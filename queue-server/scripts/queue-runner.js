@@ -2109,6 +2109,62 @@ async function mirrorToRepo() {
   else if (!out.ok) console.log(dim(`  mirror: ${out.error}`));
 }
 
+// ─── Core-paradigm additions, into the hand-curated doc ───────────────────────
+// A Room "Core paradigm" save (mind.js#saveRemembered) is Antoine's direct
+// instruction to publish — no second review gate. It writes a `core_publications`
+// row; this appends it to data-seed/docs/fractal_operational_core.md and pushes,
+// then acknowledges the row so a restarted runner never repeats the append.
+//
+// The append is built INSIDE commitFilesToTrunk's `buildFiles` hook, which runs
+// only after the mirror worktree has fetched and reset to `origin/develop` — so
+// it reads the doc's actual current trunk content, never a copy that a concurrent
+// hand-edit to the same file could have already moved past. Each addition carries
+// a hidden `core_pub:<id>` marker: if a previous run pushed the append but died
+// before acknowledging it (network drop right after the push), this recognises
+// the marker is already on the trunk and only acknowledges — it never appends the
+// same addition twice.
+const CORE_DOC_PATH = 'queue-server/data-seed/docs/fractal_operational_core.md';
+async function publishCoreAdditions() {
+  let pending = null;
+  try {
+    const r = await apiRoot('/mind/core-publications/pending');
+    if (r.ok) pending = (await r.json()).publications;
+  } catch { return; }
+  if (!Array.isArray(pending) || !pending.length) return;
+
+  const out = commitFilesToTrunk({
+    repo: RUNNER_REPO,
+    trunk: TRUNK,
+    buildFiles: (wt) => {
+      const full = join(wt, CORE_DOC_PATH);
+      let current = '';
+      try { current = readFileSync(full, 'utf8'); } catch { /* nothing written yet is not expected, but never fatal */ }
+      let next = current;
+      for (const row of pending) {
+        const marker = `<!-- core_pub:${row.id} -->`;
+        if (next.includes(marker)) continue;
+        next = `${next.replace(/\s*$/, '')}\n\n${marker}\n${row.addition}\n`;
+      }
+      return next === current ? [] : [{ path: CORE_DOC_PATH, content: next }];
+    },
+    message: `core: ${pending.length} addition(s) from the Room`,
+    dryRun: GIT_SHIP_DRY_RUN,
+    log: (m) => console.log(dim(`    ${m}`)),
+  });
+  if (!out.ok) { console.log(dim(`  core publish: ${out.error}`)); return; }
+  if (out.dry) { console.log(dim('  core publish: dry run — not acknowledging')); return; }
+
+  // Ack every row whose marker is now confirmed on the trunk — covers both a fresh
+  // append (out.changed) and a retry where the push landed last time but the ack
+  // never arrived (out.changed === false, markers already present in the doc).
+  const wt = shipTree(RUNNER_REPO, TRUNK, 'mirror');
+  const sha = out.sha || (wt ? gitIn(wt, ['rev-parse', 'HEAD']) : null);
+  for (const row of pending) {
+    try { await apiRoot(`/mind/core-publications/${row.id}/ack`, { method: 'POST', body: { commitSha: sha } }); } catch { /* retried next tick */ }
+  }
+  if (out.changed) console.log(`  ${bold('core')} ${pending.length} addition(s) published to the paradigm doc`);
+}
+
 async function runGitJobs() {
   let r;
   try { r = await api('/worker/git/claim', {}); } catch { return; }
@@ -2373,6 +2429,7 @@ async function runHousekeeping() {
     try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
     try { await runStrandedSweep(); } catch (e) { console.error('Stranded-review sweep failed —', e.message); }
     try { await mirrorToRepo(); } catch (e) { console.error('Room mirror failed —', e.message); }
+    try { await publishCoreAdditions(); } catch (e) { console.error('Core publish failed —', e.message); }
   } finally {
     housekeepingRunning = false;
   }

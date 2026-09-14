@@ -27,6 +27,8 @@ import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
 import { generateText as _generateText } from './ai/text.js';
 import { getConvo, listMessages } from './conversations.js';
+import { USER_FACING_STYLE } from './ai/style.js';
+import { paradigmVoiceBlock } from './ai/voice.js';
 
 let db = null;
 export function bindRoomAnalogiesDb(database) { db = database; }
@@ -216,31 +218,35 @@ function contextLines(ctx) {
 
 const BATCH_CAP = 6; // per model call — the request-level count has no ceiling
 const DEFAULT_COUNT = 3;
+const MAX_POOL = 12; // ceiling on candidates offered to the critic in one round
 
-function buildUnaskedPrompt({ transcript, ctx }) {
-  return `You are the analogical instrument beside a conversation. You are NOT summarising it and NOT proposing work to build.
+// The default search is a SOCIAL one — Antoine's correction (2026-09-13): another
+// social arrangement (a person, a family, a group, an institution, a city, a
+// nation...) that reveals the same shape of power, belonging, care, dependence,
+// exclusion, conflict, memory or repair. Scientific domains stay available, but
+// only when he explicitly asks for them — they no longer default in.
+const SOCIAL_FIRST_RULES = `Precedence, in order:
+1. If he named a domain, a form, or a count, follow it exactly — a request always wins.
+2. Otherwise default to SOCIAL structure: personal relations, families, households, peer
+   groups, neighbourhoods, workplaces, organizations, markets, care systems, courts,
+   cities, states, movements, rituals, historical societies. Films, books, myths and
+   imagined societies count too, as long as they hold a clear social arrangement.
+3. Prefer the closest structural match over a stranger, weaker one. Scale difference
+   (a person vs. a nation, say) is a tie-breaker between equally strong matches, never
+   a goal by itself — do not force one candidate per scale.
+4. Do not default to scientific, biological, ecological or engineering material unless
+   he asked for that domain by name.`;
 
-Your one job: find where the RELATION being discussed is already living under other names — in any domain, any scale, anywhere in the real world. The stranger the domain, the better, as long as the relation truly holds.
-
-The conversation so far:
----
-${transcript}
----
-${contextLines(ctx)}
-
-Hard rules:
-- Match on the relation, never on shared words or shared subject matter. If two things are analogous only because they use the same nouns, it is not an analogy.
-- Offer it only if you could say where it breaks. Do not write that down — let it keep you honest about what you offer.
+const HARD_RULES = `Hard rules:
+- Match on the RELATION — who holds authority, who depends on whom, who carries the
+  cost, how membership is granted or denied, what tension is being contained, what
+  relation reproduces the arrangement. Never match on shared words or shared subject
+  matter; if two things line up only because they share nouns, it is not an analogy.
+- Offer it only if you could say where it breaks. Do not write that down.
 - Never give a similarity score, percentage or star rating.
-- A pattern repeating at several scales is not evidence that anything travels between them. Never imply cause.
-- What you offer is PROPOSED, never established.
-- Plain, short words. No jargon.
-
-Respond with ONLY this JSON and nothing else:
-{"arrivals":[{"left":"the first side, 1-3 words","right":"the other side, 1-3 words","title":"the relation itself, under 7 words","reading":"one or two short sentences saying what holds","question":"the new question this makes possible, one sentence"}]}
-
-Exactly one arrival — the strongest you have.`;
-}
+- A pattern repeating at several scales is not evidence that anything travels between
+  them. Never imply cause.
+- What you offer is PROPOSED, never established.`;
 
 function firstJson(text) {
   const t = String(text || '').replace(/```(?:json)?/gi, '');
@@ -254,19 +260,137 @@ function firstJson(text) {
   return null;
 }
 
-export function parseArrivals(text, { anchorMessageId = null, asked = false, cap = null } = {}) {
+function normalizeCandidate(a) {
+  const c = {
+    left: S(a?.left, 60), right: S(a?.right, 60),
+    title: S(a?.title, 120), reading: S(a?.reading, 600),
+    question: S(a?.question, 400),
+    left_scale: S(a?.left_scale, 40), right_scale: S(a?.right_scale, 40),
+    structural_frame: {
+      positions: Array.isArray(a?.structural_frame?.positions) ? a.structural_frame.positions.map((t) => S(t, 60)).filter(Boolean).slice(0, 6) : [],
+      relations: Array.isArray(a?.structural_frame?.relations) ? a.structural_frame.relations.map((t) => S(t, 160)).filter(Boolean).slice(0, 6) : [],
+    },
+  };
+  return c;
+}
+
+export function parseCandidates(text) {
   const parsed = firstJson(text);
-  const list = Array.isArray(parsed?.arrivals) ? parsed.arrivals : [];
-  const out = list
-    .map((a) => ({
-      kind: 'arrival',
-      left: S(a?.left, 60), right: S(a?.right, 60),
-      title: S(a?.title, 120), reading: S(a?.reading, 600),
-      question: S(a?.question, 400),
-      anchor_message_id: anchorMessageId, asked,
-    }))
-    .filter((a) => a.title && a.left && a.right);
-  return cap ? out.slice(0, cap) : out;
+  const list = Array.isArray(parsed?.candidates) ? parsed.candidates : [];
+  return list.map(normalizeCandidate).filter((a) => a.title && a.left && a.right);
+}
+
+// Turn an accepted candidate into what actually gets stored as a card.
+function toArrivalCard(candidate, { anchorMessageId = null, asked = false } = {}) {
+  return { kind: 'arrival', ...candidate, anchor_message_id: anchorMessageId, asked };
+}
+
+function avoidLines(cards) {
+  return (cards || []).map((c) => `- ${c.left} ↔ ${c.right}: ${c.title}`).join('\n');
+}
+
+// ─── The generator ───────────────────────────────────────────────────────────
+// Proposes candidates broadly. Never judges its own work — that is the critic's
+// job, in a separate call, below.
+
+function buildCandidatesPrompt({ transcript, ctx, instruction, poolSize, avoid, askCount }) {
+  const avoided = avoidLines(avoid);
+  return `ANALOGY GENERATOR: you are the analogical instrument beside a conversation. You are NOT summarising it and NOT proposing work to build.
+
+Your one job: find where the RELATION being discussed is already living under other names — anywhere in the real world (or in fiction, myth or an imagined society), at any scale.
+
+${SOCIAL_FIRST_RULES}
+
+${transcript ? `The conversation so far:\n---\n${transcript}\n---\n` : ''}${contextLines(ctx)}
+${instruction ? `He directly asked: "${instruction}" — honor exactly what this names (domain, form, or count).` : 'No direct request was made this time — use the precedence above on your own.'}
+${avoided ? `Do not repeat any of these, in any form:\n${avoided}\n` : ''}
+${HARD_RULES}
+- Plain, short words. No jargon.
+
+Propose ${poolSize} candidates — cast a wide net, the strongest ones will be picked from these.${askCount ? ' Also work out how many he actually wants: a bare number ("twelve", "17") IS a count; a number that is part of a name or established structure (e.g. "five-act structure", "the seven deadly sins") is NOT a request for that many — it is part of the subject. If no count is stated, the default is ' + DEFAULT_COUNT + '.' : ''}
+
+${USER_FACING_STYLE}
+${paradigmVoiceBlock({ lengthRuleWins: true })}
+
+Respond with ONLY this JSON and nothing else:
+{${askCount ? '"requested_count": <integer or null>, ' : ''}"candidates":[{"left":"the first side, 1-3 words","right":"the other side, 1-3 words","title":"the relation itself, under 7 words","reading":"one or two short sentences saying what holds","question":"the new question this makes possible, one sentence","left_scale":"e.g. person, family, institution, city, nation","right_scale":"same idea for the other side","structural_frame":{"positions":["the roles involved, no real names"],"relations":["how those roles relate to each other"]}}]}`;
+}
+
+// ─── The critic ──────────────────────────────────────────────────────────────
+// Sees the same nameless frame, the same request, the proposed candidates, and a
+// compact inventory of what has already been accepted — but never the generator's
+// own reasoning. It selects and ranks; it never rewrites or embellishes.
+
+function buildCriticPrompt({ candidates, instruction, ctx, priorAccepted, cap }) {
+  const list = candidates
+    .map((c, i) => `${i}. [${c.left_scale || '?'} ↔ ${c.right_scale || '?'}] ${c.left} / ${c.right} — ${c.title}. ${c.reading}`)
+    .join('\n');
+  const already = avoidLines(priorAccepted) || '(none yet)';
+  return `ANALOGY CRITIC: judge candidate analogies for the same nameless-conversation instrument. You did not propose these — you only select and rank. Never rewrite, soften or add a fact to a candidate.
+
+${contextLines(ctx)}
+${instruction ? `The request was: "${instruction}". Reject anything that does not honor exactly what was named.` : 'No direct request was made — default to social/structural candidates; reject a scientific, biological, ecological or engineering one outright unless nothing else is offered.'}
+
+Already accepted so far in this delivery (reject any near-duplicate — same pair of sides, or the same relation restated):
+${already}
+
+Candidates:
+${list}
+
+Reject a candidate if:
+- it rests on shared vocabulary or a shared subject rather than the relation itself
+- it is a generic social trope with nothing specific holding it up
+- it reverses power, authority or dependence
+- it invents a factual detail that was not given
+- it uses jargon
+- it is a near-duplicate of another candidate, or of one already accepted (exact match or same relation restated)
+- it opens no new question
+- (with no domain requested) it is scientific rather than social
+
+Respond with ONLY this JSON and nothing else:
+{"accepted":[<indices into the candidates array above, strongest first, rank order, at most ${cap}>]}`;
+}
+
+function parseAcceptedIndices(text, len) {
+  const parsed = firstJson(text);
+  const raw = Array.isArray(parsed?.accepted) ? parsed.accepted : [];
+  const seen = new Set();
+  const out = [];
+  for (const v of raw) {
+    const i = Number(v);
+    if (Number.isInteger(i) && i >= 0 && i < len && !seen.has(i)) { seen.add(i); out.push(i); }
+  }
+  return out;
+}
+
+// Generate a pool, then have an independent call judge it — the two-pass shape
+// every arrival goes through, whether it showed up on its own, was asked for, or
+// is replacing a card in place.
+async function runGenerateAndCritic({ transcript = null, ctx, instruction = null, need, avoid = [], priorAccepted = [], askCount = false }) {
+  const poolSize = instruction ? Math.min(MAX_POOL, Math.max(need * 2, need)) : Math.max(4, need);
+  const genResult = await generateText({
+    prompt: buildCandidatesPrompt({ transcript, ctx, instruction, poolSize, avoid: [...avoid, ...priorAccepted], askCount }),
+    feature: 'analogies', maxTokens: 1800, label: 'room:analogies:generate', maxAttempts: 2, timeoutMs: 25_000,
+  });
+  if (genResult?.error) return { error: genResult.error };
+  const parsedGen = askCount ? firstJson(genResult.text) : null;
+  const requestedCount = askCount
+    ? (Number.isInteger(parsedGen?.requested_count) && parsedGen.requested_count > 0 ? parsedGen.requested_count : DEFAULT_COUNT)
+    : null;
+
+  let candidates = parseCandidates(genResult.text);
+  const avoidSigs = new Set([...avoid, ...priorAccepted].map(signatureOf));
+  candidates = candidates.filter((c) => !avoidSigs.has(signatureOf(c)));
+  if (!candidates.length) return { requestedCount, arrivals: [] };
+
+  const criticResult = await generateText({
+    prompt: buildCriticPrompt({ candidates, instruction, ctx, priorAccepted, cap: need }),
+    feature: 'analogies', maxTokens: 600, label: 'room:analogies:critic', maxAttempts: 2, timeoutMs: 20_000,
+  });
+  if (criticResult?.error) return { error: criticResult.error };
+
+  const accepted = parseAcceptedIndices(criticResult.text, candidates.length).slice(0, need).map((i) => candidates[i]);
+  return { requestedCount, arrivals: accepted };
 }
 
 // The last thing HE said — the line an unasked arrival is pinned to in the
@@ -283,19 +407,11 @@ async function runUnaskedLook(convoId) {
   if (!transcript) return { arrivals: [] };
   const ctx = getContext(convoId);
 
-  const result = await generateText({
-    prompt: buildUnaskedPrompt({ transcript, ctx }),
-    feature: 'analogies',
-    maxTokens: 700,
-    label: 'room:analogies',
-    maxAttempts: 2,
-    timeoutMs: 20_000,
-  });
+  const result = await runGenerateAndCritic({ transcript, ctx, need: 1 });
   if (result?.error) return { error: result.error };
+  if (!result.arrivals.length) return { arrivals: [] };
 
-  const arrivals = parseArrivals(result?.text, { anchorMessageId: lastUserMessageId(convoId), asked: false, cap: 1 });
-  if (!arrivals.length) return { arrivals: [] };
-
+  const arrivals = result.arrivals.map((c) => toArrivalCard(c, { anchorMessageId: lastUserMessageId(convoId), asked: false }));
   const side = sideThread(convoId, { create: true });
   for (const card of arrivals) addSideMessage(side.id, 'assistant', card.title, card);
   broadcastAll('analogies:updated', { convoId, count: arrivals.length });
@@ -366,6 +482,15 @@ function inventoryFor(sideId, requestId) {
   return set;
 }
 
+// The same inventory, as compact cards the generator/critic can be shown so
+// "never repeat this" has something to point at, not just a signature string.
+function inventoryCardsFor(sideId, requestId) {
+  return listMessages(sideId)
+    .map((m) => parseMeta(m.meta))
+    .filter((meta) => meta?.kind === 'arrival' && meta.request_id === requestId)
+    .map((meta) => ({ left: meta.left, right: meta.right, title: meta.title }));
+}
+
 function storeArrivals(sideId, arrivals, meta, startOrdinal) {
   return arrivals.map((card, i) => {
     const full = { ...card, request_id: meta.request_id, ordinal: startOrdinal + i + 1, requested_count: meta.requested_count };
@@ -374,45 +499,26 @@ function storeArrivals(sideId, arrivals, meta, startOrdinal) {
   });
 }
 
-function requestPromptHeader(meta) {
-  return `${contextLines(meta.context_snapshot)}\nWhat is being asked of you right now: ${meta.instruction}`;
-}
-
+// The first call for a fresh request: work out how many he wants (or the
+// default), propose a pool, and have the critic pick the first batch — up to
+// BATCH_CAP, fewer if the requested count is smaller.
 async function interpretAndFirstBatch(meta) {
-  const prompt = `You are the analogical instrument beside a conversation. Someone just asked you directly for structural analogies — matches on the RELATION, never on shared words or subject matter, from anywhere in the real world, any domain, any scale.
-${requestPromptHeader(meta)}
-
-First work out how many analogies they actually want. A bare number ("twelve", "17") IS a count. A number that is part of a NAME or established structure (e.g. "five-act structure", "the seven deadly sins") is NOT a request for that many — it is part of the subject. If no count is stated, the default is ${DEFAULT_COUNT}.
-
-Then produce the first batch: up to ${BATCH_CAP} arrivals (fewer if the requested count is smaller). Each must survive an internal "where does it break?" check — never write the break down, just be honest with yourself before offering it. Never give a similarity score. A pattern recurring at several scales is not evidence of cause. What you offer is proposed, never established. Plain, short words, no jargon.
-
-Respond with ONLY this JSON:
-{"requested_count": <integer>, "arrivals":[{"left":"...","right":"...","title":"...","reading":"...","question":"..."}]}`;
-
-  const result = await generateText({ prompt, feature: 'analogies', maxTokens: 1600, label: 'room:analogies-request', maxAttempts: 2, timeoutMs: 25_000 });
+  const ctx = meta.context_snapshot;
+  const result = await runGenerateAndCritic({ ctx, instruction: meta.instruction, need: BATCH_CAP, askCount: true });
   if (result?.error) return { error: result.error };
-  const parsed = firstJson(result.text);
-  const requestedCount = Number.isInteger(parsed?.requested_count) && parsed.requested_count > 0 ? parsed.requested_count : DEFAULT_COUNT;
-  const arrivals = parseArrivals(result.text, { asked: true, cap: Math.min(BATCH_CAP, requestedCount) });
+  const requestedCount = result.requestedCount ?? DEFAULT_COUNT;
+  const need = Math.min(BATCH_CAP, requestedCount);
+  const arrivals = result.arrivals.slice(0, need).map((c) => toArrivalCard(c, { asked: true }));
   return { requestedCount, arrivals };
 }
 
-async function nextBatch(meta, need, priorInventory) {
-  const seenList = [...priorInventory].map((s) => `- ${s}`).join('\n') || '(none yet)';
-  const prompt = `You are continuing an earlier analogy request in the same standing direction — do not change what was asked.
-${requestPromptHeader(meta)}
-
-Already offered (never repeat any of these, in any form — same pair of sides or the same relation restated):
-${seenList}
-
-Produce exactly ${need} NEW arrivals, none matching the list above. Each must survive an internal "where does it break?" check — never write it down. Never give a similarity score. A pattern recurring at several scales is not evidence of cause. What you offer is proposed, never established. Plain, short words, no jargon.
-
-Respond with ONLY this JSON:
-{"arrivals":[{"left":"...","right":"...","title":"...","reading":"...","question":"..."}]}`;
-
-  const result = await generateText({ prompt, feature: 'analogies', maxTokens: 1600, label: 'room:analogies-request', maxAttempts: 2, timeoutMs: 25_000 });
+// A continuation of a request already under way — same instruction, standing
+// direction unchanged, and a compact inventory of what has already landed so
+// the generator and the critic both avoid repeating it.
+async function nextBatch(meta, need, priorInventoryCards) {
+  const result = await runGenerateAndCritic({ ctx: meta.context_snapshot, instruction: meta.instruction, need, priorAccepted: priorInventoryCards });
   if (result?.error) return { error: result.error };
-  return { arrivals: parseArrivals(result.text, { asked: true, cap: need }) };
+  return { arrivals: result.arrivals.map((c) => toArrivalCard(c, { asked: true })) };
 }
 
 const _reqInFlight = new Map(); // convoId -> requestMsgId currently generating
@@ -510,7 +616,8 @@ async function runRequest(convoId, sideId, requestMsgId) {
 
       const need = Math.min(BATCH_CAP, meta.requested_count - meta.delivered_count);
       const inventory = inventoryFor(sideId, meta.request_id);
-      const batch = await nextBatch(meta, need, inventory);
+      const inventoryCards = inventoryCardsFor(sideId, meta.request_id);
+      const batch = await nextBatch(meta, need, inventoryCards);
 
       row = getMessage(requestMsgId);
       if (!row) return;
@@ -623,9 +730,16 @@ export function forgetAnalogy(convoId, messageId) {
   return { ok: true, removed: n };
 }
 
+function findRequestInstruction(sideId, requestId) {
+  if (!requestId) return null;
+  const msg = findRequestMessage(sideId, requestId);
+  const meta = msg ? parseMeta(msg.meta) : null;
+  return meta?.instruction || null;
+}
+
 // Swap one card for a fresh one in the same slot — same row, same position,
-// same anchor. Asking the model to avoid what it just said stops it handing
-// back the same arrival twice in a row.
+// same anchor. Runs through the same generator-then-critic pass as every other
+// arrival, telling the generator not to repeat what is being replaced.
 export async function regenerateAnalogy(convoId, messageId) {
   if (!db) return { error: 'no_db' };
   const side = sideThread(convoId);
@@ -636,23 +750,21 @@ export async function regenerateAnalogy(convoId, messageId) {
 
   const transcript = transcriptFor(convoId);
   if (!transcript) return { error: 'empty' };
-  const steer = getSteer(convoId);
-  const prompt = buildPrompt({ transcript, steer, question: null })
-    + `\n\nOne more rule: do not repeat this one, offer something different from "${oldCard.left} ↔ ${oldCard.right} — ${oldCard.title}".`;
+  const ctx = getContext(convoId);
+  const instruction = oldCard.asked ? findRequestInstruction(side.id, oldCard.request_id) : null;
 
-  const result = await generateText({
-    prompt, feature: 'analogies', maxTokens: 1200, label: 'room:analogies:regen',
-    maxAttempts: 2, timeoutMs: 20_000,
-  });
+  const result = await runGenerateAndCritic({ transcript, ctx, instruction, need: 1, avoid: [oldCard] });
   if (result?.error) return { error: result.error };
-
-  const arrivals = parseArrivals(result?.text, { steer, anchorMessageId: oldCard.anchor_message_id, asked: oldCard.asked });
-  const next = arrivals[0];
+  const next = result.arrivals[0];
   if (!next) return { error: 'empty' };
 
-  db.prepare(`UPDATE convo_messages SET text=?, meta=? WHERE id=?`).run(next.title, JSON.stringify(next), messageId);
+  const full = {
+    ...toArrivalCard(next, { anchorMessageId: oldCard.anchor_message_id, asked: oldCard.asked }),
+    request_id: oldCard.request_id, ordinal: oldCard.ordinal, requested_count: oldCard.requested_count,
+  };
+  db.prepare(`UPDATE convo_messages SET text=?, meta=? WHERE id=?`).run(full.title, JSON.stringify(full), messageId);
   broadcastAll('analogies:updated', { convoId });
-  return { ok: true, card: next };
+  return { ok: true, card: full };
 }
 
 export function clearAnalogies(convoId) {

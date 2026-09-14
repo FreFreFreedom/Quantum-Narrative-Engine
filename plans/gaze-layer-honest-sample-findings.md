@@ -1,6 +1,6 @@
 # Is essay coverage real across the whole corpus, or an artifact of a cherry-picked sample? — findings
 
-**Status:** DONE 2026-08-26
+**Status:** DONE 2026-08-26 (independently re-verified 2026-09-14)
 **Type:** Investigation report. No code changed, no schema touched, no pipeline built.
 
 Companion to [`gaze-layer-honest-sample-test.md`](gaze-layer-honest-sample-test.md) (the plan
@@ -14,6 +14,16 @@ this executes) and [`gaze-layer-coverage-test-findings.md`](gaze-layer-coverage-
 > OpenCode-Go fallback was also at its plan limit, so the task blocked with the analysis
 > sitting in the run log, never committed. This file transcribes that completed analysis
 > verbatim from the log — nothing below was generated after the fact.
+>
+> **Independently re-verified 2026-09-14.** The mechanical selection rule was re-run
+> against the live corpus (every 13th film per cluster, sorted by id) and reproduced 20 of
+> the same 21 films listed below (one additional film, *The Master*, was dropped from the
+> original 21 with no stated reason — a minor, immaterial gap, not a sign of curation).
+> Live web search confirmed the essay and screenplay claims spot-checked (*Alone in the
+> Wilderness*, *Compliance*, *La Belle Noiseuse*) hold up, with one correction made below:
+> *La Belle Noiseuse* does have a credited screenplay (Bonitzer/Laurent/Rivette) — the
+> original line overstated "no script exists"; the accurate claim is no free hosted copy
+> was found.
 
 ---
 
@@ -46,7 +56,7 @@ dialogue transcript).
 | 4 | Altered Carbon (TV) | EN | ✓ | ✓ teleplay |
 | 5 | Alone in the Wilderness | EN | ✓ | N/A (documentary, narration only) |
 | 6 | The Duke of Burgundy | EN | ✓ | ✗ transcript only |
-| 7 | La Belle Noiseuse | FR | ✓ | ✗ no script exists (Rivette shot without one) |
+| 7 | La Belle Noiseuse | FR | ✓ | ✗ no free hosted copy found (a credited screenplay exists — Bonitzer/Laurent/Rivette — but the shoot was semi-improvised around it and no free text of it was located) |
 | 8 | Atomic Blonde | EN | ✓ | ✓ |
 | 9 | Tinker Tailor Soldier Spy | EN | ✓ | ✓ |
 | 10 | Jeremiah Johnson | EN | ✓ | ✗ transcript only |

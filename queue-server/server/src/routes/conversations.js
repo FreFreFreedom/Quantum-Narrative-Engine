@@ -7,7 +7,7 @@ import * as convos from '../services/conversations.js';
 import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
 import { rhymeSoon } from '../services/boardRhyme.js';
-import { rememberPassage } from '../services/mind.js';
+import { proposeRemember, saveRemembered } from '../services/mind.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -35,7 +35,7 @@ function statusFor(err) {
   if (err === 'not_found' || err === 'not_exist' || err === 'no_plan' || err === 'not_attached') return 404;
   if (err === 'unknown_subject_type' || err === 'empty' || err === 'too_many_subjects'
       || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required' || err === 'no_such_message' || err === 'no_title'
-      || err === 'invalid_kind') return 400;
+      || err === 'invalid_kind' || err === 'invalid_mode') return 400;
   return 500;
 }
 
@@ -299,18 +299,39 @@ export function conversationsRoutes() {
     res.json(out);
   }));
 
-  // POST /api/convos/:id/remember — body: { passage, messageId? }. Returns a
-  // PROPOSAL only ({kind, text, detail}) — saving is a separate, explicit call to
-  // the existing fact routes (POST /api/mind/facts), because where it lands is
-  // his choice, never decided for him.
+  // POST /api/convos/sides/backfill-titles — one-time fix for side talks
+  // started before smart titles covered them (plan "fix the Aside / side-talk
+  // flow"). Mirrors /api/travaux/suggestions/classify: waits for the answer,
+  // reports how many rows changed, no polling needed. Safe to run more than
+  // once — a side talk already titled is not touched again.
+  router.post('/sides/backfill-titles', asyncHandler(async (req, res) => {
+    const out = await convos.backfillSideTitles();
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
+
+  // POST /api/convos/:id/remember — body: { passage, messageId?, ownerNote?, central?, destination? }.
+  // One call, from the capture card's single Save action: proposes the memory
+  // from the passage + his note, then saves it. Where it lands (Memory vs Core
+  // paradigm) is always his choice, made before this fires — Core is his direct
+  // instruction to publish, no second approval screen after this.
   router.post('/:id/remember', asyncHandler(async (req, res) => {
     if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
     const passage = String(req.body?.passage || '').trim();
     if (!passage) return res.status(400).json({ error: 'empty' });
-    const out = await rememberPassage(req.params.id, {
-      passage, messageId: req.body?.messageId || null, kind: req.body?.kind || null,
+    const ownerNote = req.body?.ownerNote || null;
+    const central = !!req.body?.central;
+    const destination = req.body?.destination === 'core' ? 'core' : 'memory';
+    const proposed = await proposeRemember({
+      sourceType: 'passage', text: passage, convoId: req.params.id, messageId: req.body?.messageId || null,
+      ownerNote, central, destination,
     });
-    if (out.error) return res.status(out.error === 'empty' ? 400 : 500).json(out);
+    if (proposed.error) return res.status(proposed.error === 'empty' ? 400 : 500).json(proposed);
+    const out = saveRemembered({
+      sourceType: 'passage', sourceText: passage, convoId: req.params.id, ownerNote, central,
+      destination, kind: proposed.kind, text: proposed.text, detail: proposed.detail,
+    });
+    if (out.error) return res.status(out.error === 'duplicate' ? 409 : 400).json(out);
     res.json(out);
   }));
 
@@ -326,6 +347,52 @@ export function conversationsRoutes() {
     const lane = convos.setChatLane(req.params.id, provider ? { provider, model: req.body?.model || null, account: req.body?.account || null } : null);
     res.json({ chat_override: lane });
   });
+
+  // POST /api/convos/:id/clarification-mode — body: { mode: 'normal'|'interview' }.
+  // The Interview switch in the composer, and the narrow natural-language start/
+  // end phrases in sendMessage, both land here (or its sibling /answer-now).
+  router.post('/:id/clarification-mode', (req, res) => {
+    const mode = req.body?.mode;
+    if (mode !== 'normal' && mode !== 'interview') return res.status(400).json({ error: 'invalid_mode' });
+    const out = convos.setClarificationMode(req.params.id, mode);
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  // POST /api/convos/:id/answer-now — Antoine's explicit "enough material,
+  // answer now" during Interview mode. Same NDJSON/plain-JSON split as
+  // /:id/message, since the composer streams this exactly like an ordinary turn.
+  router.post('/:id/answer-now', asyncHandler(async (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    const wantsStream = /application\/x-ndjson/i.test(String(req.headers.accept || ''));
+
+    if (!wantsStream) {
+      const out = await convos.answerNow(req.params.id, {});
+      if (out.error) return res.status(statusFor(out.error)).json(out);
+      return res.json(out);
+    }
+
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders?.();
+    const write = (obj) => { try { res.write(JSON.stringify(obj) + '\n'); res.flush?.(); } catch {} };
+    const cancel = new AbortController();
+    const clientGone = () => cancel.signal.aborted;
+    res.on('close', () => { if (!res.writableFinished) cancel.abort(); });
+
+    try {
+      const out = await convos.answerNow(req.params.id, {
+        signal: cancel.signal,
+        onToken: (t) => { if (!clientGone()) write({ type: 'token', text: t }); },
+        onStatus: (m) => { if (!clientGone()) write({ type: 'status', text: String(m || '') }); },
+      });
+      write({ type: 'done', ...out });
+    } catch (e) {
+      write({ type: 'error', error: 'answer_now_failed', message: e.message });
+    }
+    res.end();
+  }));
 
   // GET /api/convos/:id/subjects — every card attached to this conversation,
   // primary first.

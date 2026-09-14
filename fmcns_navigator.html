@@ -1376,8 +1376,12 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    above it, the lane is already pinned, and the command list is for the Studio —
    all three squeezed the box someone types in down to nothing. His words,
    2026-09-13: "i dont even know where to type". */
-.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-more { display:none; }
+.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-more, .se-slim .se-interview, .se-slim .se-answer-now { display:none; }
 .se-slim .se-input { flex:1 1 auto; min-width:0; }
+/* Side talks (plan "fix the Aside / side-talk flow"): the model picker is the one
+   .se-lanewrap piece worth keeping even in the slim layout — he wants to change a
+   side talk's model the same way he can on the main chat. */
+.se-slim.se-lane-visible .se-lanewrap { display:flex; }
 .se-remember-shelf { font:inherit; text-transform:none; letter-spacing:normal; background:none;
   border:1px solid var(--c-border); border-radius:999px; padding:3px 10px; margin-left:6px;
   color:var(--c-ink-4); cursor:pointer; }
@@ -1386,6 +1390,14 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-remember-text { margin:6px 0; font-size:var(--fs-sm); }
 .se-remember-detail { margin:0 0 8px; font-size:var(--fs-xs); color:var(--c-ink-3); }
 .se-remember-acts { display:flex; gap:8px; justify-content:flex-end; }
+/* Owner-emphasis capture card (plan "owner emphasis when the Room remembers or
+   changes the core"): the same small card now opens BEFORE any model call, for
+   both entrances — a selected passage and a directly typed thought. */
+.se-remember-note { width:100%; box-sizing:border-box; font:inherit; font-size:var(--fs-sm); resize:vertical;
+  background:var(--c-bg); color:var(--c-ink); border:1px solid var(--c-border); border-radius:var(--r-sm);
+  padding:6px 8px; margin:6px 0; min-height:38px; }
+.se-remember-row { display:flex; flex-wrap:wrap; gap:0; margin-bottom:4px; }
+.se-remember-row .se-remember-shelf { margin-left:0; margin-right:6px; }
 /* Side talks — the list and the one open at a time. */
 .room-side-new { margin-bottom:8px; }
 .room-side-list { display:flex; flex-direction:column; gap:2px; margin-bottom:8px; }
@@ -1504,6 +1516,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-ana-item.is-regenning { opacity:.5; }
 .room-ana-acts button[disabled] { cursor:default; opacity:.5; text-decoration:none; }
 .room-ana-eyebrow { font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
+.room-ana-scale { font-size:var(--fs-xs); letter-spacing:.06em; color:var(--c-ink-4); opacity:.6; margin-top:1px; }
 .room-ana-item h4 { font-family:var(--room-font); font-weight:400; font-size:var(--fs-md); line-height:1.25; margin:7px 0 5px; }
 .room-ana-item p { margin:0 0 6px; font-size:var(--fs-sm); color:var(--c-ink-3); }
 .room-ana-acts { display:flex; gap:12px; margin-top:8px; }
@@ -1585,6 +1598,17 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-lanepick.is-set { color:var(--c-brand); border-color:var(--c-brand); }
 .se-lane-clear { background:none; border:none; color:var(--c-ink-4); font-size:var(--fs-sm); line-height:1; cursor:pointer; padding:2px; }
 .se-lane-clear:hover { color:var(--c-ink); }
+/* Interview mode (plan "room-clarifying-questions-and-interview-mode") — same
+   quiet-pill idiom as the lane picker beside it: muted until active, brand
+   colour once on, so the two controls read as one family. Answer now only
+   ever shows while Interview is active. */
+.se-interview { -webkit-appearance:none; appearance:none; background:none; border:1px solid var(--c-border-2); border-radius:var(--r-pill); color:var(--c-ink-4); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:3px 8px; cursor:pointer; flex:none; align-self:center; }
+.se-interview:hover { border-color:var(--c-ink-4); color:var(--c-ink); }
+.se-interview.is-set { color:var(--c-brand); border-color:var(--c-brand); }
+.se-answer-now { -webkit-appearance:none; appearance:none; background:var(--c-brand); border:1px solid var(--c-brand); border-radius:var(--r-pill); color:var(--c-on-accent); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:3px 10px; cursor:pointer; flex:none; align-self:center; }
+.se-answer-now:hover:not(:disabled) { opacity:.88; }
+.se-answer-now:disabled { opacity:.5; cursor:default; }
+.se-answer-now-inline { margin-top:4px; }
 /* The architecture panel is a fixed 330px column at every window size, so its log
    is shortened by where it lives rather than by a viewport breakpoint. */
 .ws-archdetail .se-log { max-height:240px; }
@@ -1636,6 +1660,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
       padding:var(--sp-2) var(--sp-3); background:var(--c-surface);
       box-shadow:var(--sh-xs); margin-bottom:var(--sp-1); cursor:pointer;
       transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease), background-color var(--t-fast) var(--ease), opacity var(--t-med) var(--ease); }
+.tv-body.flow-refresh .uc { animation:none !important; }
 .uc:hover { border-color:var(--c-border-3); background-image:linear-gradient(var(--c-hover-wash), var(--c-hover-wash)); }
 .uc.is-sel { border-color:var(--c-ink-4); box-shadow:0 0 0 1px var(--c-ink-4); }
 /* A card waiting on you (violet) or moving (green) says so with its border — the
@@ -10580,19 +10605,22 @@ function renderRoomMind() {
   if (note) { note.textContent = _mindNote; note.className = 'room-note' + (_mindNote && _mindNote.indexOf('Could') !== -1 ? ' err' : ''); }
 }
 
-async function roomAddFact() {
+// Opens the same capture card the selected-passage Remember uses (see
+// openRememberCard, defined with the Room chat code below) — a typed thought and
+// a selected passage are two sources into one shared "what does this mean, is it
+// Central, where does it go" flow, plan "owner emphasis when the Room remembers
+// or changes the core". Falls back to the old plain save if the card isn't
+// defined yet (script order), so the input never silently does nothing.
+function roomAddFact() {
   const input = document.getElementById('roomMindInput');
   const text = input ? input.value.trim() : '';
   if (!text) return;
-  try {
-    await apiWrite('/api/mind', 'POST', { text });
-    if (input) input.value = '';
-    _mindNote = '';
-    await loadRoomMind();
-  } catch (e) {
-    _mindNote = (e && e.message === 'duplicate') ? 'That fact is already remembered.' : 'Could not save that fact.';
-    renderRoomMind();
+  if (typeof window.openRememberCard !== 'function') {
+    apiWrite('/api/mind', 'POST', { text }).then(() => { if (input) input.value = ''; loadRoomMind(); }).catch(() => {});
+    return;
   }
+  window.openRememberCard({ source: text, kind: 'direct' });
+  if (input) input.value = '';
 }
 
 async function roomForgetFact(id) {
@@ -10808,6 +10836,7 @@ function renderRoomAnalogies() {
     const regenning = roomAnaRegenBusy.has(it.id);
     return '<div class="room-ana-item' + (regenning ? ' is-regenning' : '') + '">'
       + '<div class="room-ana-eyebrow">' + qEsc(c.left) + ' ↔ ' + qEsc(c.right) + '</div>'
+      + (c.left_scale && c.right_scale ? '<div class="room-ana-scale">' + qEsc(c.left_scale.toUpperCase()) + ' ↔ ' + qEsc(c.right_scale.toUpperCase()) + '</div>' : '')
       + '<h4>' + qEsc(c.title) + '</h4>'
       + (c.reading ? '<p>' + qEsc(c.reading) + '</p>' : '')
       + '<div class="room-ana-acts">'
@@ -10913,18 +10942,26 @@ function roomSideOpen(id) {
 }
 
 // mode: 'empty' (a fresh aside) or 'fork' (branch the main thread itself into
-// the pane). `starter` carries the from-quotes door's first message + the
-// picked passages straight through, same shape sendMessage already accepts.
-async function roomSideCreate({ mode = 'empty', throughMessageId = null, starter = null } = {}) {
+// the pane). `prefill`, when given, is put straight into the new aside's own
+// message box and focused — never sent on his behalf; he writes the first
+// line and sends it himself, when he's ready.
+async function roomSideCreate({ mode = 'empty', throughMessageId = null, prefill = null } = {}) {
   if (!roomSel) return null;
   const body = { mode };
   if (throughMessageId) body.throughMessageId = throughMessageId;
-  if (starter) { body.text = starter.text; if (starter.quotes) body.quotes = starter.quotes; if (starter.body) body.body = starter.body; }
   try {
     const out = await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/sides', 'POST', body);
     if (!out || !out.convo) return null;
     await loadRoomSides();
     roomSideOpen(out.convo.id);
+    if (prefill && window.studioLend && window.studioLend.entry) {
+      const entry = window.studioLend.entry('side', out.convo.subject_id);
+      entry.draft = prefill;
+      entry.draftForce = true;
+      renderRoomSide();
+      const box = document.querySelector('#roomSideEmbed .se-input');
+      if (box) box.focus();
+    }
     return out.convo;
   } catch (e) { return null; }
 }
@@ -10994,7 +11031,7 @@ function renderRoomSide() {
     const embedHost = document.getElementById('roomSideEmbed');
     if (embedHost) {
       window.studioEmbedOpen('side', open.subject_id);
-      window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '', slim: true });
+      window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '', slim: true, showLane: true });
     }
   }
 }
@@ -13120,7 +13157,7 @@ async function qLoad() {
     modeBadgeEl.classList.toggle('on', askingCount > 0);
   }
   if (modeBtnEl) modeBtnEl.classList.toggle('warm', askingCount > 0);
-  if (coreView === 'flow' && changed) renderFlow();
+  if (coreView === 'flow' && changed) scheduleFlowRender();
   if (queuePanelOpen && changed) renderQueuePanel();
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
@@ -13214,15 +13251,13 @@ async function qAction(action, id, btn) {
         await qLoad();
         break;
       case 'start':
-      case 'rerun':
         await apiWrite(`/api/travaux/prompts/${id}`, 'PATCH', { status: 'queued' });
         await apiWrite('/api/travaux/prompts/advance', 'POST');
         await qLoad();
         break;
+      case 'rerun':
       case 'rerun-fresh':
-        await apiWrite(`/api/travaux/prompts/${id}/clear-context`, 'POST');
-        await apiWrite(`/api/travaux/prompts/${id}`, 'PATCH', { status: 'queued' });
-        await apiWrite('/api/travaux/prompts/advance', 'POST');
+        await apiWrite(`/api/travaux/prompts/${id}/retry`, 'POST', {});
         await qLoad();
         break;
       case 'delete':
@@ -13603,7 +13638,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   else if (p.plan_pending) { primary = ubtnHtml('Start it now', 'skip-plan', p.id, 'is-primary', 'Skip drafting the plan and start this task now, on the raw text you submitted'); primaryAct = 'skip-plan'; }
   else if (st && st.btn) { primary = ubtnStage(st.btn, 'is-primary', p.id); primaryAct = st.btn.act || 'stage'; }
   else if (shipReady) { primary = ubtnHtml('Send it live', 'ship-now', p.id, 'is-primary', 'Send this work live now'); primaryAct = 'ship-now'; }
-  else if (canRerun) { primary = ubtnHtml('Run again', 'rerun', p.id, '', 'Run it again, carrying on from where it left off'); primaryAct = 'rerun'; }
+  else if (canRerun) { primary = ubtnHtml('Continue task', 'rerun', p.id, '', 'Keep this stopped attempt visible and queue a linked continuation'); primaryAct = 'rerun'; }
 
   // Gone from here entirely, not moved into the menu: the 💬 chat symbol (opening
   // the card already shows the conversation), the ▲▼ arrows as symbols (they are
@@ -13615,8 +13650,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     ['queued', 'paused'].includes(p.status) ? { label: 'First in line', act: 'first', id: p.id } : null,
     reorderable ? { label: 'Move up', act: 'up', id: p.id } : null,
     reorderable ? { label: 'Move down', act: 'down', id: p.id } : null,
-    canRerun && primaryAct !== 'rerun' ? { label: 'Run again', act: 'rerun', id: p.id } : null,
-    canRerun ? { label: 'Run again fresh', act: 'rerun-fresh', id: p.id } : null,
+    canRerun && primaryAct !== 'rerun' ? { label: 'Continue task', act: 'rerun', id: p.id } : null,
     isLive ? { label: 'Put it back', act: 'ship-undo', id: p.id, danger: true } : null,
     { label: 'Delete', act: 'delete', id: p.id, danger: true },
   ];
@@ -14933,9 +14967,10 @@ function qDragMove(id, overId) {
   qPersistReorder(qRebuildFullOrder(next));
 }
 
-function renderFlow() {
+function renderFlow({ background = false } = {}) {
   const host = document.getElementById('tvBodyFlow');
   if (!host) return;
+  const restoreScroll = background ? host.scrollTop : null;
   // Never rebuild the list while the human is typing (inline title or inside the
   // expanded task card — reply box, seed fields) or mid-drag — the data below
   // stays current (polls update it) and renders again right after.
@@ -14964,7 +14999,9 @@ function renderFlow() {
   let html = '';
 
   const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
-  const done = qPrompts.filter(p => rel(p) && p.status === 'done' && flowMatches([p.title, p.prompt]));
+  // Done is the record of endings, including attempts the runner had to stop.
+  // A continuation gets its own queue row, so this attempt never vanishes.
+  const done = qPrompts.filter(p => rel(p) && ['done', 'blocked', 'cancelled'].includes(p.status) && flowMatches([p.title, p.prompt]));
 
   // ── Group umbrella computation ──────────────────────────────────────────────
   // Identify group rows (is_group=1) and their children (parts with parent_prompt_id).
@@ -15105,7 +15142,7 @@ function renderFlow() {
       html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${doneCount}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}</div>${showDoneList ? doneGroupRows + doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
     }
     if (flowType === 'done' && !doneCount) {
-      html += '<div class="empty">Nothing finished yet — done tasks land here.</div>';
+      html += '<div class="empty">Nothing completed or stopped yet.</div>';
     }
   }
 
@@ -15172,6 +15209,7 @@ function renderFlow() {
     html = '<div class="empty">' + guide + '</div>';
   }
   host.innerHTML = html;
+  if (restoreScroll !== null) host.scrollTop = restoreScroll;
 
   // Row wiring
   if (showNextUp) { wireNextUp(host); wireStudioSlots(host, () => { loadNextUp(true); renderFlow(); }); }
@@ -15806,8 +15844,8 @@ function qRenderDetail(p) {
     qResultLineHtml(p),
     p.blocked_why ? `<div class="q-result${p.status === 'blocked' ? ' blocked' : ''}">${qEsc(p.blocked_why)}</div>` : '',
   ].filter(Boolean).join('');
-  const outcomeHtml = outcomeBits ? `
-    <div class="arch-field"><div class="arch-field-label">What happened</div><div class="arch-field-body">${outcomeBits}</div></div>` : '';
+  const outcomeHtml = (outcomeBits || stopped) ? `
+    <div class="arch-field"><div class="arch-field-label">What happened</div><div class="arch-field-body">${outcomeBits}${stopped ? `<div class="q-row" style="margin-top:8px;"><button class="ctrlbtn" data-action="retry-detail">Continue as a new attempt</button></div>` : ''}</div></div>` : '';
   // A frozen preparation step is invisible from the status pill alone — it just
   // reads as "still working". This says it plainly, once, at the top, and works
   // for the plan-draft case too (the world-look panel below only exists for
@@ -15913,6 +15951,12 @@ function qRenderDetail(p) {
       await apiWrite(`/api/travaux/prompts/${p.id}/skip-plan`, 'POST', {});
       await qLoad();
     } catch (err) { b.disabled = false; b.textContent = 'Skip plan / Start now'; notify('Error: ' + err.message, { kind: 'error' }); }
+  });
+  host.querySelector('[data-action="retry-detail"]')?.addEventListener('click', async (e) => {
+    const b = e.currentTarget;
+    b.disabled = true; b.textContent = 'Queueing…';
+    try { await apiWrite(`/api/travaux/prompts/${p.id}/retry`, 'POST', {}); await qLoad(); }
+    catch (err) { b.disabled = false; b.textContent = 'Continue as a new attempt'; notify('Error: ' + err.message, { kind: 'error' }); }
   });
   if (!p.summary) qSummarize(p);
   qWireInspire(p);
@@ -16679,7 +16723,13 @@ let flowRenderScheduled = false;
 function scheduleFlowRender() {
   if (flowRenderScheduled) return;
   flowRenderScheduled = true;
-  setTimeout(() => { flowRenderScheduled = false; renderFlow(); }, 150);
+  setTimeout(() => {
+    flowRenderScheduled = false;
+    const host = document.getElementById('tvBodyFlow');
+    host?.classList.add('flow-refresh');
+    renderFlow({ background: true });
+    requestAnimationFrame(() => host?.classList.remove('flow-refresh'));
+  }, 150);
 }
 // One silent lookup per item per session: after a reload, the panel and the
 // row markers come back without re-searching. If the server is already running
@@ -17222,27 +17272,27 @@ async function loadSuggestions() {
   tvSuggestions.forEach(s => { flowWorldSync('suggestion', s.id); flowWorldPoll('suggestion', s.id); });
   // Which of these have been talked about already — one request for the whole
   // list, so the closed line on each card can say so without asking per card.
-  studioIndexLoad('suggestion', tvSuggestions.map(s => s.id)).then(() => { if (coreView === 'flow' && !qTypingGuard()) renderFlow(); });
+  studioIndexLoad('suggestion', tvSuggestions.map(s => s.id)).then(() => { if (coreView === 'flow' && !qTypingGuard()) scheduleFlowRender(); });
   // Re-open the suggestion detail after a refresh (accept/dismiss/regenerate) if
   // it is still in the list — the expanded card survives the Flow re-render.
   if (flowSideSel && flowSideSel.kind === 'suggestion') {
     const fresh = tvSuggestions.find(x => x.id === flowSideSel.id);
     if (fresh) { if (!qTypingGuard()) renderSuggestionDetail(fresh); } else flowSideSel = null;
   }
-  if (coreView === 'flow') renderFlow();
+  if (coreView === 'flow') scheduleFlowRender();
 }
 
 // ── Idées ──────────────────────────────────────────────────────────────────────
 async function loadIdeas() {
   try { tvIdeas = (await api('/api/travaux/ideas')).ideas || []; } catch (e) { tvIdeas = []; }
-  studioIndexLoad('seed', tvIdeas.map(i => i.id)).then(() => { if (coreView === 'flow' && !qTypingGuard()) renderFlow(); });
+  studioIndexLoad('seed', tvIdeas.map(i => i.id)).then(() => { if (coreView === 'flow' && !qTypingGuard()) scheduleFlowRender(); });
   // Re-open the seed detail after a refresh (promote/plant/delete/add) if it is
   // still in the list — the expanded card survives the Flow re-render.
   if (flowSideSel && flowSideSel.kind === 'seed') {
     const fresh = tvIdeas.find(x => x.id === flowSideSel.id);
     if (fresh) { if (!qTypingGuard()) renderSeedDetail(fresh); } else flowSideSel = null;
   }
-  if (coreView === 'flow') renderFlow();
+  if (coreView === 'flow') scheduleFlowRender();
 }
 
 // Put an idea on screen with its conversation open: the Seeds list, that card
@@ -21193,6 +21243,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       key: key, type: type, subjectId: subjectId,
       convoId: null, msgs: [], acts: [], edits: [], promptId: null, via: null, title: '',
       lane: undefined,               // manual model picker: undefined = not loaded yet, null = Auto, {provider,model,tag} = pinned
+      clarify: undefined,            // Interview mode: undefined = not loaded yet, 'normal' | 'interview'
       hint: null,                    // travels with the request for subjects the DB cannot describe
       loaded: false, loading: false,  // `loaded` gates the refetch, so a repaint costs nothing
       open: false, busy: false, draft: '', err: '', note: '',
@@ -21285,6 +21336,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // set from the fetch, never left undefined once loaded, so sendTurn always
         // knows whether to say "use Auto" or "use whatever's already pinned".
         e.lane = data.chat_override || null;
+        // Interview mode lives on the row, so it survives a refresh and a change of
+        // answering model — read straight off the conversation, never guessed.
+        e.clarify = (data.convo && data.convo.clarification_mode) || 'normal';
         e.loaded = true;
         e.note = '';
         index[e.key] = data.convo;   // keeps the closed line's count honest
@@ -21366,6 +21420,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           // marked as a chapter right away instead of only after a reload.
           e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0 });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
+          // /interview, /grill-me and "answer now" all report the mode they left the
+          // conversation in, so the toggle and the composer reflect it at once — no
+          // separate re-fetch needed.
+          if (d.mode) e.clarify = d.mode;
           // A roaming thread can pick up its title from this very turn (the first
           // exchange), so the list needs to come back the same way /fold or
           // /handoff already trigger it — every other subject type keeps its own
@@ -21401,6 +21459,45 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       })
       .then(function(){ e.busy = false; e.phase = ''; if(repaint) repaint(); });
     return true;
+  }
+
+  // Answer now (plan "room-clarifying-questions-and-interview-mode"): Antoine's
+  // explicit decision that Interview mode has enough material. No fake user
+  // message is inserted — the interview already IN the transcript is the
+  // material, so this hits its own endpoint rather than sendTurn with empty text.
+  function sendAnswerNow(e, repaint, onDone){
+    if(!e.convoId || e.busy) return false;
+    e.busy = true; e.note = ''; e.phase = ''; e.stream = '';
+    e.abort = new AbortController();
+    e.cancelled = false;
+    return fetch(API_BASE + '/api/convos/' + e.convoId + '/answer-now', {
+      method: 'POST',
+      signal: e.abort.signal,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/x-ndjson' },
+      body: JSON.stringify({}),
+    })
+      .then(function(r){ return readTurn(r, e, repaint); })
+      .then(function(d){
+        if(d.error){
+          // Generation failed — Interview mode is left exactly as it was on the
+          // server (see runAnswerNowTurn), so e.clarify is deliberately untouched.
+          e.note = d.message || 'Could not answer now — try again.';
+        } else if(d.text){
+          var arrivedWhole = !e.stream;
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null });
+          if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
+          e.clarify = d.mode || 'normal';
+          if(e.type === 'open' && onDone) onDone();
+        }
+        e.stream = '';
+        if(d.via) e.via = d.via;
+        if(repaint) repaint();
+      })
+      .catch(function(){
+        e.stream = '';
+        if(!e.cancelled) e.note = 'Could not answer now — try again.';
+      })
+      .then(function(){ e.busy = false; e.phase = ''; if(repaint) repaint(); });
   }
 
   function stopTurn(e){
@@ -21817,7 +21914,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // Nothing here holds state worth preserving, so it is simply redrawn — which
       // also picks up a count that arrived from the batch lookup after the card did.
       host.setAttribute('data-se', stamp);
-      host.innerHTML = '<div class="se-wrap' + (opts && opts.slim ? ' se-slim' : '') + '">' + teaserHtml(e) + '</div>';
+      host.innerHTML = '<div class="se-wrap' + (opts && opts.slim ? ' se-slim' : '') + (opts && opts.showLane ? ' se-lane-visible' : '') + '">' + teaserHtml(e) + '</div>';
       host.querySelector('.se-teaser').onclick = function(ev){
         ev.stopPropagation();
         e.open = true;
@@ -21830,7 +21927,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(fresh){
       host.setAttribute('data-se', stamp);
       host.innerHTML = ''
-        + '<div class="se-wrap se-open' + (opts && opts.slim ? ' se-slim' : '') + '">'
+        + '<div class="se-wrap se-open' + (opts && opts.slim ? ' se-slim' : '') + (opts && opts.showLane ? ' se-lane-visible' : '') + '">'
         +   '<div class="se-head">'
         +     '<span class="se-head-title">Talk it over</span>'
         +     '<span class="se-count"></span>'
@@ -21859,6 +21956,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +       '<select class="se-lanemodel" style="display:none"></select>'
         +       '<button type="button" class="se-lane-clear" style="display:none" title="Back to Auto">✕</button>'
         +     '</span>'
+        +     '<button type="button" class="se-interview" title="Ask me questions before you answer">Interview</button>'
+        +     '<button type="button" class="se-answer-now" style="display:none">Answer now</button>'
         +     '<textarea class="se-input" rows="1" placeholder="Say what you\'re thinking…"></textarea>'
         +     '<span class="se-spend" hidden></span>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
@@ -21982,6 +22081,34 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         fillEmbed(host, e, opts);
       };
     }
+    // Interview mode toggle + its Answer now sibling. Independently reachable
+    // from the lane picker beside it — switching lane mid-interview must not
+    // touch this, and vice versa.
+    var interviewBtn = host.querySelector('.se-interview');
+    var answerNowBtn = host.querySelector('.se-answer-now');
+    if(interviewBtn){
+      interviewBtn.onclick = function(ev){
+        ev.stopPropagation();
+        if(!e.convoId || e.busy) return;
+        if(e.clarify === 'interview'){
+          // Antoine's own decision to step back out — never inferred, never the
+          // model's call. Leaves nothing behind: no synthesis, no saved message.
+          apiWrite('/api/convos/' + e.convoId + '/clarification-mode', 'POST', { mode: 'normal' })
+            .then(function(d){ e.clarify = (d && d.mode) || 'normal'; repaint(); })
+            .catch(function(){});
+        } else {
+          e.clarify = 'interview'; repaint(); // reflect the click at once
+          sendTurn(e, '/interview', repaint, opts.onDone);
+        }
+      };
+    }
+    if(answerNowBtn){
+      answerNowBtn.onclick = function(ev){
+        ev.stopPropagation();
+        sendAnswerNow(e, repaint, opts.onDone);
+      };
+    }
+
     grow(input);
     if(e.justOpened){ e.justOpened = false; input.focus(); }
   }
@@ -22153,8 +22280,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             if(!e.quotes) e.quotes = [];
             e.quotes.push({ text: passage, msgId: msgId || null });
             var quotes = e.quotes.slice();
-            var question = 'What should I understand this as?';
-            roomSideCreate({ starter: { text: withQuote({ quotes: quotes }, question), body: question, quotes: quotes } });
+            roomSideCreate({ prefill: withQuote({ quotes: quotes }, '') });
             e.quotes = [];
             saveDraft(e);
             repaint();
@@ -22362,87 +22488,132 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); });
   }
 
-  // "Remember this" (plan "side talks in the Room, and remember this"): ask the
-  // model what a selected passage is an instance OF, then let him choose where it
-  // lands — never decided for him. One card on screen at a time.
-  var ROOM_MIND_KINDS = [['about','About him'],['taste','Taste'],['decision','Decision'],['project','Project'],['person','Person'],['style','Style'],['vision','Vision — the paradigm itself']];
+  // "Remember this" (plan "owner emphasis when the Room remembers or changes the
+  // core"): one small capture card, open BEFORE any model call, for both
+  // entrances — a selected passage here, or a directly typed thought (see
+  // openRememberCard's other caller, roomAddFact). His note, Central, and the
+  // destination are his choices made up front; the model then writes the memory
+  // (or the core addition) FROM all of that, in one Save.
   var rememberPop = null;
   function killRememberPop(){ if(rememberPop && rememberPop.parentNode) rememberPop.parentNode.removeChild(rememberPop); rememberPop = null; }
-  function roomRememberOffer(convoId, msgId, passage){
+
+  // opts: { source, kind: 'passage'|'direct', convoId?, messageId? }
+  function openRememberCard(opts){
     killRememberPop();
     var card = document.createElement('div');
     card.className = 'se-remember-pop';
-    card.innerHTML = '<div class="se-remember-text">Working out what to remember…</div>';
+    card.innerHTML = '<div class="se-remember-text">' + qEsc(opts.source) + '</div>'
+      + '<textarea class="se-remember-note" placeholder="What I mean / why this matters (optional)" rows="2"></textarea>'
+      + '<div class="se-remember-row">'
+      +   '<button type="button" class="se-remember-shelf" data-rem-central="1">Central</button>'
+      +   '<button type="button" class="se-remember-shelf is-on" data-rem-dest="memory">Memory</button>'
+      +   '<button type="button" class="se-remember-shelf" data-rem-dest="core">Core paradigm</button>'
+      + '</div>'
+      + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button><button type="button" class="ubtn ubtn--pill" data-rem-save="1">Save</button></div>';
     document.body.appendChild(card);
     rememberPop = card;
-    apiWrite('/api/convos/' + convoId + '/remember', 'POST', { passage: passage, messageId: msgId || null })
-      .then(function(out){
-        if(rememberPop !== card) return; // closed, or superseded, while this was in flight
-        if(!out || out.error || !out.text){
-          card.innerHTML = '<div class="se-remember-text">Could not work out what to remember.</div>'
+
+    var central = false;
+    var destination = 'memory';
+    var noteEl = card.querySelector('.se-remember-note');
+    var centralBtn = card.querySelector('[data-rem-central]');
+    var destBtns = card.querySelectorAll('[data-rem-dest]');
+    centralBtn.onclick = function(){ central = !central; centralBtn.classList.toggle('is-on', central); };
+    destBtns.forEach(function(b){
+      b.onclick = function(){
+        destination = b.getAttribute('data-rem-dest');
+        destBtns.forEach(function(x){ x.classList.toggle('is-on', x === b); });
+      };
+    });
+    card.querySelector('[data-rem-close]').onclick = killRememberPop;
+
+    var saveBtn = card.querySelector('[data-rem-save]');
+    saveBtn.onclick = function(){
+      saveBtn.disabled = true;
+      var ownerNote = (noteEl.value || '').trim() || null;
+      var body = { ownerNote: ownerNote, central: central, destination: destination };
+      var req;
+      if(opts.kind === 'direct'){
+        body.text = opts.source;
+        req = apiWrite('/api/mind/remember', 'POST', body);
+      } else {
+        body.passage = opts.source;
+        body.messageId = opts.messageId || null;
+        req = apiWrite('/api/convos/' + opts.convoId + '/remember', 'POST', body);
+      }
+      req.then(function(out){
+        if(rememberPop !== card) return; // closed while this was in flight
+        if(!out || out.error || !out.fact){
+          card.innerHTML = '<div class="se-remember-text">Could not remember that.</div>'
             + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
-        } else {
-          // Two shelves, not seven. The model still picks the exact kind underneath —
-          // this only flips between the one that reaches the written vision and the one
-          // that stays in the app's memory, because that is the only difference with a
-          // consequence. His call, 2026-09-13: "too much options here".
-          // Two pills, both on screen, and either or BOTH can be lit — a thing can
-          // belong to the paradigm and say something about him at the same time.
-          // His call, 2026-09-13.
-          var remShelf = { vision: out.kind === 'vision', plain: out.kind !== 'vision' };
-          var remPlain = (out.kind && out.kind !== 'vision') ? out.kind : 'about';
-          var shelfBtnHtml = function(k, label){
-            return '<button type="button" class="se-remember-shelf' + (remShelf[k] ? ' is-on' : '') + '" data-rem-shelf="' + k + '">' + label + '</button>';
-          };
-          card.innerHTML = '<div class="se-remember-kind">Keeps as ' + shelfBtnHtml('vision', 'the paradigm') + shelfBtnHtml('plain', 'about you') + '</div>'
-            + '<div class="se-remember-text">' + qEsc(out.text) + '</div>'
-            + (out.detail ? '<div class="se-remember-detail">' + qEsc(out.detail) + '</div>' : '')
-            + '<div class="se-remember-acts"><button type="button" data-rem-drop="1">Drop</button><button type="button" class="ubtn ubtn--pill" data-rem-save="1">Save</button></div>';
-          var saveBtn = card.querySelector('[data-rem-save]');
-          var syncShelves = function(){
-            card.querySelectorAll('[data-rem-shelf]').forEach(function(b){
-              b.classList.toggle('is-on', !!remShelf[b.getAttribute('data-rem-shelf')]);
-            });
-            // Nothing lit means nothing to keep, so Save stops offering.
-            saveBtn.disabled = !remShelf.vision && !remShelf.plain;
-          };
-          card.querySelectorAll('[data-rem-shelf]').forEach(function(btn){
-            btn.onclick = function(){
-              var k = btn.getAttribute('data-rem-shelf');
-              remShelf[k] = !remShelf[k];
-              syncShelves();
-            };
-          });
-          syncShelves();
-          saveBtn.onclick = function(){
-            saveBtn.disabled = true;
-            var kinds = [];
-            if(remShelf.vision) kinds.push('vision');
-            if(remShelf.plain) kinds.push(remPlain);
-            Promise.all(kinds.map(function(kind){
-              return apiWrite('/api/mind', 'POST', { kind: kind, text: out.text, detail: out.detail || null }).catch(function(){});
-            }))
-              .then(function(){ if(typeof loadRoomMind === 'function') loadRoomMind(); })
-              .catch(function(){})
-              .then(killRememberPop);
-          };
+          card.querySelector('[data-rem-close]').onclick = killRememberPop;
+          return;
         }
-        var closeBtn = card.querySelector('[data-rem-close]');
-        var dropBtn = card.querySelector('[data-rem-drop]');
-        if(closeBtn) closeBtn.onclick = killRememberPop;
-        if(dropBtn) dropBtn.onclick = killRememberPop;
-      })
-      .catch(function(){
+        renderRememberedResult(card, out);
+        if(typeof loadRoomMind === 'function') loadRoomMind();
+      }).catch(function(){
         if(rememberPop !== card) return;
-        card.innerHTML = '<div class="se-remember-text">Could not work out what to remember.</div>'
+        card.innerHTML = '<div class="se-remember-text">Could not remember that.</div>'
           + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
-        var closeBtn = card.querySelector('[data-rem-close]');
-        if(closeBtn) closeBtn.onclick = killRememberPop;
+        card.querySelector('[data-rem-close]').onclick = killRememberPop;
       });
+    };
+  }
+
+  // What's shown once a save lands. Memory is done the moment this renders; Core
+  // paradigm still has to reach the repo (the Mac runner's job), so its status
+  // starts at "Publishing to core…" and is polled to "In core" — a pending id is
+  // kept in localStorage so it survives a reload rather than going silent.
+  var ROOM_CORE_PENDING_KEY = 'fmcns_room_core_pending';
+  function roomCorePendingLoad(){ try { return JSON.parse(localStorage.getItem(ROOM_CORE_PENDING_KEY)) || {}; } catch(e){ return {}; } }
+  function roomCorePendingSave(map){ try { localStorage.setItem(ROOM_CORE_PENDING_KEY, JSON.stringify(map)); } catch(e){} }
+  var CORE_POLL_MS = 15000;
+
+  function renderRememberedResult(card, out){
+    var statement = out.fact && out.fact.text ? out.fact.text : '';
+    if(out.destination === 'core'){
+      card.innerHTML = '<div class="se-remember-text">' + qEsc(statement) + '</div>'
+        + '<div class="se-remember-detail" data-rem-status="1">Publishing to core…</div>'
+        + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
+      var pubId = out.publication && out.publication.id;
+      if(pubId){
+        var map = roomCorePendingLoad(); map[pubId] = statement; roomCorePendingSave(map);
+        pollCorePublication(card, pubId);
+      }
+    } else {
+      card.innerHTML = '<div class="se-remember-text">' + qEsc(statement) + '</div>'
+        + '<div class="se-remember-detail">Remembered.</div>'
+        + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
+    }
+    card.querySelector('[data-rem-close]').onclick = killRememberPop;
+  }
+
+  function pollCorePublication(card, id){
+    setTimeout(function check(){
+      if(rememberPop !== card) return; // card closed — the pending id in localStorage still resolves on reload
+      api('/api/mind/core-publications/' + encodeURIComponent(id)).then(function(status){
+        if(rememberPop !== card) return;
+        var el = card.querySelector('[data-rem-status]');
+        if(status && status.state === 'published'){
+          if(el) el.textContent = 'In core';
+          var map = roomCorePendingLoad(); delete map[id]; roomCorePendingSave(map);
+        } else {
+          setTimeout(check, CORE_POLL_MS);
+        }
+      }).catch(function(){ setTimeout(check, CORE_POLL_MS); });
+    }, CORE_POLL_MS);
+  }
+
+  function roomRememberOffer(convoId, msgId, passage){
+    openRememberCard({ source: passage, kind: 'passage', convoId: convoId, messageId: msgId });
   }
   document.addEventListener('mousedown', function(ev){
     if(rememberPop && !rememberPop.contains(ev.target)) killRememberPop();
   }, true);
+  // The Mind pane's direct-text input (roomAddFact, defined outside this closure)
+  // opens the same card for its own source — one shared entrance, plan "owner
+  // emphasis when the Room remembers or changes the core".
+  window.openRememberCard = openRememberCard;
 
   // The carried passage, folded into the message actually sent. Quoted rather than
   // pasted invisibly, so the transcript still reads as a conversation afterwards —
@@ -22531,6 +22702,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           return;
         }
         forkFromMessage(e, messageId, repaintFork);
+      };
+    });
+    log.querySelectorAll('[data-se-answer-now]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        sendAnswerNow(e, function(){ if(host.isConnected) fillEmbed(host, e, opts); }, opts.onDone);
       };
     });
     var retry = log.querySelector('[data-se-retry]');
@@ -22722,6 +22899,22 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       laneClear.style.display = e.lane ? '' : 'none';
     }
 
+    // Interview mode's own reflection — independent of the lane picker above it.
+    var interviewBtn = host.querySelector('.se-interview');
+    if(interviewBtn){
+      var inInterview = e.clarify === 'interview';
+      interviewBtn.classList.toggle('is-set', inInterview);
+      interviewBtn.disabled = !e.convoId;
+      interviewBtn.title = inInterview
+        ? 'Interview mode is on — say "answer now" or use Answer now when you have enough'
+        : 'Ask me questions before you answer';
+    }
+    var answerNowBtn = host.querySelector('.se-answer-now');
+    if(answerNowBtn){
+      answerNowBtn.style.display = e.clarify === 'interview' ? '' : 'none';
+      answerNowBtn.disabled = !!e.busy;
+    }
+
     var n = e.loaded ? userTurns(e) : 0;
     host.querySelector('.se-count').textContent = n ? String(n) : '';
     // In the Room the head is hidden, so the count says what it means up in the
@@ -22845,12 +23038,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }).join('');
       }
       var shown = (you && m.body) ? m.body : m.text;
+      // A small "Answer now" beneath the newest interview question — same action
+      // as the composer's, offered right where the question is, so it is never
+      // more than a glance away from what it is answering.
+      var inlineAnswerNow = (!you && e.clarify === 'interview' && idx === e.msgs.length - 1 && !e.busy)
+        ? '<button type="button" class="se-cmd se-answer-now-inline" data-se-answer-now="1">Answer now</button>'
+        : '';
       html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + (idx === e.freshMsgIdx ? ' data-fresh="1"' : '') + '>'
            +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  foldHtml
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
                     : '<div class="se-body' + (you ? '' : ' md') + '">' + fmtBody(shown, !you, m.id || null) + '</div>')
            +  actsHtml
+           +  inlineAnswerNow
            +  '</div>';
       // An implement proposal shows three ways forward instead of free text.
       if (!you && m.intent === 'implement') {

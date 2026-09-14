@@ -33,7 +33,7 @@ import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
-import { mindBlock, harvest as harvestMind, rememberPassage as rememberPassageMind } from './mind.js';
+import { mindBlock, harvest as harvestMind } from './mind.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
 
@@ -155,6 +155,7 @@ const CONVO_CHAT_MODEL = process.env.CONVO_CHAT_MODEL || 'claude-haiku-4-5-20251
 const CONVO_PLAN_MODEL = process.env.CONVO_PLAN_MODEL || 'claude-sonnet-4-5';
 
 const DEFAULT_OPEN_TITLE = 'Open conversation';
+const DEFAULT_SIDE_TITLE = 'Side talk';
 
 // ─── Auto-title (roaming conversations only) ─────────────────────────────────
 // A roaming thread starts as "Open conversation" — no subject to name it after,
@@ -200,13 +201,14 @@ export function generateTitleFromText(text) {
 // names a new chat. Never overwrites a title the owner already set: a rename
 // (manual or a prior auto-title) means this has already been decided.
 function maybeAutoTitleConvo(convo) {
-  if (!db || !convo || convo.subject_type !== 'open') return;
+  if (!db || !convo || (convo.subject_type !== 'open' && convo.subject_type !== 'side')) return;
   const turns = convo.turns || 0;
   const named = String(convo.title || '').trim();
+  const defaultTitle = convo.subject_type === 'side' ? DEFAULT_SIDE_TITLE : DEFAULT_OPEN_TITLE;
 
   // Turn one: name it instantly from the words themselves, so a new thread is
   // never nameless while a model is thinking, then improve it below.
-  if (turns === 0 && named === DEFAULT_OPEN_TITLE) {
+  if (turns === 0 && named === defaultTitle) {
     const firstUser = db.prepare(
       `SELECT text FROM convo_messages WHERE convo_id=? AND role='user' ORDER BY created_at ASC, rowid ASC LIMIT 1`,
     ).get(convo.id);
@@ -229,9 +231,18 @@ function maybeAutoTitleConvo(convo) {
 // stand between him and his answer.
 const SMART_TITLE_PROMPT = `Name this conversation the way a person would name it afterwards: what it is ABOUT, not how it opened.
 
-Three to six words. A noun phrase, no verb needed, no quotes, no final full stop. Name the subject and, where there is one, the angle on it — "Civic structures as instruments of isolation" beats "Politics discussion". Never echo the opening words of the first message, never start with "Conversation about" or "Exploration of", and never use the words "fractal" or "paradigm" unless the conversation is genuinely about those and not merely written in them.
+Write three to seven words. Name a concrete subject and, where there is one, its angle — "Suits: recurring relationship dynamics" or "Civic structures as instruments of isolation", never "The mechanics", "The nature", "Fields for", "Discussion", or "Question". Do not give a sentence fragment. Do not end on a joining word such as "for", "of", "with", "and", or "in". Never echo the opening words of the first message, never start with "Conversation about" or "Exploration of", and never use the words "fractal" or "paradigm" unless the conversation is genuinely about those and not merely written in them.
 
 Reply with the title alone.`;
+
+const SMART_TITLE_REPAIR_PROMPT = `The previous title was too vague or incomplete. Read this conversation again and name its actual subject in three to seven words. Include a concrete topic and its angle. Never answer with a generic phrase such as "The nature", "The mechanics", "Fields for", "Discussion", "Question", or "Analysis". Do not end on "for", "of", "with", "and", or "in". Reply with the title alone.`;
+
+const TITLE_GENERIC_WORDS = new Set([
+  'analysis', 'aspect', 'discussion', 'exploration', 'field', 'fields', 'idea',
+  'ideas', 'mechanic', 'mechanics', 'nature', 'overview', 'question', 'questions',
+  'subject', 'theme', 'themes', 'thing', 'things', 'topic', 'topics',
+]);
+const TITLE_TRAILING_CONNECTORS = new Set(['about', 'and', 'as', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'on', 'or', 'the', 'to', 'with']);
 
 // The same pass, asked for on purpose. Ignores title_auto — clicking the button
 // IS the permission — and marks the result as the machine's again so a drifting
@@ -261,14 +272,7 @@ async function writeSmartTitle(convoId) {
   const transcript = msgs
     .map((m) => `${m.role === 'user' ? 'He asked' : 'The answer'}: ${String(m.text).slice(0, 1200)}`)
     .join('\n\n');
-  const out = await generateText({
-    prompt: `${SMART_TITLE_PROMPT}\n\n=== THE CONVERSATION ===\n${transcript}`,
-    feature: 'summary',
-    label: 'conversations:smart-title',
-    maxTokens: 30,
-    timeoutMs: 45_000,
-  });
-  const title = cleanTitle(out?.text);
+  const title = await generateSmartTitle(transcript);
   if (!title) return null;
   // Read again: the whole point of the flag is that a rename during the call wins.
   const still = getConvo(convoId);
@@ -278,14 +282,34 @@ async function writeSmartTitle(convoId) {
   return title;
 }
 
+async function generateSmartTitle(transcript) {
+  const ask = async (prompt, label) => {
+    const out = await generateText({
+      prompt: `${prompt}\n\n=== THE CONVERSATION ===\n${transcript}`,
+      feature: 'summary',
+      label,
+      maxTokens: 30,
+      timeoutMs: 45_000,
+    });
+    return cleanTitle(out?.text);
+  };
+  return await ask(SMART_TITLE_PROMPT, 'conversations:smart-title')
+    || await ask(SMART_TITLE_REPAIR_PROMPT, 'conversations:smart-title-repair');
+}
+
 // Models like to answer a request for a title with a sentence about the title.
-function cleanTitle(raw) {
+export function cleanTitle(raw) {
   let t = String(raw || '').trim().split('\n')[0].trim();
   t = t.replace(/^(title|name)\s*[:\-]\s*/i, '');
   t = t.replace(/^[""'\u201c\u2018]+|[""'\u201d\u2019]+$/g, '').trim();
   t = t.replace(/[.]+$/, '').trim();
   if (t.length < 3 || t.length > 90) return null;
-  if (t.split(/\s+/).length > 10) return null;
+  const words = t.split(/\s+/);
+  if (words.length < 3 || words.length > 10) return null;
+  const normalized = words.map((word) => word.toLowerCase().replace(/[^a-z0-9]/g, '')).filter(Boolean);
+  if (!normalized.length || TITLE_TRAILING_CONNECTORS.has(normalized.at(-1))) return null;
+  const concreteWords = normalized.filter((word) => !TITLE_STOPWORDS.has(word) && !TITLE_GENERIC_WORDS.has(word));
+  if (concreteWords.length < 2) return null;
   return t.slice(0, 80);
 }
 
@@ -328,6 +352,31 @@ export function setChatLane(convoId, override) {
   db.prepare(`UPDATE convos SET chat_override=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(json, convoId);
   broadcastAll('convos:updated', { convoId });
   return getChatLane(convoId);
+}
+
+// ─── Clarifying questions & Interview mode (plan "room-clarifying-questions-
+// and-interview-mode") ─────────────────────────────────────────────────────
+// A per-conversation switch, same shape as the lane above: 'normal' (a model
+// may ask ONE clarifying question when it matters) or 'interview' (the owner
+// asked to be questioned before an answer, and stays that way until he says
+// "answer now"). Lives on the row, so it survives a refresh and a change of
+// answering model — not app-wide, not in the browser.
+const CLARIFICATION_MODES = new Set(['normal', 'interview']);
+
+export function getClarificationMode(convoId) {
+  const row = db?.prepare(`SELECT clarification_mode FROM convos WHERE id=? AND deleted_at IS NULL`).get(convoId);
+  if (!row) return 'not_found';
+  return CLARIFICATION_MODES.has(row.clarification_mode) ? row.clarification_mode : 'normal';
+}
+
+export function setClarificationMode(convoId, mode) {
+  if (!db) return { error: 'no_db' };
+  if (!CLARIFICATION_MODES.has(mode)) return { error: 'invalid_mode' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  db.prepare(`UPDATE convos SET clarification_mode=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(mode, convoId);
+  broadcastAll('convos:updated', { convoId });
+  return { ok: true, mode };
 }
 
 // Side talks (plan "side talks in the Room, and remember this") default to
@@ -603,13 +652,32 @@ export function listSideTalks(parentConvoId) {
   ).all(parentConvoId);
 }
 
+// One-time fix for side talks started before smart titles covered them (plan
+// "fix the Aside / side-talk flow") — still placeholder-named ("Aside N" is a
+// frontend fallback, so the only real placeholder on the row itself is empty or
+// the literal default) but with at least one turn to name from. Reuses
+// retitleConvo, the same forced-rename path the "rename" button already calls.
+export async function backfillSideTitles() {
+  if (!db) return { error: 'no_db' };
+  const rows = db.prepare(
+    `SELECT id, title FROM convos WHERE subject_type='side' AND deleted_at IS NULL AND turns >= 1
+     AND (title_auto=1 OR title IS NULL OR trim(title) = '' OR trim(title) = ?)`,
+  ).all(DEFAULT_SIDE_TITLE).filter((row) => !cleanTitle(row.title));
+  let updated = 0;
+  for (const row of rows) {
+    const out = await retitleConvo(row.id);
+    if (out && out.ok) updated += 1;
+  }
+  return { ok: true, checked: rows.length, updated };
+}
+
 // Door #1 — an empty aside beside `parentConvoId`. Its first message (plain, or
 // carrying picked passages via sendMessage's `quotes`) is the caller's job — this
 // only opens the thread and pins it to Gemini.
 export function createSideTalk(parentConvoId, { title = null, createdBy = 'antoine' } = {}) {
   if (!db) return { error: 'no_db' };
   if (!getConvo(parentConvoId)) return { error: 'not_found' };
-  const made = createOpenConvo({ title: title || 'Side talk', createdBy });
+  const made = createOpenConvo({ title: title || DEFAULT_SIDE_TITLE, createdBy });
   if (made.error) return made;
   const subjectId = sideSubjectId(parentConvoId);
   db.prepare(`UPDATE convos SET subject_type='side', subject_id=?, parent_convo_id=? WHERE id=?`)
@@ -1115,6 +1183,27 @@ The brief must:
 
 Write for the coding agent, not for a human reader. Be concise.`;
 
+// ─── Clarifying questions & Interview mode (plan "room-clarifying-questions-
+// and-interview-mode") ─────────────────────────────────────────────────────
+// Provider-independent prompt behaviour: the same three instructions run on
+// every lane (Auto or manually pinned), because they are just words in the
+// prompt, not a second model call or a side thread.
+const CLARIFY_QUESTION_RULE = `If a missing meaning, goal, constraint or distinction would materially change your answer, ask ONE focused clarifying question before answering — folded naturally into your reply, not a numbered survey, not a list, not an explanation of why you're asking. Use the thread, its recap, attached material and shared memory first; never ask something the owner already answered. Otherwise just give the useful answer now — do not turn ordinary conversation into a ritual of questions merely because more detail could be useful.`;
+
+const INTERVIEW_INSTRUCTION = `INTERVIEW MODE. The owner asked to be questioned before you answer. Treat the conversation so far — including what he just said — as material to explore, and ask the SINGLE most important next question: whichever of the goal, the desired outcome, the meaning of a key word, a real tension, a boundary, the audience, or what would count as a good result actually matters most right now, not a checklist that mechanically works through all of them. Ask ONE question only, folded into the conversation naturally — no numbered form, no explanation of why you're asking. Do not offer a solution, plan, recommendation or reading yet — that only happens once he says the interview has enough material.`;
+
+const ANSWER_NOW_INSTRUCTION = `The owner has decided the interview above has enough material — answer or synthesize now, using the whole interview as your source. Give the real thing the conversation was working toward: a recommendation, a reading, a plan, an answer. No more questions.`;
+
+// Narrow on purpose: the WHOLE message (trimmed, case-insensitive, a little
+// slack for "please"/"can you"/trailing punctuation) has to be one of these
+// fixed phrases. A longer sentence that happens to contain the words — a
+// question ABOUT the feature, or a request buried in more context — does not
+// match, so it never flips the mode by accident.
+// Exported (pure regexes) so scripts/room-selftest.mjs can check the narrow
+// matching directly, with no model call.
+export const INTERVIEW_START_RE = /^(?:please\s+|can you\s+|could you\s+|will you\s+)?(?:ask me questions(?: about (?:this|it))?|interview me(?: about (?:this|it))?|help me clarify what i mean|question me before answering)[.!?]?$/i;
+export const ANSWER_NOW_RE = /^(?:ok,?\s*|okay,?\s*)?(?:you can\s+)?answer now[.!?]?$/i;
+
 function buildMessages(convo, msgs, windowSize) {
   const visible = msgs.slice(-windowSize).filter((m) => m.kind === 'chat');
   const pairs = [];
@@ -1277,7 +1366,13 @@ function parentTranscriptFor(convo) {
   return parentTranscriptBlock(convo, parent, listMessages(parent.id));
 }
 
-function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null, maxChars = null }) {
+// clarifyMode: 'normal' appends CLARIFY_QUESTION_RULE to the default WHAT TO DO
+// NOW text (only when no explicit `instruction` is given — a caller with an
+// explicit instruction, like /check or /plan, is not an ordinary answering
+// turn and does not get it). Any other value (interview, /check, /second, …)
+// leaves the default text untouched; interview mode instead passes its own
+// `instruction` (INTERVIEW_INSTRUCTION) from the call site.
+function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null, maxChars = null, clarifyMode = null }) {
   const msgs = listMessages(convo.id);
   const depth = !brevity;
   // Only on a depth turn: the brief turn lands in a small card, where a
@@ -1335,7 +1430,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
       : `\n=== WHAT TO DO NOW ===\n${brevity
           ? `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`
-          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''} Judge the thing being discussed: is it real, what is it actually, is it worth his attention. Say so.\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.`}`,
+          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''} Judge the thing being discussed: is it real, what is it actually, is it worth his attention. Say so.\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
     // DEAD LAST, after the voice and after the task, because the end of a long
     // prompt is weighted most and this has to beat "density, not brevity".
     askedWords
@@ -1442,8 +1537,15 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // a lane that counts both against one ceiling — so the budget is worked out
   // BEFORE the prompt is built, and the prompt is built to fit it.
   const maxTokens = turnMaxTokens(convoId);
+  // Interview mode overrides the ordinary answer with its own instruction (ask
+  // one question, don't answer yet); any other mode is the normal turn, which
+  // gets the shared "ask when it matters" rule instead. See buildTurnPrompt's
+  // clarifyMode note.
+  const clarifyMode = convo.clarification_mode === 'interview' ? 'interview' : 'normal';
   const prompt = buildTurnPrompt({
     convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null,
+    instruction: clarifyMode === 'interview' ? INTERVIEW_INSTRUCTION : null,
+    clarifyMode,
     maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
   });
   // Instrumentation for the prompt-caching plan (2026-08-21): the map's own
@@ -1526,8 +1628,11 @@ async function runChatTurn(convoId, userId, turn) {
   if (ctx.error) return { error: ctx.error };
 
   const maxTokens = turnMaxTokens(convoId);
+  const clarifyMode = convo.clarification_mode === 'interview' ? 'interview' : 'normal';
   const prompt = buildTurnPrompt({
     convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null,
+    instruction: clarifyMode === 'interview' ? INTERVIEW_INSTRUCTION : null,
+    clarifyMode,
     maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
   });
   const result = await generateTextStream({
@@ -1554,6 +1659,70 @@ async function runChatTurn(convoId, userId, turn) {
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
   return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId };
+}
+
+// Start (or re-enter) Interview mode and ask the first question right away,
+// from whatever is already in the conversation — same as the old one-off
+// /grill-me, except the mode now persists. Reuses the ordinary chat-turn
+// machinery: once clarification_mode is 'interview', runChatTurn/
+// runChatTurnStreaming pick up INTERVIEW_INSTRUCTION on their own (see above),
+// so there is exactly one place that assembles an interview prompt. No new
+// user message is saved — starting the mode is not itself a thing said.
+async function startInterview(convoId, { onToken = null, onStatus = null, signal = null } = {}) {
+  const set = setClarificationMode(convoId, 'interview');
+  if (set.error) return set;
+  const turn = { intent: 'interview', lane: null };
+  const out = onToken
+    ? await runChatTurnStreaming(convoId, 'antoine', onToken, turn, onStatus, signal)
+    : await runChatTurn(convoId, 'antoine', turn);
+  if (out.error) return out;
+  out.intent = 'interview';
+  out.mode = 'interview';
+  return out;
+}
+
+// Answer now — Antoine's explicit decision that Interview mode has enough
+// material. Same lane the conversation is already on (its sticky pin, or Auto),
+// same prompt machinery as an ordinary turn, but with the synthesis instruction
+// instead of the default one. Mode is cleared back to 'normal' ONLY after the
+// answer is saved — a failed generation leaves the interview on so nothing about
+// it is lost. Shared by the /:id/answer-now route, the composer's "Answer now"
+// button (via that route) and the "answer now" natural-language phrase in
+// sendMessage below — one function, one path.
+async function runAnswerNowTurn(convoId, { onToken = null, onStatus = null, signal = null } = {}) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ctx = await convoContext(convo);
+  if (ctx.error) return { error: ctx.error };
+
+  const lane = getChatLane(convoId); // the sticky pin, or null = Auto
+  const maxTokens = turnMaxTokens(convoId);
+  const prompt = buildTurnPrompt({
+    convo, ctx, brevity: false, tools: true, instruction: ANSWER_NOW_INSTRUCTION,
+    maxChars: promptCharBudget({ feature: 'studio', provider: lane?.provider || null, maxTokens }),
+  });
+  const result = await generateTextStream({
+    prompt, feature: 'studio',
+    model: lane?.model || null, provider: lane?.provider || null, account: lane?.account || null,
+    tools: studioTools(), dispatchTool: studioDispatch,
+    maxTokens, label: 'conversations:answer-now', tailReminder: voiceTailReminder(),
+    allowLongOutput: true, timeoutMs: 150_000, onToken, onStatus,
+    cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
+  });
+  if (signal?.aborted) return { error: 'cancelled' };
+  // Generation failed — leave Interview mode exactly as it was. Nothing here has
+  // been lost, so there is nothing to clear.
+  if (result.error) return result;
+
+  const laneTag = tagFromVia(result.via, lane?.tag || 'gpt-4.1');
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: 'answer_now', interview_synthesis: true });
+  // Cleared only now: the answer is safely saved, so the interview is over.
+  setClarificationMode(convoId, 'normal');
+  maybeAutoTitleConvo(convo);
+  harvestMind(convoId);
+  roomWorldLook(convoId);
+  analogyLook(convoId);
+  return { text: result.text, via: result.via, laneTag, intent: 'answer_now', messageId: savedId, mode: 'normal' };
 }
 
 // code_read — a read-only helper job on the runner (claude, with Read/Grep/Glob),
@@ -2161,7 +2330,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     }
     if (slash === 'help') {
       return {
-        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff claude|opencode — queue the plan as a paused task in the Dispatch Queue (idempotent); name an engine to pick it, or leave it off for the default.\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /ask gpt|claude|second|opencode <question> — force this one turn onto that lane (gpt = Google Gemini, second = your second Claude account).\n  /check — re-examine the last answer on a different lane, with fresh code facts.\n  /second — answer your last question again on a second lane, side by side.\n  /help — this list.\n\nOtherwise just type — I\'ll pick the right lane myself: a free code lookup when you name a file or function, a brainstorm when you\'re thinking out loud, and a build proposal when you ask me to make something.',
+        text: 'Available commands:\n  /interview (alias /grill-me) — switch to Interview mode: I ask you one question at a time, no answer yet, until you say "answer now".\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff claude|opencode — queue the plan as a paused task in the Dispatch Queue (idempotent); name an engine to pick it, or leave it off for the default.\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /ask gpt|claude|second|opencode <question> — force this one turn onto that lane (gpt = Google Gemini, second = your second Claude account).\n  /check — re-examine the last answer on a different lane, with fresh code facts.\n  /second — answer your last question again on a second lane, side by side.\n  /help — this list.\n\nOtherwise just type — I\'ll pick the right lane myself: a free code lookup when you name a file or function, a brainstorm when you\'re thinking out loud, and a build proposal when you ask me to make something. If something in what you ask is genuinely unclear I may ask one question before answering.',
       };
     }
     if (slash === 'seed') return runSaveSeedTurn(convoId);
@@ -2172,22 +2341,17 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     if (slash === 'reframe') return runReframeTurn(convoId);
     if (slash === 'check') return runCheckTurn(convoId);
     if (slash === 'second') return runSecondTurn(convoId);
-    if (slash === 'grill-me') {
-      // interrogation mode: a single turn where the model asks questions only
-      const ctx = await convoContext(convo);
-      if (ctx.error) return { error: ctx.error };
-      const result = await runRoutedTurn({
-        convo, ctx, model: CONVO_CHAT_MODEL, maxTokens: 700,
-        feature: 'studio', label: 'conversations:grill', includeProjectContext: false,
-        instruction: 'GRILL MODE. Ask the owner the sharpest clarifying questions you can, ONE at a time, in order of importance. Do not propose solutions yet. End with a question mark. Keep it short.',
-      });
-      if (result.error) return result;
-      saveAssistantTurn(convoId, result.text);
-      return { text: result.text, via: result.via };
-    }
+    if (slash === 'grill-me' || slash === 'interview') return startInterview(convoId, { onToken, onStatus, signal });
     // /ask (and any other text) falls through to the ordinary path, where the
     // turn router recognises it as a forced lane and routes accordingly.
   }
+
+  // Natural-language equivalents of the two controls above, narrow enough that a
+  // sentence merely discussing whether this feature exists ("does the Room ever
+  // ask me questions?") does not accidentally flip the mode — these only match
+  // when the WHOLE message is (close to) one of the fixed phrases.
+  if (INTERVIEW_START_RE.test(trimmed)) return startInterview(convoId, { onToken, onStatus, signal });
+  if (ANSWER_NOW_RE.test(trimmed)) return answerNow(convoId, { onToken, onStatus, signal });
 
   // Resolve the lane BEFORE any model cost. The router is free and deterministic
   // except for one tiny tie-break judge call; it never dispatches a coding task
@@ -2228,6 +2392,13 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   out.laneTag = out.laneTag || turn.lane?.tag || null;
   out.intent = turn.intent;
   return out;
+}
+
+// Thin exported entry point for the route + the natural-language phrase below —
+// runAnswerNowTurn itself stays private, same pattern as every other run*Turn.
+export async function answerNow(convoId, opts = {}) {
+  if (!db) return { error: 'no_db' };
+  return runAnswerNowTurn(convoId, opts);
 }
 
 export async function requestPlan(convoId) {

@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-13 |
+| **DONE** | 2026-09-14 |
 
 ## Where you are
 
@@ -205,3 +205,33 @@ row or modify the hand-curated document.
 When finished, update this plan and its `plans/README.md` row in the same commit
 as the implementation. Report the actual core-publication commit and the live
 Room test result, not only syntax checks.
+
+**Implemented 2026-09-14.** Data/services (schema columns + `core_publications`
+table, `saveFact`/`proposeRemember`/`saveRemembered`, `CENTRAL_WEIGHT`), routes
+(`/api/convos/:id/remember`, `/api/mind/remember`, the runner-only
+`core-publications` endpoints), the runner bridge (`git-ship.js#commitFilesToTrunk`
+now takes a `buildFiles(wt)` hook that runs after the mirror worktree resets to
+`origin/develop`, and returns the commit `sha`; `queue-runner.js#publishCoreAdditions`
+appends pending rows under a hidden `core_pub:<id>` marker and acknowledges only
+after push), and the Room UI (one shared capture card — source, owner note,
+Central, Memory/Core paradigm, one Save — replacing both the direct Mind input and
+the passage popover's old two-step flow) are all in place. The served copy
+(`queue-server/public/index.html`) was re-synced and confirmed byte-identical.
+
+Verified without spending a model credit: a migration test against a simulated
+pre-existing `mind_facts` table (old rows read back with `owner_note=NULL`,
+`is_central=0`, idempotent across a repeated `initMindSchema` call); an
+end-to-end run of `saveFact`/`saveRemembered` against a throwaway git repo showing
+Central outranking a normal fact in `mindBlock()` and `recallFacts()`, a Core save
+producing exactly one vision fact plus one pending row, the runner's append
+landing as one dated, marker-tagged addition on top of the existing hand-written
+document (preserved exactly), and a simulated restart-before-ack retry appending
+nothing a second time and still acknowledging cleanly. `npm run mind:selftest`
+(now including the proposal-prompt assembly test this plan asked for, plus a
+source-level check that automatic harvest never touches `core_publications`),
+`npm run notes:selftest` and `npm run ship:selftest` all pass.
+
+**Not verified: driving the live Room in a browser** (item 6 of Verification) —
+this session has no browser attached. The capture card, Central toggle,
+destination choice and "Publishing to core… / In core" status should be checked
+by hand against the deployed app before treating that part as proven.

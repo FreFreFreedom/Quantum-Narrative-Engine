@@ -104,13 +104,26 @@ function pushTrunk(wt, trunk, dryRun) {
 // `pruneDirs` (repo-relative) drops files in those directories that the list no longer
 // contains, so deleting a note in the app also takes it out of the repo. Without it
 // a note stays readable by every coding agent after it is gone.
-export function commitFilesToTrunk({ repo, trunk = 'develop', files = [], pruneDirs = [], message, dryRun = false, log = () => {} } = {}) {
-  if (!files.length || !message) return { ok: false, error: 'nothing_to_commit' };
+// `buildFiles(wt)`, when given, replaces `files` and is called AFTER the mirror
+// worktree has fetched and reset to `origin/<trunk>` — so it can read a file's
+// CURRENT trunk content (e.g. `join(wt, 'path/to/doc.md')`) and return an
+// appended version, instead of one built from a copy that might already be
+// stale by the time this runs. Plain `files` is still resolved before the reset
+// for every other caller, which is fine: those are always full-content mirrors,
+// never an append onto content this call doesn't already own.
+export function commitFilesToTrunk({ repo, trunk = 'develop', files = [], buildFiles = null, pruneDirs = [], message, dryRun = false, log = () => {} } = {}) {
+  if (!message) return { ok: false, error: 'nothing_to_commit' };
+  if (!buildFiles && !files.length) return { ok: false, error: 'nothing_to_commit' };
 
   const wt = shipTree(repo, trunk, 'mirror');
   if (!wt) return { ok: false, error: 'no_worktree' };
   if (!fetchTrunk(repo, wt, trunk)) return { ok: false, error: 'no_trunk' };
   resetToTrunk(wt, trunk);
+
+  if (buildFiles) {
+    files = buildFiles(wt) || [];
+    if (!files.length) return { ok: true, changed: false };
+  }
 
   const paths = [];
   try {
@@ -138,11 +151,12 @@ export function commitFilesToTrunk({ repo, trunk = 'develop', files = [], pruneD
   if (git(wt, ['add', '-A', '--', ...paths]) === null) return { ok: false, error: 'add_failed' };
   if (!git(wt, ['status', '--porcelain', '--', ...paths])) return { ok: true, changed: false };
   if (git(wt, ['commit', '-m', message]) === null) return { ok: false, error: 'commit_failed' };
+  const sha = git(wt, ['rev-parse', 'HEAD']);
 
   const pushed = pushTrunk(wt, trunk, dryRun);
   if (!pushed.ok) return { ok: false, error: pushed.error };
   log(`pushed ${paths.length} file(s) to ${trunk}`);
-  return { ok: true, changed: true, files: paths.length, dry: !!pushed.dry };
+  return { ok: true, changed: true, files: paths.length, dry: !!pushed.dry, sha };
 }
 
 // ─── is it already live? ────────────────────────────────────────────────────

@@ -22,10 +22,57 @@ export function mindRoutes() {
     const b = req.body || {};
     if (!b.text || !String(b.text).trim()) return res.status(400).json({ error: 'text_required' });
     if (b.kind && !KINDS.includes(b.kind)) return res.status(400).json({ error: 'bad_kind' });
-    const saved = mind.saveFact({ kind: b.kind || 'about', text: b.text, detail: b.detail || null, sourceNote: 'manual' });
+    const saved = mind.saveFact({
+      kind: b.kind || 'about', text: b.text, detail: b.detail || null, sourceNote: 'manual',
+      ownerNote: b.ownerNote || null, central: !!b.central,
+    });
     if (saved.error === 'duplicate') return res.status(409).json({ error: 'duplicate', id: saved.id });
     if (saved.error) return res.status(400).json(saved);
     res.json({ fact: saved });
+  });
+
+  // POST /api/mind/remember — the direct-text remember entrance (the Room Mind
+  // pane's typed input has no conversation to read around it, unlike a selected
+  // passage — see /api/convos/:id/remember for that one). Body:
+  // { text, ownerNote?, central?, destination: 'memory'|'core' }.
+  // One call: proposes the memory from his source + note, then saves it — Core
+  // paradigm is his direct instruction to publish, no second approval screen.
+  router.post('/remember', asyncHandler(async (req, res) => {
+    const b = req.body || {};
+    const text = String(b.text || '').trim();
+    if (!text) return res.status(400).json({ error: 'empty' });
+    const destination = b.destination === 'core' ? 'core' : 'memory';
+    const proposed = await mind.proposeRemember({
+      sourceType: 'direct', text, ownerNote: b.ownerNote || null, central: !!b.central, destination,
+    });
+    if (proposed.error) return res.status(proposed.error === 'empty' ? 400 : 500).json(proposed);
+    const out = mind.saveRemembered({
+      sourceType: 'direct', sourceText: text, ownerNote: b.ownerNote || null, central: !!b.central,
+      destination, kind: proposed.kind, text: proposed.text, detail: proposed.detail,
+    });
+    if (out.error) return res.status(out.error === 'duplicate' ? 409 : 400).json(out);
+    res.json(out);
+  }));
+
+  // Runner-only surface for the Core-paradigm append (queue-runner.js#publishCoreAdditions).
+  // Never exposes a write path for the browser to invent a publication with — only
+  // to list what saveRemembered() already queued, and acknowledge it after push.
+  router.get('/core-publications/pending', (req, res) => {
+    res.json({ publications: mind.listPendingCorePublications() });
+  });
+
+  // Lets the Room poll a pending Core save's status after a reload, so
+  // "Publishing to core…" can turn into "In core" without staying in memory.
+  router.get('/core-publications/:id', (req, res) => {
+    const status = mind.corePublicationStatus(req.params.id);
+    if (!status) return res.status(404).json({ error: 'not_found' });
+    res.json(status);
+  });
+
+  router.post('/core-publications/:id/ack', (req, res) => {
+    const out = mind.acknowledgeCorePublication(req.params.id, req.body?.commitSha || null);
+    if (out.error) return res.status(400).json(out);
+    res.json(out);
   });
 
   router.patch('/:id', (req, res) => {

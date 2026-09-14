@@ -77,10 +77,12 @@ function initSchema(db) {
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       started_at TEXT,
       completed_at TEXT,
+      retry_of_prompt_id TEXT REFERENCES work_prompts(id),
       deleted_at TEXT
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_prompts_status ON work_prompts(status, position)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_prompts_retry_of ON work_prompts(retry_of_prompt_id)`); } catch {}
   // component_id is the join between a task and the piece of architecture it
   // belongs to. It had no index despite being read on every ranked-next-steps
   // call, every component history view and every "never worked on" signal.
@@ -198,6 +200,12 @@ function initSchema(db) {
   // dispatched; NULL = no retry context pending.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_worktree_path TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_branch TEXT`); } catch {}
+  // A retry is a new attempt, never a status rewrite of the stopped attempt. This
+  // link keeps both cards visible and lets the Flow show their relationship.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_of_prompt_id TEXT REFERENCES work_prompts(id)`); } catch {}
+  // This sits after the additive migration so it is also created on databases
+  // that predate retry_of_prompt_id (the earlier index attempt is harmless there).
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_prompts_retry_of ON work_prompts(retry_of_prompt_id)`); } catch {}
   // Task tier (free-only plan): 'mini' (tiny tweaks — instant mini-plan, no
   // world-look, fastest free model), 'standard' (normal plans, fast free model),
   // 'deep' (big builds — full plan on the strongest free model). Judged by a
@@ -1766,6 +1774,13 @@ export function initConversationsSchema(db) {
   // re-searches on a beat rather than on every render. Same shape as
   // analogy_seen_turns above.
   try { db.exec(`ALTER TABLE convos ADD COLUMN wall_seen_turns INTEGER DEFAULT 0`); } catch {}
+
+  // Clarifying questions / Interview mode (plan "room-clarifying-questions-and-
+  // interview-mode"): 'normal' (the default — a model may ask one clarifying
+  // question when it matters) or 'interview' (the owner asked to be questioned
+  // before an answer). Per conversation, so it survives a refresh and a change
+  // of answering model. A conversation with no value here reads as 'normal'.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN clarification_mode TEXT NOT NULL DEFAULT 'normal'`); } catch {}
 }
 
 // ─── The Room's shared memory (`mind_facts`, plan "room-shared-memory") ───────
@@ -1793,6 +1808,36 @@ export function initMindSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_mind_facts_active ON mind_facts(active, kind)`); } catch {}
+
+  // Owner emphasis (plan "owner-emphasis-when-the-room-remembers-or-changes-the-core"):
+  // his own note on why a remembered thing matters, and whether he marked it Central.
+  // Idempotent ALTERs — old rows read back with owner_note=NULL, is_central=0.
+  try { db.exec(`ALTER TABLE mind_facts ADD COLUMN owner_note TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE mind_facts ADD COLUMN is_central INTEGER NOT NULL DEFAULT 0`); } catch {}
+
+  // A Core-paradigm save is his direct instruction to publish — no second review
+  // gate. This table is the queue between "he pressed Save" and "the runner
+  // appended it to fractal_operational_core.md and pushed develop" (Railway has no
+  // git, so only the Mac runner can do that part). Stable `id` (a uuid) makes
+  // publishing idempotent: a restarted runner acknowledges by id and never appends
+  // the same addition twice.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS core_publications (
+      id TEXT PRIMARY KEY,
+      convo_id TEXT,
+      source_type TEXT,          -- 'passage' | 'direct'
+      source_text TEXT,          -- the passage or typed thought this came from
+      owner_note TEXT,
+      is_central INTEGER NOT NULL DEFAULT 0,
+      addition TEXT NOT NULL,    -- the final, dated core-document text to append
+      fact_id TEXT,              -- the mind_facts row (kind='vision') saved alongside it
+      state TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'published'
+      commit_sha TEXT,
+      created_at TEXT,
+      published_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_core_pub_pending ON core_publications(state)`); } catch {}
 }
 
 // ─── Film enrichment: TMDb metadata (synopsis, genres, keywords, cast) ────────

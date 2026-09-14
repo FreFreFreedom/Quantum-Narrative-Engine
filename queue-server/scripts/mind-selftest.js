@@ -11,7 +11,9 @@
 //      push (and redeploy) forever.
 
 import assert from 'node:assert/strict';
-import { unseenTurns } from '../server/src/services/mind.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { unseenTurns, buildProposePrompt, buildCoreAddition, CENTRAL_WEIGHT } from '../server/src/services/mind.js';
 import { renderMindFrom, renderVisionFrom, mindFiles, MEMORY_REPO_PATH } from '../server/src/services/mindMirror.js';
 
 let passed = 0;
@@ -100,5 +102,57 @@ ok('same facts render byte-identically (no clock, no randomness)');
 const visionOrder = renderVisionFrom(facts).indexOf('morphogenetic') < renderVisionFrom(facts).indexOf('Policies are universal');
 assert.ok(visionOrder, 'the order handed in is the order written out');
 ok('the given order is kept');
+
+// ─── 4. owner emphasis (plan "owner emphasis when the Room remembers or changes
+// the core"): the proposal prompt must carry his note as an instruction, state
+// Central explicitly, and tell direct text apart from a selected passage — none
+// of that is visible from a quick manual check once a model is in the loop. ─────
+const passageNote = buildProposePrompt({
+  sourceType: 'passage', text: 'a selected line', transcript: 'HE ASKED: x', factList: [],
+  ownerNote: 'this is the load-bearing part', central: true, destination: 'memory',
+});
+assert.ok(passageNote.includes('this is the load-bearing part'), 'his note must reach the prompt verbatim');
+assert.ok(/HONOUR|Honour/.test(passageNote), 'the note must be framed as an instruction, not an aside');
+assert.ok(passageNote.includes('CENTRAL'), 'Central must be stated plainly, not left implicit');
+assert.ok(/selected this passage/.test(passageNote), 'a selected passage must be labelled as such');
+ok('owner note is honoured and Central is explicit for a selected passage');
+
+const directNote = buildProposePrompt({
+  sourceType: 'direct', text: 'a typed thought', transcript: null, factList: [],
+  ownerNote: null, central: false, destination: 'core',
+});
+assert.ok(/typed this thought directly/.test(directNote), 'a direct entry must read differently from a passage');
+assert.ok(!directNote.includes('CENTRAL'), 'Central must not appear when he did not mark it');
+assert.ok(/CORE PARADIGM/.test(directNote), 'saving to Core must tell the model to write a settled addition');
+ok('a direct thought reads as typed, not as a passage, and Core is stated when chosen');
+
+const noNote = buildProposePrompt({ sourceType: 'passage', text: 'x', transcript: null, factList: [], ownerNote: null, central: false, destination: 'memory' });
+assert.ok(!noNote.includes('HIS OWN NOTE'), 'an empty note must cost nothing in the prompt, never a placeholder');
+ok('no note means no note — never an empty instruction block');
+
+// Central must actually outrank an equal ordinary fact — the CENTRAL_WEIGHT
+// constant is what mindBlock()'s score (weight * recency * hits) and
+// recallFacts()'s ORDER BY weight both key off.
+assert.ok(CENTRAL_WEIGHT > 1, 'Central must weigh more than the default weight of 1');
+ok('Central fact weight outranks a normal fact everywhere weight is read');
+
+// The Core addition is a dated, self-contained record — a future agent reading
+// fractal_operational_core.md needs the reasoning and the provenance, not just
+// the headline.
+const addition = buildCoreAddition({ text: 'Analogy is a morphogenetic operator', detail: 'The mechanism.', ownerNote: 'this matters because X' });
+assert.match(addition, /^### \d{4}-\d{2}-\d{2} — Analogy is a morphogenetic operator/);
+assert.ok(addition.includes('The mechanism.'));
+assert.ok(addition.includes('this matters because X'));
+ok('a Core addition is dated and carries its reasoning and owner note');
+
+// Automatic harvest() must never be able to produce a core-publication row: only
+// saveRemembered() (an explicit Save) writes to core_publications, and only when
+// destination === 'core'. Proven at the source level rather than against a real
+// DB, matching this file's no-database, no-network, no-credits discipline.
+const mindSrc = readFileSync(fileURLToPath(new URL('../server/src/services/mind.js', import.meta.url)), 'utf8');
+const harvestBody = mindSrc.slice(mindSrc.indexOf('async function runHarvest'), mindSrc.indexOf('export function rewindHarvest'));
+assert.ok(!harvestBody.includes('core_publications'), 'automatic harvest must never touch core_publications');
+assert.ok(!harvestBody.includes('saveRemembered'), 'automatic harvest must never call the explicit-Save path');
+ok('automatic harvest has no path to a core-publication row');
 
 console.log(`\n${passed} checks passed — the Room's memory reaches the repo intact.`);

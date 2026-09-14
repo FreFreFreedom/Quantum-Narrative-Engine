@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-13 |
+| **DONE** | 2026-09-14 |
 
 ## Where you are
 
@@ -111,4 +111,8 @@ After a successful answer the thread stays in normal conversation. A later topic
 
 ## Completion record
 
-When finished, update this plan's status and its row in `plans/README.md` in the same commit as the implementation. State what was tested and whether normal clarification was verified on more than one actual provider.
+Implemented as specified: `convos.clarification_mode` (normal/interview, additive `ALTER TABLE`, defaults existing rows to normal); `getClarificationMode`/`setClarificationMode` in `conversations.js`; `POST /:id/clarification-mode` and `POST /:id/answer-now` (NDJSON + plain-JSON, same split as `/:id/message`); the normal-clarify rule and the Interview instruction threaded into `buildTurnPrompt`/`runChatTurn`/`runChatTurnStreaming` via a `clarifyMode` param, provider-independent; narrow whole-message regexes for the natural-language start/end phrases; `/grill-me` and `/interview` both start the same persistent mode (no longer a one-off); `/help` updated. Frontend: an Interview toggle beside the lane picker and an Answer now action (composer + inline under the newest question) in `fmcns_navigator.html`, mirrored byte-identically to `queue-server/public/index.html`.
+
+Tested: `node --check` on every edited server file and the frontend's inline `<script>` blocks; extended `scripts/room-selftest.mjs` (mode normalisation, narrow phrase detection, the answer-now failure invariant) — all passing, no model cost. Verified live against a local server + real database: old conversations default to normal, mode changes persist and reject invalid values, fetch responses expose `clarification_mode`, `/help` lists the new commands. Also drove the actual turn/model pipeline live (not mocked) via direct API calls exercising the same code the browser calls: `/interview` set the mode and asked one real question (answered by Google's free lane); `answer-now` synthesised from the interview and returned the thread to normal (Cerebras); the natural phrase "ask me questions" re-entered interview mode and asked a further question; a pinned lane going rate-limited on `answer-now` left the mode on `interview` untouched (the failure invariant, caught live, not just in the self-test); the `/grill-me` alias still starts the same mode. Normal clarification (the shared "ask when it matters" instruction on ordinary turns) is wired into the same prompt path proven live above, on two real free-lane providers (Google AI Studio, Cerebras) plus the deterministic self-test — not separately re-verified with a message ambiguous enough to force a live clarifying question, since that judgment call belongs to the model on a real Antoine message rather than a scripted one.
+
+Not done: could not drive the actual browser UI (click the Interview button, the composer's Answer now, resize the window, check popovers) — this sandbox has no browser. The frontend markup, CSS and event wiring were written, syntax-checked, and reasoned through against the existing composer's own patterns, but not visually confirmed. The lane-picker/Interview independence and narrow-window layout claims in the plan's "How to verify" §5 are therefore unverified and worth a real look before calling this fully closed.
