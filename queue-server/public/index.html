@@ -62,6 +62,11 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
   --fs-2xs: 9.5px; --fs-xs: 10.5px; --fs-sm: 11.5px; --fs-base: 13px;
   --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px;
   --fw-normal: 400; --fw-medium: 600;
+  /* The one text size every conversation embed reads — Room, Side Talks, a
+     card's own studio. His own A-/A+ control (applyRoomType()) overrides this
+     at the root, so changing it in one place changes it everywhere the same
+     shared component is used. */
+  --room-font: var(--font-read); --room-size: 14px;
   /* Reading measure. Long prose stops here however wide the window gets.
      In ch, so it follows whichever face the reader has chosen — ch is the width of the
      digit zero, which runs wider than average lowercase, so this lands near seventy-five
@@ -1045,12 +1050,10 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-convo { flex:1; min-height:0; padding:0 18px 14px; display:flex; flex-direction:column; }
 .room-convo .se-wrap { flex:1; min-height:0; display:flex; flex-direction:column; border-top:none; margin-top:0; padding-top:0; }
 .room-convo .se-log { max-height:none; flex:1; min-height:0; padding:var(--sp-6) 0 var(--sp-3); }
-/* Reading comfort is a setting, not a constant — the Room is the one place in
-   this app where long text is actually read (his ask, 2026-09-09). Two variables
-   set on the panel itself and remembered per browser; only the words move, never
-   the chrome around them. */
-.room-convo { --room-font:var(--font-read); --room-size:16px; }
-.room-convo .se-body, .room-convo .se-input, .room-convo .se-recap-body { font-family:var(--room-font); font-size:var(--room-size); }
+/* Reading comfort is a setting, not a constant (his ask, 2026-09-09) — and one
+   setting, not one per panel: every conversation embed reads the same
+   --room-font/--room-size (defined at :root), remembered per browser; only the
+   words move, never the chrome around them. */
 /* An answer is a page, not a log line: it stops at the reading measure however wide the
    window gets, and gets the line-height a serif needs. The composer keeps the same face
    so what you type looks like what comes back. */
@@ -1193,17 +1196,15 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-convo .se-send:hover:not(:disabled) { background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); opacity:.88; }
 .room-convo .se-send:disabled { background:var(--c-surface-3); border-color:transparent; color:var(--c-ink-4); opacity:1; }
 .room-convo .se-cmds { max-width:48rem; margin:6px auto 0; padding:0 18px; }
-/* Nothing but the Room hides these: a card's studio has no ＋ to bring them back
-   with, so they stay where they were. */
-.se-more { display:none; }
-.room-convo .se-more { display:flex; align-items:center; justify-content:center; flex:none; width:26px; height:26px;
+/* Every embed — Room, Side Talks, a card's own studio — collapses the seven
+   text-link commands behind one ＋ toggle. A spelled-out row of them read as
+   a wall of small text wherever it showed, not just here. */
+.se-more { display:flex; align-items:center; justify-content:center; flex:none; width:26px; height:26px;
   padding:0; border:1px solid var(--c-border-2); border-radius:var(--r-pill); background:none; color:var(--c-ink-4);
   font:inherit; font-size:var(--fs-base); line-height:1; cursor:pointer;
   transition:color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease); }
-.room-convo .se-more:hover { color:var(--c-ink); border-color:var(--c-ink-4); }
-.room-convo .se-more[aria-expanded="true"] { color:var(--c-ink); border-color:var(--c-ink-4); }
-.room-convo .se-cmds { display:none; }
-.room-convo .se-wrap.cmds-open .se-cmds { display:flex; }
+.se-more:hover { color:var(--c-ink); border-color:var(--c-ink-4); }
+.se-more[aria-expanded="true"] { color:var(--c-ink); border-color:var(--c-ink-4); }
 .room-empty { flex:1; display:flex; align-items:center; justify-content:center; }
 .room-picklist { max-height:300px; overflow-y:auto; margin-bottom:10px; border:1px solid var(--c-border); border-radius:var(--r-md); }
 .room-pickrow { display:flex; align-items:center; gap:6px; width:100%; padding:6px 8px; background:none; border:none; border-bottom:1px solid var(--c-border); text-align:left; font:inherit; font-size:var(--fs-sm); color:var(--c-ink-2); cursor:pointer; }
@@ -1298,7 +1299,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-iconbtn:hover { background:var(--c-surface); color:var(--c-ink); }
 .se-recap { border:1px solid var(--c-border); border-radius:var(--r-sm); background:var(--c-surface); padding:6px 8px; margin-bottom:8px; }
 .se-recap summary { cursor:pointer; font-size:var(--fs-sm); color:var(--c-ink-4); font-weight:var(--fw-medium); }
-.se-recap-body { white-space:pre-wrap; font-size:var(--fs-sm); color:var(--c-ink-3); margin-top:6px; }
+.se-recap-body { white-space:pre-wrap; font-family:var(--room-font); font-size:var(--room-size); color:var(--c-ink-3); margin-top:6px; }
 /* 320px was sized for the old terse answers (a few sentences, ~450 tokens). The
    conversation lane now answers at whatever length the question deserves, so the
    box gets real room — bounded by the viewport so it still can't push the
@@ -1328,7 +1329,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-who { font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink-4); margin-bottom:4px;
   display:flex; align-items:center; gap:7px; }
 .se-turn.you .se-who { color:var(--c-brand); }
-.se-body { font-size:var(--fs-base); line-height:1.6; white-space:pre-wrap; word-break:break-word; color:var(--c-ink-2); }
+.se-body { font-family:var(--room-font); font-size:var(--room-size); line-height:1.6; white-space:pre-wrap; word-break:break-word; color:var(--c-ink-2); }
 .se-turn.you .se-body { color:var(--c-ink); }
 /* A drafted plan is the moment the conversation becomes something you can build,
    so it is the one turn allowed to break the pattern. Amber is already this app's
@@ -1376,8 +1377,8 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    above it, the lane is already pinned, and the command list is for the Studio —
    all three squeezed the box someone types in down to nothing. His words,
    2026-09-13: "i dont even know where to type". */
-.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-more, .se-slim .se-interview, .se-slim .se-answer-now { display:none; }
-.se-slim .se-input { flex:1 1 auto; min-width:0; }
+.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-interview, .se-slim .se-answer-now { display:none; }
+.se-slim .se-input { flex:1 1 6rem; min-width:6rem; }
 /* Side talks (plan "fix the Aside / side-talk flow"): the model picker is the one
    .se-lanewrap piece worth keeping even in the slim layout — he wants to change a
    side talk's model the same way he can on the main chat. */
@@ -1563,7 +1564,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-about button { appearance:none; border:0; background:transparent; color:var(--c-ink-4); cursor:pointer;
   font:inherit; line-height:1; padding:2px 3px; border-radius:var(--r-xs); }
 .se-about button:hover { color:var(--c-ink); background:var(--c-hover-wash); }
-.se-input { flex:1; min-width:0; max-height:110px; background:transparent; border:none; border-bottom:1px solid var(--c-border-2); border-radius:0; padding:5px 1px; font-family:inherit; font-size:var(--fs-base); line-height:1.5; color:var(--c-ink); resize:none; }
+.se-input { flex:1; min-width:0; max-height:110px; background:transparent; border:none; border-bottom:1px solid var(--c-border-2); border-radius:0; padding:5px 1px; font-family:var(--room-font); font-size:var(--room-size); line-height:1.5; color:var(--c-ink); resize:none; }
 .se-input:focus { outline:none; border-bottom-color:var(--c-ink-4); }
 .se-input::placeholder { color:var(--c-ink-5); }
 .se-send { background:none; border:1px solid var(--c-border-2); border-radius:var(--r-sm); color:var(--c-ink-3); cursor:pointer; font-size:var(--fs-sm); padding:4px 9px; }
@@ -1574,9 +1575,12 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-send.is-stop:hover:not(:disabled), .room-convo .se-send.is-stop:hover:not(:disabled) {
   background:var(--c-danger); border-color:transparent; color:#fff; opacity:.85; }
 /* Commands as middot-separated words rather than a second row of pills — the card
-   already carries badges and buttons, and pills here would read as a toolbar. */
-.se-cmds { display:flex; flex-wrap:wrap; align-items:center; gap:0 6px; margin-top:7px; }
-.se-cmd { background:none; border:none; padding:1px 0; cursor:pointer; font-family:inherit; font-size:var(--fs-sm); color:var(--c-ink-4); }
+   already carries badges and buttons, and pills here would read as a toolbar.
+   Hidden until the ＋ opens them — a spelled-out row of seven is clutter,
+   not a control. */
+.se-cmds { display:none; flex-wrap:wrap; align-items:center; gap:0 6px; margin-top:7px; }
+.se-wrap.cmds-open .se-cmds { display:flex; }
+.se-cmd { background:none; border:none; padding:1px 0; cursor:pointer; font-family:inherit; font-size:var(--room-size); color:var(--c-ink-4); }
 .se-cmd:hover:not(:disabled) { color:var(--c-ink); text-decoration:underline; }
 .se-cmd:disabled { opacity:.4; cursor:default; }
  .se-dot { font-size:var(--fs-sm); color:var(--c-ink-5); }
@@ -1593,7 +1597,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    select, no different from any other muted control in the app; once a lane is
    picked, it takes the brand color so the override is legible at a glance. */
 .se-lanewrap { display:flex; align-items:center; gap:4px; align-self:center; flex:none; }
-.se-lanepick, .se-lanemodel { -webkit-appearance:none; appearance:none; background:none; border:1px solid var(--c-border-2); border-radius:var(--r-pill); color:var(--c-ink-4); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:3px 8px; cursor:pointer; max-width:104px; }
+.se-lanepick, .se-lanemodel { -webkit-appearance:none; appearance:none; background:none; border:1px solid var(--c-border-2); border-radius:var(--r-pill); color:var(--c-ink-4); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:3px 8px; cursor:pointer; max-width:88px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:none; }
 .se-lanepick:hover, .se-lanemodel:hover { border-color:var(--c-ink-4); color:var(--c-ink); }
 .se-lanepick.is-set { color:var(--c-brand); border-color:var(--c-brand); }
 .se-lane-clear { background:none; border:none; color:var(--c-ink-4); font-size:var(--fs-sm); line-height:1; cursor:pointer; padding:2px; }
@@ -10234,10 +10238,12 @@ function renderRoomHead() {
   if (!t) { roomEndRename(); killRoomMoreMenu(); }
 }
 
-// Font and text size for the Room, kept in this browser. Only the words the
-// Room is for — the answers, the recap, what you are typing — take these; the
-// toolbar, the tabs and the thread list stay the size they were, or the setting
-// would be a zoom control rather than a reading one.
+// Font and text size, kept in this browser. Only the words a conversation is
+// made of — answers, recaps, what you are typing, in the Room or any of its
+// side talks or a card's own studio — take these; the toolbar, the tabs and
+// the thread list stay the size they were, or the setting would be a zoom
+// control rather than a reading one. Set at the root so every embed of the
+// one shared conversation component reads the same size, not just the Room.
 const ROOM_TYPE_KEY = 'fmcns_room_type';
 const ROOM_FONTS = [
   ['system', 'System', '-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif'],
@@ -10248,11 +10254,9 @@ const ROOM_SIZE_MIN = 12;
 const ROOM_SIZE_MAX = 22;
 let roomType = { font: 'system', size: 14 };
 function applyRoomType() {
-  const el = document.getElementById('roomConvo');
-  if (!el) return;
   const f = ROOM_FONTS.find((x) => x[0] === roomType.font) || ROOM_FONTS[0];
-  el.style.setProperty('--room-font', f[2]);
-  el.style.setProperty('--room-size', roomType.size + 'px');
+  document.documentElement.style.setProperty('--room-font', f[2]);
+  document.documentElement.style.setProperty('--room-size', roomType.size + 'px');
 }
 function saveRoomType() {
   try { localStorage.setItem(ROOM_TYPE_KEY, JSON.stringify(roomType)); } catch (e) {}
@@ -22338,7 +22342,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
      scroll and Escape closes that this used to carry its own copy of. Lanes that
      cannot answer today stay visible and greyed, with the reason in words — hiding
      one makes it look as though the app never had it. */
-  function openLaneMenu(btn, e, text, repaint){
+  function openLaneMenu(btn, e, text, repaint, carried){
     var items = reaskLanes().map(function(row){
       var provider = row[0];
       var off = provider && !laneAvailable(provider, laneCatalog);
@@ -22353,7 +22357,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             var models = laneModelsFor(provider, laneCatalog);
             lane = { provider: provider, model: models.length ? models[0] : null, account: null };
           }
-          sendTurn(e, text, repaint, null, lane);
+          sendTurn(e, text, repaint, null, lane, carried);
         }
       };
     });
@@ -22671,7 +22675,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         ev.stopPropagation();
         if(e.busy) return;
         var m = e.msgs[Number(b.getAttribute('data-se-redo'))];
-        if(m && m.text) openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); });
+        if(m && m.text) openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); },
+          m.body ? { body: m.body, quotes: m.quotes } : undefined);
       };
     });
     log.querySelectorAll('[data-se-rewind]').forEach(function(b){
@@ -22892,6 +22897,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
         if(document.activeElement !== laneModel) laneModel.value = e.lane.model || (models[0] || '');
         laneModel.style.display = '';
+        laneModel.title = laneModel.value || '';
       } else {
         laneModel.style.display = 'none';
         laneModel.removeAttribute('data-for');
