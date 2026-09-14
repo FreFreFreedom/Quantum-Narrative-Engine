@@ -1,6 +1,6 @@
 # Flow stability and interrupted-task history
 
-**IMPLEMENTED 2026-09-14.** This brief records the change made after Antoine saw the
+**IMPLEMENTED + deployed 2026-09-14.** This brief records the change made after Antoine saw the
 Flow flicker and received an alert for a blocked task that then seemed to disappear.
 
 ## Context
@@ -49,4 +49,3 @@ restores its scroll position after the one coalesced redraw.
   Continue task creates a separate queued continuation.
 - Leave an expanded task or a scrolled Flow list open while polling and while a
   suggestion/Seed update arrives; the list must not flash or jump.
-
