@@ -231,9 +231,18 @@ function maybeAutoTitleConvo(convo) {
 // stand between him and his answer.
 const SMART_TITLE_PROMPT = `Name this conversation the way a person would name it afterwards: what it is ABOUT, not how it opened.
 
-Three to six words. A noun phrase, no verb needed, no quotes, no final full stop. Name the subject and, where there is one, the angle on it — "Civic structures as instruments of isolation" beats "Politics discussion". Never echo the opening words of the first message, never start with "Conversation about" or "Exploration of", and never use the words "fractal" or "paradigm" unless the conversation is genuinely about those and not merely written in them.
+Write three to seven words. Name a concrete subject and, where there is one, its angle — "Suits: recurring relationship dynamics" or "Civic structures as instruments of isolation", never "The mechanics", "The nature", "Fields for", "Discussion", or "Question". Do not give a sentence fragment. Do not end on a joining word such as "for", "of", "with", "and", or "in". Never echo the opening words of the first message, never start with "Conversation about" or "Exploration of", and never use the words "fractal" or "paradigm" unless the conversation is genuinely about those and not merely written in them.
 
 Reply with the title alone.`;
+
+const SMART_TITLE_REPAIR_PROMPT = `The previous title was too vague or incomplete. Read this conversation again and name its actual subject in three to seven words. Include a concrete topic and its angle. Never answer with a generic phrase such as "The nature", "The mechanics", "Fields for", "Discussion", "Question", or "Analysis". Do not end on "for", "of", "with", "and", or "in". Reply with the title alone.`;
+
+const TITLE_GENERIC_WORDS = new Set([
+  'analysis', 'aspect', 'discussion', 'exploration', 'field', 'fields', 'idea',
+  'ideas', 'mechanic', 'mechanics', 'nature', 'overview', 'question', 'questions',
+  'subject', 'theme', 'themes', 'thing', 'things', 'topic', 'topics',
+]);
+const TITLE_TRAILING_CONNECTORS = new Set(['about', 'and', 'as', 'at', 'by', 'for', 'from', 'in', 'into', 'of', 'on', 'or', 'the', 'to', 'with']);
 
 // The same pass, asked for on purpose. Ignores title_auto — clicking the button
 // IS the permission — and marks the result as the machine's again so a drifting
@@ -263,14 +272,7 @@ async function writeSmartTitle(convoId) {
   const transcript = msgs
     .map((m) => `${m.role === 'user' ? 'He asked' : 'The answer'}: ${String(m.text).slice(0, 1200)}`)
     .join('\n\n');
-  const out = await generateText({
-    prompt: `${SMART_TITLE_PROMPT}\n\n=== THE CONVERSATION ===\n${transcript}`,
-    feature: 'summary',
-    label: 'conversations:smart-title',
-    maxTokens: 30,
-    timeoutMs: 45_000,
-  });
-  const title = cleanTitle(out?.text);
+  const title = await generateSmartTitle(transcript);
   if (!title) return null;
   // Read again: the whole point of the flag is that a rename during the call wins.
   const still = getConvo(convoId);
@@ -280,14 +282,34 @@ async function writeSmartTitle(convoId) {
   return title;
 }
 
+async function generateSmartTitle(transcript) {
+  const ask = async (prompt, label) => {
+    const out = await generateText({
+      prompt: `${prompt}\n\n=== THE CONVERSATION ===\n${transcript}`,
+      feature: 'summary',
+      label,
+      maxTokens: 30,
+      timeoutMs: 45_000,
+    });
+    return cleanTitle(out?.text);
+  };
+  return await ask(SMART_TITLE_PROMPT, 'conversations:smart-title')
+    || await ask(SMART_TITLE_REPAIR_PROMPT, 'conversations:smart-title-repair');
+}
+
 // Models like to answer a request for a title with a sentence about the title.
-function cleanTitle(raw) {
+export function cleanTitle(raw) {
   let t = String(raw || '').trim().split('\n')[0].trim();
   t = t.replace(/^(title|name)\s*[:\-]\s*/i, '');
   t = t.replace(/^[""'\u201c\u2018]+|[""'\u201d\u2019]+$/g, '').trim();
   t = t.replace(/[.]+$/, '').trim();
   if (t.length < 3 || t.length > 90) return null;
-  if (t.split(/\s+/).length > 10) return null;
+  const words = t.split(/\s+/);
+  if (words.length < 3 || words.length > 10) return null;
+  const normalized = words.map((word) => word.toLowerCase().replace(/[^a-z0-9]/g, '')).filter(Boolean);
+  if (!normalized.length || TITLE_TRAILING_CONNECTORS.has(normalized.at(-1))) return null;
+  const concreteWords = normalized.filter((word) => !TITLE_STOPWORDS.has(word) && !TITLE_GENERIC_WORDS.has(word));
+  if (concreteWords.length < 2) return null;
   return t.slice(0, 80);
 }
 
@@ -638,9 +660,9 @@ export function listSideTalks(parentConvoId) {
 export async function backfillSideTitles() {
   if (!db) return { error: 'no_db' };
   const rows = db.prepare(
-    `SELECT id FROM convos WHERE subject_type='side' AND deleted_at IS NULL AND turns >= 1
-     AND (title IS NULL OR trim(title) = '' OR trim(title) = ?)`,
-  ).all(DEFAULT_SIDE_TITLE);
+    `SELECT id, title FROM convos WHERE subject_type='side' AND deleted_at IS NULL AND turns >= 1
+     AND (title_auto=1 OR title IS NULL OR trim(title) = '' OR trim(title) = ?)`,
+  ).all(DEFAULT_SIDE_TITLE).filter((row) => !cleanTitle(row.title));
   let updated = 0;
   for (const row of rows) {
     const out = await retitleConvo(row.id);
