@@ -11,7 +11,10 @@ rmSync(process.env.DB_PATH, { force: true }); // a fork test must start from an 
 const { openDb } = await import('../server/src/db/schema.js');
 const passages = await import('../server/src/services/passages.js');
 const convos = await import('../server/src/services/conversations.js');
-const { lengthRequest, forkConvo, createOpenConvo, listMessages, listOpenConvos, addMark, listMarks, deleteMark } = convos;
+const {
+  lengthRequest, forkConvo, createOpenConvo, listMessages, listOpenConvos, addMark, listMarks, deleteMark,
+  getClarificationMode, setClarificationMode,
+} = convos;
 convos.bindConversationsDb(openDb());
 
 const HITS = {
@@ -192,4 +195,48 @@ console.log(`cut answers OK — continued and joined; a 4000-word ask now gets $
   assert.equal(foldedShort.length, 3, 'a short thread still folds all but its last message');
   assert.ok(convos.foldCut(Array.from({ length: 7 }, (_, i) => msg(i))).length === 1);
   console.log('fold cut OK — the newest exchanges are never summarised away');
+}
+
+// ─── Clarifying questions & Interview mode ───────────────────────────────────
+{
+  // Mode normalisation: a fresh conversation reads as 'normal' (the default, not
+  // app-wide — a new thread never opens in Interview), a set mode round-trips,
+  // an invalid one is rejected, and a missing conversation is a clean not_found —
+  // same shape as the lane helpers this mirrors.
+  const { convo: clarifyConvo } = createOpenConvo({ title: 'Clarify test' });
+  assert.equal(getClarificationMode(clarifyConvo.id), 'normal', 'a new thread starts normal');
+  assert.equal(convos.getConvo(clarifyConvo.id).clarification_mode, 'normal', 'and reads that way straight off the row');
+  assert.deepEqual(setClarificationMode(clarifyConvo.id, 'interview'), { ok: true, mode: 'interview' });
+  assert.equal(getClarificationMode(clarifyConvo.id), 'interview');
+  assert.equal(setClarificationMode(clarifyConvo.id, 'bogus').error, 'invalid_mode');
+  assert.equal(getClarificationMode(clarifyConvo.id), 'interview', 'a rejected mode does not clobber the one already set');
+  assert.equal(setClarificationMode('missing', 'normal').error, 'not_found');
+  assert.equal(getClarificationMode('missing'), 'not_found');
+  console.log('clarification mode OK — normalised, round-trips, invalid input rejected, missing thread is not_found');
+
+  // Narrow natural-language detection: the fixed phrases hit (with a little slack
+  // for "please"/"can you"/trailing punctuation), but a sentence that merely
+  // discusses the feature — or buries the phrase in more words — must not.
+  const startHits = ['ask me questions', 'Interview me about this.', 'help me clarify what I mean', 'question me before answering', 'Can you ask me questions about it?'];
+  const startMisses = ['does the room ever ask me questions', 'I want you to ask me questions about something and then explain it', 'what happens if I interview me'];
+  for (const s of startHits) assert.ok(convos.INTERVIEW_START_RE.test(s), `should start: ${s}`);
+  for (const s of startMisses) assert.ok(!convos.INTERVIEW_START_RE.test(s), `should NOT start: ${s}`);
+
+  const endHits = ['answer now', 'You can answer now.', 'ok answer now', 'Okay, answer now!'];
+  const endMisses = ['can you answer now eventually', 'answer now please give me the detail', 'I will answer now'];
+  for (const s of endHits) assert.ok(convos.ANSWER_NOW_RE.test(s), `should answer now: ${s}`);
+  for (const s of endMisses) assert.ok(!convos.ANSWER_NOW_RE.test(s), `should NOT answer now: ${s}`);
+  console.log('interview phrase detection OK — narrow enough to skip a discussion ABOUT the feature');
+
+  // The invariant that matters most: a synthesis that never ran (or failed before
+  // saving) must never clear the mode. answerNow on a conversation that does not
+  // exist fails before any model call or save — cheapest possible proof that the
+  // error path takes no side effect. (The success path — clearing the mode only
+  // after saveAssistantTurn — is a live-model call and is instead exercised by
+  // hand against the Room; see the plan's "How to verify".)
+  const before = getClarificationMode(clarifyConvo.id);
+  const failed = await convos.answerNow('missing-convo-id', {});
+  assert.equal(failed.error, 'not_found');
+  assert.equal(getClarificationMode(clarifyConvo.id), before, 'a failed/absent answer-now leaves every mode untouched');
+  console.log('answer-now failure invariant OK — no save, no mode change');
 }

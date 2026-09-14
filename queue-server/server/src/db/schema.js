@@ -1774,6 +1774,13 @@ export function initConversationsSchema(db) {
   // re-searches on a beat rather than on every render. Same shape as
   // analogy_seen_turns above.
   try { db.exec(`ALTER TABLE convos ADD COLUMN wall_seen_turns INTEGER DEFAULT 0`); } catch {}
+
+  // Clarifying questions / Interview mode (plan "room-clarifying-questions-and-
+  // interview-mode"): 'normal' (the default — a model may ask one clarifying
+  // question when it matters) or 'interview' (the owner asked to be questioned
+  // before an answer). Per conversation, so it survives a refresh and a change
+  // of answering model. A conversation with no value here reads as 'normal'.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN clarification_mode TEXT NOT NULL DEFAULT 'normal'`); } catch {}
 }
 
 // ─── The Room's shared memory (`mind_facts`, plan "room-shared-memory") ───────
