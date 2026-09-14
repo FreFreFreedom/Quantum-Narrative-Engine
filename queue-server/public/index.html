@@ -1400,7 +1400,10 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-remember-row { display:flex; flex-wrap:wrap; gap:0; margin-bottom:4px; }
 .se-remember-row .se-remember-shelf { margin-left:0; margin-right:6px; }
 /* Side talks — the list and the one open at a time. */
-.room-side-new { margin-bottom:8px; }
+.room-side-new { margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.room-side-fold { margin-left:auto; background:none; border:none; padding:2px 4px; cursor:pointer; font:inherit;
+  font-size:var(--fs-sm); color:var(--c-ink-5); }
+.room-side-fold:hover { color:var(--c-ink); }
 .room-side-list { display:flex; flex-direction:column; gap:2px; margin-bottom:8px; }
 .room-side-row { text-align:left; background:none; border:none; padding:6px 8px; border-radius:var(--r-sm); cursor:pointer;
   font:inherit; font-size:var(--fs-sm); color:var(--c-ink-3); }
@@ -10926,6 +10929,7 @@ function renderRoomAnalogies() {
    the main thread; nothing here ever sends in his name. */
 let roomSides = [];
 let roomSideOpenId = null;
+let roomSideListCollapsed = (function () { try { return localStorage.getItem('fmcns.roomSideListCollapsed') === '1'; } catch (e) { return false; } })();
 
 async function loadRoomSides() {
   const want = roomSel;
@@ -11003,18 +11007,22 @@ function renderRoomSide() {
   if (!roomSel) { host.innerHTML = ''; return; }
 
   const open = roomSides.find(s => s.id === roomSideOpenId) || null;
+  const listCollapsed = roomSideListCollapsed && roomSides.length > 0;
   let html = '<div class="room-ana-acts room-side-new">'
     + '<button type="button" data-side-new="1">+ Aside</button>'
+    + (roomSides.length ? '<button type="button" class="room-side-fold" data-side-fold="1" title="' + (listCollapsed ? 'Show the list' : 'Hide the list') + '" aria-label="' + (listCollapsed ? 'Show the list' : 'Hide the list') + '">' + (listCollapsed ? '▸' : '▾') + ' ' + roomSides.length + '</button>' : '')
     + '</div>';
 
-  html += '<div class="room-side-list">' + roomSides.map((s, i) => (
-    '<div class="room-side-item">'
-    + '<button type="button" class="room-side-row' + (s.id === roomSideOpenId ? ' is-open' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
-    + qEsc(s.title && s.title !== 'Side talk' ? s.title : 'Aside ' + (i + 1))
-    + '</button>'
-    + '<button type="button" class="room-side-drop" data-side-drop="' + qEscAttr(s.id) + '" title="Throw this aside away" aria-label="Throw this aside away">✕</button>'
-    + '</div>'
-  )).join('') + (!roomSides.length ? '<div class="tv-empty">Nothing yet. Select a passage and choose Aside, or start one here.</div>' : '') + '</div>';
+  if (!listCollapsed) {
+    html += '<div class="room-side-list">' + roomSides.map((s, i) => (
+      '<div class="room-side-item">'
+      + '<button type="button" class="room-side-row' + (s.id === roomSideOpenId ? ' is-open' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
+      + qEsc(s.title && s.title !== 'Side talk' ? s.title : 'Aside ' + (i + 1))
+      + '</button>'
+      + '<button type="button" class="room-side-drop" data-side-drop="' + qEscAttr(s.id) + '" title="Throw this aside away" aria-label="Throw this aside away">✕</button>'
+      + '</div>'
+    )).join('') + (!roomSides.length ? '<div class="tv-empty">Nothing yet. Select a passage and choose Aside, or start one here.</div>' : '') + '</div>';
+  }
 
   if (open) {
     html += '<div class="room-side-open" id="roomSideEmbed"></div>'
@@ -11024,6 +11032,12 @@ function renderRoomSide() {
 
   const newBtn = host.querySelector('[data-side-new]');
   if (newBtn) newBtn.onclick = () => roomSideCreate({ mode: 'empty' });
+  const foldBtn = host.querySelector('[data-side-fold]');
+  if (foldBtn) foldBtn.onclick = () => {
+    roomSideListCollapsed = !roomSideListCollapsed;
+    try { localStorage.setItem('fmcns.roomSideListCollapsed', roomSideListCollapsed ? '1' : '0'); } catch (e) {}
+    renderRoomSide();
+  };
   host.querySelectorAll('[data-side-pick]').forEach(b => {
     b.onclick = () => roomSideOpen(b.getAttribute('data-side-pick'));
   });
