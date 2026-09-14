@@ -19,14 +19,21 @@ any chat session, is `queue-server/scripts/queue-runner.js` — the local proces
 actually executes queued tasks. It already polls the queue every 5s (idle) and prints
 a snapshot every 30s (`printSnapshot()`, checked this session — reads
 `GET /api/travaux/prompts?space=fmcns`, the exact same list the app's Queue tab
-shows). It also already has two free, zero-LLM-cost notification channels wired up
-and used today only for task completion: `slackNotify()` (posts to a Slack webhook)
-and `desktopNotify()` (a macOS notification banner via `osascript`), both called
-through `notifyEnding()`.
+shows). It also already has a free, zero-LLM-cost desktop notification
+(`desktopNotify()`, a macOS banner via `osascript`), used today for task completion
+via `notifyEnding()`.
+
+**Antoine does not want Slack notifications, ever — this is a standing rule, not
+specific to this feature.** `slackNotify()` exists in this file and is still called
+by `notifyEnding()` for completions, but it is a silent no-op today because
+`SLACK_WEBHOOK_URL` is unset in `queue-server/.env`. Do not call `slackNotify()` for
+either new event this plan adds — desktop only. Do not set/restore
+`SLACK_WEBHOOK_URL` for any reason as part of this work, and do not add a new Slack
+call anywhere.
 
 This plan adds new-task and possible-duplicate detection to that same already-running
-loop, using the same two notification channels — no new process, no LLM calls, no
-Claude session required to be open.
+loop, using the desktop notification channel only — no new process, no LLM calls, no
+Claude session required to be open, and no Slack.
 
 ## What already exists (checked this session — reuse it, don't rebuild)
 
