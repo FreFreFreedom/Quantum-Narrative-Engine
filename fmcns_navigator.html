@@ -3045,7 +3045,6 @@ button:active { transform: translateY(1px) scale(.99); }
             <button data-ftype="suggestions">Suggestions</button>
             <button data-ftype="seeds">Seeds</button>
             <button data-ftype="done">✓ Done</button>
-            <button data-ftype="landed" title="World ideas you picked that did not end up usable"><svg class="ic" aria-hidden="true"><use href="#ic-bulb"></use></svg>Ideas dropped<span class="core-tab-count" id="coreCountLanded"></span></button>
           </span>
           <span class="flow-sg-filters" id="flowSgFilters">
             <span class="sg-filterbtns" role="group" aria-label="Suggestion status filter">
@@ -3147,7 +3146,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="flow-runner-banner" style="font-size:12px;color:var(--c-ink-4);">
           <div id="qRunnerState" style="display:none;"></div>
         </div>
-        <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list (finished cards: amber ✨ idea-gap badge; Ideas-dropped tab: queued-fix rows open their task) | fmcns_navigator.html: renderFlow(), flowQueueRow(), renderLandedFlow()/wireNbLanded()"></div>
+        <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list (finished cards carry an amber ✨ idea-gap badge) | fmcns_navigator.html: renderFlow(), flowQueueRow()"></div>
       </div>
     </div>
     <div class="ws-room" id="wsRoom" data-src="CORE ARCHITECTURE → Room: the roaming conversations (threads | the conversation | the attached cards) | fmcns_navigator.html: initRoom()/loadRoom()/renderRoom(), painted by studioEmbed() | backend: /api/convos/open, /api/convos/:id/subjects, /api/convos/:id/rename, services/conversations.js">
@@ -13114,11 +13113,6 @@ async function qLoad() {
   const askingCount = qPrompts.filter(qIsAsking).length;
   const askCountEl = document.getElementById('coreCountAsking');
   if (askCountEl) askCountEl.textContent = askingCount || '';
-  // How many picked ideas did not end up usable. Loaded once, lazily, so the number is
-  // on the chip before it is ever clicked — the whole point of moving it here.
-  if (!nbLanded && !nbLandedBusy && !nbLandedError) nbLoadLanded();
-  const landedEl = document.getElementById('coreCountLanded');
-  if (landedEl) landedEl.textContent = nbLandedCount() || '';
   const modeBadgeEl = document.getElementById('sysBadge');
   const modeBtnEl = document.getElementById('sysBtn');
   if (modeBadgeEl) {
@@ -14960,8 +14954,6 @@ function renderFlow() {
   // "Not built" lives in the Flow now — the siftable list of unbuilt tree
   // components, its own toolbar included.
   if (flowType === 'notbuilt') { renderNotbuiltFlow(); return; }
-  // Its own chip rather than a section buried under another list — see nbLoadLanded.
-  if (flowType === 'landed') { if (!nbLanded && !nbLandedBusy) nbLoadLanded(); renderLandedFlow(); return; }
 
   const showQueue = flowType === 'all' || flowType === 'queue';
   const showSg = flowType === 'all' || flowType === 'suggestions';
@@ -18200,129 +18192,6 @@ async function nbLoadUnplanted() {
 // Free to ask. The server answers it by reading its own routes and its own interface,
 // not by calling a model, which is why it can be re-asked on every look and stays true
 // as the app changes.
-// ─── "The ideas you picked, and whether they are actually usable" ─────────────
-// A world idea is never handed to the coding agent word for word: it is summarised,
-// given to a planning model, and rewritten into a brief. So an idea can quietly
-// evaporate, or get half built — the server side working with nothing in the app
-// calling it, which from here means the feature is not there.
-//
-// This lives on its own chip beside ✓ Done. It used to sit at the bottom of "On the
-// Horizon", below a long list and behind that list's search box, and Antoine could not
-// find it — three things had to go right. These are finished tasks, so they belong
-// next to the other finished work.
-let nbLanded = null, nbLandedBusy = false, nbLandedError = null, nbLandedRetried = false;
-
-async function nbLoadLanded() {
-  if (nbLandedBusy) return;
-  nbLandedBusy = true;
-  try { nbLanded = await api('/api/travaux/ideas-landed/audit'); nbLandedError = null; }
-  catch (e) {
-    // Never leave it null with nothing said. The old version did, so one failed call
-    // blanked the screen silently for the rest of the session with no second attempt.
-    nbLandedError = e.message || 'could not load';
-    // One retry, once — enough to catch a redeploy or a cold start, not a poll that
-    // keeps asking forever when the server is genuinely down.
-    if (!nbLandedRetried) {
-      nbLandedRetried = true;
-      setTimeout(() => { nbLandedBusy = false; nbLoadLanded(); }, 20000);
-    }
-  }
-  finally { nbLandedBusy = false; }
-  if (typeof renderFlow === 'function') renderFlow();
-}
-
-function nbLandedCount() {
-  return (nbLanded && nbLanded.needs_work) ? nbLanded.needs_work.length : 0;
-}
-
-// Its own list, rendered into the Flow like the other chips. Says something in every
-// state: still loading, could not load, nothing wrong, or here is what is wrong.
-// Blank was the worst of these — "no problems", "the call failed" and "wrong tab" all
-// looked identical.
-function renderLandedFlow() {
-  const host = document.getElementById('tvBodyFlow');
-  if (!host) return;
-  if (nbLandedError) {
-    host.innerHTML = `<div class="nb-empty">Could not check the ideas you picked — ${qEsc(nbLandedError)}. Trying again shortly.</div>`;
-    return;
-  }
-  if (!nbLanded) { host.innerHTML = '<div class="nb-empty">Checking the ideas you picked…</div>'; return; }
-
-  const items = nbLanded.needs_work || [];
-  const queued = nbLanded.queued_fix || [];
-  const unknown = (nbLanded.not_checked || []).length;
-
-  if (!items.length) {
-    host.innerHTML = `<div class="nb-empty">Every idea you picked that could be checked is usable.${
-      unknown ? ` ${unknown} couldn't be checked — that's a missing answer, not a problem.` : ''}</div>`
-      + landedQueuedHtml(queued);
-    wireNbLanded(host);
-    return;
-  }
-
-  host.innerHTML = items.map(it => `
-      <div class="uc uc--row">
-        <div class="uc-head">
-          <span class="uc-title" title="${qEscAttr(it.line || '')}">${qEsc(it.pick_name || 'An idea you picked')}</span>
-          ${it.prompt_title ? `<span class="nb-terr">${qEsc(it.prompt_title)}</span>` : ''}
-          ${cardActs(ubtnRaw('Finish it', `data-landed-fix="${qEscAttr(it.id)}"`, 'is-primary', 'Queues the missing half as its own task. What is already built is left alone.'), null)}
-        </div>
-        <div class="nb-what">${qEsc(it.line || '')}</div>
-      </div>`).join('')
-    + landedQueuedHtml(queued)
-    + (unknown ? `<div class="nb-empty" style="margin-top:14px;">${unknown} more couldn't be checked — no proof to look for, which is a missing answer rather than a problem.</div>` : '');
-  wireNbLanded(host);
-}
-
-function landedQueuedHtml(queued) {
-  if (!queued || !queued.length) return '';
-  // Each row carries its follow-up task's id, and is clickable because of it —
-  // the pointer and hover come free from .uc--row, same as every sibling row.
-  return `<div class="tv-toolbar-top" style="margin-top:18px;"><span class="arch-title" style="font-size:13px;">Already queued to be finished</span></div>`
-    + queued.map(r => `<div class="uc uc--row"${r.fix_prompt_id ? ` data-qfix="${qEscAttr(r.fix_prompt_id)}"` : ''}><div class="uc-head"><span class="uc-title">${qEsc(r.pick_name || '')}</span></div></div>`).join('');
-}
-
-function wireNbLanded(host) {
-  // A queued-fix row opens that paused task's card. Same mechanism the
-  // neighbouring Flow rows use to open a task — select it out of the loaded list,
-  // mark it seen, re-render — with one difference forced by where it sits: this is
-  // the Ideas-dropped tab, and the opened card lives under All/Parked, so the tab
-  // switches too or the click would visibly do nothing.
-  host.querySelectorAll('.uc[data-qfix]').forEach(el => {
-    el.onclick = async () => {
-      const id = el.getAttribute('data-qfix');
-      let p = qPrompts.find(x => x.id === id);
-      if (!p) { try { await qLoad(); } catch {} p = qPrompts.find(x => x.id === id); }
-      if (!p) return;
-      if (!p.seen_at) {
-        p.seen_at = '1';
-        apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {});
-      }
-      qSelected = p;
-      flowSideSel = null;
-      flowType = 'all';
-      renderFlow();
-    };
-  });
-  host.querySelectorAll('[data-landed-fix]').forEach(b => {
-    b.onclick = async (e) => {
-      e.stopPropagation();
-      b.disabled = true;
-      const was = b.textContent;
-      b.textContent = 'Queueing…';
-      try {
-        await apiWrite(`/api/travaux/ideas-landed/${b.dataset.landedFix}/fix`, 'POST');
-        nbLandedBusy = false;
-        await nbLoadLanded();
-        qLoad();
-      } catch (err) {
-        b.disabled = false; b.textContent = was;
-        notify('Could not queue it: ' + err.message, { kind: 'error' });
-      }
-    };
-  });
-}
-
 // ─── "Built, but you can't use it yet" ────────────────────────────────────────
 // Work that landed on the server and really is finished there, but that the
 // interface never calls — so from where you sit the feature does not exist. The

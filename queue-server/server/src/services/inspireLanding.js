@@ -332,67 +332,6 @@ export function pickTextFrom(report_id, part_index, pick_index) {
   } catch { return null; }
 }
 
-// ─── The audit (free, server-side, re-runnable) ──────────────────────────────
-//
-// The consequence of layer B living on the server is the useful one: the question
-// that matters for an OLD card is not "was it in that diff" — it is "can he use it
-// today". That is answerable here, for every card ever, with no git, no checkout, no
-// terminal and no model, because reachability.js reads the routes and the interface
-// straight out of the running deployment.
-//
-// So this re-checks reachability against what is live NOW and updates the verdict. It
-// can only ever move a row between 'landed' and 'server_only' — the two states
-// reachability is entitled to distinguish. It never invents 'not_landed', because
-// "the interface does not name it" says nothing about whether it was built.
-// Reads the whole interface file once and matches every row against it in memory —
-// the earlier version re-read and re-scanned that ~16,500-line file per row.
-//
-// It is NEVER awaited by a request. On the night this shipped, the audit screen called
-// it inline and the whole app stopped answering — not just this endpoint, /api/health
-// too. The cause was never proven, but a page that waits on a filesystem scan is a
-// mistake whichever way that went, so the request path no longer touches it.
-export async function auditReachability() {
-  const nothing = { checked: 0, server_only: 0, landed: 0 };
-  if (!db) return nothing;
-  const rows = listAll().filter(r => r.needs_ui === 1 && String(r.witness_value || '').trim());
-  // The common case, and the one that used to hang: nothing to check. Answer before
-  // importing or reading anything at all.
-  if (!rows.length) return nothing;
-
-  let mod, front = null;
-  try { mod = await import('./reachability.js'); } catch { return { ...nothing, error: 'unavailable' }; }
-  try { front = mod.frontendSource(); } catch { front = null; }
-  if (!front) return { ...nothing, error: 'no-frontend' };
-
-  let checked = 0, serverOnly = 0, landed = 0;
-  for (const r of rows) {
-    let reached = null;
-    try { reached = mod.isReachedByFrontend(r.witness_value, front); } catch { reached = null; }
-    if (reached === null) continue;
-    checked++;
-    // Never overwrite a 'not_landed' the diff layer earned: if the thing was never
-    // built, "the interface does not call it" is not the more useful sentence.
-    if (r.verdict === 'not_landed') continue;
-    if (reached) { landed++; recordVerdict(r.id, { verdict: 'landed', note: null }); }
-    else { serverOnly++; recordVerdict(r.id, { verdict: 'server_only', note: null }); }
-  }
-  return { checked, server_only: serverOnly, landed };
-}
-
-// Fire-and-forget, one at a time, never awaited — the same shape reachability.js uses
-// for its own write-up (kickExplain). The list is the load-bearing part and it is
-// already stored; the refresh only has to land before the next look.
-let _recheckInFlight = false;
-export function kickReachabilityRecheck() {
-  if (_recheckInFlight) return;
-  _recheckInFlight = true;
-  setImmediate(() => {
-    auditReachability()
-      .catch(() => {})
-      .finally(() => { _recheckInFlight = false; });
-  });
-}
-
 // The historical ideas: picked before a witness was ever drafted for them, so the free
 // layers have nothing to look for and correctly say so. What they DO have is a finished
 // task with a real commit range, and that lives on the Mac. This hands the terminal
@@ -426,27 +365,12 @@ export function unsettledByTask() {
   return [...byTask.values()];
 }
 
-// The whole picture, grouped the way it should be read: what needs doing first, what
-// is fine, and — kept separate and never counted as a problem — what could not be
-// checked at all.
-export function auditSummary() {
-  const rows = listAll();
-  const withLine = rows.map(r => ({ ...r, line: verdictLine(r) }));
-  return {
-    total: rows.length,
-    needs_work: withLine.filter(r => (r.verdict === 'server_only' || r.verdict === 'not_landed') && !r.fix_prompt_id),
-    queued_fix: withLine.filter(r => !!r.fix_prompt_id),
-    landed: withLine.filter(r => r.verdict === 'landed'),
-    not_checked: withLine.filter(r => !r.verdict || r.verdict === 'not_checked'),
-  };
-}
-
 // ─── The nudge ───────────────────────────────────────────────────────────────
 // One notification, and only at the moment unusable ideas appear out of a clean
 // slate: previous count zero, now above it. While the number stays high nothing
-// is sent — the amber badges and the Ideas-dropped list already carry the standing
-// state, and repeating it would only teach him to ignore it. When the count
-// returns to zero the stored value resets with it, so a later rise notifies again.
+// is sent — the amber badges on finished cards already carry the standing state,
+// and repeating it would only teach him to ignore it. When the count returns to
+// zero the stored value resets with it, so a later rise notifies again.
 //
 // The previous count lives in app_kv, the same small key/value store
 // reachability.js caches its write-up in. A missing value means no baseline yet:
@@ -467,8 +391,8 @@ export async function notifyGapRise() {
     if (prev == null || !Number.isFinite(prev)) return;   // first look: baseline only
     if (!(prev === 0 && now > 0)) return;                 // only a rise from zero speaks
     const text = now === 1
-      ? 'Heads-up — a world idea you picked isn\'t usable yet · Core → Flow → Ideas dropped'
-      : `Heads-up — ${now} world ideas you picked aren't usable yet · Core → Flow → Ideas dropped`;
+      ? 'Heads-up — a world idea you picked isn\'t usable yet · Core → Flow → Done'
+      : `Heads-up — ${now} world ideas you picked aren't usable yet · Core → Flow → Done`;
     const url = process.env.NOTIFY_WEBHOOK_URL || '';
     if (!url) { console.log(`[recap] ${text}`); return; }
     const resp = await fetch(url, {

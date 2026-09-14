@@ -23,7 +23,6 @@
     "world:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/worldbrainstorm-selftest.js",
     "docs:sync": "node scripts/sync-docs.js",
     "idea:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/idealanded-selftest.js",
-    "ideas:audit": "node scripts/ideas-audit.js",
     "ending:selftest": "node scripts/ending-selftest.js",
     "never-deep:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/never-deep-selftest.js",
     "notes:selftest": "node scripts/notes-selftest.js",

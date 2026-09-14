@@ -147,19 +147,6 @@ export function travauxRoutes() {
     res.json(out);
   });
 
-  // ── Did the world ideas he picked actually get built? ──────────────────────
-  // The list, grouped. Free: reading rows and, unless ?recheck=0, re-asking the one
-  // question that stays true only if it is re-asked — can he reach it from the app
-  // as the app stands right now. No model, no git, no cost.
-  // Answers from what is stored, always, and starts the refresh behind it. Nothing on
-  // this path reads a file or awaits anything: the night this shipped, awaiting the
-  // recheck here took the whole app down, /api/health included. The list is the
-  // load-bearing part and a refresh that lands on the next look is soon enough.
-  router.get('/ideas-landed/audit', (req, res) => {
-    res.json(landing.auditSummary());
-    if (req.query.recheck !== '0') landing.kickReachabilityRecheck();
-  });
-
   // What was picked on one card, for the card itself to show.
   router.get('/ideas-landed/for/:promptId', (req, res) => {
     const rows = landing.listForPrompt(req.params.promptId)
