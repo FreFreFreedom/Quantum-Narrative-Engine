@@ -14,10 +14,11 @@ running. What follows is what the code says. The percentages are rough but the n
 
 ## Open work
 
-Twenty-five plans still have something in them. Each row names the actual remaining piece.
+Twenty-six plans still have something in them. Each row names the actual remaining piece.
 
 | Plan | What is left | State |
 |---|---|---|
+| [run-queue-tasks-in-parallel.md](run-queue-tasks-in-parallel.md) | Everything. The Dispatch Queue's local runner only ever runs one task at a time today even though per-task worktrees, branches, and the ship lock already make parallel work safe — turn the runner's main loop into a bounded pool (reusing `MAX_CONCURRENT_WRITERS`), add a take-turns guard for question-mode tasks (they share one folder, unlike coding tasks), and move publishing/cleanup onto their own timer so a full pool doesn't starve shipping. | **PLANNED** 2026-09-13 |
 | [opencode-go-usage-link.md](opencode-go-usage-link.md) | Nothing — shipped 2026-09-13 (taken out of the queue and built in a terminal session). Two plain links to `opencode.ai/go` — one in AI Settings' quota pane beside the health row, one as a "Go usage" icon button in the rail foot beside Settings and Look. A link out, not a live reading: checked that there is no real API for the 5-hour/weekly/monthly numbers (only a private, session-cookie-authenticated internal call that breaks on their next deploy). Both HTML copies in sync, scripts pass `node --check`, and the queue card was deleted once the work landed. | **DONE** 2026-09-13 |
 | [room-analogy-engine-social-structure.md](room-analogy-engine-social-structure.md) | Everything. Reform the Room analogy pane so social structures are the default at any scale, while explicit requests can still reach scientific domains. Port the completed but unmerged natural-request work from `76c301b`, preserve the later forget/regenerate controls already on `develop`, and add an independent critic that rejects shallow or merely clever matches before a compact scale-labelled card appears. | **PLANNED** 2026-09-13 — approved and sent to the queue |
 | [queue-world-ideas-manual-only.md](queue-world-ideas-manual-only.md) | Audit and finish the manual-only World Ideas change. Core backend code already landed in concurrent commit `905eb78`: creation and the six-hour sweep stay quiet, while **Look at the world** remains explicit. Added the missing regression test, corrected the raw-task UI wording in both HTML copies, ran the full checks. | **DONE** 2026-09-13 |
