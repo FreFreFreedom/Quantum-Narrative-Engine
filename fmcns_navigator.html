@@ -2809,11 +2809,11 @@ button:active { transform: translateY(1px) scale(.99); }
         <span class="rail-label">Room</span>
       </button>
     </div>
-    <!-- The foot carries one read-out and three buttons, and nothing else. Pause and the
+    <!-- The foot carries one read-out and two buttons, and nothing else. Pause and the
          queue status line moved to the build panel — the queue's own surface — and the
          server pick moved into Settings, which is where a knob touched twice a year
-         belongs. What is left is the only thing here that is information, plus the
-         Settings/Look buttons and a link out to OpenCode Go's own usage page. -->
+         belongs. The OpenCode Go usage link lives in Settings' quota pane instead of
+         here — a link out doesn't need permanent rail real estate. -->
     <div class="rail-foot">
       <div id="usageStripHost" data-src="Side rail → the quota read-out (both Claude accounts + Codex + the paid lane) | fmcns_navigator.html: loadUsage(), usageRailHtml(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
       <div class="rail-btnrow">
@@ -2825,10 +2825,6 @@ button:active { transform: translateY(1px) scale(.99); }
           <svg class="rail-ic ic" aria-hidden="true"><use href="#ic-look" id="lookIconUse"></use></svg>
           <span class="rail-label">Look</span>
         </button>
-        <a class="rail-item rail-btn" href="https://opencode.ai/go" target="_blank" rel="noopener" title="Your OpenCode Go usage — 5-hour, weekly and monthly bars, on their own page">
-          <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"></use></svg>
-          <span class="rail-label">Go usage</span>
-        </a>
       </div>
     </div>
   </div>
