@@ -2416,6 +2416,11 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     : await runChatTurn(convoId, userId, turn, imageList.map((x) => x.dataUrl));
   if (out.error === 'cancelled') db.prepare(`DELETE FROM convo_messages WHERE id=?`).run(mid);
   if (out.error) return out;
+  // The browser paints the user's turn before the answer arrives. Give that
+  // optimistic row its real id immediately so actions that address a stored
+  // message (especially Rewind in Side Talks, which does not reload after every
+  // answer) are available without closing and reopening the conversation.
+  out.userMessageId = mid;
   out.laneTag = out.laneTag || turn.lane?.tag || null;
   out.intent = turn.intent;
   return out;

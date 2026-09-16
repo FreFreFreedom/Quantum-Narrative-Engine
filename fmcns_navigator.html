@@ -21475,6 +21475,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     })
       .then(function(r){ return readTurn(r, e, repaint); })
       .then(function(d){
+        // Side Talks keep their live cache instead of reloading the whole Room
+        // after every answer. Join the optimistic user turn to its stored row so
+        // Rewind is enabled there immediately, just as it is after a main-Room
+        // reload.
+        if(d.userMessageId && e.msgs[sentAt - 1] && e.msgs[sentAt - 1].role === 'user'){
+          e.msgs[sentAt - 1].id = d.userMessageId;
+        }
         if(d.report && window.refreshWorldPanels) window.refreshWorldPanels(d.report);
         if(d.error && !d.ok){
           var stale = /invalid_token|missing_token|unauthorized/i.test(String(d.error || ''));
