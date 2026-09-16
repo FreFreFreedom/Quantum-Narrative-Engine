@@ -980,3 +980,16 @@ message to `generateText(... images)` and force the existing free Gemini vision 
 the transcript stores their names, never their base64 bytes. A vision turn refuses
 plainly when that lane is unavailable rather than answering blind. Full shape:
 `plans/attachments-in-room-composers.md`.
+
+## Explicit Room memories are immediate (2026-09-16)
+
+When Antoine directly tells the Room to remember or not forget something, it is a
+lasting instruction from that message onward. Do not wait for the three-turn background
+harvest and do not merely promise to remember it in prose. `mind.js#saveExplicitChatMemory`
+recognises the narrow direct-memory wording, writes the exact meaning as a central
+`mind_facts` row before the answer prompt is assembled, broadcasts the Mind update, and
+returns the saved memory with the turn. Questions *about* memory do not trigger it.
+
+Antoine's first explicit preference is: **do not use immune-system metaphors in answers
+unless he specifically asks for that lens.** This corrects a verbal habit; it does not
+erase the immune-logic material already stored as project history.

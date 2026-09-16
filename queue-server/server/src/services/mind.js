@@ -121,6 +121,62 @@ export function saveFact({ kind, text, detail = null, sourceConvoId = null, sour
   }
 }
 
+// A direct instruction to remember something must not wait for the background
+// harvest. That pass deliberately waits for several turns and can fail with the
+// model lane, which made "remember this" sound like a promise while leaving no
+// durable fact behind. Keep recognition narrow and deterministic: questions
+// about memory do not match, while a direct command or stated wish does.
+const EXPLICIT_MEMORY_PATTERNS = [
+  /^\s*(?:please\s+)?remember(?:\s+this)?(?:\s*[:,.-]|\s+that)?\s+(.+)$/i,
+  /^\s*(?:please\s+)?(?:do not|don't)\s+forget(?:\s+that)?\s+(.+)$/i,
+  /\bI\s+(?:really\s+)?want\s+(?:you|the\s+model|it)\s+to\s+remember(?:\s+this)?(?:\s*[:,.-]|\s+that)?\s+(.+)$/i,
+  /\bmake\s+sure\s+(?:you|the\s+model|it)\s+remember(?:s)?(?:\s+this)?(?:\s*[:,.-]|\s+that)?\s+(.+)$/i,
+];
+
+export function explicitMemoryText(input) {
+  const source = String(input || '').trim();
+  if (!source || source.endsWith('?')) return null;
+  for (const pattern of EXPLICIT_MEMORY_PATTERNS) {
+    const match = pattern.exec(source);
+    const remembered = String(match?.[1] || '').trim().replace(/[.!]+$/, '').trim();
+    if (remembered) return remembered;
+  }
+  return null;
+}
+
+function explicitMemoryKind(text) {
+  const value = String(text || '').toLowerCase();
+  if (/\b(?:answer|reply|respond|write|say|speak|call|refer|metaphor|analogy|model|assistant|tone|style|word|phrase|stop|never|always)\b/.test(value)) return 'style';
+  if (/\b(?:like|love|dislike|hate|prefer|favourite|favorite)\b/.test(value)) return 'taste';
+  if (/\b(?:decided|decision|choose|chosen|will use|will not use)\b/.test(value)) return 'decision';
+  return 'about';
+}
+
+// Save the owner's exact meaning, not a model's paraphrase. Explicit memories
+// are central so they remain in the always-on memory slice instead of decaying
+// behind facts gathered automatically. A duplicate still counts as remembered:
+// return the existing row so the caller can report success honestly.
+export function saveExplicitChatMemory(input, { convoId = null } = {}) {
+  const remembered = explicitMemoryText(input);
+  if (!remembered) return null;
+  const text = remembered.length <= 240
+    ? remembered
+    : `${remembered.slice(0, 237).trimEnd()}...`;
+  const saved = saveFact({
+    kind: explicitMemoryKind(remembered),
+    text,
+    detail: remembered.length > 240 ? remembered : null,
+    sourceConvoId: convoId,
+    sourceNote: 'chat_explicit',
+    ownerNote: 'Explicitly asked the Room to remember this.',
+    central: true,
+  });
+  if (saved?.error === 'duplicate') return getFact(saved.id);
+  if (saved?.error) return saved;
+  broadcastAll('mind:updated', {});
+  return saved;
+}
+
 export function forgetFact(id) {
   try {
     const r = db.prepare(`UPDATE mind_facts SET active=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND active=1`).run(id);
@@ -165,7 +221,7 @@ export function mindBlock() {
       const score = (f.weight || 1) * recency * (1 + Math.log((f.hits || 0) + 1));
       return { f, score };
     }).sort((a, b) => b.score - a.score);
-    let out = '\n=== WHAT YOU KNOW ABOUT THE OWNER ===\n';
+    let out = '\n=== WHAT YOU KNOW ABOUT THE OWNER ===\nFollow explicit instructions and preferences here. When an older theme conflicts with a newer direct instruction, the direct instruction wins.\n';
     for (const { f } of scored) {
       const line = `- ${String(f.text).slice(0, 240)}`;
       if (out.length + line.length + 1 > BLOCK_CAP) break;

@@ -13,7 +13,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { unseenTurns, buildProposePrompt, buildCoreAddition, CENTRAL_WEIGHT } from '../server/src/services/mind.js';
+import { unseenTurns, buildProposePrompt, buildCoreAddition, CENTRAL_WEIGHT, explicitMemoryText } from '../server/src/services/mind.js';
 import { renderMindFrom, renderVisionFrom, mindFiles, MEMORY_REPO_PATH } from '../server/src/services/mindMirror.js';
 
 let passed = 0;
@@ -135,6 +135,22 @@ ok('no note means no note — never an empty instruction block');
 // recallFacts()'s ORDER BY weight both key off.
 assert.ok(CENTRAL_WEIGHT > 1, 'Central must weigh more than the default weight of 1');
 ok('Central fact weight outranks a normal fact everywhere weight is read');
+
+// ─── 5. words spoken directly in chat ───────────────────────────────────────
+// These matches decide whether "remember this" is durable before the answer is
+// generated. Keep them narrow enough that asking ABOUT memory never writes one.
+assert.equal(explicitMemoryText('Remember that I do not want immune-system metaphors.'), 'I do not want immune-system metaphors');
+assert.equal(explicitMemoryText('I want the model to remember: stop ending every answer with a question.'), 'stop ending every answer with a question');
+assert.equal(explicitMemoryText("Please don't forget that my sister is called Marie."), 'my sister is called Marie');
+assert.equal(explicitMemoryText('Make sure you remember I prefer short status updates.'), 'I prefer short status updates');
+assert.equal(explicitMemoryText('Do you remember what I said yesterday?'), null);
+assert.equal(explicitMemoryText('How does the Room remember things?'), null);
+ok('direct remember requests are recognised, while questions about memory are not');
+
+const conversationsSrc = readFileSync(fileURLToPath(new URL('../server/src/services/conversations.js', import.meta.url)), 'utf8');
+const sendMessageBody = conversationsSrc.slice(conversationsSrc.indexOf('export async function sendMessage'), conversationsSrc.indexOf('// Thin exported entry point'));
+assert.ok(sendMessageBody.indexOf('saveExplicitChatMemory(trimmed') < sendMessageBody.indexOf('resolveTurn({'), 'the memory must be saved before routing and prompt assembly');
+ok('an explicit memory is written before the answer prompt is assembled');
 
 // The Core addition is a dated, self-contained record — a future agent reading
 // fractal_operational_core.md needs the reasoning and the provenance, not just

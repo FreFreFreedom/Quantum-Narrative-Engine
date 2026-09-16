@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-24 |
+| **DONE — explicit chat memory added 2026-09-16** | 2026-08-24 |
 
 Split out of [one-chat-many-minds.md](one-chat-many-minds.md) Part 1 — the substrate
 piece of that larger plan, sent as its own task because it is the biggest single part and
@@ -28,6 +28,22 @@ library" below.)
 This plan is backend + a small frontend panel only. It does **not** include the per-turn
 router or the `/ask`/`/check`/`/second` commands — those are separate, larger pieces of
 the parent plan, not sent this round.
+
+## 2026-09-16 amendment — saying “remember” must itself remember
+
+The original system had two entrances: a deliberate Save control, and an automatic
+harvest after several turns. It did not cover the most natural entrance: Antoine saying
+inside an ordinary Room message, “remember that…” or “I want the model to remember…”.
+The assistant could agree while the harvest had not run, leaving no durable fact.
+
+This is now synchronous and deterministic. `services/mind.js#explicitMemoryText`
+recognises only direct commands or stated wishes to remember; questions about how memory
+works do not match. `saveExplicitChatMemory` writes the exact meaning as a central fact,
+with `source_note = 'chat_explicit'`. `services/conversations.js#sendMessage` calls it
+before routing or building the answer prompt, so that same answer and every later thread
+already receive the fact through `mindBlock()`. Model generation is not used to decide
+whether the memory lands. The first saved preference is to stop using immune-system
+metaphors unless Antoine asks for that lens.
 
 ## Why not an existing library
 

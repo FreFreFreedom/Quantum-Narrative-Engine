@@ -33,7 +33,7 @@ import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
-import { mindBlock, harvest as harvestMind } from './mind.js';
+import { mindBlock, harvest as harvestMind, saveExplicitChatMemory } from './mind.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
 
@@ -2374,6 +2374,13 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   if (INTERVIEW_START_RE.test(trimmed)) return startInterview(convoId, { onToken, onStatus, signal });
   if (ANSWER_NOW_RE.test(trimmed)) return answerNow(convoId, { onToken, onStatus, signal });
 
+  // "Remember this" is a synchronous write, not a hope that the background
+  // harvest will notice it several turns later. Saving before lane routing and
+  // prompt assembly means the instruction is already inside mindBlock() for the
+  // answer to this very message, as well as every future Room thread.
+  const explicitMemory = saveExplicitChatMemory(trimmed, { convoId });
+  if (explicitMemory?.error) return { error: 'memory_save_failed', message: 'I could not save that memory.' };
+
   // Resolve the lane BEFORE any model cost. The router is free and deterministic
   // except for one tiny tie-break judge call; it never dispatches a coding task
   // (that is the owner's click, on an implement proposal).
@@ -2423,6 +2430,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   out.userMessageId = mid;
   out.laneTag = out.laneTag || turn.lane?.tag || null;
   out.intent = turn.intent;
+  if (explicitMemory) out.memorySaved = { id: explicitMemory.id, text: explicitMemory.text };
   return out;
 }
 
