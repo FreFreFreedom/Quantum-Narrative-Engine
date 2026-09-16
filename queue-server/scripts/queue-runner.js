@@ -644,7 +644,9 @@ async function usageForReport() {
   } catch { /* unknown — the rail shows a dash */ }
   let codex = null;
   try { codex = codexCli.readQuota(); } catch { /* quota must never break a heartbeat */ }
-  return { ...usage, side, codex };
+  let codexSecond = null;
+  try { codexSecond = codexCli.readQuota(join(homedir(), '.codex-second', 'sessions')); } catch { /* independent account, unknown is a dash */ }
+  return { ...usage, side, codex, codexSecond };
 }
 
 // This Mac's OpenCode is logged into providers the container never can be

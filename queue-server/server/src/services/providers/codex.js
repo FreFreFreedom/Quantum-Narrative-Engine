@@ -112,14 +112,16 @@ function quotaFromLines(lines, now) {
       const limits = event.payload?.rate_limits ?? event.rate_limits;
       if (!limits) continue;
       if (limits.limit_id && limits.limit_id !== 'codex') continue;
-      const bucket = (value, minutes) => {
-        if (!value || value.window_minutes !== minutes || !Number.isFinite(value.used_percent)
+      const bucket = (minutes) => {
+        const value = [limits.primary, limits.secondary].find(v => v?.window_minutes === minutes);
+        if (!value) return null;
+        if (!Number.isFinite(value.used_percent)
           || value.used_percent < 0 || value.used_percent > 100
           || !Number.isFinite(value.resets_at)) throw new Error('Invalid quota window');
         return { utilizationPct: value.used_percent, resetsAt: new Date(value.resets_at * 1000).toISOString() };
       };
       return freshQuota({
-        session: bucket(limits.primary, 300), week: bucket(limits.secondary, 10080),
+        session: bucket(300), week: bucket(10080),
         plan: typeof limits.plan_type === 'string' ? limits.plan_type : null,
         credits: limits.credits ?? null, at: event.timestamp,
       }, now);

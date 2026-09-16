@@ -970,3 +970,11 @@ scientific defaults and semantic duplicates before anything is stored. The
 implementation must reconcile completed but unmerged commit `76c301b` (natural
 requests, lasting context, progressive exact counts) with `90d9a63` and
 `3b3e28f` already on `develop` (long asks, forget and regenerate controls).
+
+## Second Codex account quota (2026-09-15)
+
+The runner reports `~/.codex-second/sessions` separately as `codexSecond` in
+`/api/agent/usage`, displayed as Codex 2 in the rail and AI Settings. This account
+reports a weekly-only limit in `primary` (10080 minutes), with no `secondary`.
+The reader maps windows by duration, not by position; absent windows stay unknown.
+This adds quota visibility only, not a second execution provider.

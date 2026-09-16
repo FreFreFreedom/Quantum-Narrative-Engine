@@ -552,7 +552,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    height moves Settings and Look out from under the cursor the moment the rail opens.
    Shut, the grid is replaced by two short bars — the five-hour window of each
    account — with the month's spend underneath. */
-.rail-foot #usageStripHost { flex:0 0 auto; height:120px; overflow:hidden; padding:0 3px; }
+.rail-foot #usageStripHost { flex:0 0 auto; height:144px; overflow:hidden; padding:0 3px; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot #usageStripHost { padding:0 2px; }
 .uq-grid { display:flex; flex-direction:column; }
 .uq-grid .uq-line { padding:2px 4px; }
@@ -17136,6 +17136,11 @@ function usageFullHtml(u) {
 
   return `<div class="uq-panel">
     ${lane('Building account', 'Runs your tasks — the account that writes code.', build, 'No reading.')}
+    ${['codex', 'codexSecond'].map((key, i) => {
+      const q = currentCodexQuota(u, key);
+      return lane(i ? 'Codex 2' : 'Codex', 'ChatGPT subscription — remaining allowance.',
+        usageFullRow('Next 5 hours', q?.session) + usageFullRow('This week', q?.week), '—');
+    }).join('')}
     ${lane('Paid lane', 'Real money, Idea Studio.', paid, 'Off.')}
   </div>`;
 }
@@ -17196,8 +17201,8 @@ function uqShutBar(name, usage) {
 // Same rule as the server's own: a reading holds until the window it measures
 // resets, since the numbers only exist while Codex is being used and would
 // otherwise blank an hour after every session. Each window stands or falls alone.
-function currentCodexQuota(u) {
-  const quota = u && u.codex;
+function currentCodexQuota(u, account = 'codex') {
+  const quota = u && u[account];
   const at = Date.parse(quota && quota.at);
   const now = Date.now();
   if (!Number.isFinite(at) || at > now + 2 * 60000) return null;
@@ -17267,12 +17272,14 @@ async function loadUsage() {
       ${uqRow('PA', pa)}
       ${uqRow('Antoine', ant)}
       ${uqRow('Codex', codex)}
+      ${uqRow('Codex 2', currentCodexQuota(u, 'codexSecond'))}
       ${money}
     </div>
     <div class="uq-shut">
       ${uqShutBar('PA', pa)}
       ${uqShutBar('Ant', ant)}
       ${uqShutBar('Codex', codex)}
+      ${uqShutBar('Cx 2', currentCodexQuota(u, 'codexSecond'))}
       ${cap && typeof cap.spentUsd === 'number' ? `<span class="uq-spend" title="Spent this month">$${cap.spentUsd.toFixed(2)}</span>` : ''}
     </div>`;
 }

@@ -394,6 +394,7 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
       ...usage,
       openai,
       codex: runnerStatus().connected ? freshQuota(fromRunner?.codex) : null,
+      codexSecond: runnerStatus().connected ? freshQuota(fromRunner?.codexSecond) : null,
       schedulerLimitResetAt: queueDeferUntil(),
     });
   } catch (err) {
