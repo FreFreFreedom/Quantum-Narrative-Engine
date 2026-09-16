@@ -24,6 +24,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## How he wants to be worked with
 
+- Do not use immune-system metaphors in answers unless Antoine specifically asks for that lens. — This is a direct preference about the language used in answers. Existing project material about immune logic remains part of the project history, but it must not become a default metaphor.
 - When exploring vision directions, go deep—full paradigm investigation, not surface summaries — Wants thorough exploration of the ontology and its mechanisms, not executive summaries or simplified explanations
 - Vision exploration should be bold and unrestricted, not bounded by feasibility or 'realism'—focus on defining core elements of the full paradigm's power — During deep vision exploration, no plans or app modifications; pure examination of what could be
 - Design must have elegance, beauty, power, efficiency, AND simplicity—all four equally, not traded off.
