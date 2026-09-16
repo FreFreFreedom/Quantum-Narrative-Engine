@@ -94,6 +94,7 @@ tracked as open work.
 
 | Plan | What it is | Note |
 |---|---|---|
+| [attachments-in-room-composers.md](attachments-in-room-composers.md) | One paperclip in the main Room and every side talk: images ride with the message to the existing vision lane; PDFs and common text files become lasting, tool-readable conversation context. | **DONE** 2026-09-15 |
 | [cheap-paid-opencode-models.md](cheap-paid-opencode-models.md) | DeepSeek/Qwen/Zhipu-paid/Kimi wired into OpenCode's own `provider` config with real per-token cost, kept out of every automatic/free fallback chain; the New-Prompt/AI-Settings model pickers extended to allow just these four provider families. | **DONE** 2026-09-13 — verified live against the actual OpenCode config; Antoine still needs to add his own API keys before any of these run for real |
 | [free-model-file-tools.md](free-model-file-tools.md) | The free chat-only providers can run implement-mode Dispatch Queue tasks with real file tools (read/write/edit/list, no shell), behind two required gates: an env master switch (`ALLOW_AI_ROUTER_TOOLS`, off by default) and a per-task checkbox that only appears once the switch is on. | **DONE** 2026-09-13 — sandboxing and both gates verified; two minor follow-ups noted in the code (a tight rate-limit edge case, a silent-no-op path if worktree creation ever fails) |
 | [opencode-go-usage-link.md](opencode-go-usage-link.md) | Two plain links to `opencode.ai/go` — one in AI Settings' quota pane, one as a rail icon button. | **DONE** 2026-09-13 — confirmed live in production |

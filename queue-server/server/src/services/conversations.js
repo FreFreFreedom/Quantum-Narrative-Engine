@@ -1527,7 +1527,7 @@ function noticeFor(turn, existingNotice) {
 
 // The streaming turn, now laned. `turn` is the resolveTurn() decision; its
 // feature/model drive the generation, and repoFacts (if any) ride in the prompt.
-async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = null, signal = null) {
+async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = null, signal = null, images = null) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ctx = await convoContext(convo);
@@ -1585,6 +1585,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     // the same OpenAI prompt cache instead of scattering across machines (plan
     // "make-the-caching-actually-work"). Only OpenAI's adapter reads this.
     cacheKey: convoId,
+    images, requireVision: !!images?.length,
     onUsage: (usage, where) => {
       const cached = usage?.prompt_tokens_details?.cached_tokens || 0;
       console.log(`[studio-turn] prompt ${prompt.length} chars (map ${mapChars}) → prompt_tokens ${usage?.prompt_tokens ?? '?'}, cached ${cached}`);
@@ -1621,7 +1622,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
 // The non-streaming twin. Reached only when the client does not ask for NDJSON,
 // so it uses generateTextStream without a token callback — that still honours the
 // paid-lane cap and notice, and is the single code path.
-async function runChatTurn(convoId, userId, turn) {
+async function runChatTurn(convoId, userId, turn, images = null) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ctx = await convoContext(convo);
@@ -1646,6 +1647,7 @@ async function runChatTurn(convoId, userId, turn) {
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
+    images, requireVision: !!images?.length,
   });
   if (result.error) return saveFailedTurn(convoId, result, turn);
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
@@ -2304,12 +2306,31 @@ Respond with ONLY this JSON object and nothing else:
 // onToken, when supplied by the route, turns the ordinary text turn into a
 // streamed one. Slash commands stay non-streamed: they are structured actions
 // (plan, handoff, fold) whose value is the finished artefact, not the typing.
-export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, onStatus = null, override = undefined, signal = null, quotes = null, body = null } = {}) {
+export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, onStatus = null, override = undefined, signal = null, quotes = null, body = null, images = null, attachments = null } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const trimmed = String(text || '').trim();
   if (!trimmed) return { error: 'empty' };
+
+  // Images ride only with this turn. The transcript keeps their names, not the
+  // base64 bytes: loading an old Room thread must not download every photograph
+  // again. The vision lane receives at most four common web-image formats and a
+  // bounded total payload; anything else is refused instead of being sent blind.
+  const imageList = Array.isArray(images)
+    ? images
+      .map((x) => ({
+        name: String(x?.name || 'image').slice(0, 180),
+        mimeType: String(x?.mimeType || '').toLowerCase(),
+        dataUrl: String(x?.dataUrl || ''),
+      }))
+      .filter((x) => /^image\/(?:jpeg|png|webp|gif)$/.test(x.mimeType)
+        && x.dataUrl.startsWith(`data:${x.mimeType};base64,`))
+      .slice(0, 4)
+    : [];
+  const imageChars = imageList.reduce((n, x) => n + x.dataUrl.length, 0);
+  if (Array.isArray(images) && images.length && !imageList.length) return { error: 'invalid_images', message: 'Those images could not be read.' };
+  if (imageChars > 18_000_000) return { error: 'images_too_large', message: 'Those images are too large to send together.' };
 
   // Sticky lane (plan "chat-model-picker"): a caller with no opinion on the lane
   // (override left undefined) reads whatever this conversation is pinned to —
@@ -2381,12 +2402,18 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
       .slice(0, 20)
     : [];
   const typed = String(body || '').trim();
-  const userMeta = quoteList.length && typed ? JSON.stringify({ quotes: quoteList, body: typed }) : null;
+  const attachmentMeta = (Array.isArray(attachments) ? attachments : imageList)
+    .map((x) => ({ name: String(x?.name || 'file').slice(0, 180), mimeType: String(x?.mimeType || '').slice(0, 100) }))
+    .slice(0, 8);
+  const meta = {};
+  if (quoteList.length && typed) { meta.quotes = quoteList; meta.body = typed; }
+  if (attachmentMeta.length) meta.attachments = attachmentMeta;
+  const userMeta = Object.keys(meta).length ? JSON.stringify(meta) : null;
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta) VALUES (?,?,?,?,?,?)`)
     .run(mid, convoId, 'user', 'chat', sendText, userMeta);
   const out = onToken
-    ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus, signal)
-    : await runChatTurn(convoId, userId, turn);
+    ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus, signal, imageList.map((x) => x.dataUrl))
+    : await runChatTurn(convoId, userId, turn, imageList.map((x) => x.dataUrl));
   if (out.error === 'cancelled') db.prepare(`DELETE FROM convo_messages WHERE id=?`).run(mid);
   if (out.error) return out;
   out.laneTag = out.laneTag || turn.lane?.tag || null;

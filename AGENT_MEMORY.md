@@ -978,3 +978,13 @@ The runner reports `~/.codex-second/sessions` separately as `codexSecond` in
 reports a weekly-only limit in `primary` (10080 minutes), with no `secondary`.
 The reader maps windows by duration, not by position; absent windows stay unknown.
 This adds quota visibility only, not a second execution provider.
+
+## Attachments live in both Room composers (2026-09-15)
+
+The main Room and Side Talks use the same `studioEmbed()` paperclip. PDFs and common
+text/code files reuse `conversations.js#attachFile`: browser-extracted text becomes a
+lasting `File:` subject on that exact conversation. Images ride only with the current
+message to `generateText(... images)` and force the existing free Gemini vision lane;
+the transcript stores their names, never their base64 bytes. A vision turn refuses
+plainly when that lane is unavailable rather than answering blind. Full shape:
+`plans/attachments-in-room-composers.md`.

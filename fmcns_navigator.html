@@ -1544,6 +1544,19 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-turn.has-analogy::before { content:''; position:absolute; left:-13px; top:7px; width:7px; height:7px;
   border-radius:50%; background:var(--c-accent); opacity:.7; }
 .se-compose { display:flex; align-items:flex-end; gap:8px; border-top:1px solid var(--c-border); margin-top:2px; padding-top:8px; }
+.se-attach { flex:none; align-self:center; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center;
+  border:0; background:transparent; color:var(--c-ink-4); border-radius:var(--r-sm); cursor:pointer; }
+.se-attach:hover:not(:disabled) { color:var(--c-ink); background:var(--c-hover-wash); }
+.se-attach:disabled { opacity:.35; cursor:default; }
+.se-attach .ic { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; }
+.se-filebar { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.se-filebar:empty { display:none; }
+.se-filechip, .se-message-file { display:inline-flex; align-items:center; gap:5px; max-width:17rem; padding:3px 7px;
+  border:1px solid var(--c-border-2); background:var(--c-surface-2); color:var(--c-ink-3); border-radius:var(--r-sm); font-size:var(--fs-xs); }
+.se-filechip span, .se-message-file span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.se-filechip img { width:28px; height:28px; border-radius:var(--r-xs); object-fit:cover; }
+.se-filechip button { border:0; background:transparent; color:var(--c-ink-4); cursor:pointer; padding:0 1px; font:inherit; }
+.se-message-files { display:flex; flex-wrap:wrap; gap:5px; margin:0 0 5px; }
 /* What the last answer cost, on the paid lane only. It sits INSIDE the composer
    rather than on a line of its own: a horizontal band is the scarcest thing on
    this screen, and this is a glance, not a reading. Absent entirely when nothing
@@ -3230,7 +3243,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <div class="room-pane-acts">
             <button type="button" class="uicon" id="roomAttachBtn" title="Attach a card to this thread" aria-label="Attach a card to this thread">＋</button>
             <button type="button" id="roomDropZone" class="uicon room-dropzone" title="Drag a file here, or click to browse" aria-label="Attach a file"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-upload"/></svg></button>
-            <input type="file" id="roomFileInput" hidden accept=".md,.txt,.pdf">
+            <input type="file" id="roomFileInput" hidden accept=".md,.txt,.pdf,.csv,.json,.js,.mjs,.cjs,.ts,.tsx,.jsx,.html,.css,.xml,.yaml,.yml,.log,.srt">
           </div>
           <div id="roomAttachPick" hidden>
             <input class="searchbox" id="roomPickSearch" placeholder="Find a card…" autocomplete="off">
@@ -11846,6 +11859,16 @@ async function roomLoadPickSources() {
 // never a CDN); .md/.txt are read directly. No library can turn .doc/.docx into
 // text client-side, so they're not offered.
 const ROOM_FILE_MAX_CHARS = 3000000;
+const ROOM_TEXT_FILE_EXTS = new Set(['.md', '.txt', '.csv', '.json', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.html', '.css', '.xml', '.yaml', '.yml', '.log', '.srt']);
+const ROOM_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+function roomFileExt(file) { return `.${String(file?.name || '').split('.').pop() || ''}`.toLowerCase(); }
+function roomFileKind(file) {
+  if (ROOM_IMAGE_TYPES.has(String(file?.type || '').toLowerCase())) return 'image';
+  const ext = roomFileExt(file);
+  if (ext === '.pdf') return 'pdf';
+  if (ROOM_TEXT_FILE_EXTS.has(ext) || String(file?.type || '').startsWith('text/')) return 'text';
+  return null;
+}
 let pdfjsLoadPromise = null;
 function loadPdfjs() {
   if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
@@ -11930,39 +11953,51 @@ function roomDropZoneSay(msg, isNote, holdMs) {
   }, holdMs || 2500);
 }
 
-async function roomUploadFile(file) {
-  if (!file) return;
-  if (!roomSel) return roomDropZoneSay('No conversation selected', true);
-  const ext = `.${file.name.split('.').pop() || ''}`.toLowerCase();
-  const allowedTypes = ['.md', '.txt', '.pdf'];
-  if (!allowedTypes.includes(ext)) return roomDropZoneSay(`Unsupported file type: ${ext}`, true);
-
-  roomDropZoneSay(`Reading "${file.name}"…`, false, 60000);
+async function roomUploadFileToConvo(file, convoId) {
+  if (!file || !convoId) throw new Error('No conversation selected');
+  const kind = roomFileKind(file);
+  if (kind !== 'pdf' && kind !== 'text') throw new Error(`Unsupported file type: ${roomFileExt(file)}`);
   let text = '';
   let outline = [];
-  try {
-    if (ext === '.pdf') { const out = await extractPdfText(file); text = out.text; outline = out.outline || []; }
-    else text = await file.text();
-  } catch (err) {
-    return roomDropZoneSay(`Could not read file: ${err.message}`, true, 3000);
-  }
-  if (!text) return roomDropZoneSay('No readable text found in this file', true, 3000);
+  if (kind === 'pdf') { const out = await extractPdfText(file); text = out.text; outline = out.outline || []; }
+  else text = await file.text();
+  if (!text) throw new Error('No readable text found in this file');
   let truncated = false;
   if (text.length > ROOM_FILE_MAX_CHARS) {
     text = text.slice(0, ROOM_FILE_MAX_CHARS); truncated = true;
     outline = outline.filter((o) => o.charStart < ROOM_FILE_MAX_CHARS);
   }
-
   let sha = '';
   try {
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
     sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
   } catch {}
+  const out = await apiWrite(`/api/convos/${encodeURIComponent(convoId)}/files`, 'POST', {
+    filename: file.name, mimeType: file.type || '', text, bytes: file.size, sha, outline,
+  });
+  return { ...out, truncated };
+}
 
+function roomImageDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!ROOM_IMAGE_TYPES.has(String(file?.type || '').toLowerCase())) return reject(new Error('That image format is not supported'));
+    if (file.size > 8 * 1024 * 1024) return reject(new Error('That image is over 8 MB'));
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Could not read that image'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function roomUploadFile(file) {
+  if (!file) return;
+  if (!roomSel) return roomDropZoneSay('No conversation selected', true);
+  const kind = roomFileKind(file);
+  if (kind !== 'pdf' && kind !== 'text') return roomDropZoneSay(`Unsupported file type: ${roomFileExt(file)}`, true);
+
+  roomDropZoneSay(`Reading "${file.name}"…`, false, 60000);
   try {
-    await apiWrite(`/api/convos/${roomSel}/files`, 'POST', {
-      filename: file.name, mimeType: file.type || '', text, bytes: file.size, sha, outline,
-    });
+    const uploaded = await roomUploadFileToConvo(file, roomSel);
     // The upload attaches the file as a subject server-side, but the UI caches
     // both the attached-card list and the picker's source lists — refresh them
     // so the file shows up in "Attached" immediately and is offered by the picker.
@@ -11970,7 +12005,7 @@ async function roomUploadFile(file) {
     await loadRoomSubjects();
     await roomLoadPickSources();
     renderRoomPick();
-    roomDropZoneSay(`File "${file.name}" uploaded${truncated ? ' (truncated)' : ''}`);
+    roomDropZoneSay(`File "${file.name}" uploaded${uploaded.truncated ? ' (truncated)' : ''}`);
   } catch (err) {
     roomDropZoneSay(`Upload failed: ${err.message}`, true, 3000);
   }
@@ -21344,6 +21379,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (meta.checked) out.checked = meta.checked;
         if (meta.answered) out.answered = meta.answered;
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
+        if (Array.isArray(meta.attachments)) out.attachments = meta.attachments;
       }
       return out;
     });
@@ -21395,9 +21431,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // only the words he typed, with the passages as a folded line above it.
     var typed = carried && carried.body ? String(carried.body).trim() : '';
     var carriedQuotes = carried && carried.quotes && carried.quotes.length ? carried.quotes.slice() : null;
+    var carriedAttachments = carried && carried.attachments && carried.attachments.length ? carried.attachments.slice() : null;
+    var attachmentMeta = carriedAttachments ? carriedAttachments.map(function(a){ return { name: a.name, mimeType: a.mimeType || '' }; }) : null;
     e.msgs.push({ role: 'user', kind: 'chat', text: text,
       body: carriedQuotes && typed ? typed : undefined,
-      quotes: carriedQuotes && typed ? carriedQuotes : undefined });
+      quotes: carriedQuotes && typed ? carriedQuotes : undefined,
+      attachments: attachmentMeta || undefined });
     if(repaint) repaint();
     var sentAt = e.msgs.length;
     e.stream = '';
@@ -21423,6 +21462,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       body: JSON.stringify((function(){
         var payload = { text: text };
         if(carriedQuotes && typed){ payload.quotes = carriedQuotes; payload.body = typed; }
+        if(carriedAttachments){
+          payload.attachments = attachmentMeta;
+          payload.images = carriedAttachments.filter(function(a){ return a.kind === 'image' && a.dataUrl; })
+            .map(function(a){ return { name: a.name, mimeType: a.mimeType, dataUrl: a.dataUrl }; });
+        }
         var lane = laneOverride !== undefined ? laneOverride : e.lane;
         if(laneOverride === undefined && e.lane === undefined) return payload;
         payload.override = lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null } : null;
@@ -21441,6 +21485,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             ? 'No plan yet — ask for the brief first, then send it to the queue.'
             : (d.message || d.text || 'Something went wrong (' + d.error + ').');
           e.msgs.push({ role: 'assistant', kind: 'chat', text: msg });
+          if(carriedAttachments) e.pendingAttachments = carriedAttachments;
         } else if(d.prompt){
           e.promptId = (d.prompt.id || d.prompt.prompt_id) || e.promptId;
           e.msgs.push({ role: 'assistant', kind: 'chat', text: d.already
@@ -21486,6 +21531,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           // hand it back to the box, edited or not. Nothing to wait for.
           if(e.msgs[sentAt - 1] && e.msgs[sentAt - 1].role === 'user') e.msgs.splice(sentAt - 1, 1);
           e.draft = text; e.draftForce = true; saveDraft(e);
+          if(carriedAttachments) e.pendingAttachments = carriedAttachments;
           return;
         }
         // A good answer can take well over a minute, and the connection in front
@@ -21979,6 +22025,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +   '<div class="se-markbar"></div>'
         +   '<div class="se-aboutbar"></div>'
         +   '<div class="se-quotebar"></div>'
+        +   '<div class="se-filebar"></div>'
         +   '<div class="se-compose">'
         +     '<button type="button" class="se-more" data-se-act="cmds" title="What else this conversation can do" aria-label="What else this conversation can do">＋</button>'
         +     '<span class="se-lanewrap">'
@@ -21996,6 +22043,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +     '</span>'
         +     '<button type="button" class="se-interview" title="Ask me questions before you answer">Interview</button>'
         +     '<button type="button" class="se-answer-now" style="display:none">Answer now</button>'
+        +     ((opts.type === 'open' || opts.type === 'side')
+              ? '<button type="button" class="se-attach" title="Add an image, PDF or text file" aria-label="Add an image, PDF or text file"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-upload"/></svg></button><input type="file" class="se-file-input" hidden multiple accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.md,.txt,.csv,.json,.js,.mjs,.cjs,.ts,.tsx,.jsx,.html,.css,.xml,.yaml,.yml,.log,.srt">'
+              : '')
         +     '<textarea class="se-input" rows="1" placeholder="Say what you\'re thinking…"></textarea>'
         +     '<span class="se-spend" hidden></span>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
@@ -22036,12 +22086,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var input = host.querySelector('.se-input');
     var send = host.querySelector('.se-send');
     var say = function(text){
-      if(e.busy || !String(text || '').trim()) return;
+      var pending = (e.pendingAttachments || []).slice();
+      if(e.busy || (!String(text || '').trim() && !pending.length)) return;
+      var actualText = String(text || '').trim() || (pending.some(function(a){ return a.kind === 'image'; })
+        ? 'Look at the attached image.' : 'Read the attached file.');
       // Clear only once the message is actually on its way. Losing what someone
       // typed is worse than any error message.
-      if(sendTurn(e, withQuote(e, text), repaint, opts.onDone, undefined,
-                  { body: text, quotes: (e.quotes || []).slice() })){
-        input.value = ''; e.quotes = []; e.draft = '';
+      if(sendTurn(e, withQuote(e, actualText), repaint, opts.onDone, undefined,
+                  { body: text, quotes: (e.quotes || []).slice(), attachments: pending })){
+        input.value = ''; e.quotes = []; e.pendingAttachments = []; e.draft = '';
         saveDraft(e);
         grow(input);
       }
@@ -22058,6 +22111,49 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     };
     // One button, two jobs: send while idle, stop while an answer is on its way.
     send.onclick = function(){ if(e.busy) stopTurn(e); else say(input.value); };
+
+    // The main Room and its side talks share this composer. Documents use the
+    // Room's existing extracted-text attachment path; images ride with the next
+    // message so the vision lane can actually see them. Nothing is sent merely
+    // because it was picked.
+    var attachBtn = host.querySelector('.se-attach');
+    var fileInput = host.querySelector('.se-file-input');
+    var addFiles = function(files){
+      Array.from(files || []).slice(0, 6).reduce(function(chain, file){
+        return chain.then(async function(){
+          var kind = roomFileKind(file);
+          if(!kind){ e.note = 'That file type is not supported.'; repaint(); return; }
+          e.note = 'Reading “' + file.name + '”…'; repaint();
+          try {
+            if(kind === 'image'){
+              var dataUrl = await roomImageDataUrl(file);
+              if(!e.pendingAttachments) e.pendingAttachments = [];
+              var imageCount = e.pendingAttachments.filter(function(a){ return a.kind === 'image'; }).length;
+              if(imageCount >= 4) throw new Error('You can send up to four images at once');
+              var imageChars = e.pendingAttachments.reduce(function(n, a){ return n + (a.dataUrl ? a.dataUrl.length : 0); }, 0);
+              if(imageChars + dataUrl.length > 18000000) throw new Error('Those images are too large to send together');
+              e.pendingAttachments.push({ kind: 'image', name: file.name, mimeType: file.type, dataUrl: dataUrl });
+            } else {
+              var uploaded = await roomUploadFileToConvo(file, e.convoId);
+              if(!e.pendingAttachments) e.pendingAttachments = [];
+              e.pendingAttachments.push({ kind: 'document', id: uploaded.id, name: uploaded.title || file.name, mimeType: file.type || '' });
+              roomPickFiles = null;
+              if(typeof roomSel !== 'undefined' && e.convoId === roomSel){
+                await loadRoomSubjects(); await roomLoadPickSources(); renderRoomPick();
+              }
+            }
+            e.note = ''; repaint();
+          } catch(err){ e.note = err && err.message ? err.message : 'Could not attach that file.'; repaint(); }
+        });
+      }, Promise.resolve());
+    };
+    if(attachBtn && fileInput){
+      attachBtn.onclick = function(ev){ ev.stopPropagation(); if(e.convoId && !e.busy) fileInput.click(); };
+      fileInput.onchange = function(){ var files = fileInput.files; fileInput.value = ''; addFiles(files); };
+      var compose = host.querySelector('.se-compose');
+      compose.ondragover = function(ev){ ev.preventDefault(); };
+      compose.ondrop = function(ev){ ev.preventDefault(); addFiles(ev.dataTransfer && ev.dataTransfer.files); };
+    }
     host.querySelectorAll('[data-se-act]').forEach(function(b){
       b.onclick = function(ev){
         ev.stopPropagation();
@@ -22685,6 +22781,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var was = log.scrollTop;
     log.innerHTML = logHtml(e);
     log.scrollTop = atBottom ? log.scrollHeight : was;
+    var filebar = host.querySelector('.se-filebar');
+    if(filebar){
+      filebar.innerHTML = (e.pendingAttachments || []).map(function(a, i){
+        return '<span class="se-filechip">'
+          + (a.kind === 'image' ? '<img src="' + qEscAttr(a.dataUrl) + '" alt="">' : '')
+          + '<span>' + qEsc(a.name || 'file') + '</span>'
+          + '<button type="button" data-se-file-remove="' + i + '" aria-label="Remove ' + qEscAttr(a.name || 'file') + '">×</button></span>';
+      }).join('');
+      filebar.querySelectorAll('[data-se-file-remove]').forEach(function(b){
+        b.onclick = function(){
+          var i = Number(b.getAttribute('data-se-file-remove'));
+          var a = e.pendingAttachments[i];
+          e.pendingAttachments.splice(i, 1); fillEmbed(host, e, opts);
+          if(a && a.kind === 'document' && a.id && e.convoId){
+            apiWrite('/api/convos/' + encodeURIComponent(e.convoId) + '/subjects/file/' + encodeURIComponent(a.id), 'DELETE').catch(function(){});
+          }
+        };
+      });
+    }
     // An answer that arrived whole (see sendTurn's arrivedWhole) gets to reveal
     // itself a beat at a time, once — on its rendered blocks (paragraphs, list
     // items…), never on the raw markdown source, so nothing about how it reads
@@ -22976,6 +23091,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     sendBtn.textContent = e.busy ? '■' : '↵';
     sendBtn.title = e.busy ? 'Stop this answer (Esc)' : 'Send (Enter)';
     sendBtn.classList.toggle('is-stop', !!e.busy);
+    var attachBtn = host.querySelector('.se-attach');
+    if(attachBtn) attachBtn.disabled = !e.convoId || !!e.busy;
 
     var cmds = host.querySelector('.se-cmds');
     cmds.innerHTML = '';
@@ -23077,6 +23194,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
                + '<span class="se-qfold-txt">\u201c' + qEsc(qt) + '\u201d</span></button>';
         }).join('');
       }
+      var filesHtml = '';
+      if (you && m.attachments && m.attachments.length) {
+        filesHtml = '<div class="se-message-files">' + m.attachments.map(function(a){
+          return '<span class="se-message-file"><span>' + qEsc(a.name || 'file') + '</span></span>';
+        }).join('') + '</div>';
+      }
       var shown = (you && m.body) ? m.body : m.text;
       // A small "Answer now" beneath the newest interview question — same action
       // as the composer's, offered right where the question is, so it is never
@@ -23087,6 +23210,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + (idx === e.freshMsgIdx ? ' data-fresh="1"' : '') + '>'
            +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  foldHtml
+           +  filesHtml
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
                     : '<div class="se-body' + (you ? '' : ' md') + '">' + fmtBody(shown, !you, m.id || null) + '</div>')
            +  actsHtml

@@ -501,7 +501,10 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   // CLI-driven ones (claude-code, claude-side, opencode) take a single prompt and
   // hand back a single answer, so they are told the tools are not there instead of
   // being left to pretend they used them.
-  const wantsTools = !!(tools?.length && dispatchTool);
+  // A vision turn must reach runToolless, which owns the multimodal message
+  // shape. The catalogue tool loop is text-only; letting it win here would send
+  // a perfectly valid image request with the image silently missing.
+  const wantsTools = !!(tools?.length && dispatchTool && !(images && images.length));
   // The note goes on, and then the caller's closing reminder goes on AFTER it.
   // Order is load-bearing and this is the one place it can go wrong: a model
   // weights the END of a long prompt most heavily (the reason conversations.js
@@ -737,7 +740,7 @@ function benched(providerId, model = '') {
   return !router.mayProbe(providerId, model);
 }
 
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null, images = null }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null, images = null, requireVision = false }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
 
@@ -757,6 +760,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       ? 'gemini-flash-latest'
       : (!benched('google-ai-studio', 'gemini-flash-lite-latest') ? 'gemini-flash-lite-latest' : null);
     if (!process.env.GOOGLE_AI_STUDIO_API_KEY || !visionModel) {
+      if (requireVision) return { error: 'vision_unavailable', message: 'The image-reading lane is unavailable right now. Your image was not sent blind.' };
       images = null;
     } else {
       explicitProvider = 'google-ai-studio';
@@ -1261,8 +1265,23 @@ export async function generateTextStream({
   // The helper lane costs no money and returns instantly when no runner is
   // attached, so it is the right last resort for a turn someone is waiting on.
   claudeLastResort = false, helperWaitMs = null,
-  cacheKey = null, tailReminder = null, onStatus = null,
+  cacheKey = null, tailReminder = null, onStatus = null, images = null, requireVision = false,
 }) {
+  // Vision requests are deliberately one-shot. generateText() already owns the
+  // image-capable-lane rule and sends data URLs in the provider's multimodal
+  // shape; the paid streaming branch below is text-only. Keeping the fork here
+  // means Room and side-talk images work on the same free Gemini path as the
+  // board's visual reading, without teaching every text streamer about images.
+  if (images && images.length) {
+    const r = await generateText({
+      prompt, feature, maxTokens, label, model: explicitModel,
+      provider: explicitProvider, account: explicitAccount, timeoutMs,
+      allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap,
+      cacheKey, tailReminder, onStatus, onUsage, images, requireVision,
+    });
+    if (r?.text && onToken) onToken(r.text);
+    return r;
+  }
   const { defaults } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // Same override rule as generateText: a caller-named provider (the Room's

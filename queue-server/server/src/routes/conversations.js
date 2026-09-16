@@ -35,7 +35,7 @@ function statusFor(err) {
   if (err === 'not_found' || err === 'not_exist' || err === 'no_plan' || err === 'not_attached') return 404;
   if (err === 'unknown_subject_type' || err === 'empty' || err === 'too_many_subjects'
       || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required' || err === 'no_such_message' || err === 'no_title'
-      || err === 'invalid_kind' || err === 'invalid_mode') return 400;
+      || err === 'invalid_kind' || err === 'invalid_mode' || err === 'images_too_large' || err === 'invalid_images') return 400;
   return 500;
 }
 
@@ -466,7 +466,7 @@ export function conversationsRoutes() {
         : null);
 
     if (!wantsStream) {
-      const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id, override, quotes: req.body?.quotes, body: req.body?.body });
+      const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id, override, quotes: req.body?.quotes, body: req.body?.body, images: req.body?.images, attachments: req.body?.attachments });
       if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
       return res.json(out);
     }
@@ -501,6 +501,8 @@ export function conversationsRoutes() {
         // above his message instead of repeating them inside it.
         quotes: req.body?.quotes,
         body: req.body?.body,
+        images: req.body?.images,
+        attachments: req.body?.attachments,
         signal: cancel.signal,
         onToken: (t) => { if (!clientGone()) write({ type: 'token', text: t }); },
         // Progress lines. Same channel as the tokens, different type — an older

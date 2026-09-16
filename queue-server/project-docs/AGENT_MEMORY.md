@@ -970,3 +970,13 @@ scientific defaults and semantic duplicates before anything is stored. The
 implementation must reconcile completed but unmerged commit `76c301b` (natural
 requests, lasting context, progressive exact counts) with `90d9a63` and
 `3b3e28f` already on `develop` (long asks, forget and regenerate controls).
+
+## Attachments live in both Room composers (2026-09-15)
+
+The main Room and Side Talks use the same `studioEmbed()` paperclip. PDFs and common
+text/code files reuse `conversations.js#attachFile`: browser-extracted text becomes a
+lasting `File:` subject on that exact conversation. Images ride only with the current
+message to `generateText(... images)` and force the existing free Gemini vision lane;
+the transcript stores their names, never their base64 bytes. A vision turn refuses
+plainly when that lane is unavailable rather than answering blind. Full shape:
+`plans/attachments-in-room-composers.md`.
