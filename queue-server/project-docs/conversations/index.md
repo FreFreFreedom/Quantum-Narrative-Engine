@@ -4,6 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
+- Action films matched to bike intensity — conversations/action-films-matched-to-bike-intensity-a7051bc8.md
 - Fractal reasoning across civic and justice narratives (fork) — conversations/fractal-reasoning-across-civic-and-justice-narratives-fork-400c0cb3.md
 - Fractal reasoning across civic and justice narratives (fork) — conversations/fractal-reasoning-across-civic-and-justice-narratives-fork-05863085.md
 - probe lane failure — conversations/probe-lane-failure-e973067e.md
