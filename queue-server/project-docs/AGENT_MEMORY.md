@@ -1024,3 +1024,16 @@ Selection remains deep despite title-only paper display. Details and release sta
 `services/recommendationPapers.js`. The durable worker is second-account Sonnet only;
 no fallback into interactive providers. Collections start reading history when first
 opened. `npm run recommendations:selftest` uses in-memory data and mocked calls only.
+
+### Shared reference Library and broader discovery — 2026-09-17
+
+Implemented following Antoine's explicit go-ahead: Interests becomes Library; Apps
+becomes Projects. `referenceLibrary.js` federates imported media and kept passages
+with independently saved recommendation snapshots. Save persists; Attach targets
+the last active Room/Side Talk composer and never sends or builds. Typed reference
+IDs are resolved server-side at Send, and failed sends retain draft references.
+Library → Discover activates scoped automatic media picks. `recommendationDiscovery.js`
+adds shared Mind selection and bounded public-source discovery through the existing
+second-account helper. Existing projects and Idea to build remain visibly distinct;
+papers retain title-only content. Personal save notes and mixed named collections
+remain excluded. The three Room recommendation/library plans record this release.

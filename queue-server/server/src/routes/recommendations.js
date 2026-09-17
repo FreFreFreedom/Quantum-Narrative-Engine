@@ -1,11 +1,19 @@
 import { Router } from 'express';
 import * as recommendations from '../services/roomRecommendations.js';
+import * as library from '../services/referenceLibrary.js';
 export function recommendationRoutes() {
   const router = Router();
   const action = fn => async (req, res) => {
     try { res.json(await fn(req)); }
     catch (e) { res.status(e.status || 500).json({ error: e.status ? e.message : 'Could not update recommendations.' }); }
   };
+  const owner=req=>req.user?.sub || req.user?.id;
+  router.get('/library', action(req=>library.listReferences(owner(req),req.query)));
+  router.post('/media-focus', action(req=>recommendations.focusMedia(req.body?.scope)));
+  router.post('/library/save', action(req=>library.saveReference(owner(req),req.body)));
+  router.post('/library/attach', action(req=>library.referenceQuote(owner(req),req.body)));
+  router.post('/library/read', action(req=>library.resolveReference(owner(req),req.body)));
+  router.post('/library/remove', action(req=>library.removeReference(owner(req),req.body)));
   router.get('/', action(req => recommendations.listRecommendations(String(req.query.kind || ''), String(req.query.scope || 'all'))));
   router.post('/initialize', action(req => recommendations.initializeCollection(req.body?.kind, req.body?.scope)));
   router.patch('/settings', action(req => recommendations.changeSettings(req.body?.kind, req.body?.scope, req.body || {})));

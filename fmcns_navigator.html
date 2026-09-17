@@ -3288,12 +3288,12 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" data-room-pane="passages" role="tab">Passages <span class="room-tabcount" id="roomPassCount"></span></button>
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="papers" role="tab">Papers <span class="room-tabcount" id="roomPapersCount"></span></button>
-          <button type="button" data-room-pane="apps" role="tab">Apps <span class="room-tabcount" id="roomAppsCount"></span></button>
+          <button type="button" data-room-pane="apps" role="tab">Projects <span class="room-tabcount" id="roomAppsCount"></span></button>
           <button type="button" data-room-pane="analogies" role="tab">Analogies <span class="room-tabcount" id="roomAnaCount"></span></button>
           <button type="button" data-room-pane="board" role="tab">Board <span class="room-tabcount" id="roomBoardCount"></span></button>
           <button type="button" data-room-pane="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
-          <button type="button" data-room-pane="interests" role="tab">Interests</button>
+          <button type="button" data-room-pane="interests" role="tab">Library</button>
           <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
         </div>
         <div class="room-pane room-attached is-active" id="roomAttached">
@@ -10018,6 +10018,7 @@ function initRoom() {
     const id = btn.getAttribute('data-pass-id');
     const act = btn.getAttribute('data-pass-act');
     if (act === 'open') { roomPassagesOpen.has(id) ? roomPassagesOpen.delete(id) : roomPassagesOpen.add(id); renderRoomPassages(); }
+    else if (act === 'attach') window.studioReferenceAttach({type:'passage',id}).then(out=>{btn.textContent='Attached to '+out.destination;}).catch(err=>{btn.title=err.message;btn.textContent=err.message;});
     else if (act === 'drop') roomDropPassage(id);
     else if (act === 'read') roomReadPassage(id);
     else if (act === 'world') roomPassageWorldLook(id);
@@ -10079,7 +10080,7 @@ async function loadRoom() {
   loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
   loadRoomIdeas();
   loadRoomAnalogies();
-  ['papers', 'apps'].forEach(kind => { if (recVisible(kind)) openRoomRecommendations(kind); });
+  ['papers', 'apps', 'media'].forEach(kind => { if (recVisible(kind)) openRoomRecommendations(kind); });
   loadRoomSides();
   loadRoomBoard();
   loadRoomExtract();
@@ -10174,6 +10175,7 @@ function renderRoomPassages() {
             +   (p.source_title ? '<span class="pass-from">from “' + qEsc(p.source_title) + '”</span>' : '')
             +   '<button type="button" class="se-cmd" data-pass-act="read" data-pass-id="' + qEsc(p.id) + '">' + (p.reading ? 'Read it again' : 'Read it') + '</button>'
             +   '<button type="button" class="se-cmd" data-pass-act="world" data-pass-id="' + qEsc(p.id) + '">' + (world && world.report ? 'World ideas' : 'Look at the world') + '</button>'
+            +   '<button type="button" class="se-cmd" data-pass-act="attach" data-pass-id="' + qEsc(p.id) + '">Attach</button>'
             +   '<button type="button" class="se-cmd" data-pass-act="drop" data-pass-id="' + qEsc(p.id) + '">Forget</button>'
             + '</div>'
             + '</div>'
@@ -10695,10 +10697,15 @@ async function roomDeleteThread(id) {
   }
 }
 
+let roomMediaScopeReported=null;
 function renderRoomConvo() {
   const host = document.getElementById('roomConvo');
   if (!host) return;
   const t = roomThreads.find(x => x.id === roomSel) || null;
+  if(roomMediaScopeReported!==roomSel){
+    roomMediaScopeReported=roomSel;
+    apiWrite('/api/recommendations/media-focus','POST',{scope:roomSel}).catch(()=>{roomMediaScopeReported=null;});
+  }
   if (!t) {
     // An empty room gets one control and nothing else.
     host.removeAttribute('data-se');
@@ -10986,10 +10993,10 @@ const roomRecData = {}, roomRecErrors = {}, roomRecLoading = new Set();
 let roomRecRefreshTimer = null;
 function recRead(key, fallback) { try { return localStorage.getItem('fmcns.rec.' + key) ?? fallback; } catch (e) { return fallback; } }
 function recSave(key, value) { try { localStorage.setItem('fmcns.rec.' + key, String(value)); } catch (e) {} }
-function recScope(kind) { return recRead(kind + '.scope', 'thread') === 'all' ? 'all' : roomSel; }
+function recScope(kind) { return kind!=='media' && recRead(kind + '.scope', 'thread') === 'all' ? 'all' : roomSel; }
 function recKey(kind, scope) { return kind + ':' + scope; }
-function recHost(kind) { return document.getElementById(kind === 'papers' ? 'roomPapersHost' : 'roomAppsHost'); }
-function recVisible(kind) { return document.querySelector('[data-room-pane="' + kind + '"]')?.classList.contains('active'); }
+function recHost(kind) { return document.getElementById(kind === 'media' ? 'roomMediaHost' : kind === 'papers' ? 'roomPapersHost' : 'roomAppsHost'); }
+function recVisible(kind) { return kind==='media' ? !!document.getElementById('roomMediaHost') && document.getElementById('roomInterests')?.classList.contains('is-active') : document.querySelector('[data-room-pane="' + kind + '"]')?.classList.contains('active'); }
 async function loadRoomRecommendations(kind, initialize = false) {
   const scope = recScope(kind), key = recKey(kind, scope);
   if (!scope) { renderRoomRecommendations(kind); return; }
@@ -11011,7 +11018,7 @@ function openRoomRecommendations(kind) {
 function refreshVisibleRecommendations() {
   clearTimeout(roomRecRefreshTimer);
   roomRecRefreshTimer = setTimeout(() => {
-    ['papers', 'apps'].forEach(kind => { if (recVisible(kind)) loadRoomRecommendations(kind); });
+    ['papers', 'apps', 'media'].forEach(kind => { if (recVisible(kind)) loadRoomRecommendations(kind); });
   }, 250);
 }
 async function recAction(kind, action) {
@@ -11037,11 +11044,13 @@ function renderRoomRecommendations(kind) {
   const latest = pending[0] || requests[0];
   const status = roomRecErrors[key] || (latest ? latest.note || (latest.status === 'queued' ? 'Waiting…' : '') : (!data ? 'Loading…' : ''));
   host.innerHTML = '<div class="room-rec-controls">'
-    + '<select data-rec-scope aria-label="Recommendation collection"><option value="thread"' + (scope !== 'all' ? ' selected' : '') + '>This conversation</option><option value="all"' + (scope === 'all' ? ' selected' : '') + '>All conversations</option></select>'
+    + '<select data-rec-scope aria-label="Recommendation collection"'+(kind==='media'?' hidden':'')+'><option value="thread"' + (scope !== 'all' ? ' selected' : '') + '>This conversation</option><option value="all"' + (scope === 'all' ? ' selected' : '') + '>All conversations</option></select>'
     + '<button type="button" class="room-ana-chip" data-rec-auto title="Change when recommendations arrive">' + (settings.automatic ? 'As you talk' : 'Only when asked') + '</button></div>'
     + '<div class="room-rec-list">' + (items.length ? items.map(item => '<article class="room-rec-item">'
-      + (kind === 'papers' ? '<a class="room-rec-title" href="' + qEscAttr(/^https:\/\//.test(item.url || '') ? item.url : '#') + '" target="_blank" rel="noopener noreferrer">' + qEsc(item.title) + '</a>'
+      + (kind === 'papers' || kind === 'media' ? '<a class="room-rec-title" href="' + qEscAttr(/^https:\/\//.test(item.url || '') ? item.url : '#') + '" target="_blank" rel="noopener noreferrer">' + qEsc(item.title) + '</a>' + (kind==='media'?'<p>'+qEsc(item.sentence)+'</p>':'')
         : '<button type="button" class="room-rec-title" data-rec-open="' + qEscAttr(item.id) + '">' + qEsc(item.title) + '</button><p>' + qEsc(item.sentence) + '</p>')
+      + (kind==='apps'?'<small>'+qEsc(item.details?.origin || 'Idea to build')+'</small> '+(item.url?'<a href="'+qEscAttr(/^https:\/\//.test(item.url)?item.url:'#')+'" target="_blank" rel="noopener noreferrer">Website</a>':''):'')
+      + '<div class="interest-import"><button data-rec-save="'+qEscAttr(item.id)+'"'+(item.saved?' disabled':'')+'>'+(item.saved?'Saved':'Save')+'</button><button data-rec-attach="'+qEscAttr(item.id)+'">Attach</button></div>'
       + '<details class="room-rec-menu"><summary aria-label="Recommendation actions" title="Actions">⋯</summary><button type="button" data-rec-dismiss="' + qEscAttr(item.id) + '">Dismiss</button></details></article>').join('')
       : (status ? '' : '<div class="room-rec-status">Nothing yet.</div>')) + '</div>'
     + '<div class="room-rec-status" role="status">' + qEsc(status) + '</div>'
@@ -11070,6 +11079,8 @@ function renderRoomRecommendations(kind) {
   };
   host.querySelector('[data-rec-save-steer]').onclick = () => recAction(kind, () => apiWrite('/api/recommendations/settings', 'PATCH', { kind, scope, steering: host.querySelector('[data-rec-steer]').value }));
   host.querySelectorAll('[data-rec-dismiss]').forEach(b => b.onclick = () => recAction(kind, () => apiWrite('/api/recommendations/' + encodeURIComponent(b.dataset.recDismiss), 'DELETE')));
+  host.querySelectorAll('[data-rec-save]').forEach(b=>b.onclick=()=>recAction(kind,async()=>{await apiWrite('/api/recommendations/library/save','POST',{type:'recommendation',id:b.dataset.recSave});}));
+  host.querySelectorAll('[data-rec-attach]').forEach(b=>b.onclick=async()=>{try{const out=await window.studioReferenceAttach({type:'recommendation',id:b.dataset.recAttach});b.textContent='Attached to '+out.destination;}catch(err){b.textContent=err.message;}});
   host.querySelectorAll('[data-rec-stop]').forEach(b => b.onclick = () => recAction(kind, () => apiWrite('/api/recommendations/requests/' + encodeURIComponent(b.dataset.recStop) + '/cancel', 'POST', {})));
   host.querySelectorAll('[data-rec-resume]').forEach(b => b.onclick = () => recAction(kind, () => apiWrite('/api/recommendations/requests/' + encodeURIComponent(b.dataset.recResume) + '/resume', 'POST', {})));
   host.querySelectorAll('[data-rec-open]').forEach(b => b.onclick = async () => {
@@ -11087,7 +11098,7 @@ function renderRoomRecommendations(kind) {
     } catch (e) { roomRecErrors[key] = 'Could not open the app discussion.'; renderRoomRecommendations(kind); }
     finally { b.disabled = false; }
   });
-  setRoomTabCount(kind === 'papers' ? 'roomPapersCount' : 'roomAppsCount', items.length);
+  if(kind!=='media')setRoomTabCount(kind === 'papers' ? 'roomPapersCount' : 'roomAppsCount', items.length);
 }
 setInterval(() => { if (coreOpen() && coreView === 'room') refreshVisibleRecommendations(); }, 15000);
 
@@ -12117,7 +12128,7 @@ function roomSelect(id) {
   loadRoomSubjects();
   loadRoomIdeas();
   loadRoomAnalogies();
-  ['papers', 'apps'].forEach(kind => { if (recVisible(kind)) openRoomRecommendations(kind); });
+  ['papers', 'apps', 'media'].forEach(kind => { if (recVisible(kind)) openRoomRecommendations(kind); });
   loadRoomSides();
   loadRoomBoard();
   loadRoomExtract();
@@ -12390,7 +12401,11 @@ function interestEditForm(host, item, save) {
 async function renderInterestLibrary() {
   const host = document.getElementById('roomInterests'); if (!host) return;
   const request = ++interestLibraryRequest;
-  host.innerHTML = '<div class="interest-filter"><input aria-label="Search interests" placeholder="Search interests"><select aria-label="Interest kind"><option value="">All</option><option value="book">Books</option><option value="film">Films</option><option value="series">Series</option></select></div><div class="interest-results">Loading…</div>';
+  const discover=recRead('library.mode','saved')==='discover';
+  const modes='<div class="room-tabs"><button data-library-mode="saved" class="'+(!discover?'active':'')+'">Saved</button><button data-library-mode="discover" class="'+(discover?'active':'')+'">Discover</button></div>';
+  host.innerHTML = modes + (discover?'<div class="room-rec-host" id="roomMediaHost"></div>':'<div class="interest-filter"><input aria-label="Search library" placeholder="Search library"><select aria-label="Reference kind"><option value="">All</option><option value="book">Books</option><option value="film">Films</option><option value="series">Series</option><option value="paper">Papers</option><option value="project">Projects</option><option value="passage">Passages</option></select></div><div class="interest-results">Loading…</div>');
+  host.querySelectorAll('[data-library-mode]').forEach(b=>b.onclick=()=>{recSave('library.mode',b.dataset.libraryMode);renderInterestLibrary();});
+  if(discover){openRoomRecommendations('media');return;}
   const search = host.querySelector('input'), filter = host.querySelector('select');
   search.value = interestLibraryQuery; filter.value = interestLibraryKind;
   const refresh = () => {
@@ -12400,11 +12415,11 @@ async function renderInterestLibrary() {
   };
   search.onkeydown = ev => { if (ev.key === 'Enter') refresh(); }; search.onchange = refresh; filter.onchange = refresh;
   try {
-    const [out, review] = await Promise.all([api('/api/convos/interests?limit=40&offset=' + interestLibraryOffset + '&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)), api('/api/convos/interest-review')]);
+    const [out, review] = await Promise.all([api('/api/recommendations/library?limit=40&offset=' + interestLibraryOffset + '&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)), api('/api/convos/interest-review')]);
     if (request !== interestLibraryRequest) return;
     const results = host.querySelector('.interest-results');
     results.innerHTML = review.entries.map(e => '<div class="interest-item" data-review="' + qEscAttr(e.id) + '"><div>' + qEsc(e.observed || e.candidate.title || 'Unclear title') + '</div><small>Needs review · ' + qEsc(e.filename) + '</small><button data-edit>Review</button> <button data-dismiss>Dismiss</button></div>').join('')
-      + out.items.map(w => '<div class="interest-item" data-interest="' + qEscAttr(w.id) + '"><div>' + qEsc(w.title) + '</div><small>' + qEsc([w.kind,w.creator,w.year,w.state].filter(Boolean).join(' · ')) + '</small><button data-edit>Edit</button> <button data-remove title="Remove from your interest library">Remove</button></div>').join('')
+      + out.items.map(w => '<div class="interest-item" data-interest="' + qEscAttr(w.id) + '"><div>' + (w.url&&/^https:\/\//.test(w.url)?'<a href="'+qEscAttr(w.url)+'" target="_blank" rel="noopener noreferrer">'+qEsc(w.title)+'</a>':qEsc(w.title)) + '</div>'+(w.kind==='paper'?'':'<small>' + qEsc([w.kind,w.creator,w.year,w.state,w.origin].filter(Boolean).join(' · ')) + '</small>')+(w.excerpt?'<p>'+qEsc(w.excerpt)+'</p>':'')+'<button data-attach>Attach</button> '+(w.type==='media'?'<button data-edit>Edit</button> ':'')+'<details class="room-rec-menu"><summary title="Actions">⋯</summary><button data-remove title="'+(w.type==='passage'?'Forget this kept passage in both Library and Passages':'Remove from library')+'">Remove</button></details></div>').join('')
       + (!out.items.length && !review.entries.length ? '<div class="room-empty">No saved interests.</div>' : '')
       + '<div class="interest-item">' + (interestLibraryOffset ? '<button data-prev>Previous</button> ' : '') + (out.items.length === 40 ? '<button data-next>More</button>' : '') + '</div>';
     results.querySelectorAll('[data-review]').forEach(el => {
@@ -12414,8 +12429,13 @@ async function renderInterestLibrary() {
     });
     results.querySelectorAll('[data-interest]').forEach(el => {
       const w = out.items.find(w => w.id === el.dataset.interest);
-      el.querySelector('[data-edit]').onclick = () => interestEditForm(el, w, values => apiWrite('/api/convos/interests/' + w.id, 'PATCH', values));
-      el.querySelector('[data-remove]').onclick = async () => { try { await apiWrite('/api/convos/interests/' + w.id, 'DELETE'); renderInterestLibrary(); } catch (err) { el.textContent = err.message; } };
+      if(w.kind==='passage'){
+        const button=document.createElement('button');button.type='button';button.textContent='Read';el.insertBefore(button,el.querySelector('[data-attach]'));
+        button.onclick=async()=>{try{const item=await apiWrite('/api/recommendations/library/read','POST',{type:w.type,id:w.id});let text=el.querySelector('p');if(!text){text=document.createElement('p');el.insertBefore(text,button);}text.textContent=item.text;button.remove();}catch(err){button.textContent=err.message;}};
+      }
+      const edit=el.querySelector('[data-edit]');if(edit)edit.onclick = () => interestEditForm(el, w, values => apiWrite('/api/convos/interests/' + w.id, 'PATCH', values));
+      el.querySelector('[data-attach]').onclick=async()=>{try{const out=await window.studioReferenceAttach({type:w.type,id:w.id});el.querySelector('[data-attach]').textContent='Attached to '+out.destination;}catch(err){el.querySelector('[data-attach]').textContent=err.message;}};
+      el.querySelector('[data-remove]').onclick = async () => { try { await apiWrite('/api/recommendations/library/remove','POST',{type:w.type,id:w.id}); renderInterestLibrary();if(w.type==='passage'&&window.loadRoomPassages)window.loadRoomPassages(); } catch (err) { el.textContent = err.message; } };
     });
     const prev = results.querySelector('[data-prev]'), next = results.querySelector('[data-next]');
     if (prev) prev.onclick = () => { interestLibraryOffset = Math.max(0, interestLibraryOffset - 40); renderInterestLibrary(); };
@@ -21741,17 +21761,17 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(e.draft === undefined || e.draft === '') e.draft = row.draft || '';
     if(!e.quotes || !e.quotes.length) e.quotes = Array.isArray(row.quotes) ? row.quotes : [];
   }
-  var draftTimer = null;
+  var draftTimers = {};
   function saveDraft(e){
     if(!e || !e.key) return;
-    clearTimeout(draftTimer);
+    clearTimeout(draftTimers[e.key]);
     // Debounced: this runs on every keystroke, and a JSON round trip per character
     // is the kind of thing that makes a text box feel slow on a long draft.
-    draftTimer = setTimeout(function(){
+    draftTimers[e.key] = setTimeout(function(){
       try {
         var all = readDrafts();
-        var draft = String(e.draft || '');
-        var quotes = e.quotes || [];
+        var draft = String(e.draft || e.referenceFlight?.body || '');
+        var quotes = [...(e.referenceFlight?.quotes || []), ...(e.quotes || [])].filter((q,i,a)=>a.findIndex(x=>JSON.stringify(x)===JSON.stringify(q))===i);
         if(!draft && !quotes.length) delete all[e.key];
         else all[e.key] = { draft: draft, quotes: quotes, at: Date.now() };
         var keys = Object.keys(all);
@@ -21891,6 +21911,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var typed = carried && carried.body ? String(carried.body).trim() : '';
     var carriedQuotes = carried && carried.quotes && carried.quotes.length ? carried.quotes.slice() : null;
     var carriedAttachments = carried && carried.attachments && carried.attachments.length ? carried.attachments.slice() : null;
+    if(carriedQuotes?.some(q=>q.reference))e.referenceFlight={body:typed,quotes:carriedQuotes};
     var attachmentMeta = carriedAttachments ? carriedAttachments.map(function(a){ return { name: a.name, mimeType: a.mimeType || '' }; }) : null;
     e.msgs.push({ role: 'user', kind: 'chat', text: text,
       body: carriedQuotes && typed ? typed : undefined,
@@ -21943,6 +21964,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
         if(d.report && window.refreshWorldPanels) window.refreshWorldPanels(d.report);
         if(d.error && !d.ok){
+          if(e.referenceFlight){
+            e.draft=e.draft||typed;e.draftForce=true;
+            e.quotes=[...(carriedQuotes||[]),...(e.quotes||[])].filter((q,i,a)=>a.findIndex(x=>JSON.stringify(x)===JSON.stringify(q))===i);
+            e.referenceFlight=null;saveDraft(e);
+          }
           var stale = /invalid_token|missing_token|unauthorized/i.test(String(d.error || ''));
           if(stale && window.fmcnsSessionExpired) window.fmcnsSessionExpired();
           var msg = stale
@@ -21983,6 +22009,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // same text paints twice.
         e.stream = '';
         if(d.via) e.via = d.via;
+        if(!d.error && e.referenceFlight){e.referenceFlight=null;saveDraft(e);}
         // Where the answer actually came from, when that is not where it was meant
         // to come from — budget used up, paid lane off, gpt-4o unreachable. Shown
         // rather than swallowed: a quiet downgrade mid-brainstorm is the thing
@@ -21992,6 +22019,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       })
       .catch(function(){
         e.stream = '';
+        if(e.referenceFlight){
+          e.draft=e.draft||typed;e.draftForce=true;
+          e.quotes=[...(carriedQuotes||[]),...(e.quotes||[])].filter((q,i,a)=>a.findIndex(x=>JSON.stringify(x)===JSON.stringify(q))===i);
+          e.referenceFlight=null;e.note='Delivery is uncertain. Your draft and references are kept.';saveDraft(e);return;
+        }
         if(e.cancelled){
           // Stopped on purpose: take the question back out of the thread and
           // hand it back to the box, edited or not. Nothing to wait for.
@@ -22420,6 +22452,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Open the conversation on a subject without a click — used by the 💬 buttons,
   // which now bring the card up with the conversation already showing.
   window.studioEmbedOpen = function(type, subjectId){ entryOf(type, subjectId).open = true; };
+  let referenceTarget=null;
+  window.studioReferenceAttach=async function(ref){
+    let target=referenceTarget;
+    if(!target || target.root!==roomSel){
+      const thread=roomThreads.find(t=>t.id===roomSel);
+      if(!thread)throw new Error('Open a Room conversation first.');
+      const e=entryOf('open',thread.subject_id),host=document.getElementById('roomConvo');
+      target={e,host,root:roomSel,repaint:()=>renderRoomConvo()};
+    }
+    const available=()=>target.root===roomSel&&target.host?.isConnected&&target.host.getAttribute('data-se')===target.e.key+'|open';
+    if(!available())throw new Error('Choose the conversation to attach to first.');
+    const quote=await apiWrite('/api/recommendations/library/attach','POST',ref);
+    if(!available())throw new Error('The destination changed. Attach again in the intended conversation.');
+    const e=target.e;if(!e.quotes)e.quotes=[];
+    if(e.quotes.length>=20)throw new Error('Attach up to twenty references at once.');
+    if(!e.quotes.some(q=>quote.identity&&q.identity===quote.identity || q.reference?.type===quote.reference.type&&q.reference?.id===quote.reference.id))e.quotes.push(quote);
+    const destination=e.title|| (e.type==='side'?'Side Talk':'Room');
+    saveDraft(e);e.note='Attached to '+destination+'.';target.repaint();return {destination};
+  };
   window.studioIndexLoad = indexLoad;
 
   // ── Lending the studio to a card that already has a box ──────────────────────
@@ -22552,15 +22603,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function wireEmbed(host, e, opts, repaint){
     var input = host.querySelector('.se-input');
     var send = host.querySelector('.se-send');
+    input.addEventListener('focus',()=>{if(opts.captureInterests)referenceTarget={e,host,root:roomSel,repaint};});
     var say = function(text){
       var pending = (e.pendingAttachments || []).slice();
-      if(e.busy || (!String(text || '').trim() && !pending.length)) return;
-      var actualText = String(text || '').trim() || (pending.some(function(a){ return a.kind === 'image'; })
+      if(e.busy || (!String(text || '').trim() && !pending.length && !e.quotes?.length)) return;
+      var actualText = String(text || '').trim() || (e.quotes?.length?'Discuss these references.':pending.some(function(a){ return a.kind === 'image'; })
         ? 'Look at the attached image.' : 'Read the attached file.');
       // Clear only once the message is actually on its way. Losing what someone
       // typed is worse than any error message.
       if(sendTurn(e, withQuote(e, actualText), repaint, opts.onDone, undefined,
-                  { body: text, quotes: (e.quotes || []).slice(), attachments: pending })){
+                  { body: actualText, quotes: (e.quotes || []).slice(), attachments: pending })){
         input.value = ''; e.quotes = []; e.pendingAttachments = []; e.draft = '';
         saveDraft(e);
         grow(input);
@@ -23251,6 +23303,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function withQuote(e, text){
     var qs = e.quotes || [];
     if(!qs.length) return text;
+    if(qs.some(q=>q.reference))return text; // Server resolves reference IDs and builds trusted snapshots.
     if(qs.length === 1) return 'About this part of your answer:\n\u201c' + quoteText(qs[0]) + '\u201d\n\n' + text;
     // Numbered on the wire exactly as they are numbered on screen, so "quote 2"
     // in his question points at the same passage the model is looking at.
@@ -23458,7 +23511,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var jumpable = !!quoteMsg(q);
           return '<div class="se-quoted' + (jumpable ? ' can-jump' : '') + '" title="' + qEsc(text) + '">'
             + '<span class="se-quoted-n">' + (i + 1) + '</span>'
-            + '<span class="se-quoted-text"' + (jumpable ? ' data-jump="' + i + '"' : '') + '>“' + qEsc(text) + '”</span>'
+            + '<span class="se-quoted-text"' + (jumpable ? ' data-jump="' + i + '"' : '') + '>' + (q.reference?qEsc(q.title||text):'“'+qEsc(text)+'”') + '</span>'
             + '<button type="button" data-drop="' + i + '" title="Take this passage off — it will not be sent with your question" aria-label="Remove this passage">✕</button></div>';
         }).join('')
           + (e.quotes.length > 1 ? '<button type="button" class="se-quotes-clear" data-drop-all="1">Clear all ' + e.quotes.length + '</button>' : '');
