@@ -1009,3 +1009,18 @@ returns the saved memory with the turn. Questions *about* memory do not trigger 
 Antoine's first explicit preference is: **do not use immune-system metaphors in answers
 unless he specifically asks for that lens.** This corrects a verbal habit; it does not
 erase the immune-logic material already stored as project history.
+
+
+## Papers and Apps recommendations (2026-09-17)
+
+Antoine approved exactly two new Room recommendation tabs. Papers display only
+original linked titles; Apps display a title and one sentence, covering QNE additions
+and independent personal apps. Both have separate This conversation / All conversations
+collections, include Side Talks and existing history, and support automatic/manual
+arrivals. App clicks open a Side Talk with context and an unsent draft, never a build.
+Selection remains deep despite title-only paper display. Details and release status:
+`plans/room-research-and-invention-recommendations.md`. Work lives in
+`services/roomRecommendations.js`, with real publication lookup in
+`services/recommendationPapers.js`. The durable worker is second-account Sonnet only;
+no fallback into interactive providers. Collections start reading history when first
+opened. `npm run recommendations:selftest` uses in-memory data and mocked calls only.

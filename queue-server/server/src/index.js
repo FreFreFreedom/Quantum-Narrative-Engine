@@ -54,6 +54,8 @@ import { bindAiTextDb, migrateSecondAccountFirst, migratePlanDraftModel, migrate
 import { bindRouterDb, queueDeferUntil } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
+import { recommendationRoutes } from './routes/recommendations.js';
+import { bindRecommendations } from './services/roomRecommendations.js';
 import { conversationsRoutes } from './routes/conversations.js';
 import { bindConversationsDb } from './services/conversations.js';
 import { bindRoomAnalogiesDb, resumeAllStrayRequests } from './services/roomAnalogies.js';
@@ -128,6 +130,7 @@ bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
 bindRoomAnalogiesDb(db);
+bindRecommendations(db);
 bindBoardDb(db);
 bindImageSourcesDb(db);
 try { resumeAllStrayRequests(); } catch (e) { console.error('[room] analogy request resume failed:', e?.message || e); }
@@ -408,6 +411,7 @@ app.use('/api/architecture', requireAuth, architectureRoutes(db));
 app.use('/api/architecture/intel', requireAuth, intelRoutes(db));
 app.use('/api/discovery', requireAuth, discoveryRoutes(db));
 app.use('/api/convos', requireAuth, conversationsRoutes());
+app.use('/api/recommendations', requireAuth, recommendationRoutes());
 app.use('/api/passages', requireAuth, passagesRoutes());
 app.use('/api/mind', requireAuth, mindRoutes());
 app.use('/api/dashboard', requireAuth, dashboardRoutes());

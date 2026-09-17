@@ -40,6 +40,7 @@
     "queue-inspiration:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/queue-inspiration-selftest.js",
     "gaps:selftest": "node scripts/taggaps-selftest.js",
     "mind:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/mind-selftest.js",
+    "recommendations:selftest": "node scripts/recommendations-selftest.js",
     "room:selftest": "node scripts/room-selftest.mjs",
     "tensions:selftest": "node scripts/tensions-selftest.js",
     "signature:selftest": "node scripts/signature-selftest.js",

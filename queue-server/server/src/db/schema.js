@@ -42,6 +42,7 @@ export function openDb() {
   initBookDetailSchema(db);
   initDiscoverySchema(db);
   initConversationsSchema(db);
+  initRecommendationsSchema(db);
   initMindSchema(db);
   initFilmEnrichmentSchema(db);
   initBoardSchema(db);
@@ -2061,5 +2062,44 @@ export function initBoardSchema(db) {
       body TEXT NOT NULL,
       fetched_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )
+  `);
+}
+
+// Papers and app ideas: durable collections and resumable work, outside chat history.
+export function initRecommendationsSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS recommendation_collections (
+      id TEXT PRIMARY KEY, kind TEXT NOT NULL, scope TEXT NOT NULL,
+      automatic INTEGER NOT NULL DEFAULT 1, steering TEXT NOT NULL DEFAULT '',
+      due_at INTEGER NOT NULL DEFAULT 0, last_auto INTEGER NOT NULL DEFAULT 0,
+      fingerprint TEXT NOT NULL DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS recommendation_contexts (
+      convo_id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, prefix_hash TEXT NOT NULL,
+      offset INTEGER NOT NULL, summary TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS recommendations (
+      id TEXT PRIMARY KEY, collection_id TEXT NOT NULL REFERENCES recommendation_collections(id),
+      request_id TEXT NOT NULL, title TEXT NOT NULL, sentence TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '',
+      dedupe TEXT NOT NULL, rationale TEXT NOT NULL DEFAULT '', sources TEXT NOT NULL DEFAULT '[]',
+      dismissed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL,
+      UNIQUE(collection_id,dedupe)
+    );
+    CREATE TABLE IF NOT EXISTS recommendation_requests (
+      id TEXT PRIMARY KEY, collection_id TEXT NOT NULL REFERENCES recommendation_collections(id),
+      instruction TEXT NOT NULL, manual INTEGER NOT NULL DEFAULT 0, target INTEGER,
+      delivered INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'queued',
+      rounds INTEGER NOT NULL DEFAULT 0, empty_rounds INTEGER NOT NULL DEFAULT 0,
+      context TEXT, attempts INTEGER NOT NULL DEFAULT 0, retry_at INTEGER NOT NULL DEFAULT 0,
+      note TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS recommendation_requests_pending ON recommendation_requests(status,retry_at);
+    CREATE TABLE IF NOT EXISTS recommendation_search_cache (
+      key TEXT PRIMARY KEY, body TEXT NOT NULL, fetched_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS recommendation_discussions (
+      recommendation_id TEXT NOT NULL REFERENCES recommendations(id), parent_id TEXT NOT NULL,
+      side_id TEXT NOT NULL, PRIMARY KEY(recommendation_id,parent_id)
+    );
   `);
 }

@@ -911,8 +911,8 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 /* One tab row instead of five headings. Wraps to a second line rather than
    scrolling sideways — a column this narrow can spare 18px of height far more
    easily than it can spare a hidden tab. */
-.room-tabs { display:flex; flex-wrap:wrap; gap:2px; margin-bottom:10px; }
-.room-tabs button { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border:1px solid transparent;
+.room-tabs { display:flex; flex-wrap:nowrap; overflow-x:auto; flex-shrink:0; gap:2px; margin-bottom:10px; }
+.room-tabs button { flex-shrink:0; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border:1px solid transparent;
   border-radius:var(--r-pill); background:none; color:var(--c-ink-4); font:inherit; font-size:var(--fs-xs); text-transform:uppercase;
   letter-spacing:.05em; cursor:pointer; transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .room-tabs button:hover { background:var(--c-surface-2); color:var(--c-ink); }
@@ -1539,6 +1539,28 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-cursor { display:inline-block; margin-left:1px; color:var(--c-ink-4); animation:seBlink 1s var(--ease) infinite; }
 /* The composer is a line, not a box: one rule underneath that darkens on focus. */
 
+.room-cards:has(#roomPapers.is-active),.room-cards:has(#roomApps.is-active) { display:flex; flex-direction:column; overflow:hidden; }
+.room-rec-host { display:flex; flex-direction:column; min-height:0; flex:1; }
+.room-rec-controls { display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-bottom:8px; }
+.room-rec-controls select { min-width:0; flex:1; font:inherit; color:inherit; background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:5px; padding:4px; }
+.room-rec-list { overflow-y:auto; flex:1; min-height:40px; }
+.room-rec-item { position:relative; padding:10px 24px 10px 0; border-bottom:1px solid var(--c-border-2); }
+.room-rec-title { font:inherit; text-align:left; color:var(--c-ink); line-height:1.5; background:none; border:0; padding:0; cursor:pointer; text-decoration:none; }
+.room-rec-title:hover { text-decoration:underline; }
+.room-rec-item p { margin:5px 0 0; font-size:12px; line-height:1.5; color:var(--c-ink-3); }
+.room-rec-menu { position:absolute; right:2px; top:10px; }
+.room-rec-menu summary { list-style:none; cursor:pointer; padding:0 4px; }
+.room-rec-menu button { position:absolute; right:0; z-index:2; background:var(--c-surface-2); color:var(--c-ink); border:1px solid var(--c-border-2); padding:5px 10px; }
+.room-rec-status { font-size:11px; color:var(--c-ink-3); margin:5px 0; }
+.room-rec-requests { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; }
+.room-rec-requests button,.room-rec-steering button { font:inherit; background:none; color:var(--c-ink); border:1px solid var(--c-border-2); border-radius:4px; cursor:pointer; }
+.room-rec-ask { display:flex; gap:5px; margin-top:8px; }
+.room-rec-ask input,.room-rec-steering textarea { min-width:0; width:100%; font:inherit; color:var(--c-ink); background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:5px; padding:6px; }
+.room-rec-ask button { border:0; border-radius:5px; background:var(--c-surface-2); color:var(--c-ink); padding:4px 9px; cursor:pointer; }
+.room-rec-steering { font-size:11px; margin-top:6px; }
+.room-rec-steering summary { cursor:pointer; color:var(--c-ink-3); }
+.room-rec-steering textarea { box-sizing:border-box; margin:6px 0; }
+#roomPapers.is-active,#roomApps.is-active { display:flex; flex-direction:column; min-height:0; flex:1; }
 /* Analogies beside the Room. Not the world-look's question (what could be built)
    but the other one: where is this relation already living, under other names.
    The pane is its own small conversation, so it carries an ask box of its own. */
@@ -3265,6 +3287,8 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" class="active" data-room-pane="attached" role="tab">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
           <button type="button" data-room-pane="passages" role="tab">Passages <span class="room-tabcount" id="roomPassCount"></span></button>
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
+          <button type="button" data-room-pane="papers" role="tab">Papers <span class="room-tabcount" id="roomPapersCount"></span></button>
+          <button type="button" data-room-pane="apps" role="tab">Apps <span class="room-tabcount" id="roomAppsCount"></span></button>
           <button type="button" data-room-pane="analogies" role="tab">Analogies <span class="room-tabcount" id="roomAnaCount"></span></button>
           <button type="button" data-room-pane="board" role="tab">Board <span class="room-tabcount" id="roomBoardCount"></span></button>
           <button type="button" data-room-pane="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
@@ -3307,6 +3331,8 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-pane room-ideas" id="roomIdeas">
           <div id="roomIdeasHost"></div>
         </div>
+        <div class="room-pane" id="roomPapers"><div class="room-rec-host" id="roomPapersHost"></div></div>
+        <div class="room-pane" id="roomApps"><div class="room-rec-host" id="roomAppsHost"></div></div>
         <div class="room-pane room-ideas" id="roomAnalogies">
           <div id="roomAnalogiesHost"></div>
         </div>
@@ -9517,7 +9543,7 @@ const ROOM_ZONE_KEYS = { roomThreads: 'fmcns_room_threads_open', roomCards: 'fmc
 // Which of the right column's five panes is showing. One key where there used to
 // be five, because only one of them is open at a time now.
 const ROOM_PANE_KEY = 'fmcns_room_pane';
-const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', board: 'roomBoard', mind: 'roomMind', extract: 'roomExtract', interests: 'roomInterests' };
+const ROOM_PANES = { papers: 'roomPapers', apps: 'roomApps', attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', board: 'roomBoard', mind: 'roomMind', extract: 'roomExtract', interests: 'roomInterests' };
 // A tab carries its own count so a shut pane can still say it has something in
 // it — the whole reason five headings were worth losing.
 function setRoomTabCount(id, n) {
@@ -9971,6 +9997,7 @@ function initRoom() {
         b.setAttribute('aria-selected', String(on));
       });
       if (pane === 'interests') renderInterestLibrary();
+      if (pane === 'papers' || pane === 'apps') openRoomRecommendations(pane);
     };
     strip.onclick = (ev) => {
       const b = ev.target.closest('[data-room-pane]');
@@ -10050,6 +10077,7 @@ async function loadRoom() {
   loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
   loadRoomIdeas();
   loadRoomAnalogies();
+  ['papers', 'apps'].forEach(kind => { if (recVisible(kind)) openRoomRecommendations(kind); });
   loadRoomSides();
   loadRoomBoard();
   loadRoomExtract();
@@ -10950,6 +10978,116 @@ function roomIdeasRemember() { try { localStorage.setItem(ROOM_IDEAS_KEY, JSON.s
 const roomIdeaSel = roomIdeasState.sel;
 function roomIdeaSelFor(id) { return roomIdeaSel[id] || (roomIdeaSel[id] = []); }
 function roomIdeaIsOpen(id, idx) { return id in roomIdeasState.open ? !!roomIdeasState.open[id] : idx === 0; }
+
+/* Papers and Apps: separate persistent collections, no generated text in the Room. */
+const roomRecData = {}, roomRecErrors = {}, roomRecLoading = new Set();
+let roomRecRefreshTimer = null;
+function recRead(key, fallback) { try { return localStorage.getItem('fmcns.rec.' + key) ?? fallback; } catch (e) { return fallback; } }
+function recSave(key, value) { try { localStorage.setItem('fmcns.rec.' + key, String(value)); } catch (e) {} }
+function recScope(kind) { return recRead(kind + '.scope', 'thread') === 'all' ? 'all' : roomSel; }
+function recKey(kind, scope) { return kind + ':' + scope; }
+function recHost(kind) { return document.getElementById(kind === 'papers' ? 'roomPapersHost' : 'roomAppsHost'); }
+function recVisible(kind) { return document.querySelector('[data-room-pane="' + kind + '"]')?.classList.contains('active'); }
+async function loadRoomRecommendations(kind, initialize = false) {
+  const scope = recScope(kind), key = recKey(kind, scope);
+  if (!scope) { renderRoomRecommendations(kind); return; }
+  if (roomRecLoading.has(key)) return;
+  roomRecLoading.add(key);
+  try {
+    let out = await api('/api/recommendations?kind=' + kind + '&scope=' + encodeURIComponent(scope));
+    if (!out.initialized && initialize) out = await apiWrite('/api/recommendations/initialize', 'POST', { kind, scope });
+    roomRecData[key] = out;
+    delete roomRecErrors[key];
+  } catch (e) { roomRecErrors[key] = 'Could not load recommendations.'; }
+  finally { roomRecLoading.delete(key); }
+  if (recScope(kind) === scope && recVisible(kind)) renderRoomRecommendations(kind);
+}
+function openRoomRecommendations(kind) {
+  renderRoomRecommendations(kind);
+  loadRoomRecommendations(kind, true);
+}
+function refreshVisibleRecommendations() {
+  clearTimeout(roomRecRefreshTimer);
+  roomRecRefreshTimer = setTimeout(() => {
+    ['papers', 'apps'].forEach(kind => { if (recVisible(kind)) loadRoomRecommendations(kind); });
+  }, 250);
+}
+async function recAction(kind, action) {
+  const scope = recScope(kind), key = recKey(kind, scope);
+  try { await action(); delete roomRecErrors[key]; }
+  catch (e) { roomRecErrors[key] = e.message || 'Could not update recommendations.'; if (recScope(kind) === scope) renderRoomRecommendations(kind); return; }
+  if (recScope(kind) === scope) await loadRoomRecommendations(kind);
+}
+function renderRoomRecommendations(kind) {
+  const host = recHost(kind), scope = recScope(kind), key = recKey(kind, scope);
+  if (!host) return;
+  if (!scope) { host.innerHTML = '<div class="tv-empty">Open a conversation.</div>'; return; }
+  // Remember scrolling even when a background result repaints the active pane.
+  const previous = host.querySelector('.room-rec-list');
+  if (previous && host.dataset.collection === key) recSave(key + '.scroll', previous.scrollTop);
+  const focusSelector = document.activeElement === host.querySelector('[data-rec-steer]') ? '[data-rec-steer]' : '[data-rec-ask]';
+  const focused = document.activeElement === host.querySelector(focusSelector);
+  const cursor = focused ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
+  host.dataset.collection = key;
+  const data = roomRecData[key], settings = data?.settings || { automatic: true, steering: '' };
+  const items = data?.items || [], requests = data?.requests || [];
+  const pending = requests.filter(r => ['queued', 'running', 'waiting', 'paused'].includes(r.status));
+  const latest = pending[0] || requests[0];
+  const status = roomRecErrors[key] || (latest ? latest.note || (latest.status === 'queued' ? 'Waiting…' : '') : (!data ? 'Loading…' : ''));
+  host.innerHTML = '<div class="room-rec-controls">'
+    + '<select data-rec-scope aria-label="Recommendation collection"><option value="thread"' + (scope !== 'all' ? ' selected' : '') + '>This conversation</option><option value="all"' + (scope === 'all' ? ' selected' : '') + '>All conversations</option></select>'
+    + '<button type="button" class="room-ana-chip" data-rec-auto title="Change when recommendations arrive">' + (settings.automatic ? 'As you talk' : 'Only when asked') + '</button></div>'
+    + '<div class="room-rec-list">' + (items.length ? items.map(item => '<article class="room-rec-item">'
+      + (kind === 'papers' ? '<a class="room-rec-title" href="' + qEscAttr(/^https:\/\//.test(item.url || '') ? item.url : '#') + '" target="_blank" rel="noopener noreferrer">' + qEsc(item.title) + '</a>'
+        : '<button type="button" class="room-rec-title" data-rec-open="' + qEscAttr(item.id) + '">' + qEsc(item.title) + '</button><p>' + qEsc(item.sentence) + '</p>')
+      + '<details class="room-rec-menu"><summary aria-label="Recommendation actions" title="Actions">⋯</summary><button type="button" data-rec-dismiss="' + qEscAttr(item.id) + '">Dismiss</button></details></article>').join('')
+      : '<div class="tv-empty">' + (status ? '' : 'Nothing yet.') + '</div>') + '</div>'
+    + '<div class="room-rec-status" role="status">' + qEsc(status) + '</div>'
+    + (pending.length ? '<div class="room-rec-requests">' + pending.map(r => '<span>' + (r.target ? qEsc(r.delivered + ' / ' + r.target) : '')
+      + (['paused','waiting'].includes(r.status) ? ' <button type="button" data-rec-resume="' + qEscAttr(r.id) + '">Retry</button>' : '')
+      + (r.status !== 'paused' ? ' <button type="button" data-rec-stop="' + qEscAttr(r.id) + '">Stop</button>' : '') + '</span>').join('') + '</div>' : '')
+    + '<form class="room-rec-ask"><input data-rec-ask aria-label="Ask for recommendations" placeholder="Ask for more…" value="' + qEscAttr(recRead(key + '.draft', '')) + '"><button type="submit" title="Ask">↑</button></form>'
+    + '<details class="room-rec-steering"' + (recRead(key + '.directionOpen', '') === '1' ? ' open' : '') + '><summary>Direction</summary><textarea data-rec-steer aria-label="Recommendation direction" placeholder="What to look for">' + qEsc(recRead(key + '.steeringDraft', settings.steering || '')) + '</textarea><button type="button" data-rec-save-steer>Save</button></details>';
+  const list = host.querySelector('.room-rec-list');
+  list.scrollTop = Number(recRead(key + '.scroll', '0')) || 0;
+  list.onscroll = () => recSave(key + '.scroll', list.scrollTop);
+  host.querySelector('[data-rec-scope]').onchange = e => { recSave(kind + '.scope', e.target.value); openRoomRecommendations(kind); };
+  host.querySelector('[data-rec-auto]').onclick = () => recAction(kind, () => apiWrite('/api/recommendations/settings', 'PATCH', { kind, scope, automatic: !settings.automatic }));
+  const input = host.querySelector('[data-rec-ask]');
+  input.oninput = () => recSave(key + '.draft', input.value);
+  if (focused) { const target = host.querySelector(focusSelector); target.focus(); target.setSelectionRange(...cursor); }
+  host.querySelector('[data-rec-steer]').oninput = e => recSave(key + '.steeringDraft', e.target.value);
+  host.querySelector('.room-rec-steering').ontoggle = e => recSave(key + '.directionOpen', e.target.open ? '1' : '0');
+  host.querySelector('form').onsubmit = async e => {
+    e.preventDefault();
+    const text = input.value;
+    await recAction(kind, async () => {
+      await apiWrite('/api/recommendations/requests', 'POST', { kind, scope, text });
+      recSave(key + '.draft', '');
+    });
+  };
+  host.querySelector('[data-rec-save-steer]').onclick = () => recAction(kind, () => apiWrite('/api/recommendations/settings', 'PATCH', { kind, scope, steering: host.querySelector('[data-rec-steer]').value }));
+  host.querySelectorAll('[data-rec-dismiss]').forEach(b => b.onclick = () => recAction(kind, () => apiWrite('/api/recommendations/' + encodeURIComponent(b.dataset.recDismiss), 'DELETE')));
+  host.querySelectorAll('[data-rec-stop]').forEach(b => b.onclick = () => recAction(kind, () => apiWrite('/api/recommendations/requests/' + encodeURIComponent(b.dataset.recStop) + '/cancel', 'POST', {})));
+  host.querySelectorAll('[data-rec-resume]').forEach(b => b.onclick = () => recAction(kind, () => apiWrite('/api/recommendations/requests/' + encodeURIComponent(b.dataset.recResume) + '/resume', 'POST', {})));
+  host.querySelectorAll('[data-rec-open]').forEach(b => b.onclick = async () => {
+    const parent = roomSel;
+    b.disabled = true;
+    try {
+      const out = await apiWrite('/api/recommendations/' + encodeURIComponent(b.dataset.recOpen) + '/open', 'POST', { convoId: parent });
+      if (roomSel !== parent) return;
+      await loadRoomSides();
+      if (out.prefill && window.studioLend?.entry) {
+        const entry = window.studioLend.entry('side', out.convo.subject_id);
+        entry.draft = out.prefill; entry.draftForce = true;
+      }
+      roomSideOpen(out.convo.id);
+    } catch (e) { roomRecErrors[key] = 'Could not open the app discussion.'; renderRoomRecommendations(kind); }
+    finally { b.disabled = false; }
+  });
+  setRoomTabCount(kind === 'papers' ? 'roomPapersCount' : 'roomAppsCount', items.length);
+}
+setInterval(() => { if (coreOpen() && coreView === 'room') refreshVisibleRecommendations(); }, 15000);
 
 /* ── Analogies beside the Room ───────────────────────────────────────────────
    The world-look asks what could be BUILT out of a conversation. This asks the
@@ -11977,6 +12115,7 @@ function roomSelect(id) {
   loadRoomSubjects();
   loadRoomIdeas();
   loadRoomAnalogies();
+  ['papers', 'apps'].forEach(kind => { if (recVisible(kind)) openRoomRecommendations(kind); });
   loadRoomSides();
   loadRoomBoard();
   loadRoomExtract();
@@ -13280,6 +13419,7 @@ const WS_ROUTES = {
   // The Room streams its own turn as it arrives, so this is only about the thread
   // list — titles, new threads, deletions — and only while the Room is on screen.
   'convos:updated': () => { if (coreOpen() && coreView === 'room' && typeof renderRoomThreads === 'function') renderRoomThreads(); },
+  'recommendations:updated': () => refreshVisibleRecommendations(),
   'analogies:updated': () => { if (coreOpen() && coreView === 'room' && typeof loadRoomAnalogies === 'function') loadRoomAnalogies(); },
   'passages:updated': () => { if (coreOpen() && coreView === 'room' && typeof window.loadRoomPassages === 'function') window.loadRoomPassages(); },
   'board:updated': (e) => { if (coreOpen() && coreView === 'room' && roomSel === e.convoId && typeof loadRoomBoard === 'function') loadRoomBoard(); },
