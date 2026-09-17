@@ -50,6 +50,19 @@ export function initializeCollection(kind, scope) {
   db.prepare('INSERT OR IGNORE INTO recommendation_collections(id,kind,scope,due_at) VALUES(?,?,?,?)').run(kind + ':' + scope, kind, scope, now);
   return listRecommendations(kind, scope);
 }
+// Prepare shelves independently of panel visits. INSERT OR IGNORE preserves
+// explicit pauses and steering, including across restarts and backfills.
+function prepareCollections() {
+  const roots=db.prepare(`SELECT c.id FROM convos c
+    WHERE c.subject_type='open' AND c.deleted_at IS NULL AND c.created_by='antoine'
+    AND EXISTS (SELECT 1 FROM convo_messages m JOIN convos s ON s.id=m.convo_id
+      WHERE s.deleted_at IS NULL AND (s.id=c.id OR (s.subject_type='side' AND s.parent_convo_id=c.id))
+      AND m.kind='chat' AND m.role='user')`).all();
+  const insert=db.prepare('INSERT OR IGNORE INTO recommendation_collections(id,kind,scope,due_at) VALUES(?,?,?,?)');
+  const now=Date.now();
+  for(const root of roots)for(const kind of ['papers','apps','media'])insert.run(kind+':'+root.id,kind,root.id,now);
+  if(roots.length)for(const kind of ['papers','apps'])insert.run(kind+':all',kind,'all',now);
+}
 function sourceThreads(scope) {
   return db.prepare(`SELECT id,title FROM convos WHERE subject_type='open' AND deleted_at IS NULL ${scope === 'all' ? '' : 'AND id=?'} ORDER BY id`).all(...(scope === 'all' ? [] : [scope]));
 }
@@ -277,8 +290,8 @@ export async function tick() {
   busy = true;
   try {
     const now = Date.now();
+    prepareCollections();
     for (const c of db.prepare('SELECT * FROM recommendation_collections WHERE automatic=1 AND due_at<=? AND last_auto<=?').all(now, now - 600000)) {
-      if(c.kind==='media'&&c.scope!==activeMediaScope)continue;
       if (c.scope !== 'all' && !sourceThreads(c.scope).length) continue;
       const fingerprint = signature(c.scope);
       if (fingerprint === c.fingerprint) {
@@ -288,7 +301,10 @@ export async function tick() {
       enqueue(c, c.kind === 'papers' ? 'Recommend what could advance these conversations.' : 'Recommend relevant works or projects based on the conversation and interests. No forced challenge or novelty.', false, c.kind === 'apps' ? 2 : 3);
       db.prepare('UPDATE recommendation_collections SET last_auto=? WHERE id=?').run(now, c.id);
     }
-    const request = db.prepare("SELECT * FROM recommendation_requests WHERE status IN ('queued','waiting') AND retry_at<=? ORDER BY manual DESC,created_at LIMIT 1").get(now);
+    const request = db.prepare(`SELECT r.* FROM recommendation_requests r
+      JOIN recommendation_collections c ON c.id=r.collection_id
+      WHERE r.status IN ('queued','waiting') AND r.retry_at<=?
+      ORDER BY r.manual DESC, (c.scope=?) DESC, r.created_at LIMIT 1`).get(now,activeMediaScope || '');
     if (!request) return;
     db.prepare("UPDATE recommendation_requests SET status='running',note='Reading and finding recommendations…' WHERE id=?").run(request.id);
     notify();
@@ -308,7 +324,7 @@ export async function tick() {
 export function focusMedia(scope) {
   if(scope && (!getConvo(scope)||getConvo(scope).subject_type!=='open'))fail('Conversation not found.',404);
   activeMediaScope=scope || null;
-  db.prepare("UPDATE recommendation_requests SET status='cancelled',note='' WHERE manual=0 AND status IN ('queued','running','waiting') AND collection_id IN (SELECT id FROM recommendation_collections WHERE kind='media' AND scope<>?)").run(scope || '');
+  // Focus only raises priority; changing threads must not cancel preparation.
   return {ok:true};
 }
 export function resumeRequest(id) {

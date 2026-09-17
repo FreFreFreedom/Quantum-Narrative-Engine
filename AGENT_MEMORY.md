@@ -1037,3 +1037,11 @@ adds shared Mind selection and bounded public-source discovery through the exist
 second-account helper. Existing projects and Idea to build remain visibly distinct;
 papers retain title-only content. Personal save notes and mixed named collections
 remain excluded. The three Room recommendation/library plans record this release.
+
+Follow-up, 2026-09-17: Antoine wants recommendations ready BEFORE opening panels.
+The scheduler now creates Papers/Projects/Media collections for every nonempty Room
+thread (including Side Talk content), plus Papers/Projects all-conversation shelves.
+Existing and future threads prepare without a panel visit. Open-thread work takes
+priority; changing threads no longer cancels other media preparation. Explicit
+pauses survive. The existing single worker and unchanged-context cache remain;
+initial catch-up needs time and never guarantees instant results on an empty shelf.

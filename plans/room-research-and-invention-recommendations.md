@@ -1,5 +1,7 @@
 # Papers and Apps recommendations in the Room
 
+Timing correction, 2026-09-17: all nonempty existing/new Room threads and both all-conversation shelves now prepare automatically before panels are opened. Open-thread work takes priority; explicit pauses are preserved. Initial sequential catch-up takes time. This replaces first-panel-visit activation below.
+
 Status: ORIGINAL FEATURES AND BROADER DISCOVERY EXTENSION IMPLEMENTED. 2026-09-17. Apps is now labelled Projects. Existing source-backed projects and Idea to build cards stay distinct, with shared Save/Attach and relevant Mind context. Public source discovery uses the existing side helper and bounded HTTPS fetches; status remains explicitly unknown unless confirmed. This records implementation, not exhaustive live-model verification.
 
 - New scope from Antoine, 2026-09-17: the Apps recommendations must ALSO discover existing apps, projects and initiatives relevant to his conversations. His words: “it doesnt have to just be computer apps.” This extends, rather than replaces, ideas for things he might build. Implemented in the shared reference-library pass; the older DONE record below covers the original generators.
