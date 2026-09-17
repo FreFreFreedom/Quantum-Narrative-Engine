@@ -1078,6 +1078,12 @@ export function addMark(convoId, { messageId, snippet = '', label = '' } = {}) {
   if (!getConvo(convoId)) return { error: 'not_found' };
   const mid = String(messageId || '').trim();
   if (!mid) return { error: 'empty' };
+  // A chapter belongs to exactly one conversation. The UI already sends the
+  // open conversation's own message id, but enforce that boundary here too so a
+  // stale panel or direct request can never file another thread's passage under
+  // this one.
+  const ownsMessage = db.prepare(`SELECT 1 FROM convo_messages WHERE id=? AND convo_id=?`).get(mid, convoId);
+  if (!ownsMessage) return { error: 'no_such_message' };
   const text = String(snippet || '').replace(/\s+/g, ' ').trim().slice(0, 100000);
   // The label is what shows in the strip, so it falls back to the first words of
   // the passage — a chapter with no name is still worth having.

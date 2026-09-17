@@ -137,7 +137,19 @@ assert.ok(listMessages(branched.convo.id).some((x) => x.id === carried[0].messag
 assert.ok(deleteMark(convo.id, m.mark.id).ok);
 assert.equal(listMarks(convo.id).length, 1);
 assert.equal(deleteMark(convo.id, m.mark.id).error, 'not_found', 'deleting twice is a 404, not a silent ok');
-console.log('chapters OK — saved, labelled, carried into a fork, deleted');
+
+// Two conversations keep two independent chapter shelves. Even a direct request
+// cannot file conversation A's message under conversation B.
+const { convo: otherChapterConvo } = createOpenConvo({ title: 'Another chapter shelf' });
+ins.run('other-m1', otherChapterConvo.id, 'assistant', 'chat', 'A different conversation and passage.');
+const otherMark = addMark(otherChapterConvo.id, { messageId: 'other-m1', snippet: 'different conversation', label: 'Other thread' });
+assert.ok(otherMark.ok);
+assert.equal(listMarks(otherChapterConvo.id).length, 1);
+assert.equal(listMarks(otherChapterConvo.id)[0].label, 'Other thread');
+assert.equal(listMarks(convo.id).length, 1, 'adding a chapter elsewhere does not enter this conversation');
+assert.equal(addMark(otherChapterConvo.id, { messageId: 'm4', snippet: 'wrong shelf' }).error, 'no_such_message');
+assert.equal(deleteMark(otherChapterConvo.id, listMarks(convo.id)[0].id).error, 'not_found', 'one conversation cannot delete another conversation\'s chapter');
+console.log('chapters OK — saved, labelled, carried into a fork, deleted, and isolated between conversations');
 
 // ─── Passages ────────────────────────────────────────────────────────────────
 // The shelf of kept lines. No model here: the reading is a separate call, and
