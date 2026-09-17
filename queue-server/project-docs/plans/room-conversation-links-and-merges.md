@@ -1,19 +1,21 @@
 # Link and merge Room conversations
 
-**STATUS: PLANNED 2026-09-16 — design proposal only. This is not a green light to
-build it.**
+**STATUS: IMPLEMENTED 2026-09-16.**
 
 Antoine asked to be able to merge conversations and to reference one conversation
 from another in the Room. This brief records the proposed shape so another session
 can continue the design without asking him to explain the idea again.
 
-Two choices are recommended here but are not yet Antoine's decisions:
+Antoine approved both recommended choices on 2026-09-16:
 
 1. A reference is fixed at the point when it is attached, with an explicit **Refresh**
-   action if the source later grows. The alternative is a live reference whose meaning
-   can change silently.
-2. A merge opens with a model-written bridge between the source conversations. The
-   alternative is a blank new thread that merely carries the sources as background.
+   action if the source later grows.
+2. A merge opens with a model-written bridge between the source conversations.
+
+He added one direct-manipulation requirement in the same approval: while a destination
+conversation is open, dragging another conversation from the left thread list and
+dropping it onto the chat must attach it as a reference. This is the same lasting
+snapshot as the picker action, not a second attachment type and not a copied message.
 
 ## The distinction the interface must protect
 
@@ -47,6 +49,11 @@ behind its `...` menu. Removing it only removes the link; it never removes the s
 From then on, the referenced conversation informs every answer in the destination
 thread. A specific passage can still be carried as a quote with the existing quote
 flow; that is a citation to one passage, while the Attached card is lasting context.
+
+The faster gesture is direct: drag any non-open thread row from the left list and drop
+it onto the open chat. The chat highlights as a link target, and the resulting
+conversation chip appears above its composer and in Attached. The currently open
+thread is not draggable onto itself.
 
 ### Merging
 
@@ -237,4 +244,3 @@ Then drive the live app in the states people actually use:
 - automatically merging conversations because the model thinks they are related;
 - a graph view of conversation ancestry;
 - making every conversation in the database globally searchable by the model.
-

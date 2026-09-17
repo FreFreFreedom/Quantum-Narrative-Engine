@@ -13,7 +13,8 @@ const passages = await import('../server/src/services/passages.js');
 const convos = await import('../server/src/services/conversations.js');
 const {
   lengthRequest, forkConvo, createOpenConvo, listMessages, listOpenConvos, addMark, listMarks, deleteMark,
-  getClarificationMode, setClarificationMode,
+  getClarificationMode, setClarificationMode, attachConvoReference, refreshConvoReference,
+  detachConvoReference, listConvoLinks, listLinkSources, createSideTalk, createMergedConvo,
 } = convos;
 convos.bindConversationsDb(openDb());
 
@@ -65,6 +66,54 @@ assert.equal(forkConvo(convo.id, { throughMessageId: 'nope' }).error, 'no_such_m
 assert.equal(forkConvo('missing').error, 'not_found');
 assert.ok(listOpenConvos(50).some((c) => c.id === part.convo.id), 'a fork shows up in the Room');
 console.log('fork OK — whole thread, from a point, no stacked suffix, original untouched');
+
+// ─── Conversation references ────────────────────────────────────────────────
+// A link freezes the source. Later additions and even a rewind cannot quietly
+// change what the destination used; Refresh is the only operation that moves it.
+const { convo: destination } = createOpenConvo({ title: 'Destination' });
+const { convo: source } = createOpenConvo({ title: 'Source thread' });
+ins.run('s1', source.id, 'user', 'chat', 'the source fact');
+ins.run('s2', source.id, 'assistant', 'chat', 'the source answer');
+const linked = attachConvoReference(destination.id, source.id);
+assert.ok(linked.ok, JSON.stringify(linked));
+assert.equal(linked.links.length, 1);
+const firstLink = db.prepare('SELECT * FROM convo_links WHERE id=?').get(linked.link.id);
+assert.match(firstLink.snapshot_text, /the source fact/);
+assert.match(firstLink.snapshot_text, /the source answer/);
+
+ins.run('s3', source.id, 'user', 'chat', 'a later addition');
+assert.doesNotMatch(db.prepare('SELECT snapshot_text FROM convo_links WHERE id=?').get(firstLink.id).snapshot_text, /later addition/, 'a source growing does not alter a reference');
+assert.ok(refreshConvoReference(destination.id, firstLink.id).ok);
+assert.match(db.prepare('SELECT snapshot_text FROM convo_links WHERE id=?').get(firstLink.id).snapshot_text, /later addition/, 'Refresh deliberately moves the snapshot');
+
+const duplicate = attachConvoReference(destination.id, source.id);
+assert.ok(duplicate.already);
+assert.equal(listConvoLinks(destination.id).length, 1, 'the same source is one reference');
+assert.equal(attachConvoReference(destination.id, destination.id).error, 'cannot_link_self');
+assert.equal(attachConvoReference(source.id, destination.id).error, 'link_cycle', 'A -> B prevents B -> A');
+
+// Rewind removes source rows physically, but the refreshed snapshot remains.
+assert.ok(convos.rewindConvo(source.id, 's3').ok);
+assert.match(db.prepare('SELECT snapshot_text FROM convo_links WHERE id=?').get(firstLink.id).snapshot_text, /later addition/);
+
+// Merge origins share the storage but are lineage, not removable attachments.
+db.prepare(`INSERT INTO convo_links (id,target_convo_id,source_convo_id,kind,source_title,snapshot_text,digest_text) VALUES ('origin-test',?,?,'merge_origin','Origin','x','x')`).run(destination.id, convo.id);
+assert.equal(detachConvoReference(destination.id, 'origin-test').error, 'immutable_origin');
+assert.equal(refreshConvoReference(destination.id, 'origin-test').error, 'immutable_origin');
+assert.ok(detachConvoReference(destination.id, firstLink.id).ok);
+
+const side = createSideTalk(convo.id).convo;
+assert.ok(listLinkSources(destination.id).some((x) => x.id === side.id && x.subject_type === 'side'), 'Side Talks are eligible sources');
+const sourceBeforeMerge = listMessages(source.id).length;
+const merged = createMergedConvo([convo.id, source.id, side.id]);
+assert.ok(merged.ok, JSON.stringify(merged));
+assert.equal(merged.links.length, 3);
+assert.ok(merged.links.every((x) => x.kind === 'merge_origin'));
+assert.equal(listMessages(merged.convo.id).length, 0, 'sources are lineage, never pasted into the new transcript');
+assert.equal(listMessages(source.id).length, sourceBeforeMerge, 'merging does not alter a source');
+assert.equal(createMergedConvo([convo.id]).error, 'invalid_merge_count');
+assert.equal(createMergedConvo([convo.id, 'missing']).error, 'not_found');
+console.log('conversation references and merges OK — frozen, refreshable, cycle-safe, rewind-safe, origins immutable, Side Talks included, transcripts untouched');
 
 // ─── Chapters ────────────────────────────────────────────────────────────────
 // A saved place, its label falling back to the passage, and a fork that carries

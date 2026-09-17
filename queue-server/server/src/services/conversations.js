@@ -403,6 +403,272 @@ export function listMessages(convoId) {
   return db.prepare(`SELECT * FROM convo_messages WHERE convo_id=? ORDER BY created_at ASC, rowid ASC`).all(convoId);
 }
 
+// ─── Conversation references and merges ─────────────────────────────────────
+// A reference is a captured conversation, not a live pointer. The exact snapshot
+// is the authority; the digest is the bounded piece carried on ordinary turns.
+// Merge origins use the same record but cannot be refreshed or detached.
+export const MAX_CONVO_LINKS = 6;
+const LINK_DIGEST_CHARS = 8000;
+const LINKS_PROMPT_CHARS = 24000;
+
+function snapshotConversation(convo) {
+  const messages = listMessages(convo.id);
+  const last = messages.at(-1) || null;
+  const text = messages.map((m) => {
+    const who = m.role === 'user' ? 'Antoine' : 'Assistant';
+    const kind = m.kind === 'plan' ? ' [plan]' : '';
+    return `${who}${kind}: ${String(m.text || '').trim()}`;
+  }).join('\n\n');
+  return {
+    text,
+    throughMessageId: last?.id || null,
+    throughCreatedAt: last?.created_at || null,
+  };
+}
+
+function snapshotDigest(convo, snapshot) {
+  const text = String(snapshot || '');
+  if (text.length <= LINK_DIGEST_CHARS) return text;
+  const recap = String(convo.recap || '').trim();
+  const tailChars = recap ? 5200 : 6000;
+  const openingChars = LINK_DIGEST_CHARS - tailChars - (recap ? Math.min(recap.length, 1800) + 80 : 80);
+  return [
+    text.slice(0, Math.max(800, openingChars)),
+    recap ? `Earlier conversation recap:\n${recap.slice(0, 1800)}` : '',
+    '[middle available through read_linked_conversation]',
+    text.slice(-tailChars),
+  ].filter(Boolean).join('\n\n');
+}
+
+export function listConvoLinks(targetConvoId) {
+  if (!db) return [];
+  return db.prepare(`
+    SELECT l.id, l.target_convo_id, l.source_convo_id, l.kind,
+           l.through_message_id, l.through_created_at, l.source_title,
+           l.created_at, l.refreshed_at,
+           c.title AS current_title, c.subject_type AS source_type,
+           c.parent_convo_id AS source_parent_convo_id,
+           c.deleted_at AS source_deleted_at
+      FROM convo_links l
+      LEFT JOIN convos c ON c.id=l.source_convo_id
+     WHERE l.target_convo_id=?
+     ORDER BY CASE l.kind WHEN 'merge_origin' THEN 0 ELSE 1 END, l.created_at ASC, l.rowid ASC
+  `).all(targetConvoId);
+}
+
+export function mergeBridgeReady(targetConvoId) {
+  if (!db) return false;
+  return !!db.prepare(`SELECT 1 FROM convo_messages WHERE convo_id=? AND meta LIKE '%"merge_bridge":true%'`).get(targetConvoId);
+}
+
+export function listLinkSources(targetConvoId = null) {
+  if (!db) return [];
+  return db.prepare(`
+    SELECT c.id, c.title, c.subject_type, c.parent_convo_id, c.turns, c.updated_at,
+           p.title AS parent_title
+      FROM convos c
+      LEFT JOIN convos p ON p.id=c.parent_convo_id
+     WHERE c.deleted_at IS NULL AND c.subject_type IN ('open','side')
+       AND (? IS NULL OR c.id<>?)
+     ORDER BY c.updated_at DESC
+     LIMIT 300
+  `).all(targetConvoId, targetConvoId);
+}
+
+function wouldLinkCycle(targetConvoId, sourceConvoId) {
+  const rows = db.prepare(`SELECT target_convo_id, source_convo_id FROM convo_links WHERE source_convo_id IS NOT NULL`).all();
+  const next = new Map();
+  for (const row of rows) {
+    if (!next.has(row.target_convo_id)) next.set(row.target_convo_id, []);
+    next.get(row.target_convo_id).push(row.source_convo_id);
+  }
+  const stack = [sourceConvoId];
+  const seen = new Set();
+  while (stack.length) {
+    const id = stack.pop();
+    if (id === targetConvoId) return true;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    stack.push(...(next.get(id) || []));
+  }
+  return false;
+}
+
+export function attachConvoReference(targetConvoId, sourceConvoId) {
+  if (!db) return { error: 'no_db' };
+  const target = getConvo(targetConvoId);
+  const source = getConvo(sourceConvoId);
+  if (!target || !source) return { error: 'not_found' };
+  if (target.id === source.id) return { error: 'cannot_link_self' };
+  const existing = db.prepare(`SELECT id FROM convo_links WHERE target_convo_id=? AND source_convo_id=?`).get(target.id, source.id);
+  if (existing) return { ok: true, already: true, links: listConvoLinks(target.id) };
+  const count = db.prepare(`SELECT COUNT(*) AS n FROM convo_links WHERE target_convo_id=?`).get(target.id)?.n || 0;
+  if (count >= MAX_CONVO_LINKS) return { error: 'too_many_links' };
+  if (wouldLinkCycle(target.id, source.id)) return { error: 'link_cycle' };
+  const snap = snapshotConversation(source);
+  const id = randomUUID();
+  db.prepare(`INSERT INTO convo_links
+    (id, target_convo_id, source_convo_id, kind, through_message_id, through_created_at, source_title, snapshot_text, digest_text)
+    VALUES (?,?,?,'reference',?,?,?,?,?)`)
+    .run(id, target.id, source.id, snap.throughMessageId, snap.throughCreatedAt,
+      source.title || DEFAULT_OPEN_TITLE, snap.text, snapshotDigest(source, snap.text));
+  db.prepare(`UPDATE convos SET updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(target.id);
+  broadcastAll('convos:updated', { convoId: target.id });
+  return { ok: true, link: listConvoLinks(target.id).find((x) => x.id === id), links: listConvoLinks(target.id) };
+}
+
+export function refreshConvoReference(targetConvoId, linkId) {
+  if (!db) return { error: 'no_db' };
+  const link = db.prepare(`SELECT * FROM convo_links WHERE id=? AND target_convo_id=?`).get(linkId, targetConvoId);
+  if (!link) return { error: 'not_found' };
+  if (link.kind !== 'reference') return { error: 'immutable_origin' };
+  const source = getConvo(link.source_convo_id);
+  if (!source) return { error: 'source_unavailable' };
+  const snap = snapshotConversation(source);
+  db.prepare(`UPDATE convo_links SET through_message_id=?, through_created_at=?, source_title=?, snapshot_text=?, digest_text=?, refreshed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
+    .run(snap.throughMessageId, snap.throughCreatedAt, source.title || link.source_title,
+      snap.text, snapshotDigest(source, snap.text), link.id);
+  broadcastAll('convos:updated', { convoId: targetConvoId });
+  return { ok: true, links: listConvoLinks(targetConvoId) };
+}
+
+export function detachConvoReference(targetConvoId, linkId) {
+  if (!db) return { error: 'no_db' };
+  const link = db.prepare(`SELECT * FROM convo_links WHERE id=? AND target_convo_id=?`).get(linkId, targetConvoId);
+  if (!link) return { error: 'not_found' };
+  if (link.kind !== 'reference') return { error: 'immutable_origin' };
+  db.prepare(`DELETE FROM convo_links WHERE id=?`).run(link.id);
+  broadcastAll('convos:updated', { convoId: targetConvoId });
+  return { ok: true, links: listConvoLinks(targetConvoId) };
+}
+
+function linkedConversationsBlock(convoId) {
+  const rows = db.prepare(`SELECT id, kind, source_title, through_created_at, digest_text FROM convo_links WHERE target_convo_id=? ORDER BY created_at ASC, rowid ASC`).all(convoId);
+  if (!rows.length) return '';
+  let used = 0;
+  const blocks = [];
+  for (const row of rows) {
+    const room = Math.max(0, LINKS_PROMPT_CHARS - used);
+    if (!room) break;
+    const text = String(row.digest_text || '').slice(0, room);
+    used += text.length;
+    blocks.push(`--- ${row.kind === 'merge_origin' ? 'MERGE ORIGIN' : 'REFERENCED CONVERSATION'} [${row.id}] — "${row.source_title}"${row.through_created_at ? ` (captured through ${row.through_created_at})` : ''} ---\n${text}`);
+  }
+  return `\n=== LINKED CONVERSATIONS ===\nThese are deliberate, lasting attachments. Use them as context, while keeping clear which conversation a claim came from. If exact wording or an omitted middle passage matters, call read_linked_conversation with its link id.\n\n${blocks.join('\n\n')}`;
+}
+
+const LINKED_CONVERSATION_TOOL = {
+  name: 'read_linked_conversation',
+  description: 'Read or search the exact captured snapshot of a conversation deliberately linked to the current thread. Use the link id shown in LINKED CONVERSATIONS. This cannot read unlinked Room conversations.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      link_id: { type: 'string' },
+      query: { type: 'string', description: 'Optional words to find inside the snapshot.' },
+      offset: { type: 'integer', description: 'Character offset when no query is given.' },
+      length: { type: 'integer', description: 'Maximum characters to return, up to 12000.' },
+    },
+    required: ['link_id'],
+  },
+};
+
+function readLinkedConversation(convoId, input = {}) {
+  const row = db.prepare(`SELECT source_title, snapshot_text FROM convo_links WHERE id=? AND target_convo_id=?`).get(String(input.link_id || ''), convoId);
+  if (!row) return { error: 'not_linked' };
+  const text = String(row.snapshot_text || '');
+  const length = Math.min(Math.max(Number(input.length) || 8000, 500), 12000);
+  const query = String(input.query || '').trim().toLowerCase();
+  let offset = Math.max(0, Number(input.offset) || 0);
+  if (query) {
+    const hit = text.toLowerCase().indexOf(query);
+    if (hit < 0) return { title: row.source_title, found: false };
+    offset = Math.max(0, hit - Math.floor(length / 3));
+  }
+  return { title: row.source_title, offset, total_chars: text.length, text: text.slice(offset, offset + length) };
+}
+
+const MERGE_BRIDGE_PROMPT = `Several earlier conversations have just been brought together into one new Room thread. Write the opening bridge for the new conversation.
+
+State what they genuinely hold in common, where they differ or use different frames, what each one contributes that the others do not, and the live questions that only appear when they are read together. Preserve disagreement. Do not call this a summary, do not describe your task, and do not propose implementation unless the sources themselves are about implementation. Use plain language and no decorative headings. Never invent a conclusion or fact absent from the sources.`;
+
+async function writeMergeBridge(targetConvoId) {
+  const target = getConvo(targetConvoId);
+  if (!target) return { error: 'not_found' };
+  const origins = db.prepare(`SELECT source_title, digest_text FROM convo_links WHERE target_convo_id=? AND kind='merge_origin' ORDER BY created_at, rowid`).all(targetConvoId);
+  if (origins.length < 2) return { error: 'not_a_merge' };
+  const material = origins.map((o, i) => `=== SOURCE ${i + 1}: ${o.source_title} ===\n${o.digest_text}`).join('\n\n');
+  try {
+    const out = await generateText({
+      prompt: `${MERGE_BRIDGE_PROMPT}\n\n${studioPersonaText() ? `Shared voice and style:\n${studioPersonaText()}\n\n` : ''}${material}`,
+      feature: 'summary', label: 'conversations:merge-bridge', maxTokens: 1400,
+      allowLongOutput: true, timeoutMs: 120_000, helperWaitMs: 120_000, claudeLastResort: true,
+    });
+    const text = String(out?.text || '').trim();
+    if (!text) return { error: 'bridge_failed' };
+    const old = db.prepare(`SELECT id FROM convo_messages WHERE convo_id=? AND meta LIKE '%"merge_bridge":true%'`).get(targetConvoId);
+    if (old) db.prepare(`UPDATE convo_messages SET text=? WHERE id=?`).run(text, old.id);
+    else db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta) VALUES (?,?, 'assistant','chat',?,?)`)
+      .run(randomUUID(), targetConvoId, text, JSON.stringify({ merge_bridge: true }));
+    db.prepare(`UPDATE convos SET updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(targetConvoId);
+    broadcastAll('convos:updated', { convoId: targetConvoId });
+    return { ok: true, text };
+  } catch (e) {
+    console.error('[room] merge bridge failed:', e?.message || e);
+    return { error: 'bridge_failed', message: e?.message || 'The bridge could not be written.' };
+  }
+}
+
+export async function retryMergeBridge(targetConvoId) {
+  return writeMergeBridge(targetConvoId);
+}
+
+export function createMergedConvo(sourceIds, { createdBy = 'antoine' } = {}) {
+  if (!db) return { error: 'no_db' };
+  const ids = [...new Set((Array.isArray(sourceIds) ? sourceIds : []).map((x) => String(x || '').trim()).filter(Boolean))];
+  if (ids.length < 2 || ids.length > MAX_CONVO_LINKS) return { error: 'invalid_merge_count' };
+  const sources = ids.map(getConvo);
+  if (sources.some((x) => !x)) return { error: 'not_found' };
+  const title = sources.length === 2
+    ? `${sources[0].title || 'Conversation'} + ${sources[1].title || 'Conversation'}`
+    : `${sources[0].title || 'Conversation'} + ${sources.length - 1} more`;
+  const made = createOpenConvo({ title: title.slice(0, 120), createdBy });
+  if (made.error) return made;
+  const target = made.convo;
+  const insert = db.prepare(`INSERT INTO convo_links
+    (id, target_convo_id, source_convo_id, kind, through_message_id, through_created_at, source_title, snapshot_text, digest_text)
+    VALUES (?,?,?,'merge_origin',?,?,?,?,?)`);
+  for (const source of sources) {
+    const snap = snapshotConversation(source);
+    insert.run(randomUUID(), target.id, source.id, snap.throughMessageId, snap.throughCreatedAt,
+      source.title || DEFAULT_OPEN_TITLE, snap.text, snapshotDigest(source, snap.text));
+  }
+  const seen = new Set();
+  for (const source of sources) {
+    for (const row of convoSubjectRows(source)) {
+      if (row.subject_type === 'open' || row.subject_type === 'side') continue;
+      const key = `${row.subject_type}\0${row.subject_id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (listConvoSubjects(target.id).length >= MAX_ATTACHED_SUBJECTS) break;
+      attachSubject(target.id, { subjectType: row.subject_type, subjectId: row.subject_id, subjectHint: row.subject_hint || null });
+    }
+  }
+  return { ok: true, convo: getConvo(target.id), links: listConvoLinks(target.id) };
+}
+
+export async function mergeConversations(sourceIds, { createdBy = 'antoine' } = {}) {
+  const made = createMergedConvo(sourceIds, { createdBy });
+  if (made.error) return made;
+  const bridge = await writeMergeBridge(made.convo.id);
+  if (bridge.ok) {
+    // The temporary "A + B" label is useful immediately; the usual cheap title
+    // pass replaces it with what the joined material is actually about.
+    db.prepare(`UPDATE convos SET title_auto=1 WHERE id=?`).run(made.convo.id);
+    smartTitleSoon(made.convo.id);
+  }
+  return { ...made, convo: getConvo(made.convo.id), bridge: bridge.ok ? bridge.text : null, bridge_error: bridge.ok ? null : bridge.error };
+}
+
 // Rewind: drop a message and everything said after it, so the question can be
 // asked again differently. Destructive on purpose — fork is the keeping kind.
 export function rewindConvo(convoId, messageId) {
@@ -1424,6 +1690,9 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // for the same reason: variable material that belongs AFTER the cached prefix,
     // never ahead of it. See parentTranscriptBlock().
     parentTranscriptFor(convo),
+    // A deliberate conversation reference is also variable, cache-safe context.
+    // Digests ride here; the exact frozen snapshots stay behind the bounded tool.
+    linkedConversationsBlock(convo.id),
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, historyWindow) || '(nothing yet)'}`,
     depth && studioPersona() ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     instruction
@@ -1473,8 +1742,12 @@ async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens,
 // the structured turns (/plan, /fold, /reframe, /more) ask for one JSON object
 // back, and a tool round mid-way through that is a round that returns prose
 // instead of the object the caller then has to parse.
-const studioTools = () => STUDIO_TOOLS;
-const studioDispatch = (name, input) => dispatchStudioTool(db, name, input);
+const studioTools = (convoId) => listConvoLinks(convoId).length
+  ? [...STUDIO_TOOLS, LINKED_CONVERSATION_TOOL]
+  : STUDIO_TOOLS;
+const studioDispatch = (convoId) => (name, input) => name === LINKED_CONVERSATION_TOOL.name
+  ? readLinkedConversation(convoId, input)
+  : dispatchStudioTool(db, name, input);
 
 function saveAssistantTurn(convoId, text, meta = null) {
   const mid = randomUUID();
@@ -1567,7 +1840,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     // The lookup tools (plan "roaming-conversations-backend" §2). Only the chat
     // turn gets them: it is the one that answers a question, and the one whose
     // prompt now claims it can look things up.
-    tools: studioTools(), dispatchTool: studioDispatch,
+    tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
     // 4000, not 450 and not 1200. Both smaller numbers were brevity caps: 450
     // because nothing streamed and the whole answer had to be written before any
     // of it showed, 1200 because that was the timid first step away from it.
@@ -1642,7 +1915,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     model: turn?.lane?.model || null,
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
-    tools: studioTools(), dispatchTool: studioDispatch,
+    tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
     maxTokens,
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000,
@@ -1706,7 +1979,7 @@ async function runAnswerNowTurn(convoId, { onToken = null, onStatus = null, sign
   const result = await generateTextStream({
     prompt, feature: 'studio',
     model: lane?.model || null, provider: lane?.provider || null, account: lane?.account || null,
-    tools: studioTools(), dispatchTool: studioDispatch,
+    tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
     maxTokens, label: 'conversations:answer-now', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000, onToken, onStatus,
     cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
@@ -1851,7 +2124,7 @@ async function runSecondTurn(convoId) {
   const result = await generateTextStream({
     prompt, feature: lane.feature, model: null, maxTokens: secondTokens,
     label: 'conversations:second', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000,
-    tools: studioTools(), dispatchTool: studioDispatch, cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
+    tools: studioTools(convoId), dispatchTool: studioDispatch(convoId), cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
   });
   if (result.error) return result;
   const laneTag = tagFromVia(result.via, lane.tag);

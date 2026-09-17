@@ -1644,6 +1644,28 @@ export function initConversationsSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_messages ON convo_messages(convo_id, created_at)`); } catch {}
+
+  // A conversation may read another conversation without becoming it. References
+  // and merge origins keep an exact snapshot so a later rewind/delete of the
+  // source cannot silently rewrite the destination's past.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS convo_links (
+      id TEXT PRIMARY KEY,
+      target_convo_id TEXT NOT NULL REFERENCES convos(id),
+      source_convo_id TEXT,
+      kind TEXT NOT NULL CHECK(kind IN ('reference','merge_origin')),
+      through_message_id TEXT,
+      through_created_at TEXT,
+      source_title TEXT NOT NULL DEFAULT '',
+      snapshot_text TEXT NOT NULL DEFAULT '',
+      digest_text TEXT NOT NULL DEFAULT '',
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      refreshed_at TEXT,
+      UNIQUE(target_convo_id, source_convo_id, kind)
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_links_target ON convo_links(target_convo_id, created_at)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_links_source ON convo_links(source_convo_id)`); } catch {}
   // Chapters: a place in a long answer, saved so it can be returned to (his ask,
   // 2026-09-09 — "sometimes i dont finish reading an answer and i send another
   // one"). The row holds the message it lives in AND the passage that was

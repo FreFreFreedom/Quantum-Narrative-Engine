@@ -992,6 +992,8 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
   transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .room-row:hover { background:var(--c-surface); color:var(--c-ink); }
 .room-row.is-sel { background:var(--c-surface-2); color:var(--c-ink); font-weight:600; }
+.room-row[draggable="true"] { cursor:grab; }
+.room-row.is-dragging { opacity:.45; }
 .room-row .rt { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .room-row .rstar { flex:none; color:var(--c-accent); font-size:10px; line-height:1; }
 /* The ⋯ acts on THIS row. Rename and delete used to reach only the thread already
@@ -1031,6 +1033,22 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-titlebtn:hover:not(:disabled) { background:var(--c-surface); border-color:var(--c-border); }
 .room-titlebtn[aria-expanded="true"] { background:var(--c-surface-2); border-color:var(--c-border-2); }
 .room-titlebtn:disabled { cursor:default; opacity:.55; }
+.room-convo.is-convo-drop { outline:2px dashed var(--c-accent); outline-offset:-5px; background:var(--c-accent-tint); }
+.room-mergebox { position:fixed; z-index:240; width:min(360px,calc(100vw - 20px)); max-height:min(520px,calc(100vh - 20px));
+  display:flex; flex-direction:column; gap:8px; padding:10px; border:1px solid var(--c-border-2);
+  border-radius:var(--r-md); background:var(--c-bg); box-shadow:var(--shadow-lg); color:var(--c-ink); }
+.room-mergehead { display:flex; align-items:center; gap:8px; font-weight:600; }
+.room-mergehead span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.room-mergelist { overflow:auto; min-height:80px; max-height:340px; border-top:1px solid var(--c-border); border-bottom:1px solid var(--c-border); }
+.room-mergepick { display:flex; align-items:center; gap:8px; width:100%; padding:7px 4px; border:0; border-bottom:1px solid var(--c-border);
+  background:none; color:inherit; text-align:left; cursor:pointer; }
+.room-mergepick:last-child { border-bottom:0; }
+.room-mergepick:hover { background:var(--c-surface); }
+.room-mergepick input { flex:none; }
+.room-mergepick span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.room-mergeacts { display:flex; justify-content:flex-end; gap:6px; }
+[data-room-link-open] { min-width:0; border:0; padding:0; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+[data-room-link-open]:disabled { cursor:default; color:var(--c-ink-5); }
 /* The name hugs its text, so something has to take the slack and hold the attached
    toggle against the right edge. The count does it — no spacer element for a job a
    margin already does. */
@@ -9454,7 +9472,8 @@ function switchCoreView(v) {
 // is on screen, and manages the two thin side zones around it. The primary
 // subject of a roaming thread is `type: 'open'` with a synthetic uuid, which is
 // what studioEmbed is handed.
-let roomThreads = [], roomSel = null, roomSubjects = [], roomMax = 6;
+let roomThreads = [], roomSel = null, roomSubjects = [], roomLinks = [], roomMax = 6, roomMaxLinks = 6;
+let roomMergeBridgeReady = true;
 let roomIdeasTimer = null;
 let roomInited = false, roomPickOpen = false, roomPickQ = '';
 // Set by initRoom(). Anything that opens or shuts a side zone from outside that
@@ -9469,7 +9488,7 @@ let roomNote = '', roomNoteErr = false, roomThreadsNote = '';
 // than by calling loadSuggestions(), which also kicks off a world-look sync per
 // suggestion — work the picker has no use for.
 let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null, roomPickNotes = null,
-    roomPickFiles = null;   // was assigned in four places and declared in none, so reading it
+    roomPickFiles = null, roomPickConvos = null;   // was assigned in four places and declared in none, so reading it
                             // before the picker had ever been opened threw, and the throw took
                             // the attached-card list down with it
 const ROOM_SEL_KEY = 'fmcns_room_thread';
@@ -9499,7 +9518,7 @@ function setRoomTabCount(id, n) {
    The tab you are standing on always stays, whatever it holds, or the strip would
    drop the thing you are looking at from under you. */
 const ROOM_TAB_HAS = {
-  attached: () => roomAttachedCards().length > 0 || roomPickOpen,
+  attached: () => roomAttachedCards().length > 0 || roomLinks.length > 0 || roomPickOpen,
   passages: () => roomPassages.length > 0,
   ideas: () => roomIdeasReports.length > 0 || roomIdeasRunning,
   // The one tab that shows even while empty: every other pane only ever holds
@@ -9674,7 +9693,7 @@ function initRoom() {
     if (roomPickOpen) {
       // Drop the cached source lists so the picker always re-fetches — otherwise
       // a file uploaded moments ago (or a newly queued task) would be missing.
-      roomPickIdeas = roomPickSuggestions = roomPickPlans = roomPickFiles = roomPickNotes = null;
+      roomPickIdeas = roomPickSuggestions = roomPickPlans = roomPickFiles = roomPickNotes = roomPickConvos = null;
       renderRoomCards();
       roomLoadPickSources();
       const s = document.getElementById('roomPickSearch');
@@ -9687,6 +9706,33 @@ function initRoom() {
   search.oninput = () => { roomPickQ = search.value.trim(); renderRoomPick(); };
   const cardSearch = document.getElementById('roomCardSearch');
   cardSearch.oninput = () => { roomCardQ = cardSearch.value.trim(); renderRoomCards(); };
+  // A thread dragged from the left list onto the open conversation becomes the
+  // same lasting, frozen reference offered by Attached → Conversations.
+  const convoDrop = document.getElementById('roomConvo');
+  if (convoDrop) {
+    let depth = 0;
+    const draggedId = (ev) => ev.dataTransfer?.getData('application/x-qne-conversation') || '';
+    const isConversationDrag = (ev) => Array.from(ev.dataTransfer?.types || []).includes('application/x-qne-conversation');
+    convoDrop.addEventListener('dragenter', (ev) => {
+      if (!isConversationDrag(ev)) return;
+      ev.preventDefault(); depth += 1; convoDrop.classList.add('is-convo-drop');
+    });
+    convoDrop.addEventListener('dragover', (ev) => {
+      if (!isConversationDrag(ev)) return;
+      ev.preventDefault();
+      if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'link';
+    });
+    convoDrop.addEventListener('dragleave', () => {
+      depth = Math.max(0, depth - 1);
+      if (!depth) convoDrop.classList.remove('is-convo-drop');
+    });
+    convoDrop.addEventListener('drop', (ev) => {
+      const sourceId = draggedId(ev);
+      if (!sourceId) return;
+      ev.preventDefault(); depth = 0; convoDrop.classList.remove('is-convo-drop');
+      roomReferenceConversation(sourceId);
+    });
+  }
   // Narrow windows: each side zone is an overlay behind its own button, the same
   // gesture the Content rails and the architecture detail pane already use. On a
   // wide window the zones are inline columns, so collapsing them shrinks the
@@ -10102,15 +10148,18 @@ function roomPassageWorldHtml(report) {
 }
 
 async function loadRoomSubjects() {
-  if (!roomSel) { roomSubjects = []; renderRoomCards(); return; }
+  if (!roomSel) { roomSubjects = []; roomLinks = []; roomMergeBridgeReady = true; renderRoomCards(); return; }
   const want = roomSel;
   try {
     const out = await api('/api/convos/' + encodeURIComponent(want) + '/subjects');
     if (roomSel !== want) return; // a different thread was picked while this was in flight
     roomSubjects = out.subjects || [];
+    roomLinks = out.links || [];
+    roomMergeBridgeReady = out.merge_bridge_ready !== false;
     // The cap is the server's to state — every attached card is re-sent on every
     // turn, so it is a cost control and hardcoding it here would let the two drift.
     if (out.max) roomMax = out.max;
+    if (out.max_links) roomMaxLinks = out.max_links;
   } catch (e) { if (roomSel === want) roomSubjects = []; }
   renderRoomCards();
 }
@@ -10206,7 +10255,7 @@ function renderRoomThreads() {
 
   // One row: the name, a star when it carries one, and the ⋯. No lane and no turn
   // count — see the note on .room-row in the stylesheet.
-  const rowHtml = (t) => `<div class="room-row${t.id === roomSel ? ' is-sel' : ''}" data-room-thread="${qEscAttr(t.id)}" role="button" tabindex="0" title="${qEscAttr(t.title || 'Open conversation')}">`
+  const rowHtml = (t) => `<div class="room-row${t.id === roomSel ? ' is-sel' : ''}" data-room-thread="${qEscAttr(t.id)}" role="button" tabindex="0" draggable="${t.id === roomSel ? 'false' : 'true'}" title="${qEscAttr(t.title || 'Open conversation')}">`
     + `<span class="rt">${qEsc(t.title || 'Open conversation')}</span>`
     + (Number(t.starred) ? '<span class="rstar" aria-label="Starred">★</span>' : '')
     + `<button type="button" class="room-rowmore" data-room-more="${qEscAttr(t.id)}" aria-label="More for this thread" aria-haspopup="menu" title="Rename, star or delete"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-more"/></svg></button>`
@@ -10239,6 +10288,15 @@ function renderRoomThreads() {
     const pick = () => roomSelect(el.getAttribute('data-room-thread'));
     el.onclick = (ev) => { if (!ev.target.closest('[data-room-more]')) pick(); };
     el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
+    el.ondragstart = (ev) => {
+      const id = el.getAttribute('data-room-thread');
+      if (!id || id === roomSel || !ev.dataTransfer) { ev.preventDefault(); return; }
+      ev.dataTransfer.effectAllowed = 'link';
+      ev.dataTransfer.setData('application/x-qne-conversation', id);
+      ev.dataTransfer.setData('text/plain', (roomThreads.find(t => t.id === id) || {}).title || 'Conversation');
+      el.classList.add('is-dragging');
+    };
+    el.ondragend = () => el.classList.remove('is-dragging');
   });
   host.querySelectorAll('[data-room-more]').forEach(el => {
     el.onclick = (ev) => { ev.stopPropagation(); openRoomRowMenu(el, el.getAttribute('data-room-more')); };
@@ -10377,6 +10435,8 @@ function openRoomMoreMenu(btn) {
     (turns > 0 || turns >= 4) ? { sep: true } : null,
     turns > 0 ? { label: 'Fork it', title: 'The same conversation so far, carried into a new thread',
       on: () => roomForkThread(roomSel) } : null,
+    { label: 'Merge with conversations…', title: 'Create a new thread from this one and other conversations',
+      on: openRoomMergePicker },
     turns >= 4 ? { label: 'Start fresh', title: 'What was said is folded into a short recap and the thread carries on',
       on: roomStartFresh } : null,
     { sep: true },
@@ -10432,6 +10492,142 @@ async function roomForkThread(id) {
   }
 }
 
+let roomMergeBox = null;
+function closeRoomMergePicker() {
+  if (roomMergeBox?.parentNode) roomMergeBox.parentNode.removeChild(roomMergeBox);
+  roomMergeBox = null;
+}
+
+async function roomConversationSources() {
+  if (roomPickConvos) return roomPickConvos;
+  if (!roomSel) return [];
+  const out = await api('/api/convos/' + encodeURIComponent(roomSel) + '/link-sources');
+  roomPickConvos = (out && out.convos) || [];
+  return roomPickConvos;
+}
+
+async function openRoomMergePicker() {
+  if (!roomSel) return;
+  closeRoomMergePicker();
+  let sources = [];
+  try { sources = await roomConversationSources(); }
+  catch (e) { roomThreadsNote = 'Could not load conversations to merge.'; renderRoomThreads(); return; }
+  const current = roomThreads.find(t => t.id === roomSel) || {};
+  const chosen = new Set();
+  const box = document.createElement('div');
+  roomMergeBox = box;
+  box.className = 'room-mergebox';
+  box.innerHTML = '<div class="room-mergehead"><span>Merge with “' + qEsc(current.title || 'this conversation') + '”</span>'
+    + '<button type="button" class="uicon" data-merge-close aria-label="Close"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-x"/></svg></button></div>'
+    + '<div class="room-search"><svg class="ic" aria-hidden="true"><use href="#ic-search"/></svg><input type="search" placeholder="Find a conversation" data-merge-search></div>'
+    + '<div class="room-mergelist"></div><div class="room-mergeacts"><button type="button" class="ubtn" data-merge-cancel>Cancel</button><button type="button" class="ubtn is-primary" data-merge-go disabled>Merge</button></div>';
+  const list = box.querySelector('.room-mergelist');
+  const search = box.querySelector('[data-merge-search]');
+  const go = box.querySelector('[data-merge-go]');
+  const paint = () => {
+    const q = String(search.value || '').trim().toLowerCase();
+    const shown = sources.filter(s => !q || String(s.title || '').toLowerCase().includes(q) || String(s.parent_title || '').toLowerCase().includes(q)).slice(0, 120);
+    list.innerHTML = shown.length ? shown.map((s) => '<label class="room-mergepick">'
+      + '<input type="checkbox" data-merge-source="' + qEscAttr(s.id) + '"' + (chosen.has(s.id) ? ' checked' : '') + '>'
+      + '<span>' + qEsc(s.title || 'Open conversation') + (s.subject_type === 'side' && s.parent_title ? ' · ' + qEsc(s.parent_title) : '') + '</span></label>').join('')
+      : '<div class="room-note">Nothing by that name.</div>';
+    list.querySelectorAll('[data-merge-source]').forEach(input => {
+      input.onchange = () => {
+        const id = input.getAttribute('data-merge-source');
+        if (input.checked) chosen.add(id); else chosen.delete(id);
+        go.disabled = chosen.size < 1 || chosen.size > 5;
+      };
+    });
+    go.disabled = chosen.size < 1 || chosen.size > 5;
+  };
+  search.oninput = paint;
+  box.querySelector('[data-merge-close]').onclick = closeRoomMergePicker;
+  box.querySelector('[data-merge-cancel]').onclick = closeRoomMergePicker;
+  go.onclick = async () => {
+    if (!chosen.size) return;
+    go.disabled = true; go.textContent = 'Merging…';
+    try {
+      const out = await apiWrite('/api/convos/merge', 'POST', { source_ids: [roomSel, ...chosen] });
+      const id = out?.convo?.id;
+      closeRoomMergePicker();
+      roomPickConvos = null;
+      await loadRoom();
+      if (id) roomSelect(id);
+      if (out?.bridge_error) {
+        roomNote = 'The conversations are merged. Press Write opening in Attached to create their bridge.';
+        roomNoteErr = false;
+        renderRoomCards();
+      }
+    } catch (e) {
+      go.disabled = false; go.textContent = 'Merge';
+      roomThreadsNote = 'Could not merge those conversations.'; renderRoomThreads();
+    }
+  };
+  paint();
+  document.body.appendChild(box);
+  const anchor = document.getElementById('roomTitleBtn')?.getBoundingClientRect();
+  box.style.left = Math.max(10, Math.min(window.innerWidth - box.offsetWidth - 10, anchor?.left || 10)) + 'px';
+  box.style.top = Math.max(10, Math.min(window.innerHeight - box.offsetHeight - 10, (anchor?.bottom || 40) + 5)) + 'px';
+  setTimeout(() => search.focus(), 0);
+}
+
+async function roomReferenceConversation(sourceId) {
+  if (!roomSel || !sourceId || sourceId === roomSel) return;
+  try {
+    const out = await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/links', 'POST', { source_id: sourceId });
+    roomLinks = out.links || roomLinks;
+    roomNote = out.already ? 'That conversation is already attached.' : '';
+    roomNoteErr = false;
+    roomPickOpen = false; roomPickQ = '';
+  } catch (e) {
+    const code = String(e?.message || '');
+    roomNote = code === 'too_many_links' ? 'This thread already has all the conversation references it can hold.'
+      : code === 'link_cycle' ? 'That would make the conversations refer back to themselves.'
+      : 'Could not attach that conversation.';
+    roomNoteErr = true;
+  }
+  renderRoomCards();
+}
+
+async function roomRefreshReference(linkId) {
+  if (!roomSel) return;
+  try {
+    const out = await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/links/' + encodeURIComponent(linkId) + '/refresh', 'POST', {});
+    roomLinks = out.links || roomLinks; roomNote = 'Reference refreshed.'; roomNoteErr = false;
+  } catch (e) { roomNote = 'Could not refresh that reference.'; roomNoteErr = true; }
+  renderRoomCards();
+}
+
+async function roomDetachReference(linkId) {
+  if (!roomSel) return;
+  try {
+    const out = await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/links/' + encodeURIComponent(linkId), 'DELETE');
+    roomLinks = out.links || roomLinks; roomNote = ''; roomNoteErr = false;
+  } catch (e) { roomNote = 'Could not remove that reference.'; roomNoteErr = true; }
+  renderRoomCards();
+}
+
+async function roomRetryMergeBridge() {
+  if (!roomSel) return;
+  roomNote = 'Writing the opening…'; roomNoteErr = false; renderRoomCards();
+  try {
+    await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/merge-bridge', 'POST', {});
+    roomMergeBridgeReady = true; roomNote = ''; roomNoteErr = false;
+    renderRoomConvo();
+  } catch (e) { roomNote = 'Could not write the opening yet.'; roomNoteErr = true; }
+  renderRoomCards();
+}
+
+function roomOpenLinkedConversation(link) {
+  if (!link || link.source_deleted_at) return;
+  if (link.source_type === 'side' && link.source_parent_convo_id) {
+    roomSelect(link.source_parent_convo_id);
+    setTimeout(() => { roomSideOpenId = link.source_convo_id; roomShowPane('side'); loadRoomSides(); }, 0);
+    return;
+  }
+  if (roomThreads.some(t => t.id === link.source_convo_id)) roomSelect(link.source_convo_id);
+}
+
 // Two clicks from the sidebar (trash icon, then confirm) or from the open
 // thread's own header (same trash icon, same confirm) — either way it is a
 // real DELETE, not a local-only removal, so it survives a refresh.
@@ -10485,11 +10681,11 @@ function renderRoomCards() {
   // of real cards that fit is one below the cap it reports.
   const slots = Math.max(1, roomMax - 1);
   const count = document.getElementById('roomCardCount');
-  if (count) count.textContent = roomSel ? cards.length + '/' + slots : '';
+  if (count) count.textContent = roomSel ? (cards.length + '/' + slots + (roomLinks.length ? ' · ' + roomLinks.length : '')) : '';
   syncRoomTabs();
   const add = document.getElementById('roomAttachBtn');
   if (add) {
-    add.disabled = !roomSel || (!roomPickOpen && cards.length >= slots);
+    add.disabled = !roomSel || (!roomPickOpen && cards.length >= slots && roomLinks.length >= roomMaxLinks);
     add.textContent = roomPickOpen ? '✕' : '＋';
   }
   // The filter row only earns its space once there is more than one card to
@@ -10516,7 +10712,17 @@ function renderRoomCards() {
   const shown = cards.filter(s =>
     (!roomCardTypes.size || roomCardTypes.has(s.subject_type))
     && (!q || roomCardTitle(s).toLowerCase().indexOf(q) !== -1 || (s.label || s.subject_type).toLowerCase().indexOf(q) !== -1));
-  host.innerHTML = !cards.length ? ''
+  const linkHtml = roomLinks.map(l => `<div class="uc uc--row is-static">`
+    + `<div class="uc-head">`
+    + `<span class="room-cardlabel">${l.kind === 'merge_origin' ? 'Origin' : 'Conversation'}</span>`
+    + `<button type="button" class="uc-title" data-room-link-open="${qEscAttr(l.id)}" title="Open ${qEscAttr(l.current_title || l.source_title)}"${l.source_deleted_at ? ' disabled' : ''}>${qEsc(l.current_title || l.source_title)}</button>`
+    + `<span class="uc-acts">`
+    + (l.kind === 'reference' ? `<button type="button" class="uicon" data-room-link-refresh="${qEscAttr(l.id)}" title="Refresh this reference" aria-label="Refresh this reference"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-refresh"/></svg></button>` : '')
+    + (l.kind === 'reference' ? `<button type="button" class="uicon" data-room-link-off="${qEscAttr(l.id)}" title="Remove this reference" aria-label="Remove this reference"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-x"/></svg></button>` : '')
+    + `</span></div></div>`).join('');
+  const bridgeHtml = roomLinks.some(l => l.kind === 'merge_origin') && !roomMergeBridgeReady
+    ? '<button type="button" class="ubtn is-primary" data-room-bridge>Write opening</button>' : '';
+  const cardHtml = !cards.length ? ''
     : !shown.length ? '<div class="room-note">Nothing attached matches this filter.</div>'
     : shown.map(s => `<div class="uc uc--row is-static">`
     + `<div class="uc-head">`
@@ -10526,12 +10732,24 @@ function renderRoomCards() {
     + `<span class="uc-acts"><button type="button" class="uicon" data-room-detach-type="${qEscAttr(s.subject_type)}" data-room-detach-id="${qEscAttr(s.subject_id)}" title="Take this card off" aria-label="Take this card off">`
     + `<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-x"/></svg></button></span>`
     + `</div></div>`).join('');
+  host.innerHTML = linkHtml + bridgeHtml + cardHtml;
   host.querySelectorAll('[data-room-detach-id]').forEach(b => {
     b.onclick = () => roomDetach(b.getAttribute('data-room-detach-type'), b.getAttribute('data-room-detach-id'));
   });
   host.querySelectorAll('[data-room-extract-start]').forEach(b => {
     b.onclick = () => roomExtractStart(b.getAttribute('data-room-extract-start'));
   });
+  host.querySelectorAll('[data-room-link-open]').forEach(b => {
+    b.onclick = () => roomOpenLinkedConversation(roomLinks.find(l => l.id === b.getAttribute('data-room-link-open')));
+  });
+  host.querySelectorAll('[data-room-link-refresh]').forEach(b => {
+    b.onclick = () => roomRefreshReference(b.getAttribute('data-room-link-refresh'));
+  });
+  host.querySelectorAll('[data-room-link-off]').forEach(b => {
+    b.onclick = () => roomDetachReference(b.getAttribute('data-room-link-off'));
+  });
+  const bridge = host.querySelector('[data-room-bridge]');
+  if (bridge) bridge.onclick = roomRetryMergeBridge;
   const pick = document.getElementById('roomAttachPick');
   if (pick) pick.hidden = !roomPickOpen;
   if (roomPickOpen) renderRoomPick();
@@ -10549,19 +10767,26 @@ window.studioAboutBar = function (bar, opts) {
   if (!mine) { bar.innerHTML = ''; return; }
   const cards = roomAttachedCards();
   const slots = Math.max(1, roomMax - 1);
-  bar.innerHTML = (cards.length ? '<span class="se-about-l">about</span>' : '')
+  bar.innerHTML = (cards.length || roomLinks.length ? '<span class="se-about-l">about</span>' : '')
     + cards.map(c => '<span class="se-about" title="' + qEscAttr(roomCardTitle(c)) + '">'
         + '<span class="k">' + qEsc(c.label || c.subject_type) + '</span>'
         + '<span class="t">' + qEsc(roomCardTitle(c)) + '</span>'
         + '<button type="button" data-about-off-type="' + qEscAttr(c.subject_type) + '"'
         + ' data-about-off-id="' + qEscAttr(c.subject_id) + '"'
         + ' title="Take it out of this conversation" aria-label="Take it out">✕</button></span>').join('')
-    ;
+    + roomLinks.map(l => '<span class="se-about" title="' + qEscAttr(l.current_title || l.source_title) + '">'
+        + '<span class="k">' + (l.kind === 'merge_origin' ? 'origin' : 'conversation') + '</span>'
+        + '<span class="t">' + qEsc(l.current_title || l.source_title) + '</span>'
+        + (l.kind === 'reference' ? '<button type="button" data-about-link-off="' + qEscAttr(l.id) + '" title="Remove this reference" aria-label="Remove this reference">✕</button>' : '')
+        + '</span>').join('');
   bar.querySelectorAll('[data-about-off-id]').forEach(b => {
     b.onclick = (ev) => {
       ev.stopPropagation();
       roomDetach(b.getAttribute('data-about-off-type'), b.getAttribute('data-about-off-id'));
     };
+  });
+  bar.querySelectorAll('[data-about-link-off]').forEach(b => {
+    b.onclick = (ev) => { ev.stopPropagation(); roomDetachReference(b.getAttribute('data-about-link-off')); };
   });
 };
 
@@ -11717,7 +11942,7 @@ function roomSelect(id) {
   if (!id || id === roomSel) return;
   roomSel = id;
   try { localStorage.setItem(ROOM_SEL_KEY, id); } catch (e) {}
-  roomSubjects = [];
+  roomSubjects = []; roomLinks = []; roomMergeBridgeReady = true;
   roomPickOpen = false; roomPickQ = '';
   roomCardQ = ''; roomCardTypes = new Set();
   roomNote = ''; roomNoteErr = false;
@@ -11836,19 +12061,21 @@ async function roomDetach(type, id) {
 // they are not a registered subject type, so attaching one would need a backend
 // change, which this view does not make.
 async function roomLoadPickSources() {
-  if (roomPickIdeas && roomPickSuggestions && roomPickPlans && roomPickFiles && roomPickNotes) return;
-  const [ideas, sgs, plans, files, notes] = await Promise.all([
+  if (roomPickIdeas && roomPickSuggestions && roomPickPlans && roomPickFiles && roomPickNotes && roomPickConvos) return;
+  const [ideas, sgs, plans, files, notes, conversations] = await Promise.all([
     api('/api/travaux/ideas').catch(() => null),
     api('/api/travaux/suggestions').catch(() => null),
     api('/api/convos/plans').catch(() => null),
     api('/api/convos/files').catch(() => null),
     api('/api/convos/notes').catch(() => null),
+    roomSel ? api('/api/convos/' + encodeURIComponent(roomSel) + '/link-sources').catch(() => null) : Promise.resolve(null),
   ]);
   roomPickIdeas = (ideas && ideas.ideas) || [];
   roomPickSuggestions = (sgs && sgs.suggestions) || [];
   roomPickPlans = (plans && plans.plans) || [];
   roomPickFiles = (files && files.files) || [];
   roomPickNotes = (notes && notes.notes) || [];
+  roomPickConvos = (conversations && conversations.convos) || [];
   if (roomPickOpen) renderRoomPick();
 }
 
@@ -12051,6 +12278,10 @@ if (roomCardsPanel && roomFileInput) {
 
 function roomPickRows() {
   const rows = [];
+  (roomPickConvos || []).forEach(c => rows.push({
+    type: 'conversation', label: c.subject_type === 'side' ? 'Side talk' : 'Conversation',
+    id: c.id, title: c.title || 'Open conversation', parent_title: c.parent_title || '',
+  }));
   (roomPickIdeas || tvIdeas || []).forEach(i => rows.push({ type: 'seed', label: 'Seed', id: i.id, title: i.title || i.id }));
   (roomPickSuggestions || tvSuggestions || []).forEach(s => rows.push({ type: 'suggestion', label: 'Suggestion', id: s.id, title: s.title || s.id }));
   (roomPickPlans || []).forEach(p => rows.push({ type: 'plan', label: 'Plan', id: p.id, title: `${p.id} — ${p.status || 'UNKNOWN'}` }));
@@ -12078,18 +12309,27 @@ function renderRoomPick() {
   const host = document.getElementById('roomPickList');
   if (!host) return;
   const on = new Set(roomSubjects.map(s => s.subject_type + ' ' + s.subject_id));
+  roomLinks.forEach(l => on.add('conversation\0' + l.source_convo_id));
   const q = roomPickQ.toLowerCase();
-  const rows = roomPickRows()
+  const candidates = roomPickRows()
     .filter(r => r.id && !on.has(r.type + ' ' + r.id))
-    .filter(r => !q || String(r.title).toLowerCase().indexOf(q) !== -1 || r.label.toLowerCase().indexOf(q) !== -1)
-    .slice(0, 80);
+    .filter(r => !q || String(r.title).toLowerCase().indexOf(q) !== -1 || r.label.toLowerCase().indexOf(q) !== -1);
+  // Keep both worlds reachable before a search: dozens of recent conversations,
+  // and the cards/files/notes the picker already held. A single global slice let
+  // one large category crowd every other kind out.
+  const rows = q ? candidates.slice(0, 100) : [
+    ...candidates.filter(r => r.type === 'conversation').slice(0, 40),
+    ...candidates.filter(r => r.type !== 'conversation').slice(0, 60),
+  ];
   if (!rows.length) { host.innerHTML = '<div class="room-note">Nothing to attach.</div>'; return; }
   host.innerHTML = rows.map((r, i) => `<button type="button" class="room-pickrow" data-room-pick="${i}">`
     + `<span class="room-picklabel">${qEsc(r.label)}</span>`
     + `<span class="room-picktitle">${qEsc(String(r.title).slice(0, 100))}</span></button>`).join('');
   host.querySelectorAll('[data-room-pick]').forEach(b => {
     const r = rows[Number(b.getAttribute('data-room-pick'))];
-    b.onclick = () => roomAttach(r.type, r.id, roomPickHint(r.type, r.id));
+    b.onclick = () => r.type === 'conversation'
+      ? roomReferenceConversation(r.id)
+      : roomAttach(r.type, r.id, roomPickHint(r.type, r.id));
   });
 }
 

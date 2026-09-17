@@ -35,7 +35,10 @@ function statusFor(err) {
   if (err === 'not_found' || err === 'not_exist' || err === 'no_plan' || err === 'not_attached') return 404;
   if (err === 'unknown_subject_type' || err === 'empty' || err === 'too_many_subjects'
       || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required' || err === 'no_such_message' || err === 'no_title'
-      || err === 'invalid_kind' || err === 'invalid_mode' || err === 'images_too_large' || err === 'invalid_images') return 400;
+      || err === 'invalid_kind' || err === 'invalid_mode' || err === 'images_too_large' || err === 'invalid_images'
+      || err === 'cannot_link_self' || err === 'too_many_links' || err === 'link_cycle'
+      || err === 'immutable_origin' || err === 'invalid_merge_count' || err === 'source_unavailable'
+      || err === 'not_a_merge') return 400;
   return 500;
 }
 
@@ -134,6 +137,14 @@ export function conversationsRoutes() {
     if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
     res.json({ convo: out.convo, messages: [], created: true, acts: convos.writeActsForConvo(out.convo.id), edits: [], subjects: convos.listConvoSubjects(out.convo.id) });
   });
+
+  // POST /api/convos/merge — a new Room thread descended from two to six
+  // conversations. Sources are captured, never altered or concatenated.
+  router.post('/merge', asyncHandler(async (req, res) => {
+    const out = await convos.mergeConversations(req.body?.source_ids, { createdBy: req.user?.id || 'antoine' });
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
 
   // GET /api/convos/for?type=arch_component&ids=a,b,c — which of these subjects
   // already have a conversation (for the ✨/💬 markers in the "Not built" list).
@@ -399,8 +410,43 @@ export function conversationsRoutes() {
   router.get('/:id/subjects', (req, res) => {
     const convo = convos.getConvo(req.params.id);
     if (!convo) return res.status(404).json({ error: 'not_found' });
-    res.json({ subjects: convos.listConvoSubjects(convo.id), max: convos.MAX_ATTACHED_SUBJECTS });
+    res.json({
+      subjects: convos.listConvoSubjects(convo.id), max: convos.MAX_ATTACHED_SUBJECTS,
+      links: convos.listConvoLinks(convo.id), max_links: convos.MAX_CONVO_LINKS,
+      merge_bridge_ready: convos.mergeBridgeReady(convo.id),
+    });
   });
+
+  // Conversations are first-class Room attachments, but unlike card subjects
+  // they are frozen snapshots with their own lineage rules.
+  router.get('/:id/link-sources', (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    res.json({ convos: convos.listLinkSources(req.params.id) });
+  });
+
+  router.post('/:id/links', (req, res) => {
+    const out = convos.attachConvoReference(req.params.id, req.body?.source_id);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  router.post('/:id/links/:linkId/refresh', (req, res) => {
+    const out = convos.refreshConvoReference(req.params.id, req.params.linkId);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  router.delete('/:id/links/:linkId', (req, res) => {
+    const out = convos.detachConvoReference(req.params.id, req.params.linkId);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  router.post('/:id/merge-bridge', asyncHandler(async (req, res) => {
+    const out = await convos.retryMergeBridge(req.params.id);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
 
   // POST /api/convos/:id/subjects — attach a card. Capped; every attached card
   // is re-sent on every turn, so the cap is a cost control, not tidiness.
