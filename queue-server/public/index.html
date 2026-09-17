@@ -1349,6 +1349,10 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-turn.you .se-who { color:var(--c-brand); }
 .se-body { font-family:var(--room-font); font-size:var(--room-size); line-height:1.6; white-space:pre-wrap; word-break:break-word; color:var(--c-ink-2); }
 .se-turn.you .se-body { color:var(--c-ink); }
+/* Antoine's small measure at the end of every finished answer in the Room and
+   its Side Talks. Kept outside .se-body so it is never mistaken for part of the
+   answer when a passage is selected, carried or saved as a chapter. */
+.se-wordcount { margin-top:7px; font-family:var(--font-ui); font-size:var(--fs-2xs); color:var(--c-ink-5); }
 /* A drafted plan is the moment the conversation becomes something you can build,
    so it is the one turn allowed to break the pattern. Amber is already this app's
    "buildable" colour over in the tech tree, which is exactly what it means here. */
@@ -23386,6 +23390,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return '';
   }
 
+  // Count what Antoine can actually read, not markdown punctuation or the URL
+  // hidden behind a link label. Intl.Segmenter understands contractions and the
+  // scripts that do not separate every word with a space; the regex is the safe
+  // fallback for older browsers. The rendered HTML is already escaped by fmtBody.
+  function visibleWordCount(renderedHtml){
+    var box = document.createElement('div');
+    box.innerHTML = renderedHtml || '';
+    var text = (box.textContent || '').trim();
+    if(!text) return 0;
+    if(typeof Intl !== 'undefined' && Intl.Segmenter){
+      var segments = new Intl.Segmenter(undefined, { granularity: 'word' }).segment(text);
+      var total = 0;
+      segments.forEach(function(part){ if(part.isWordLike) total++; });
+      return total;
+    }
+    var words = text.match(/[\p{L}\p{N}]+(?:['\u2019][\p{L}\p{N}]+)*/gu);
+    return words ? words.length : 0;
+  }
+
   function logHtml(e){
     var html = '';
     if(e.err) return '<div class="se-note err">' + qEsc(e.err)
@@ -23448,6 +23471,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }).join('') + '</div>';
       }
       var shown = (you && m.body) ? m.body : m.text;
+      var renderedBody = plan ? qEsc(m.text) : fmtBody(shown, !you, m.id || null);
+      var showWordCount = !you && !plan && (e.type === 'open' || e.type === 'side');
+      var wordCountHtml = '';
+      if(showWordCount){
+        var wordCount = visibleWordCount(renderedBody);
+        wordCountHtml = '<div class="se-wordcount">' + wordCount + (wordCount === 1 ? ' word' : ' words') + '</div>';
+      }
       // A small "Answer now" beneath the newest interview question — same action
       // as the composer's, offered right where the question is, so it is never
       // more than a glance away from what it is answering.
@@ -23458,8 +23488,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
            +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  foldHtml
            +  filesHtml
-           +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
-                    : '<div class="se-body' + (you ? '' : ' md') + '">' + fmtBody(shown, !you, m.id || null) + '</div>')
+           +  (plan ? '<pre class="se-plan">' + renderedBody + '</pre>'
+                    : '<div class="se-body' + (you ? '' : ' md') + '">' + renderedBody + '</div>')
+           +  wordCountHtml
            +  actsHtml
            +  inlineAnswerNow
            +  '</div>';

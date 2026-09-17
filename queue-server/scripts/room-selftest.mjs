@@ -12,7 +12,8 @@ const { openDb } = await import('../server/src/db/schema.js');
 const passages = await import('../server/src/services/passages.js');
 const convos = await import('../server/src/services/conversations.js');
 const {
-  lengthRequest, forkConvo, createOpenConvo, listMessages, listOpenConvos, addMark, listMarks, deleteMark,
+  lengthRequest, answerWordCount, completeRequestedLength,
+  forkConvo, createOpenConvo, listMessages, listOpenConvos, addMark, listMarks, deleteMark,
   getClarificationMode, setClarificationMode, attachConvoReference, refreshConvoReference,
   detachConvoReference, listConvoLinks, listLinkSources, createSideTalk, createMergedConvo,
 } = convos;
@@ -35,6 +36,30 @@ const MISSES = ['make it long', 'the 12 words in the title', 'in a word, no', 'g
 for (const [text, words] of Object.entries(HITS)) assert.equal(lengthRequest(text), words, text);
 for (const text of MISSES) assert.equal(lengthRequest(text), null, text);
 console.log(`length detector OK — ${Object.keys(HITS).length} recognised, ${MISSES.length} correctly ignored`);
+
+// A numeric request is verified after generation. If the first answer is short,
+// every continuation goes straight back to the exact provider/model that wrote
+// it; the general fallback ladder is deliberately not involved.
+assert.equal(answerWordCount('One **clear** [linked phrase](https://example.com/a-long-url) here.'), 5);
+{
+  const calls = [];
+  const wordBlock = (n, name) => Array.from({ length: n }, () => name).join(' ');
+  const repaired = await completeRequestedLength({
+    text: wordBlock(600, 'opening'), target: 1500,
+    provider: 'google-ai-studio', model: 'gemini-flash-latest',
+    generate: async (opts) => {
+      calls.push(opts);
+      return { text: wordBlock(450, calls.length === 1 ? 'middle' : 'ending') };
+    },
+  });
+  assert.equal(repaired.wordCount, 1500);
+  assert.equal(repaired.passes, 2);
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every((c) => c.provider === 'google-ai-studio' && c.model === 'gemini-flash-latest'));
+  assert.ok(calls[0].prompt.includes('only 600 words'));
+  assert.ok(calls[1].prompt.includes('only 1050 words'));
+}
+console.log('requested length OK — short answers continue on the exact model until the requested count is reached');
 
 // ─── Fork ────────────────────────────────────────────────────────────────────
 // A branch, never a move: the original keeps every message, and the copy inherits

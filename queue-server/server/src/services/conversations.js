@@ -23,7 +23,7 @@ import {
 } from './codeDiscovery.js';
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
-import { generateText, generateTextStream, studioPersonaText, promptCharBudget } from './ai/text.js';
+import { generateText, generateTextDirect, generateTextStream, studioPersonaText, promptCharBudget } from './ai/text.js';
 import { costOf } from './openaiSpend.js';
 import { isMeteredProvider } from './ai/catalog.js';
 import { resolveTurn, computeLaneTag, tagFromVia } from './turnRouter.js';
@@ -1612,6 +1612,69 @@ export function turnMaxTokens(convoId, base = 4000) {
   return Math.min(32000, Math.max(base, Math.round(words * 2.8) + 2000));
 }
 
+// Count human words in an answer. Markdown punctuation is ignored, and a link's
+// visible label counts without also counting its hidden destination. This is the
+// server-side authority for length enforcement; the browser independently counts
+// the rendered words for the small receipt Antoine sees under the answer.
+export function answerWordCount(text) {
+  const visible = String(text || '')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/https?:\/\/\S+/g, ' link ');
+  if (!visible.trim()) return 0;
+  if (typeof Intl?.Segmenter === 'function') {
+    let total = 0;
+    for (const part of new Intl.Segmenter(undefined, { granularity: 'word' }).segment(visible)) {
+      if (part.isWordLike) total += 1;
+    }
+    return total;
+  }
+  return visible.match(/[\p{L}\p{N}]+(?:['\u2019][\p{L}\p{N}]+)*/gu)?.length || 0;
+}
+
+export function lengthContinuationPrompt({ answer, target, current }) {
+  const missing = Math.max(1, target - current);
+  return `Continue the answer below using the SAME voice, argument and level of detail. The owner asked for ${target} words, but the answer currently contains only ${current} words.
+
+Write the missing part now: at least ${missing} additional words. Continue directly from the existing ending. Do not restart, repeat, summarise, apologise, mention word counts, or offer to continue later. Develop the substance until the complete answer reaches at least ${target} words, then end naturally. Return ONLY the continuation.
+
+=== EXISTING ANSWER ===
+${answer}`;
+}
+
+// Models sometimes treat a numeric length as a suggestion even when the prompt
+// calls it an order. Verify the result rather than trusting the estimate. Any
+// continuation is sent directly to the exact provider/model that wrote the first
+// part: no fallback chain, no second model finishing somebody else's answer.
+export async function completeRequestedLength({ text, target, provider, model, account = null, generate = generateTextDirect, onStatus = null, onToken = null, onUsage = null, maxPasses = 3 } = {}) {
+  let whole = String(text || '').trim();
+  let count = answerWordCount(whole);
+  if (!target || count >= target || !provider || !model) return { text: whole, wordCount: count, completed: count >= (target || 0), passes: 0 };
+
+  let passes = 0;
+  while (count < target && passes < maxPasses) {
+    passes += 1;
+    if (onStatus) { try { onStatus(`Extending this answer to the ${target} words you asked for…`); } catch {} }
+    const missing = target - count;
+    const result = await generate({
+      prompt: lengthContinuationPrompt({ answer: whole, target, current: count }),
+      provider, model, account,
+      maxTokens: Math.min(32000, Math.max(1200, Math.round(missing * 2.8) + 1000)),
+      label: 'conversations:length-continuation',
+      timeoutMs: 150_000, allowLongOutput: true, tailReminder: voiceTailReminder(), onUsage,
+    });
+    const addition = String(result?.text || '').trim();
+    if (!addition) break;
+    whole = `${whole}\n\n${addition}`;
+    if (onToken) { try { onToken(`\n\n${addition}`); } catch {} }
+    const next = answerWordCount(whole);
+    if (next <= count) break;
+    count = next;
+  }
+  return { text: whole, wordCount: count, completed: count >= target, passes };
+}
+
 // One turn against the routed lane (AI Settings decides which; the Claude
 // subscription when 'studio' points there). Returns { text, via } | { error }.
 // The prompt itself, factored out so the streaming turn below sends exactly the
@@ -1833,6 +1896,20 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // string already held in memory.
   const mapChars = projectMapBlock().length;
   let spentUsd = 0, spentIn = 0, spentOut = 0;
+  const trackUsage = (usage, where) => {
+    const cached = usage?.prompt_tokens_details?.cached_tokens || 0;
+    console.log(`[studio-turn] prompt ${prompt.length} chars (map ${mapChars}) → prompt_tokens ${usage?.prompt_tokens ?? '?'}, cached ${cached}`);
+    // What this one answer cost, so the Room can show the climb. A long thread
+    // resends everything said before it, so the price of a turn rises with the
+    // thread — which is the one thing he cannot see from the text on screen.
+    // Free lanes cost nothing and record nothing; the mark stays absent there.
+    if (where?.providerId && isMeteredProvider(where.providerId)) {
+      spentUsd += costOf(where.model, usage, where.providerId);
+      spentIn += Number(usage?.prompt_tokens || 0);
+      spentOut += Number(usage?.completion_tokens || 0);
+    }
+  };
+  const exactPick = !!(turn?.lane?.provider && turn?.lane?.model);
   const result = await generateTextStream({
     prompt,
     // The router's lane: a brainstorm/forced turn points at 'studio' (which may be
@@ -1859,25 +1936,13 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     // if every free lane is rate-limited the question goes to Claude on the Mac
     // rather than coming back as an error. Costs nothing when no runner is
     // attached — runHelperJob returns at once in that case.
-    claudeLastResort: true, helperWaitMs: 120_000,
+    claudeLastResort: !exactPick, helperWaitMs: 120_000, strictModel: exactPick,
     // Stable per conversation, not per turn, so every turn of one thread hits
     // the same OpenAI prompt cache instead of scattering across machines (plan
     // "make-the-caching-actually-work"). Only OpenAI's adapter reads this.
     cacheKey: convoId,
     images, requireVision: !!images?.length,
-    onUsage: (usage, where) => {
-      const cached = usage?.prompt_tokens_details?.cached_tokens || 0;
-      console.log(`[studio-turn] prompt ${prompt.length} chars (map ${mapChars}) → prompt_tokens ${usage?.prompt_tokens ?? '?'}, cached ${cached}`);
-      // What this one answer cost, so the Room can show the climb. A long thread
-      // resends everything said before it, so the price of a turn rises with the
-      // thread — which is the one thing he cannot see from the text on screen.
-      // Free lanes cost nothing and record nothing; the mark stays absent there.
-      if (where?.providerId && isMeteredProvider(where.providerId)) {
-        spentUsd += costOf(where.model, usage, where.providerId);
-        spentIn += Number(usage?.prompt_tokens || 0);
-        spentOut += Number(usage?.completion_tokens || 0);
-      }
-    },
+    onUsage: trackUsage,
   });
   // Stopped from the Room while this was being written: save nothing, learn
   // nothing from it. The caller removes the question too.
@@ -1885,6 +1950,16 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // provider fetches if a cancelled paid-lane answer ever costs enough to matter.
   if (signal?.aborted) return { error: 'cancelled' };
   if (result.error) return saveFailedTurn(convoId, result, turn);
+  const askedWords = clarifyMode === 'normal' ? lengthRequest(lastUserText(convoId)) : null;
+  const completed = await completeRequestedLength({
+    text: result.text, target: askedWords,
+    provider: result.provider || turn?.lane?.provider,
+    model: result.model || turn?.lane?.model,
+    account: turn?.lane?.account || null,
+    onStatus, onToken, onUsage: trackUsage,
+  });
+  if (signal?.aborted) return { error: 'cancelled' };
+  result.text = completed.text;
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
   // The id travels back with the answer. Without it the just-arrived turn has no
@@ -1925,10 +2000,20 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     maxTokens,
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000,
-    cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
+    cacheKey: convoId,
+    claudeLastResort: !(turn?.lane?.provider && turn?.lane?.model), helperWaitMs: 120_000,
+    strictModel: !!(turn?.lane?.provider && turn?.lane?.model),
     images, requireVision: !!images?.length,
   });
   if (result.error) return saveFailedTurn(convoId, result, turn);
+  const askedWords = clarifyMode === 'normal' ? lengthRequest(lastUserText(convoId)) : null;
+  const completed = await completeRequestedLength({
+    text: result.text, target: askedWords,
+    provider: result.provider || turn?.lane?.provider,
+    model: result.model || turn?.lane?.model,
+    account: turn?.lane?.account || null,
+  });
+  result.text = completed.text;
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
   // The id travels back with the answer. Without it the just-arrived turn has no

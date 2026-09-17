@@ -740,7 +740,7 @@ function benched(providerId, model = '') {
   return !router.mayProbe(providerId, model);
 }
 
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null, images = null, requireVision = false }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null, images = null, requireVision = false, strictModel = false }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
 
@@ -802,7 +802,14 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // — the outcome this whole arrangement exists to avoid.
   const primaryUsable = isKnownProvider(providerId)
     && (providerId === 'claude-side' || !benched(providerId, model || ''));
-  const primaryChain = primaryUsable ? await getFallbackChain(feature, providerId, model, { noOpencodeBackup: hasExplicitProvider }) : [];
+  // A manually chosen provider+model is sometimes an identity, not merely the
+  // first rung of a lane. Conversation length repair uses this so Gemini cannot
+  // write the opening and a different Gemini model (or Claude) finish it.
+  const primaryChain = primaryUsable
+    ? (strictModel && hasExplicitProvider && model
+        ? [{ provider: providerId, model }]
+        : await getFallbackChain(feature, providerId, model, { noOpencodeBackup: hasExplicitProvider }))
+    : [];
 
   // Catalogue tail: every free model with a key present, sorted by codingRank
   // descending, skipping anything the ledger currently marks exhausted. This is
@@ -878,7 +885,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       // world-looks for no reason.
       if (result.via !== 'claude-side') recordSideCall();
       if (failures.length) console.warn(`[${label}] recovered via ${result.via} after ${failures.join(' | ')}`);
-      return result;
+      return { ...result, provider: p, model: m };
     }
 
     const errMsg = result?.message || result?.error || 'unknown';
@@ -896,7 +903,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // Last resort: hand it to Claude via the local runner (see helper_jobs in
   // schema.js). Opt-in per caller, and only reachable HERE — after every free
   // backend has already failed — so the ordinary path still costs nothing.
-  if (claudeLastResort) {
+  if (claudeLastResort && !strictModel) {
     const viaClaude = await runHelperJob({ prompt, feature, maxTokens, label, tools: helperTools, waitMs: helperWaitMs });
     if (viaClaude?.text) {
       recordSideCall();
@@ -1094,12 +1101,12 @@ export async function runWitnessProbe({ request, waitMs = 30_000, label = 'witne
 
 // Low-level: call a specific provider/model directly (for the judge/summary which
 // want a specific model regardless of feature defaults)
-export async function generateTextDirect({ prompt, provider, model, maxTokens = 800, label = 'ai-text-direct' }) {
+export async function generateTextDirect({ prompt, provider, model, maxTokens = 800, label = 'ai-text-direct', timeoutMs = 90_000, allowLongOutput = false, account = null, tailReminder = null, onUsage = null }) {
   if (!isKnownProvider(provider)) return { error: 'unknown_provider', message: provider };
-  const result = await runAttempt({ provider, model, prompt, maxTokens, label });
+  const result = await runAttempt({ provider, model, prompt, maxTokens, label, timeoutMs, allowLongOutput, account, tailReminder, onUsage });
   if (result?.text) {
     recordSideCall(); // one helper call in the daily budget ledger
-    return result;
+    return { ...result, provider, model };
   }
   const errMsg = result?.message || result?.error || 'unknown';
   if (detectQuotaLimit(provider, errMsg)) {
@@ -1266,6 +1273,7 @@ export async function generateTextStream({
   // attached, so it is the right last resort for a turn someone is waiting on.
   claudeLastResort = false, helperWaitMs = null,
   cacheKey = null, tailReminder = null, onStatus = null, images = null, requireVision = false,
+  strictModel = false,
 }) {
   // Vision requests are deliberately one-shot. generateText() already owns the
   // image-capable-lane rule and sends data URLs in the provider's multimodal
@@ -1277,7 +1285,7 @@ export async function generateTextStream({
       prompt, feature, maxTokens, label, model: explicitModel,
       provider: explicitProvider, account: explicitAccount, timeoutMs,
       allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap,
-      cacheKey, tailReminder, onStatus, onUsage, images, requireVision,
+      cacheKey, tailReminder, onStatus, onUsage, images, requireVision, strictModel,
     });
     if (r?.text && onToken) onToken(r.text);
     return r;
@@ -1295,7 +1303,7 @@ export async function generateTextStream({
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
   if (!isMeteredProvider(providerId)) {
-    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs });
+    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs, strictModel });
     if (r?.text && onToken) onToken(r.text);
     return r;
   }
@@ -1303,6 +1311,7 @@ export async function generateTextStream({
   // From here on the feature IS configured to spend money, so any deviation is
   // something Antoine needs told.
   const fallback = async (notice) => {
+    if (strictModel) return { error: 'selected_model_unavailable', message: notice };
     console.warn(`[${label}] paid lane unavailable — ${notice}`);
     if (onStatus) { try { onStatus('The paid lane is unavailable — answering on the free lane…'); } catch {} }
     const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs });
@@ -1443,5 +1452,5 @@ export async function generateTextStream({
   if (!text.trim()) return fallback('the paid model returned an empty answer, so this answer came from the free lane instead');
 
   recordSideCall();
-  return { text: text.trim(), via: providerId, toolCalls: toolCallsMade };
+  return { text: text.trim(), via: providerId, provider: providerId, model, toolCalls: toolCallsMade };
 }
