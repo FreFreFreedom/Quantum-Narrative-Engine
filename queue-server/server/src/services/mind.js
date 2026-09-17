@@ -231,12 +231,13 @@ export function mindBlock() {
   } catch { return ''; }
 }
 
-// Direct "remember this" instructions get a second, focused placement near the
-// end of every conversation prompt. The broad memory block above carries facts
-// and vision too, but it appears before the Room's voice; a later voice line such
-// as "metaphor is welcome" could therefore weaken a remembered "use fewer
-// immune-system metaphors" preference. This block is deliberately provider-free:
-// the same text reaches Gemini, Claude, ChatGPT and every other Room lane.
+// Direct "remember this" instructions and Central style/taste memories get a
+// second, focused placement near the end of every conversation prompt. The broad
+// memory block above carries facts and vision too, but it appears before the
+// Room's voice; a later voice line such as "metaphor is welcome" could therefore
+// weaken a remembered "use fewer immune-system metaphors" preference. This block
+// is deliberately provider-free: the same text reaches Gemini, Claude, ChatGPT
+// and every other Room lane.
 export function renderDirectInstructions(rows = []) {
   if (!rows.length) return '';
   return `
@@ -249,7 +250,8 @@ export function directInstructionsBlock() {
   try {
     const rows = db.prepare(`
       SELECT text FROM mind_facts
-      WHERE active=1 AND source_note='chat_explicit'
+      WHERE active=1
+        AND (source_note='chat_explicit' OR (is_central=1 AND kind IN ('style','taste')))
       ORDER BY is_central DESC, updated_at DESC
       LIMIT 20
     `).all();
