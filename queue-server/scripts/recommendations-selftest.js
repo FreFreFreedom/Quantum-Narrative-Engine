@@ -76,4 +76,6 @@ assert.equal(db.prepare('SELECT status FROM recommendation_requests WHERE id=?')
 db.prepare("UPDATE convos SET deleted_at='deleted' WHERE id='a'").run();
 assert.equal(rec.listRecommendations('apps','all').items.length,0);
 assert.throws(()=>rec.listRecommendations('papers','a'),/not found/);
+assert.deepEqual(rec.resolveSourceRefs(['67c2d97e','assistant-id','invented'], ['67c2d97e-1234-owner']), ['67c2d97e-1234-owner']);
+assert.deepEqual(rec.resolveSourceRefs(['67c2d97e'], ['67c2d97e-one','67c2d97e-two']), [], 'ambiguous prefixes must be rejected');
 console.log('Recommendation integration checks passed.');

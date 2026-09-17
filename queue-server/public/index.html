@@ -11041,7 +11041,7 @@ function renderRoomRecommendations(kind) {
       + (kind === 'papers' ? '<a class="room-rec-title" href="' + qEscAttr(/^https:\/\//.test(item.url || '') ? item.url : '#') + '" target="_blank" rel="noopener noreferrer">' + qEsc(item.title) + '</a>'
         : '<button type="button" class="room-rec-title" data-rec-open="' + qEscAttr(item.id) + '">' + qEsc(item.title) + '</button><p>' + qEsc(item.sentence) + '</p>')
       + '<details class="room-rec-menu"><summary aria-label="Recommendation actions" title="Actions">⋯</summary><button type="button" data-rec-dismiss="' + qEscAttr(item.id) + '">Dismiss</button></details></article>').join('')
-      : '<div class="tv-empty">' + (status ? '' : 'Nothing yet.') + '</div>') + '</div>'
+      : (status ? '' : '<div class="room-rec-status">Nothing yet.</div>')) + '</div>'
     + '<div class="room-rec-status" role="status">' + qEsc(status) + '</div>'
     + (pending.length ? '<div class="room-rec-requests">' + pending.map(r => '<span>' + (r.target ? qEsc(r.delivered + ' / ' + r.target) : '')
       + (['paused','waiting'].includes(r.status) ? ' <button type="button" data-rec-resume="' + qEscAttr(r.id) + '">Retry</button>' : '')

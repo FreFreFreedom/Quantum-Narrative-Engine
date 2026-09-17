@@ -130,15 +130,15 @@ async function contextFor(scope, requestId) {
     // edits or deletion force a rebuild rather than retaining stale beliefs.
     const text = messages.map(m => JSON.stringify(m) + '\n').join('');
     const consumed = text.slice(0, offset);
-    if (!saved || hash(consumed) !== saved.prefix_hash) { summary = ''; offset = 0; }
+    if (!saved || hash('owner-context-v2\n' + consumed) !== saved.prefix_hash) { summary = ''; offset = 0; }
     while (offset < text.length) {
       if (!active(requestId)) return null;
       const chunk = text.slice(offset, offset + 14000);
-      const result = await model(`${CONTEXT_RULES}\nUpdate this thread's compact research context from the next chronological text chunk (JSON may split across chunks). Keep concrete subjects and names. Preserve unfinished questions, corrections and source message IDs. A mention is not a lasting preference. Keep at most 300 words.\nPrior context: ${summary}\nThread: ${thread.title}\nNext chunk: ${chunk}\nReturn {"summary":"..."}.`, 900);
+      const result = await model(`${CONTEXT_RULES}\nUpdate this thread's compact research context from the next chronological text chunk (JSON may split across chunks). Keep concrete subjects and names. Preserve the ENTIRE owner's inquiry history from prior context, including older unfinished questions; do not replace it with the latest chunk. Summarize what the OWNER is trying to understand, not the assistant's essays. Assistant positions may supply brief background, never substitute for his interests. Preserve original OWNER message IDs verbatim. A mention is not a lasting preference. At most 300 words, mostly on owner questions; at most 60 words on assistant background.\nPrior context: ${summary}\nThread: ${thread.title}\nNext chunk: ${chunk}\nReturn {"summary":"..."}.`, 900);
       if (typeof result.summary !== 'string' || !result.summary.trim()) throw new Error('Could not read conversation context.');
       summary = cut(result.summary, 2600); offset += chunk.length;
       db.prepare(`INSERT OR REPLACE INTO recommendation_contexts(convo_id,fingerprint,prefix_hash,offset,summary) VALUES(?,?,?,?,?)`)
-        .run(thread.id, fingerprint, hash(text.slice(0, offset)), offset, summary);
+        .run(thread.id, fingerprint, hash('owner-context-v2\n' + text.slice(0, offset)), offset, summary);
     }
     contexts.push({ thread: thread.id, title: thread.title, summary });
     refs.push(...messages.filter(m => m.role === 'user').map(m => m.id));
@@ -163,8 +163,19 @@ function knownPlans() {
 function priorItems(c) {
   return db.prepare('SELECT id,title,sentence,dedupe,dismissed FROM recommendations WHERE collection_id=? ORDER BY created_at DESC').all(c.id);
 }
+// A summary may shorten a UUID. Resolve only unambiguous prefixes of real owner
+// messages; never accept an invented reference or an assistant-message citation.
+export function resolveSourceRefs(input, allowed) {
+  if (!Array.isArray(input)) return [];
+  return [...new Set(input.flatMap(ref => {
+    if (typeof ref !== 'string') return [];
+    if (allowed.includes(ref)) return [ref];
+    const matches = ref.length >= 8 ? allowed.filter(id => id.startsWith(ref)) : [];
+    return matches.length === 1 ? matches : [];
+  }))].slice(0, 8);
+}
 function storeItem(c, item, context, requestId) {
-  const refs = Array.isArray(item.source_message_ids) ? [...new Set(item.source_message_ids)].filter(id => context.refs.includes(id)).slice(0, 8) : [];
+  const refs = resolveSourceRefs(item.source_message_ids, context.refs);
   if (!refs.length) return false;
   if (!active(requestId) || !validSources(refs)) return false;
   if (c.kind === 'papers' && priorItems(c).some(p => normalized(p.title) === normalized(item.title))) return false;
