@@ -1,6 +1,10 @@
 # Papers and Apps recommendations in the Room
 
 Status: DONE — live recommendations and browser flow verified. 2026-09-17.
+Planned shared-library extension: `room-reference-library.md` adds Save and Attach
+to Papers and Apps and combines chosen recommendations with imported media and kept
+passages. That extension is not implemented by this DONE status. Preserve this plan's
+paper-title-only display, app-discussion opening, selection rules and existing controls.
 Antoine approved implementation after the plan below was agreed. No separate
 recommendation categories are authorized by this work.
 
