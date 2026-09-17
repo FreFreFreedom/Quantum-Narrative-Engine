@@ -1,6 +1,6 @@
 # Better Call Saul: institutional decay and visual aesthetics
 
-Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 21 turns · last said 2026-09-17T22:10:46.033Z
+Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 22 turns · last said 2026-09-17T22:23:55.234Z
 
 ## you
 
@@ -352,3 +352,16 @@ from this quote #1... what do you mean by "prosecutors wield unilateral leverage
 * Each added count carries years, multiplying potential prison time into a terrifying threat—perhaps fifty years at trial versus three years if settled today.
 * The state builds an overwhelming arithmetic wall where insisting on an open trial feels like deliberate suicide, converting the constitutional right to be heard into an intolerable risk.
 * It is administrative coercion disguised as negotiation: forcing absolute submission to a pre-written confession before any evidence is heard by a jury.
+
+## you
+
+About this part of your answer:
+“statutory threats”
+
+in like 50 words .. what are those in #1 ?
+
+## the room
+
+* **Statutory threats** are mandatory legal penalties built directly into written law—like compulsory minimum sentences or "three strikes" rules.
+* The law gives the judge zero discretion to reduce the punishment, no matter the person's story or circumstance.
+* Prosecutors hold this law like a gun: "Plead guilty to two years today, or face twenty mandatory years at trial."
