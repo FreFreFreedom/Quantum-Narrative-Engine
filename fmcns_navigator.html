@@ -23402,7 +23402,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(typeof Intl !== 'undefined' && Intl.Segmenter){
       var segments = new Intl.Segmenter(undefined, { granularity: 'word' }).segment(text);
       var total = 0;
-      segments.forEach(function(part){ if(part.isWordLike) total++; });
+      // Intl.Segments is iterable but does not implement Array#forEach in Safari.
+      // Array.from keeps the Room from dying on repaint after a conversation loads.
+      Array.from(segments).forEach(function(part){ if(part.isWordLike) total++; });
       return total;
     }
     var words = text.match(/[\p{L}\p{N}]+(?:['\u2019][\p{L}\p{N}]+)*/gu);
