@@ -5,7 +5,7 @@ process.env.JWT_SECRET ||= 'recommendation-selftest-only';
 const { initConversationsSchema, initRecommendationsSchema, initKnowledgeSchema } = await import('../server/src/db/schema.js');
 const rec = await import('../server/src/services/roomRecommendations.js');
 const { bindConversationsDb } = await import('../server/src/services/conversations.js');
-const { paperKey } = await import('../server/src/services/recommendationPapers.js');
+const { paperKey, searchPapers } = await import('../server/src/services/recommendationPapers.js');
 const db = new DatabaseSync(':memory:');
 db.exec("CREATE TABLE users(id TEXT PRIMARY KEY); INSERT INTO users VALUES('antoine')");
 initConversationsSchema(db); initRecommendationsSchema(db); initKnowledgeSchema(db); bindConversationsDb(db);
@@ -78,4 +78,20 @@ assert.equal(rec.listRecommendations('apps','all').items.length,0);
 assert.throws(()=>rec.listRecommendations('papers','a'),/not found/);
 assert.deepEqual(rec.resolveSourceRefs(['67c2d97e','assistant-id','invented'], ['67c2d97e-1234-owner']), ['67c2d97e-1234-owner']);
 assert.deepEqual(rec.resolveSourceRefs(['67c2d97e'], ['67c2d97e-one','67c2d97e-two']), [], 'ambiguous prefixes must be rejected');
+// A throttled source must not delay or discard results from the other source.
+const originalFetch = globalThis.fetch;
+let semanticCalls = 0, crossrefCalls = 0;
+globalThis.fetch = async url => {
+  if (url.includes('semanticscholar')) {
+    semanticCalls++;
+    return { status:429, ok:false, headers:new Headers({'retry-after':'120'}) };
+  }
+  crossrefCalls++;
+  return { status:200,ok:true,json:async()=>({message:{items:[{title:['Verified fallback paper'],DOI:'10.2/fallback'}]}}) };
+};
+try {
+  const papers=await searchPapers(['first topic','second topic']);
+  assert.equal(papers.length,1); assert.equal(papers[0].title,'Verified fallback paper');
+  assert.equal(semanticCalls,1,'respect Retry-After across queries'); assert.equal(crossrefCalls,2);
+} finally { globalThis.fetch = originalFetch; }
 console.log('Recommendation integration checks passed.');

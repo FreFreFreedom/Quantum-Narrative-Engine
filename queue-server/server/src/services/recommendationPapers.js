@@ -3,6 +3,7 @@ let db;
 export function bindRecommendationPapers(database) { db = database; }
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 let lastRequest = 0;
+const blockedUntil = new Map();
 async function readSource(url) {
   const cached = db.prepare('SELECT body, fetched_at FROM recommendation_search_cache WHERE key=?').get(url);
   if (cached && Date.now() - cached.fetched_at < 86400000) return JSON.parse(cached.body);
@@ -10,7 +11,13 @@ async function readSource(url) {
     await pause(Math.max(0, 1100 - (Date.now() - lastRequest)));
     lastRequest = Date.now();
     const response = await fetch(url, { signal: AbortSignal.timeout(20000), headers: { 'User-Agent': 'QNE-research/1.0', Accept: 'application/json' } });
-    if (response.status === 429 || response.status >= 500) {
+    if (response.status === 429) {
+      const raw = response.headers.get('retry-after');
+      const seconds = Number(raw);
+      const retryAt = raw && Number.isFinite(seconds) ? Date.now() + seconds * 1000 : Date.parse(raw || '');
+      throw Object.assign(new Error('Paper search is temporarily unavailable.'), { retryAt: Math.max(Date.now() + 60000, retryAt || Date.now() + 600000) });
+    }
+    if (response.status >= 500) {
       if (attempt === 2) throw new Error('Paper search is temporarily unavailable.');
       const retry = Number(response.headers.get('retry-after'));
       await pause(Math.min(30000, Number.isFinite(retry) && retry > 0 ? retry * 1000 : 2000 * 2 ** attempt));
@@ -34,6 +41,7 @@ export async function searchPapers(queries) {
     const q = encodeURIComponent(query);
     // Independent providers: one may throttle without making the other unusable.
     for (const source of ['crossref', 'semantic']) {
+      if ((blockedUntil.get(source) || 0) > Date.now()) continue;
       try {
         let papers;
         if (source === 'crossref') {
@@ -51,7 +59,7 @@ export async function searchPapers(queries) {
           if (old) { if (!old.abstract && p.abstract) old.abstract = p.abstract; continue; }
           found.set(key, { ...p, key });
         }
-      } catch (e) { console.warn('[recommendations] paper source unavailable:', source); }
+      } catch (e) { blockedUntil.set(source, e.retryAt || Date.now() + 60000); console.warn('[recommendations] paper source unavailable:', source); }
     }
   }
   if (!successes) throw new Error('Paper search is temporarily unavailable.');

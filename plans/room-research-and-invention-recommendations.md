@@ -1,6 +1,6 @@
 # Papers and Apps recommendations in the Room
 
-Status: IMPLEMENTED — release verification in progress. 2026-09-17.
+Status: DONE — live recommendations and browser flow verified. 2026-09-17.
 Antoine approved implementation after the plan below was agreed. No separate
 recommendation categories are authorized by this work.
 
@@ -110,4 +110,16 @@ Public source documentation consulted during planning:
 
 - In-memory integration checks passed; no model credits used.
 - Frontend inline scripts parsed successfully.
-- Live release and browser verification pending.
+- Releases `46d7c91` and `4115636` succeeded on the existing production service.
+- A real Room conversation produced three sourced papers and one app idea. Browser
+  verification confirmed original linked titles, title-plus-sentence app display,
+  opening/reopening the same Side Talk, source context attachment, an unsent draft,
+  saved request drafts, a single scrolling tab row at narrower width, and no page errors.
+- Live verification found shortened UUID references in model summaries. Unambiguous
+  prefixes now resolve to real owner messages; ambiguous and fabricated references
+  remain rejected. History summaries explicitly preserve older owner inquiries.
+- Semantic Scholar throttled some live requests. The source now honours Retry-After
+  across queries and lets Crossref continue without repeated waits. A mocked-source
+  regression confirms this without network or model calls.
+- Personal collection context and isolation are covered by the in-memory integration
+  checks; no full personal-history generation was started just for verification.

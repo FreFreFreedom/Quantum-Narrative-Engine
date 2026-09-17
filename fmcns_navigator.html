@@ -9996,6 +9996,8 @@ function initRoom() {
         b.classList.toggle('active', on);
         b.setAttribute('aria-selected', String(on));
       });
+      const selectedTab = strip.querySelector('[data-room-pane="' + pane + '"]');
+      if (selectedTab) selectedTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       if (pane === 'interests') renderInterestLibrary();
       if (pane === 'papers' || pane === 'apps') openRoomRecommendations(pane);
     };
