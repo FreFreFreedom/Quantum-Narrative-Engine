@@ -1366,6 +1366,16 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-before div { font-size:var(--fs-sm); color:var(--c-ink-3); margin-top:4px; }
 .se-note { font-size:var(--fs-sm); color:var(--c-ink-4); padding:7px 0; }
 .se-note.err { color:var(--c-danger); }
+.se-interestbar { max-width:48rem; width:100%; margin:0 auto; font-size:var(--fs-sm); max-height:130px; overflow:auto; }
+.interest-import { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:4px 10px; color:var(--c-ink-4); }
+.interest-import span { flex:1; min-width:120px; }
+.interest-import button, .interest-item button { font:inherit; color:var(--c-ink); background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:6px; padding:3px 7px; cursor:pointer; }
+.interest-item { padding:10px 0; border-bottom:1px solid var(--c-border-2); overflow-wrap:anywhere; }
+.interest-item small { display:block; color:var(--c-ink-4); margin:4px 0; }
+.interest-edit { display:grid; gap:6px; margin:6px 0; }
+.interest-edit input, .interest-edit select, .interest-filter input, .interest-filter select { min-width:0; width:100%; box-sizing:border-box; font:inherit; background:var(--c-surface-2); color:var(--c-ink); border:1px solid var(--c-border-2); border-radius:5px; padding:6px; }
+.interest-filter { display:flex; gap:6px; margin-bottom:8px; }
+.interest-filter select { width:95px; }
 /* Three dots while a turn is in flight, so a wait reads as a wait and not as a
    panel that died. Inherits the reduced-motion kill switch at the top of the file. */
 .se-dots span { animation:seBlink 1.4s var(--ease) infinite; }
@@ -3259,6 +3269,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" data-room-pane="board" role="tab">Board <span class="room-tabcount" id="roomBoardCount"></span></button>
           <button type="button" data-room-pane="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
+          <button type="button" data-room-pane="interests" role="tab">Interests</button>
           <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
         </div>
         <div class="room-pane room-attached is-active" id="roomAttached">
@@ -3278,6 +3289,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <div id="roomCardList"></div>
           <div id="roomCardsNote" class="room-note"></div>
         </div>
+        <div class="room-pane" id="roomInterests"></div>
         <div class="room-pane room-mind" id="roomMind">
           <div class="room-remember">
             <input class="searchbox" id="roomMindInput" placeholder="Remember a fact…" maxlength="240" autocomplete="off">
@@ -9505,7 +9517,7 @@ const ROOM_ZONE_KEYS = { roomThreads: 'fmcns_room_threads_open', roomCards: 'fmc
 // Which of the right column's five panes is showing. One key where there used to
 // be five, because only one of them is open at a time now.
 const ROOM_PANE_KEY = 'fmcns_room_pane';
-const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', board: 'roomBoard', mind: 'roomMind', extract: 'roomExtract' };
+const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', board: 'roomBoard', mind: 'roomMind', extract: 'roomExtract', interests: 'roomInterests' };
 // A tab carries its own count so a shut pane can still say it has something in
 // it — the whole reason five headings were worth losing.
 function setRoomTabCount(id, n) {
@@ -9958,6 +9970,7 @@ function initRoom() {
         b.classList.toggle('active', on);
         b.setAttribute('aria-selected', String(on));
       });
+      if (pane === 'interests') renderInterestLibrary();
     };
     strip.onclick = (ev) => {
       const b = ev.target.closest('[data-room-pane]');
@@ -10667,6 +10680,7 @@ function renderRoomConvo() {
   window.studioEmbedOpen('open', t.subject_id);
   window.studioEmbed(host, {
     type: 'open',
+    captureInterests: true,
     subjectId: t.subject_id,
     title: t.title || '',
     // /fold, /more and /handoff change the thread itself, so the list has to come
@@ -11300,7 +11314,7 @@ function renderRoomSide() {
     const embedHost = document.getElementById('roomSideEmbed');
     if (embedHost) {
       window.studioEmbedOpen('side', open.subject_id);
-      window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '', slim: true, showLane: true });
+      window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '', slim: true, showLane: true, captureInterests: true });
     }
   }
 }
@@ -12207,6 +12221,65 @@ async function roomUploadFileToConvo(file, convoId) {
     filename: file.name, mimeType: file.type || '', text, bytes: file.size, sha, outline,
   });
   return { ...out, truncated };
+}
+
+let interestLibraryRequest = 0;
+let interestLibraryQuery = '';
+let interestLibraryKind = '';
+let interestLibraryOffset = 0;
+try { interestLibraryKind = localStorage.getItem('qne-interest-kind') || ''; interestLibraryQuery = localStorage.getItem('qne-interest-query') || ''; } catch (_) {}
+function interestEditForm(host, item, save) {
+  host.innerHTML = '<form class="interest-edit">'
+    + '<select name="kind" aria-label="Kind"><option value="book">Book</option><option value="film">Film</option><option value="series">Series</option></select>'
+    + '<input name="title" aria-label="Title" placeholder="Title" required maxlength="300">'
+    + '<input name="creator" aria-label="Author or creator" placeholder="Author or creator" maxlength="300">'
+    + '<input name="year" aria-label="Year" placeholder="Year" maxlength="20">'
+    + (item.state ? '<select name="state" aria-label="Status"><option value="interested">Interested</option><option value="read">Read</option><option value="watched">Watched</option><option value="bought">Bought</option></select>' : '')
+    + '<div><button type="submit">Save</button> <button type="button" data-cancel>Cancel</button></div><small role="status"></small></form>';
+  const form = host.querySelector('form');
+  for (const key of ['kind','title','creator','year','state']) if (form.elements[key]) form.elements[key].value = item[key] || (key === 'kind' ? 'book' : '');
+  form.querySelector('[data-cancel]').onclick = renderInterestLibrary;
+  form.onsubmit = async ev => {
+    ev.preventDefault(); const button = form.querySelector('[type="submit"]'); button.disabled = true;
+    try { await save(Object.fromEntries(new FormData(form))); renderInterestLibrary(); }
+    catch (err) { form.querySelector('[role="status"]').textContent = err.message; button.disabled = false; }
+  };
+  form.elements.title.focus();
+}
+async function renderInterestLibrary() {
+  const host = document.getElementById('roomInterests'); if (!host) return;
+  const request = ++interestLibraryRequest;
+  host.innerHTML = '<div class="interest-filter"><input aria-label="Search interests" placeholder="Search interests"><select aria-label="Interest kind"><option value="">All</option><option value="book">Books</option><option value="film">Films</option><option value="series">Series</option></select></div><div class="interest-results">Loading…</div>';
+  const search = host.querySelector('input'), filter = host.querySelector('select');
+  search.value = interestLibraryQuery; filter.value = interestLibraryKind;
+  const refresh = () => {
+    interestLibraryQuery = search.value; interestLibraryKind = filter.value; interestLibraryOffset = 0;
+    try { localStorage.setItem('qne-interest-query', interestLibraryQuery); localStorage.setItem('qne-interest-kind', interestLibraryKind); } catch (_) {}
+    renderInterestLibrary();
+  };
+  search.onkeydown = ev => { if (ev.key === 'Enter') refresh(); }; search.onchange = refresh; filter.onchange = refresh;
+  try {
+    const [out, review] = await Promise.all([api('/api/convos/interests?limit=40&offset=' + interestLibraryOffset + '&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)), api('/api/convos/interest-review')]);
+    if (request !== interestLibraryRequest) return;
+    const results = host.querySelector('.interest-results');
+    results.innerHTML = review.entries.map(e => '<div class="interest-item" data-review="' + qEscAttr(e.id) + '"><div>' + qEsc(e.observed || e.candidate.title || 'Unclear title') + '</div><small>Needs review · ' + qEsc(e.filename) + '</small><button data-edit>Review</button> <button data-dismiss>Dismiss</button></div>').join('')
+      + out.items.map(w => '<div class="interest-item" data-interest="' + qEscAttr(w.id) + '"><div>' + qEsc(w.title) + '</div><small>' + qEsc([w.kind,w.creator,w.year,w.state].filter(Boolean).join(' · ')) + '</small><button data-edit>Edit</button> <button data-remove title="Remove from your interest library">Remove</button></div>').join('')
+      + (!out.items.length && !review.entries.length ? '<div class="room-empty">No saved interests.</div>' : '')
+      + '<div class="interest-item">' + (interestLibraryOffset ? '<button data-prev>Previous</button> ' : '') + (out.items.length === 40 ? '<button data-next>More</button>' : '') + '</div>';
+    results.querySelectorAll('[data-review]').forEach(el => {
+      const entry = review.entries.find(e => e.id === el.dataset.review);
+      el.querySelector('[data-edit]').onclick = () => interestEditForm(el, entry.candidate, values => apiWrite('/api/convos/interest-entries/' + entry.id, 'POST', values));
+      el.querySelector('[data-dismiss]').onclick = async () => { try { await apiWrite('/api/convos/interest-entries/' + entry.id, 'POST', {dismiss:true}); renderInterestLibrary(); } catch (err) { el.textContent = err.message; } };
+    });
+    results.querySelectorAll('[data-interest]').forEach(el => {
+      const w = out.items.find(w => w.id === el.dataset.interest);
+      el.querySelector('[data-edit]').onclick = () => interestEditForm(el, w, values => apiWrite('/api/convos/interests/' + w.id, 'PATCH', values));
+      el.querySelector('[data-remove]').onclick = async () => { try { await apiWrite('/api/convos/interests/' + w.id, 'DELETE'); renderInterestLibrary(); } catch (err) { el.textContent = err.message; } };
+    });
+    const prev = results.querySelector('[data-prev]'), next = results.querySelector('[data-next]');
+    if (prev) prev.onclick = () => { interestLibraryOffset = Math.max(0, interestLibraryOffset - 40); renderInterestLibrary(); };
+    if (next) next.onclick = () => { interestLibraryOffset += 40; renderInterestLibrary(); };
+  } catch (err) { if (request === interestLibraryRequest) host.querySelector('.interest-results').textContent = err.message; }
 }
 
 function roomImageDataUrl(file) {
@@ -22240,7 +22313,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var repaint = function(){
       // Only repaint into a host still on the page. A card can be closed, or its
       // whole panel rebuilt, while an answer is still on its way.
-      if(host.isConnected) paintEmbed(host, e, opts);
+      if(host.isConnected && (host.getAttribute('data-se') || '').startsWith(e.key + '|')) paintEmbed(host, e, opts);
     };
     var stamp = e.key + '|' + (e.open ? 'open' : 'shut');
     var fresh = host.getAttribute('data-se') !== stamp;
@@ -22277,6 +22350,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +   '<div class="se-aboutbar"></div>'
         +   '<div class="se-quotebar"></div>'
         +   '<div class="se-filebar"></div>'
+        +   '<div class="se-interestbar" aria-live="polite"></div>'
         +   '<div class="se-compose">'
         +     '<button type="button" class="se-more" data-se-act="cmds" title="What else this conversation can do" aria-label="What else this conversation can do">＋</button>'
         +     '<span class="se-lanewrap">'
@@ -22370,6 +22444,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var attachBtn = host.querySelector('.se-attach');
     var fileInput = host.querySelector('.se-file-input');
     var addFiles = function(files){
+      if(!e.convoId){ e.note = 'This conversation is still opening. Drop the files again once it opens.'; repaint(); return; }
+      if(Array.from(files || []).length > 6){ e.note = 'Please add up to six files at a time.'; repaint(); return; }
       Array.from(files || []).slice(0, 6).reduce(function(chain, file){
         return chain.then(async function(){
           var kind = roomFileKind(file);
@@ -22378,6 +22454,24 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           try {
             if(kind === 'image'){
               var dataUrl = await roomImageDataUrl(file);
+              if(opts.captureInterests){
+                const bitmap = await createImageBitmap(file);
+                const tooLarge = bitmap.width > 10000 || bitmap.height > 10000 || bitmap.width * bitmap.height > 24000000;
+                bitmap.close();
+                if(tooLarge) throw new Error('That screenshot is too large. Crop it into smaller images.');
+                let batch;
+                try { batch = await apiWrite('/api/convos/' + encodeURIComponent(e.convoId) + '/interest-imports', 'POST', {image:dataUrl,filename:file.name}); }
+                catch(err){
+                  if(!e.pendingAttachments) e.pendingAttachments = [];
+                  if(e.pendingAttachments.filter(a => a.kind === 'image').length < 4 && e.pendingAttachments.reduce((n,a) => n + (a.dataUrl?.length || 0), 0) + dataUrl.length <= 18000000)
+                    e.pendingAttachments.push({kind:'image',name:file.name,mimeType:file.type,dataUrl:dataUrl});
+                  throw err;
+                }
+                if(!e.interestImages) e.interestImages = {};
+                e.interestImages[batch.id] = {kind:'image',name:file.name,mimeType:file.type,dataUrl:dataUrl};
+                e.interestChecked = 0;
+                e.note = ''; repaint(); return;
+              }
               if(!e.pendingAttachments) e.pendingAttachments = [];
               var imageCount = e.pendingAttachments.filter(function(a){ return a.kind === 'image'; }).length;
               if(imageCount >= 4) throw new Error('You can send up to four images at once');
@@ -22404,6 +22498,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var compose = host.querySelector('.se-compose');
       compose.ondragover = function(ev){ ev.preventDefault(); };
       compose.ondrop = function(ev){ ev.preventDefault(); addFiles(ev.dataTransfer && ev.dataTransfer.files); };
+      input.addEventListener('paste', function(ev){
+        const files = Array.from(ev.clipboardData?.files || []);
+        if(files.length){ ev.preventDefault(); addFiles(files); }
+      });
     }
     host.querySelectorAll('[data-se-act]').forEach(function(b){
       b.onclick = function(ev){
@@ -23024,6 +23122,71 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Everything that changes between repaints, written into a scaffold that stays
   // put — so the composer keeps the caret, the selection and any IME state while
   // an answer lands beside it.
+  function fillInterestImports(host, e, opts){
+    const bar = host.querySelector('.se-interestbar');
+    if(!bar || !opts.captureInterests || !e.convoId) return;
+    const current = () => host.isConnected && host.getAttribute('data-se') === e.key + '|open';
+    const refresh = async () => {
+      if(e.interestFetching || !current()) return;
+      e.interestFetching = true;
+      try {
+        const out = await api('/api/convos/' + encodeURIComponent(e.convoId) + '/interest-imports');
+        e.interestBatches = out.batches; e.interestChecked = Date.now();
+        for(const batch of out.batches){
+          const img = e.interestImages && e.interestImages[batch.id];
+          if(batch.status === 'ordinary' && img){
+            if(!e.pendingAttachments) e.pendingAttachments = [];
+            if(e.pendingAttachments.filter(a => a.kind === 'image').length < 4 && e.pendingAttachments.reduce((n,a) => n + (a.dataUrl?.length || 0), 0) + img.dataUrl.length <= 18000000){
+              e.pendingAttachments.push(img); delete e.interestImages[batch.id];
+            } else { e.note = 'Some images are waiting. Send or remove existing attachments first.'; }
+          }
+        }
+        if(current()) fillEmbed(host, e, opts);
+      } catch(err){ if(current()) bar.textContent = err.message; }
+      finally { e.interestFetching = false; }
+    };
+    const batches = (e.interestBatches || []).filter(b => b.status !== 'undone' && (b.status !== 'ordinary' || e.interestImages?.[b.id]));
+    bar.innerHTML = batches.map(b => {
+      const r = b.result || {};
+      const added = [['book','books'],['film','films'],['series','series']].filter(([k]) => r[k]).map(([k,label]) => r[k] + ' ' + label).join(', ');
+      const status = b.status === 'done' ? (added ? 'Added ' + added : 'No new titles') + (r.duplicates ? ' · ' + r.duplicates + ' already saved' : '') + (b.entries.length ? ' · ' + b.entries.length + ' to review' : '')
+        : b.status === 'failed' ? b.error : b.status === 'ordinary' ? 'Ready to attach' : 'Reading screenshot…';
+      return '<div class="interest-import" data-import="' + qEscAttr(b.id) + '"><span title="' + qEscAttr(b.filename) + '">' + qEsc(status) + '</span>'
+        + (b.retryable ? '<button data-retry>Retry</button>' : '')
+        + (b.status === 'done' ? '<button data-library>' + (b.entries.length ? 'Review' : 'Library') + '</button>' : '')
+        + (e.interestImages?.[b.id] ? '<button data-discuss title="Attach this image to your next message">Discuss image</button>' : '')
+        + '<button data-undo>' + (['queued','reading'].includes(b.status) ? 'Cancel' : 'Undo') + '</button></div>';
+    }).join('');
+    bar.querySelectorAll('[data-import]').forEach(row => {
+      const id = row.dataset.import;
+      const act = async action => {
+        try {
+          await apiWrite('/api/convos/interest-imports/' + id + '/' + action, 'POST', {});
+          if(action === 'undo' && e.interestImages) delete e.interestImages[id];
+          e.interestChecked = 0; await refresh();
+          if(document.getElementById('roomInterests')?.classList.contains('is-active')) renderInterestLibrary();
+        } catch(err){ row.textContent = err.message; }
+      };
+      row.querySelector('[data-undo]').onclick = () => act('undo');
+      const retry = row.querySelector('[data-retry]'); if(retry) retry.onclick = () => act('retry');
+      const library = row.querySelector('[data-library]'); if(library) library.onclick = () => {
+        const panel = document.getElementById('roomCards'), button = document.getElementById('roomCardsBtn');
+        if(panel && button && (isRoomNarrow() ? !panel.classList.contains('open') : panel.classList.contains('collapsed'))) button.click();
+        document.querySelector('[data-room-pane="interests"]')?.click();
+      };
+      const discuss = row.querySelector('[data-discuss]'); if(discuss) discuss.onclick = () => {
+        const img = e.interestImages?.[id]; if(!img) return;
+        if(!e.pendingAttachments) e.pendingAttachments = [];
+        if(e.pendingAttachments.filter(a => a.kind === 'image').length >= 4 || e.pendingAttachments.reduce((n,a) => n + (a.dataUrl?.length || 0), 0) + img.dataUrl.length > 18000000){ e.note = 'Send or remove existing image attachments first.'; fillEmbed(host,e,opts); return; }
+        e.pendingAttachments.push(img); delete e.interestImages[id]; fillEmbed(host,e,opts);
+      };
+    });
+    if(!e.interestFetching && (!e.interestChecked || Date.now() - e.interestChecked > 5000)) void refresh();
+    if(!e.interestTimer){
+      e.interestTimer = setTimeout(() => { e.interestTimer = null; if(current()) fillInterestImports(host,e,opts); }, 6000);
+    }
+  }
+
   function fillEmbed(host, e, opts){
     var log = host.querySelector('.se-log');
     // Hold the reading position. A repaint that yanks you to the bottom while you
@@ -23051,6 +23214,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         };
       });
     }
+    fillInterestImports(host, e, opts);
     // An answer that arrived whole (see sendTurn's arrivedWhole) gets to reveal
     // itself a beat at a time, once — on its rendered blocks (paragraphs, list
     // items…), never on the raw markdown source, so nothing about how it reads

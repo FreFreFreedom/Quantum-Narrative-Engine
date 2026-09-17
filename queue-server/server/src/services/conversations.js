@@ -36,12 +36,13 @@ import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } fr
 import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory } from './mind.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
+import { bindInterestLibrary, interestContext, INTEREST_TOOLS, interestTool } from './interestLibrary.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
 
 let db = null;
-export function bindConversationsDb(database) { db = database; }
+export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); }
 
 // Plans live in knowledge_docs under the `Plan: ` prefix (seeded by
 // bootstrapData.js#seedPlans from the project-docs/plans/ mirror). This returns
@@ -1747,6 +1748,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // prefix and roughly quadruple the token cost of every turn. See
     // plans/room-shared-memory.md §3 and conversation-voice-and-project-map.md.
     mindBlock(),
+    interestContext(convo.created_by, lastUserText(convo.id)),
     // Repo facts (the Room's turn router) ride in the SAME cache-safe region as
     // memory — right after mindBlock(), before the transcript and voice. They are
     // free (gathered by git, not a model) and variable per turn, but variable
@@ -1815,11 +1817,12 @@ async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens,
 // the structured turns (/plan, /fold, /reframe, /more) ask for one JSON object
 // back, and a tool round mid-way through that is a round that returns prose
 // instead of the object the caller then has to parse.
-const studioTools = (convoId) => listConvoLinks(convoId).length
-  ? [...STUDIO_TOOLS, LINKED_CONVERSATION_TOOL]
-  : STUDIO_TOOLS;
+const studioTools = (convoId) => [...STUDIO_TOOLS, ...INTEREST_TOOLS,
+  ...(listConvoLinks(convoId).length ? [LINKED_CONVERSATION_TOOL] : [])];
 const studioDispatch = (convoId) => (name, input) => name === LINKED_CONVERSATION_TOOL.name
   ? readLinkedConversation(convoId, input)
+  : INTEREST_TOOLS.some(t => t.name === name)
+  ? interestTool(db.prepare('SELECT created_by FROM convos WHERE id=?').get(convoId)?.created_by, name, input)
   : dispatchStudioTool(db, name, input);
 
 function saveAssistantTurn(convoId, text, meta = null) {

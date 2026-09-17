@@ -10,6 +10,7 @@ import { rhymeSoon } from '../services/boardRhyme.js';
 import { proposeRemember, saveRemembered } from '../services/mind.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import * as interests from '../services/interestLibrary.js';
 
 // The lanes the manual model picker (plan "chat-model-picker") may point a
 // conversation at. Kept in sync by hand with turnRouter.js's FORCED_LANES and
@@ -44,6 +45,22 @@ function statusFor(err) {
 
 export function conversationsRoutes() {
   const router = Router();
+
+  const interestRoute = fn => (req, res) => {
+    try {
+      const owner = req.user?.sub || req.user?.id;
+      if (!owner) return res.status(401).json({ error: 'Sign in first.' });
+      res.json(fn(req, owner));
+    } catch (err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not update the interest library.' }); }
+  };
+  router.get('/interests', interestRoute((req, owner) => ({ items: interests.listInterests(owner, req.query) })));
+  router.get('/interest-review', interestRoute((req, owner) => ({ entries: interests.pendingInterestReview(owner) })));
+  router.patch('/interests/:itemId', interestRoute((req, owner) => interests.changeInterest(owner, req.params.itemId, req.body || {})));
+  router.delete('/interests/:itemId', interestRoute((req, owner) => interests.changeInterest(owner, req.params.itemId, {}, true)));
+  router.post('/interest-entries/:entryId', interestRoute((req, owner) => interests.resolveInterestEntry(owner, req.params.entryId, req.body || {})));
+  router.post('/interest-imports/:batchId/:action', interestRoute((req, owner) => interests.changeImport(owner, req.params.batchId, req.params.action)));
+  router.get('/:id/interest-imports', interestRoute((req, owner) => ({ batches: interests.importStatus(owner, req.params.id) })));
+  router.post('/:id/interest-imports', interestRoute((req, owner) => interests.createInterestImport(owner, req.params.id, req.body || {})));
 
   // GET /api/convos/subject/:type/:id — fetch (or create) the conversation for a
   // subject, plus its message history.
