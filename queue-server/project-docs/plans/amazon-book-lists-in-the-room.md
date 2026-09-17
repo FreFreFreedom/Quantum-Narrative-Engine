@@ -1,5 +1,10 @@
 # Amazon book lists become the Room's interest library
 
+First-release direction superseded on 2026-09-17 by
+`screenshot-interest-library.md`: screenshot drops for books, films, and TV series,
+shared across Room and Side Talk models. Amazon links and account/browser connections
+are optional later sources. The new plan is not authorization to build.
+
 | Status | Date |
 |---|---|
 | **PLANNED — not a green light to build** | 2026-09-17 |
@@ -90,4 +95,3 @@ conversation from opening.
 - Which Amazon locale(s) Antoine uses; page structure and share URLs differ by country.
 - Whether list membership should be historical after a book is removed from Amazon, or
   whether QNE should show only the latest synced state by default.
-
