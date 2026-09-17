@@ -172,6 +172,14 @@ improvement of degree; it moves the analogical layer into territory nobody has e
 
 ### How to talk to Antoine about ideas
 
+**2026-09-17 — Latest answer style, overriding older format guidance:** always bullets,
+no headings or tables. Finished work: only whether it works and anything waiting on him;
+no tests, steps, paths, internals, previous behavior, or reasons. Remaining broken things
+last, plainly. Conversation: one idea per line, a little more room, full depth without
+padding; offer to go deeper rather than dumping detail. Plain words, explained technical
+terms only when necessary, no equations or notation, fragments preferred. This also
+governs paradigm answers and progress updates. See AGENTS.md → Answer format.
+
 `AGENTS.md` → *Working with Antoine* → **"How to talk about ideas with Antoine"** carries the
 hard rules, added 2026-08-31 and applying to every engine: never an equation (but
 mathematical instruments in plain words are actively wanted), never cite historical thinkers

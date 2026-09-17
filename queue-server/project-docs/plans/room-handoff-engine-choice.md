@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-24 |
+| **DONE** | 2026-08-24 — confirmed live 2026-09-13: `/handoff claude|opencode` engine choice exists in conversations.js |
 
 ## Context
 

@@ -1,8 +1,14 @@
 # Command Center — one screen that says what the system is doing
 
-**Status: DONE** — shipped 2026-09-09 (`ffcb3d0`, `4d73ed9`, `cb3dbbd`). Read
-"What the implementation changed" at the foot before trusting the body: **two of the
-seven tiles were dropped during the build**, for the reason the plan itself gives.
+**Status: REMOVED FROM APP** — shipped 2026-09-09 (`ffcb3d0`, `4d73ed9`, `cb3dbbd`), then
+deliberately removed 2026-09-11 (`b58ec31`, "Home is gone: everything it summarised is the
+view that owns it"). The Home tab, its nav entry, and its renderers are gone from the
+frontend; the backend route (`queue-server/server/src/routes/dashboard.js`) is dead code
+left in place with a comment saying so. Found stale-labeled DONE during the 2026-09-13
+re-audit — if this is wanted back, it needs re-deciding, not just re-flagging done. Read
+"What the implementation changed" at the foot before trusting the rest of the body: **two
+of the seven tiles were dropped during the original build**, for the reason the plan
+itself gives.
 
 **Re-verified 2026-09-09 against `4c9c789`**, after the civic-structures work landed six
 commits. Three references in the first draft were wrong and are corrected below — see

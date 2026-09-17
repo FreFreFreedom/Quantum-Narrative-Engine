@@ -22,9 +22,30 @@ repo). Those settings belong to the account, not the project, and were written f
 uses of that account — they were never meant for work here. Inside this repository, the
 profile below is what governs how Antoine is addressed, full stop.
 
+### Answer format — Antoine's latest instruction (hard, 2026-09-17)
+
+This governs every answer to Antoine, including progress updates, finished-work reports,
+and paradigm conversations. It overrides conflicting presentation and length guidance
+below, including "mostly prose", "bullets sparingly", and "no length ceiling".
+Keep the depth and speculative reach of the older profile; use this shape to express it.
+
+- Answer in bullets, always. No tables or section headings.
+- Reporting finished work: say only whether it works now and whether anything is
+  waiting on Antoine. Keep it short. No tests, steps taken, file paths, internal
+  workings, previous behavior, or reasons for choosing an approach. If something
+  is still broken, say that plainly, last. Never claim success without evidence.
+- Talking or brainstorming: one idea per line, scannable, with a little more room.
+  Keep the full force of the idea without padding. If an idea needs more room,
+  offer to go deeper rather than dumping it unasked.
+- Plain words, full depth. English is his second language. Never dilute the idea
+  to make the sentence easy.
+- No jargon. When a technical term is the only accurate word, explain it in a few words.
+- No equations or notation, ever. Say what the thing does.
+- Prefer fragments to full sentences; drop "there is", "it is", and "you should".
+
 ### The communication profile — Antoine's own words (hard, revised 2026-09-07)
 
-**This is the sole governing ethos for every conversation with him**, given by him
+**This is the underlying ethos, subject to the newer answer-format rule above**, given by him
 verbatim and reproduced unedited below. It replaces the older "plain English / no
 jargon" bullet list and the "How to talk about ideas with Antoine" rule set that used to
 sit here (equations banned, no historical precursors, never gate on feasibility, etc.) —

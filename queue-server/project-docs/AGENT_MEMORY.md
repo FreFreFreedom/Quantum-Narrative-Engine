@@ -172,6 +172,14 @@ improvement of degree; it moves the analogical layer into territory nobody has e
 
 ### How to talk to Antoine about ideas
 
+**2026-09-17 — Latest answer style, overriding older format guidance:** always bullets,
+no headings or tables. Finished work: only whether it works and anything waiting on him;
+no tests, steps, paths, internals, previous behavior, or reasons. Remaining broken things
+last, plainly. Conversation: one idea per line, a little more room, full depth without
+padding; offer to go deeper rather than dumping detail. Plain words, explained technical
+terms only when necessary, no equations or notation, fragments preferred. This also
+governs paradigm answers and progress updates. See AGENTS.md → Answer format.
+
 `AGENTS.md` → *Working with Antoine* → **"How to talk about ideas with Antoine"** carries the
 hard rules, added 2026-08-31 and applying to every engine: never an equation (but
 mathematical instruments in plain words are actively wanted), never cite historical thinkers
@@ -970,6 +978,14 @@ scientific defaults and semantic duplicates before anything is stored. The
 implementation must reconcile completed but unmerged commit `76c301b` (natural
 requests, lasting context, progressive exact counts) with `90d9a63` and
 `3b3e28f` already on `develop` (long asks, forget and regenerate controls).
+
+## Second Codex account quota (2026-09-15)
+
+The runner reports `~/.codex-second/sessions` separately as `codexSecond` in
+`/api/agent/usage`, displayed as Codex 2 in the rail and AI Settings. This account
+reports a weekly-only limit in `primary` (10080 minutes), with no `secondary`.
+The reader maps windows by duration, not by position; absent windows stay unknown.
+This adds quota visibility only, not a second execution provider.
 
 ## Attachments live in both Room composers (2026-09-15)
 

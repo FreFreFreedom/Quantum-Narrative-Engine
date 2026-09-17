@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-24 |
+| **DONE** | 2026-08-24 — backend and frontend both confirmed live 2026-09-13 |
 
 ## Context
 

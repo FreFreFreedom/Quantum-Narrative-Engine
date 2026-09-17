@@ -1,6 +1,6 @@
 # Calibration test — can a model perceive patterns from subtitles alone?
 
-**Status:** PLANNED
+**Status:** DONE 2026-09-14 — report at queue-server/project-docs/plans/calibration-test-findings.md
 **Type:** Investigation. Produces one markdown report. **No code, no schema change, no pipeline.**
 
 ---

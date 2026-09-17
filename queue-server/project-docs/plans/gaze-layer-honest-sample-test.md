@@ -1,6 +1,6 @@
 # Is essay coverage real across the whole corpus, or an artifact of a cherry-picked sample?
 
-**Status:** PLANNED
+**Status:** DONE 2026-09-14 — see [gaze-layer-honest-sample-findings.md](gaze-layer-honest-sample-findings.md)
 **Type:** Investigation. Produces one markdown report. **No code, no schema change, no pipeline.**
 
 ---

@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-26 |
+| **DONE** | 2026-08-26 — confirmed merged to develop, label re-verified 2026-09-13 |
 
 ---
 
