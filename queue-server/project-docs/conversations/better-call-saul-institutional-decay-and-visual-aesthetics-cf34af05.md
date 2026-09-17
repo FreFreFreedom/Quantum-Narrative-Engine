@@ -1,6 +1,6 @@
 # Better Call Saul: institutional decay and visual aesthetics
 
-Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 20 turns · last said 2026-09-17T21:21:07.588Z
+Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 21 turns · last said 2026-09-17T22:10:46.033Z
 
 ## you
 
@@ -337,3 +337,18 @@ The books addressing quote [2] inhabit the interior experience of those who must
 
 * **Indefensible: One Lawyer's Journey into the Heart of American Justice** by David Feige.
   Written by a former trial chief of the Bronx Defenders, Feige’s memoir offers a searing, minute-by-minute account of the psychic toll exacted on an advocate who refuses to numb himself. Feige chronicles a single day in court, tracking the frantic transitions between twenty different clients: a teenager jailed over a stolen jacket, an addict facing a decade for possession, a mother whose family will dissolve if she cannot get out of jail by the afternoon. Feige describes the dizzying vertigo of moving from intense intimacy with a client’s terror to the cold, ritualized sar…(cut)
+
+## you
+
+About this part of your answer:
+“Plea bargaining converted that unpredictable, living process into a closed administrative circuit where prosecutors wield unilateral leverage through charge stacking.”
+
+from this quote #1... what do you mean by "prosecutors wield unilateral leverage through charge stacking" ? in about 100 words
+
+## the room
+
+* Charge stacking means piling multiple criminal counts onto a single event—turning one scuffle into assault, resisting arrest, battery on an officer, and disorderly conduct.
+* Leverage becomes unilateral because the prosecutor alone decides what to charge, while the judge and defense attorney have no say in that initial framing.
+* Each added count carries years, multiplying potential prison time into a terrifying threat—perhaps fifty years at trial versus three years if settled today.
+* The state builds an overwhelming arithmetic wall where insisting on an open trial feels like deliberate suicide, converting the constitutional right to be heard into an intolerable risk.
+* It is administrative coercion disguised as negotiation: forcing absolute submission to a pre-written confession before any evidence is heard by a jury.
