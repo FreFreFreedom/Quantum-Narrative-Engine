@@ -1,6 +1,6 @@
 # Better Call Saul: institutional decay and visual aesthetics
 
-Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 16 turns · last said 2026-09-17T09:06:03.744Z
+Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 19 turns · last said 2026-09-17T09:08:31.648Z
 
 ## you
 
@@ -259,3 +259,32 @@ Fractal Social Patterning
 Recursion Methodology  
 Structural Recursion Ethnography  
 Trans-Scalar Ethnology
+
+## you
+
+i want the suggestions to have the name ethnography or ethnology in it please
+
+## the room
+
+Recursive Ethnography  
+Stratified Pattern Ethnography  
+Fractal Ethnography  
+Paradigm-Recursive Ethnography  
+Analogical Ethnography  
+Trans-Scalar Ethnography  
+Cross-Scale Ethnography  
+Morphogenic Ethnology  
+Recursion Ethnology  
+Structural Echo Ethnography  
+Scale-Recursive Ethnology  
+Patterned Ethnography
+
+## you
+
+Its gonna be Fractal Ethnography...  i like this name.. Remember this for our system plz.. this name and the vision behind it... 50 words answer plz..
+
+## the room
+
+* **Fractal Ethnography** is locked into the core vocabulary.
+* It names the cross-scale discipline: tracing one living pattern across every rung of human life, from kitchen table to courtroom to national statute.
+* A method that refuses to isolate a field site, tracking how an unhealed wound or frozen posture echoes across scales and loops back.
