@@ -1045,3 +1045,9 @@ Existing and future threads prepare without a panel visit. Open-thread work take
 priority; changing threads no longer cancels other media preparation. Explicit
 pauses survive. The existing single worker and unchanged-context cache remain;
 initial catch-up needs time and never guarantees instant results on an empty shelf.
+
+Quote references, 2026-09-17: Antoine refers to selected passages as #1 and #2.
+The shared composer now labels even a single selection and explicitly maps these
+references to this message's chip order, not numbered paragraphs/citations inside
+the text or selections on older messages. Mixed Library references use the same
+mapping server-side. Missing numbers require clarification rather than guessing.
