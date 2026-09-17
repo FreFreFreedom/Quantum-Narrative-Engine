@@ -231,6 +231,32 @@ export function mindBlock() {
   } catch { return ''; }
 }
 
+// Direct "remember this" instructions get a second, focused placement near the
+// end of every conversation prompt. The broad memory block above carries facts
+// and vision too, but it appears before the Room's voice; a later voice line such
+// as "metaphor is welcome" could therefore weaken a remembered "use fewer
+// immune-system metaphors" preference. This block is deliberately provider-free:
+// the same text reaches Gemini, Claude, ChatGPT and every other Room lane.
+export function renderDirectInstructions(rows = []) {
+  if (!rows.length) return '';
+  return `
+=== OWNER INSTRUCTIONS REMEMBERED ACROSS EVERY MODEL ===
+These are direct standing instructions from Antoine. Follow them regardless of which engine is answering. They outrank the general voice above. If his current message explicitly changes one, the current message wins.
+${rows.map((row) => `- ${String(row.text || '').slice(0, 240)}`).join('\n')}`;
+}
+
+export function directInstructionsBlock() {
+  try {
+    const rows = db.prepare(`
+      SELECT text FROM mind_facts
+      WHERE active=1 AND source_note='chat_explicit'
+      ORDER BY is_central DESC, updated_at DESC
+      LIMIT 20
+    `).all();
+    return renderDirectInstructions(rows);
+  } catch { return ''; }
+}
+
 // On-demand recall (the model's `recall_memory` tool). Plain LIKE search over
 // text/detail — no embeddings. Bumps hits + last_used_at so useful facts climb
 // into mindBlock()'s top slice over time.

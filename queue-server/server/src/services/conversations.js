@@ -33,7 +33,7 @@ import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
-import { mindBlock, harvest as harvestMind, saveExplicitChatMemory } from './mind.js';
+import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory } from './mind.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
 
@@ -1764,6 +1764,10 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     linkedConversationsBlock(convo.id),
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, historyWindow) || '(nothing yet)'}`,
     depth && studioPersona() ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
+    // Explicit memories sit AFTER the general voice so every provider receives
+    // them as higher-priority instructions, but BEFORE the current task because
+    // what Antoine says now must still be able to revise an older preference.
+    directInstructionsBlock(),
     instruction
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
       : `\n=== WHAT TO DO NOW ===\n${brevity

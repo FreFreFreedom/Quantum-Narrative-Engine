@@ -13,7 +13,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { unseenTurns, buildProposePrompt, buildCoreAddition, CENTRAL_WEIGHT, explicitMemoryText } from '../server/src/services/mind.js';
+import { unseenTurns, buildProposePrompt, buildCoreAddition, CENTRAL_WEIGHT, explicitMemoryText, renderDirectInstructions } from '../server/src/services/mind.js';
 import { renderMindFrom, renderVisionFrom, mindFiles, MEMORY_REPO_PATH } from '../server/src/services/mindMirror.js';
 
 let passed = 0;
@@ -151,6 +151,21 @@ const conversationsSrc = readFileSync(fileURLToPath(new URL('../server/src/servi
 const sendMessageBody = conversationsSrc.slice(conversationsSrc.indexOf('export async function sendMessage'), conversationsSrc.indexOf('// Thin exported entry point'));
 assert.ok(sendMessageBody.indexOf('saveExplicitChatMemory(trimmed') < sendMessageBody.indexOf('resolveTurn({'), 'the memory must be saved before routing and prompt assembly');
 ok('an explicit memory is written before the answer prompt is assembled');
+
+const directBlock = renderDirectInstructions([
+  { text: 'Use fewer immune-system metaphors.' },
+  { text: 'Do not end every answer with a question.' },
+]);
+assert.ok(directBlock.includes('ACROSS EVERY MODEL'));
+assert.ok(directBlock.includes('They outrank the general voice above'));
+assert.ok(directBlock.includes('Use fewer immune-system metaphors.'));
+assert.ok(directBlock.includes('Do not end every answer with a question.'));
+ok('direct remembered instructions become one provider-independent priority block');
+
+const promptBuilderBody = conversationsSrc.slice(conversationsSrc.indexOf('function buildTurnPrompt'), conversationsSrc.indexOf('async function runRoutedTurn'));
+assert.ok(promptBuilderBody.indexOf('depth && studioPersona()') < promptBuilderBody.indexOf('directInstructionsBlock()'));
+assert.ok(promptBuilderBody.indexOf('directInstructionsBlock()') < promptBuilderBody.indexOf('instruction\n'));
+ok('remembered instructions follow the general voice but the current request still comes last');
 
 // The Core addition is a dated, self-contained record — a future agent reading
 // fractal_operational_core.md needs the reasoning and the provenance, not just
