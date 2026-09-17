@@ -5,6 +5,10 @@ Planned shared-library extension: `room-reference-library.md` adds Save and Atta
 to Papers and Apps and combines chosen recommendations with imported media and kept
 passages. That extension is not implemented by this DONE status. Preserve this plan's
 paper-title-only display, app-discussion opening, selection rules and existing controls.
+Antoine also approved adding relevant shared Mind context to future recommendation
+generation, per that extension plan: explicit preferences take priority over inferred
+patterns, while existing collection scope, provider choice and sparse display stay intact.
+This Mind integration remains PLANNED, not part of the verified implementation below.
 Antoine approved implementation after the plan below was agreed. No separate
 recommendation categories are authorized by this work.
 
