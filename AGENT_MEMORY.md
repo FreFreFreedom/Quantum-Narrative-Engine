@@ -1069,3 +1069,10 @@ Quota rows now use these names. Claude display readings use profile-specific
 credential files or the matching hashed macOS Keychain service; never substitute
 the default account's credentials. These display profiles are separate from the
 existing task-engine account settings and quota admission gates, which stay intact.
+
+Selection stability, 2026-09-18: fillEmbed previously replaced the whole transcript
+on each repaint, destroying active browser selections. It now skips unchanged
+markup and defers changed transcript markup while selecting (composer updates
+continue). Quote menus refresh after selection/keyboard changes, cancel old timers,
+preserve selection on pointer-down, and reject stale text or cross-message attribution.
+Selection-menu clicks bypass the generic drag-click suppressor. Shared Room/Side Talk path.

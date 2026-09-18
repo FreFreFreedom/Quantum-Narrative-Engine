@@ -3496,6 +3496,7 @@ function dragSelectedText(ev) {
 }
 
 document.addEventListener('click', (ev) => {
+  if(ev.target.closest && ev.target.closest('.se-quote-pop'))return;
   if (!dragSelectedText(ev)) return;
   // stopImmediatePropagation, not stopPropagation: the clamped-line expander further down is
   // also a document-level capture listener, and stopPropagation does not stop a listener on
@@ -22849,6 +22850,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // is removed on the next mousedown, on scroll, and whenever the selection is
   // dropped, so it can never outlive the thing it points at.
   var quotePop = null;
+  var quoteOfferTimer = null;
   function killQuotePop(){
     if(quotePop && quotePop.parentNode) quotePop.parentNode.removeChild(quotePop);
     quotePop = null;
@@ -22884,7 +22886,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var offer = function(settleMs){
       // After the gesture the selection is final; a frame later it is also painted,
       // which is when getBoundingClientRect is worth reading.
-      setTimeout(function(){
+      clearTimeout(quoteOfferTimer);
+      quoteOfferTimer=setTimeout(function(){
+        if(!log.isConnected)return;
         var sel = window.getSelection && window.getSelection();
         var text = sel ? String(sel).trim() : '';
         killQuotePop();
@@ -22898,7 +22902,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // and silently did nothing. Same for a selection that runs across two turns.
         var range = sel.getRangeAt(0);
         var turnEl = answerTurnOf(range.startContainer) || answerTurnOf(range.endContainer);
-        if(!turnEl) return;
+        if(!turnEl || !log.contains(range.startContainer) || !log.contains(range.endContainer)) return;
+        var endTurn=answerTurnOf(range.endContainer);
+        var startTurn=answerTurnOf(range.startContainer);
+        if(startTurn && endTurn && startTurn!==endTurn)return;
+        // Do not attribute a selection spanning messages to one arbitrary answer.
+        var touched=Array.from(log.querySelectorAll('.se-turn')).filter(t=>range.intersectsNode(t));
+        if(touched.length!==1 || touched[0]!==turnEl)return;
         var r = range.getBoundingClientRect();
         if(!r || (!r.width && !r.height)) return;
         var msgId = turnEl.getAttribute('data-msg-id');
@@ -22908,6 +22918,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var passage = text.replace(/\s+/g, ' ').slice(0, 100000);
         quotePop = document.createElement('div');
         quotePop.className = 'se-quote-pop';
+        quotePop.onpointerdown = function(ev){ ev.preventDefault(); ev.stopPropagation(); };
         quotePop.onmousedown = function(ev){ ev.preventDefault(); ev.stopPropagation(); };
         var mk = function(icon, labelText, title, fn){
           var b = document.createElement('button');
@@ -22916,9 +22927,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             + icon + '"/></svg>' + qEsc(labelText);
           b.onclick = function(ev){
             ev.stopPropagation();
-            fn();
+            // Never apply a stale menu's captured passage to a newer highlight.
+            var current=window.getSelection();
+            if(current && String(current).trim() && String(current).trim().replace(/\s+/g,' ').slice(0,100000)!==passage){offer(0);return;}
             killQuotePop();
             if(sel.removeAllRanges) sel.removeAllRanges();
+            fn();
           };
           quotePop.appendChild(b);
         };
@@ -22970,7 +22984,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         placeQuotePop();
       }, settleMs);
     };
+    log.quoteOffer=offer;
     log.addEventListener('mouseup', function(){ offer(0); });
+    log.addEventListener('keyup', function(){ offer(0); });
     // Passive: the gesture is the browser's own text selection and must not be
     // interfered with — this only reads what it produced.
     log.addEventListener('touchend', function(){ offer(350); }, { passive: true });
@@ -22981,12 +22997,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // which is worse than never appearing. Capture phase, so stopPropagation inside
   // the bar cannot save it either; the containment check is the only fix.
   document.addEventListener('mousedown', function(ev){
-    if(quotePop && !quotePop.contains(ev.target)) killQuotePop();
+    if(!quotePop || !quotePop.contains(ev.target)){clearTimeout(quoteOfferTimer);killQuotePop();}
   }, true);
   window.addEventListener('scroll', placeQuotePop, true);
   // Clicking away clears the selection; the offer goes with it.
   document.addEventListener('selectionchange', function(){
-    if(quotePop && !String(window.getSelection() || '').trim()) killQuotePop();
+    if(quotePop && quotePop.contains(document.activeElement))return;
+    var sel=window.getSelection();
+    if(!sel || !String(sel).trim()){clearTimeout(quoteOfferTimer);killQuotePop();return;}
+    if(mouseDragging)return;
+    var node=sel.anchorNode, el=node && (node.nodeType===1?node:node.parentElement);
+    var log=el && el.closest && el.closest('.se-log');
+    if(log && log.quoteOffer)log.quoteOffer(80);
+    else killQuotePop();
   });
 
   // "Answer this again, on that model." Any earlier question of yours, not only the
@@ -23388,8 +23411,24 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // are three turns up reading is the sort of thing that makes a panel feel cheap.
     var atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 24;
     var was = log.scrollTop;
-    log.innerHTML = logHtml(e);
-    log.scrollTop = atBottom ? log.scrollHeight : was;
+    var nextLog=logHtml(e);
+    var selection=window.getSelection();
+    var selecting=selection && selection.rangeCount && !selection.isCollapsed
+      && (log.contains(selection.anchorNode)||log.contains(selection.focusNode));
+    var draggingHere=mouseDragging && log.matches(':hover');
+    if(log.renderedHtml!==nextLog){
+      if(selecting || draggingHere){
+        // Keep selected DOM nodes alive. New content waits until the reader has
+        // finished selecting/using the passage; unrelated composer updates continue.
+        clearTimeout(log.selectionPaintTimer);
+        var ownerKey=host.getAttribute('data-se');
+        log.selectionPaintTimer=setTimeout(function(){if(log.isConnected && host.getAttribute('data-se')===ownerKey)fillEmbed(host,e,opts);},200);
+      }else{
+        clearTimeout(log.selectionPaintTimer);
+        log.innerHTML=nextLog;log.renderedHtml=nextLog;
+        log.scrollTop=atBottom?log.scrollHeight:was;
+      }
+    }
     var filebar = host.querySelector('.se-filebar');
     if(filebar){
       filebar.innerHTML = (e.pendingAttachments || []).map(function(a, i){
