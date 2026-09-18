@@ -1,5 +1,9 @@
 # Plan Backlog
 
+- [Room sidebar and composer studies](room-sidebar-and-composer-studies.md) — **PLANNED / CHOICES PENDING**, 2026-09-18. Ten simpler sidebar choices with book covers/film and series posters; three compact multi-attachment composers. Mockups only, no app changes approved.
+
+- [Compact Room menu](room-menu-studies.md) — **PLANNED / CHOICE PENDING**, 2026-09-18. Two mockups: short icon-and-label list, or quick controls with a shorter list. No app change approved yet.
+
 - [Theme and reading-width studies](theme-and-reading-width-studies.md) — **WIDTH IMPLEMENTED / THEMES CANCELLED**, 2026-09-18. Antoine rejected the theme mockups and cancelled this theme work. Keep existing themes and the implemented reading-menu width slider.
 
 Permanent home for implementation plans for QNE. Each file here is a **self-contained
