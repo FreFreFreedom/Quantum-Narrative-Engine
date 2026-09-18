@@ -1,6 +1,6 @@
 # Room sidebar and crowded composer studies
 
-PARTIALLY IMPLEMENTED — Antoine chose “Three places” for the Room sidebar and “Attachment drawer” for the composer on 2026-09-18. The selected presentation is shipped; cover/poster metadata work and deeper pane consolidation remain separate.
+PARTIALLY IMPLEMENTED — Antoine chose “Three places” for the Room sidebar and “Attachment drawer” for the composer on 2026-09-18. The selected presentation and the first artwork lookup pass are shipped; deeper pane consolidation remains separate.
 
 Antoine asks for a much simpler right sidebar, about ten mockup choices, and cover/poster images on book, film and series recommendations. He also asks for composer mockups that remain compact with many attached quotes, chapters, screenshots and files. Keep current appearance: theme redesign was explicitly cancelled.
 
@@ -49,4 +49,4 @@ Reuse `renderRoomRecommendations`, `renderInterestLibrary`, existing `referenceL
 
 Selected implementation: the right Room column now shows Discover, Library, Side talks and More. Discover opens the existing Library discovery mode, Library opens saved references, and Side talks keeps its existing pane. Attached, Passages, World look, Papers, Projects, Analogies, Board, Mind and Extraction remain available under More; they are not deleted or merged at the data layer. The composer uses the Attachment drawer: a compact count and short preview above the draft, with the existing chapters, quotes, files and screenshot status rows inside a bounded drawer. Existing send and attachment data contracts remain unchanged.
 
-Remaining: recommendation cards still need real cover/poster metadata and source attribution in the running app. This plan's mockup catalogue links and matching rules remain the guide for that later pass. The larger title-menu redesign choices remain pending. Keep the three-place row and drawer behavior when implementing later artwork metadata; do not restore the old eleven-tab strip.
+Artwork lookup now runs only from title, creator, year and type: Open Library for books, TVmaze for series and Wikipedia thumbnails for films. Cards keep a quiet type fallback when no image is found. The larger title-menu redesign choices remain pending. Keep the three-place row and drawer behavior; do not restore the old eleven-tab strip.

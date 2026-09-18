@@ -28,6 +28,14 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-09-18 — Room reference panel cleanup.** The Room right panel now has one primary
+Discover/Library/Side talks path with the old pane list behind More; Library no longer
+repeats Saved/Discover as a second tab row. Media recommendations and saved media use
+catalogue artwork slots (Open Library for books, TVmaze for series, Wikipedia thumbnails
+for films), while kept passages render once instead of repeating their truncated title and
+full text. The file-upload icon is hidden; drag/drop and the existing file input remain.
+See `plans/room-sidebar-and-composer-studies.md`.
+
 **Added 2026-09-01.** There are several paradigm documents and they are NOT rivals — they
 layer, each doing a different job. Nothing here contradicts anything else; read in this
 order and skip what your task does not touch. All of them live in
