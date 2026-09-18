@@ -1052,6 +1052,14 @@ references to this message's chip order, not numbered paragraphs/citations insid
 the text or selections on older messages. Mixed Library references use the same
 mapping server-side. Missing numbers require clarification rather than guessing.
 
+Implicit quote context, 2026-09-18: attached selections are the default subject of
+the next message, without naming or numbering them. Shared conversation system
+instructions cover all engines, Room/Side Talks, and mixed Library references;
+the composer also carries the rule alongside plain quotes. Resolve reactions like
+"what do you mean?" against the selected text; multiple quotes use wording/shared
+context, with clarification only for real ambiguity. Explicit topic changes win,
+and quoted claims remain discussable/correctable rather than verified facts.
+
 Codex quotas, 2026-09-18: date folders record session creation, not last activity.
 The previous reader stopped at the newest populated day and missed resumed older
 sessions (Codex 2 showed 48% remaining instead of the latest 24%). readQuota now
