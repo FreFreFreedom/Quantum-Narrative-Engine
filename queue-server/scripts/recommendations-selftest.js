@@ -4,9 +4,26 @@ import { DatabaseSync } from 'node:sqlite';
 process.env.JWT_SECRET ||= 'recommendation-selftest-only';
 const { initConversationsSchema, initRecommendationsSchema, initKnowledgeSchema } = await import('../server/src/db/schema.js');
 const rec = await import('../server/src/services/roomRecommendations.js');
+const { catalogueQueries, catalogueMedia } = await import('../server/src/services/recommendationCatalogues.js');
 const { bindConversationsDb } = await import('../server/src/services/conversations.js');
 const { paperKey, searchPapers } = await import('../server/src/services/recommendationPapers.js');
 const db = new DatabaseSync(':memory:');
+assert(catalogueQueries('How do public defenders survive a crowded criminal court?').some(q => q.includes('defenders') || q.includes('court')),
+  'catalogue discovery keeps the conversation subject without sending the conversation itself');
+const catalogueFetch = globalThis.fetch;
+process.env.TMDB_API_KEY = 'catalogue-selftest';
+globalThis.fetch = async url => {
+  const href = String(url);
+  if (href.includes('googleapis.com')) return { ok:true, json:async()=>({ items:[{ id:'book-1', volumeInfo:{ title:'Courtroom 302', authors:['Steve Bogira'], publishedDate:'2005' } }] }) };
+  if (href.includes('/search/movie')) return { ok:true, json:async()=>({ results:[{ id:1, title:'A Court Film', release_date:'2000-01-01', vote_average:8, vote_count:1000 }] }) };
+  if (href.includes('/search/tv')) return { ok:true, json:async()=>({ results:[{ id:2, name:'A Court Series', first_air_date:'2001-01-01', vote_average:8.5, vote_count:2000 }] }) };
+  throw new Error(`unexpected catalogue URL ${href}`);
+};
+try {
+  const catalogue = await catalogueMedia('A conversation about public defenders and a criminal court.');
+  assert.deepEqual(new Set(catalogue.map(item => item.details.kind)), new Set(['book','film','series']));
+  assert(catalogue.every(item => item.url.startsWith('https://')));
+} finally { globalThis.fetch = catalogueFetch; delete process.env.TMDB_API_KEY; }
 db.exec("CREATE TABLE users(id TEXT PRIMARY KEY); INSERT INTO users VALUES('antoine')");
 initConversationsSchema(db); initRecommendationsSchema(db); initKnowledgeSchema(db); bindConversationsDb(db);
 const addThread = (id, type = 'open', parent = null) => db.prepare('INSERT INTO convos(id,subject_type,subject_id,title,parent_convo_id) VALUES(?,?,?,?,?)').run(id,type,id,id,parent);

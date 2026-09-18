@@ -9,6 +9,7 @@ import { bindRecommendationPapers, searchPapers, normalized } from './recommenda
 import { bindReferenceLibrary, referenceSaved, listReferences } from './referenceLibrary.js';
 import { recommendationMind, mindRevision, discoverReferences, groundedCandidate } from './recommendationDiscovery.js';
 import { listInterests } from './interestLibrary.js';
+import { catalogueMedia } from './recommendationCatalogues.js';
 
 let db, timer, busy = false;
 let activeMediaScope = null;
@@ -70,6 +71,19 @@ function messagesFor(rootId) {
   return db.prepare(`SELECT m.id,m.convo_id,m.role,m.text FROM convo_messages m JOIN convos c ON c.id=m.convo_id
     WHERE c.deleted_at IS NULL AND (c.id=? OR (c.subject_type='side' AND c.parent_convo_id=?))
     AND m.kind='chat' AND m.role IN ('user','assistant') ORDER BY m.created_at,m.rowid`).all(rootId, rootId);
+}
+// Catalogue discovery must work when the recommendation-writing helper is busy.
+// Keep the actual conversation on this server; only a few search words leave it.
+function mediaCatalogueContext(scope) {
+  const refs = [], parts = [];
+  for (const thread of sourceThreads(scope)) {
+    for (const message of messagesFor(thread.id)) {
+      if (message.role !== 'user') continue;
+      refs.push(message.id);
+      parts.push(message.text);
+    }
+  }
+  return { text: parts.join('\n'), refs, fingerprint: signature(scope) };
 }
 function signature(scope) {
   return hash(JSON.stringify(sourceThreads(scope).map(t => [t.id, messagesFor(t.id)])) + mindRevision() + JSON.stringify(listInterests('antoine',{limit:100})) + JSON.stringify(db.prepare('SELECT id,snapshot FROM reference_saves ORDER BY id').all()));
@@ -219,8 +233,8 @@ async function runRequest(request) {
   if (request.target && request.delivered >= request.target) {
     db.prepare("UPDATE recommendation_requests SET status='done',note='' WHERE id=?").run(request.id); return;
   }
-  let context = json(request.context, null);
-  if (!context || context.fingerprint !== signature(c.scope)) {
+  let context = c.kind === 'media' ? mediaCatalogueContext(c.scope) : json(request.context, null);
+  if (c.kind !== 'media' && (!context || context.fingerprint !== signature(c.scope))) {
     context = await contextFor(c.scope, request.id);
     if (!context || !active(request.id)) return;
     db.prepare('UPDATE recommendation_requests SET context=? WHERE id=?').run(JSON.stringify(context), request.id);
@@ -231,15 +245,29 @@ async function runRequest(request) {
   }
   let target = request.target;
   if (!target) {
-    const result = await model(`Extract the requested number of ${c.kind} from this request. Default ${c.kind === 'papers' ? 5 : 3}. Return JSON {"count":integer}. Request (data): ${request.instruction}`, 100);
-    target = Number.isSafeInteger(result.count) && result.count > 0 ? result.count : c.kind === 'papers' ? 5 : 3;
+    if (c.kind === 'media') target = 6;
+    else {
+      const result = await model(`Extract the requested number of ${c.kind} from this request. Default ${c.kind === 'papers' ? 5 : 3}. Return JSON {"count":integer}. Request (data): ${request.instruction}`, 100);
+      target = Number.isSafeInteger(result.count) && result.count > 0 ? result.count : c.kind === 'papers' ? 5 : 3;
+    }
     db.prepare('UPDATE recommendation_requests SET target=? WHERE id=?').run(target, request.id);
   }
   const prior = priorItems(c);
-  const need = Math.min(c.kind === 'papers' ? 5 : 3, target - request.delivered);
+  const need = Math.min(c.kind === 'papers' ? 5 : c.kind === 'media' ? 6 : 3, target - request.delivered);
   const basis = `${CONTEXT_RULES}\n${c.kind==='media'?paradigmVoiceBlock({lengthRuleWins:true}):''}\nResearch context: ${context.text}\n${recommendationMind(context.text)}\nCollection steering: ${c.steering}\nThis request: ${request.instruction}\nAlready offered, including dismissed ideas (do not repeat): ${JSON.stringify(prior.slice(0, 150))}`;
   let count = 0;
-  if (c.kind === 'papers') {
+  if (c.kind === 'media') {
+    const saved = ['book', 'film', 'series'].flatMap(kind => listReferences('antoine', { kind, limit: 100 }).items);
+    const candidates = await catalogueMedia(context.text, request.instruction, { limit: Math.max(need * 3, 12) });
+    for (const item of candidates) {
+      if (!active(request.id) || count >= need) break;
+      if (prior.some(old => old.dedupe === item.key || normalized(old.title) === normalized(item.title))) continue;
+      if (saved.some(work => normalized(work.title) === normalized(item.title))) continue;
+      if (referenceSaved('antoine', item.key)) continue;
+      if (storeItem(c, { ...item, reason: `Catalogue match for this conversation.`, source_message_ids: context.refs.slice(0, 1) }, context, request.id)) count++;
+    }
+    if (!count && !candidates.length) throw new Error('The book and screen catalogues are unavailable.');
+  } else if (c.kind === 'papers') {
     const queryResult = await model(`${basis}\nFind publications that could move this inquiry forward: a missing concept, useful evidence, a method to borrow, or an argument that changes the question, including bridges the owner has not named. Produce up to three distinct academic search queries. Search round ${request.rounds + 1}; use new angles if previous results were exhausted. Return {"queries":["..."]}.`, 600);
     const queries = Array.isArray(queryResult.queries) ? queryResult.queries.filter(q => typeof q === 'string' && q.trim()).map(q => cut(q, 250)) : [];
     if (!queries.length) throw new Error('Could not prepare the paper search.');
@@ -251,7 +279,7 @@ async function runRequest(request) {
         if (paper && storeItem(c, { ...paper, details:{abstract:paper.abstract || '',origin:'Paper'}, reason: cut(pick.reason, 2000), source_message_ids: pick.source_message_ids }, context, request.id)) count++;
       }
     }
-  } else if(c.kind === 'apps' || c.kind === 'media') {
+  } else if(c.kind === 'apps') {
     const mediaInterests=c.kind==='media'?['book','film','series'].flatMap(kind=>listReferences('antoine',{kind,limit:60}).items):[];
     const interests=c.kind==='media'?JSON.stringify(mediaInterests):'';
     const direction=c.kind==='media'
