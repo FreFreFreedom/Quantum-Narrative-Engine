@@ -1573,14 +1573,17 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 /* The composer is a line, not a box: one rule underneath that darkens on focus. */
 
 .room-cards:has(#roomPapers.is-active),.room-cards:has(#roomApps.is-active) { display:flex; flex-direction:column; overflow:hidden; }
-.room-rec-host { display:flex; flex-direction:column; min-height:0; flex:1; }
+.room-rec-host { display:flex; flex-direction:column; min-width:0; min-height:0; width:100%; flex:1; }
 .room-rec-controls { display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-bottom:8px; }
 .room-rec-controls select { min-width:0; flex:1; font:inherit; color:inherit; background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:5px; padding:4px; }
-.room-rec-list { overflow-y:auto; flex:1; min-height:40px; }
-.room-rec-item { position:relative; display:grid; grid-template-columns:48px minmax(0,1fr); gap:9px; padding:10px 24px 10px 0; border-bottom:1px solid var(--c-border-2); }
+.room-rec-list { width:100%; overflow-y:auto; flex:1; min-height:40px; }
+/* Only media has a cover. Giving Papers and Projects its empty cover column made
+   their words collapse into a narrow strip despite the pane having room. */
+.room-rec-item { position:relative; min-width:0; width:100%; padding:10px 24px 10px 0; border-bottom:1px solid var(--c-border-2); }
+.room-rec-item--media { display:grid; grid-template-columns:48px minmax(0,1fr); gap:9px; }
 .room-rec-art { width:48px; height:68px; border-radius:5px; background:var(--c-surface-2); border:1px solid var(--c-border-2); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; color:var(--c-ink-5); font-size:9px; text-transform:uppercase; letter-spacing:.04em; text-align:center; }
-.room-rec-info { min-width:0; }
-.room-rec-title { font:inherit; text-align:left; color:var(--c-ink); line-height:1.5; background:none; border:0; padding:0; cursor:pointer; text-decoration:none; }
+.room-rec-info { min-width:0; width:100%; }
+.room-rec-title { display:block; width:100%; font:inherit; text-align:left; color:var(--c-ink); line-height:1.5; background:none; border:0; padding:0; cursor:pointer; text-decoration:none; }
 .room-rec-title:hover { text-decoration:underline; }
 .room-rec-item p { margin:5px 0 0; font-size:12px; line-height:1.5; color:var(--c-ink-3); }
 .room-rec-menu { position:absolute; right:2px; top:10px; }
@@ -1601,7 +1604,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .interest-item--media { display:grid; grid-template-columns:48px minmax(0,1fr); gap:9px; }
 .interest-item--media .interest-media-info { min-width:0; }
 .interest-art { width:48px; height:68px; border-radius:5px; background:var(--c-surface-2); border:1px solid var(--c-border-2); background-size:cover; background-position:center; }
-#roomPapers.is-active,#roomApps.is-active { display:flex; flex-direction:column; min-height:0; flex:1; }
+#roomPapers.is-active,#roomApps.is-active { display:flex; flex-direction:column; min-width:0; min-height:0; width:100%; flex:1; }
 /* Analogies beside the Room. Not the world-look's question (what could be built)
    but the other one: where is this relation already living, under other names.
    The pane is its own small conversation, so it carries an ask box of its own. */
@@ -11228,7 +11231,7 @@ function renderRoomRecommendations(kind) {
   host.innerHTML = '<div class="room-rec-controls">'
     + '<select data-rec-scope aria-label="Recommendation collection"'+(kind==='media'?' hidden':'')+'><option value="thread"' + (scope !== 'all' ? ' selected' : '') + '>This conversation</option><option value="all"' + (scope === 'all' ? ' selected' : '') + '>All conversations</option></select>'
     + '<button type="button" class="room-ana-chip" data-rec-auto title="Change when recommendations arrive">' + (settings.automatic ? 'As you talk' : 'Only when asked') + '</button></div>'
-    + '<div class="room-rec-list">' + (items.length ? items.map(item => '<article class="room-rec-item">'
+    + '<div class="room-rec-list">' + (items.length ? items.map(item => '<article class="room-rec-item' + (kind === 'media' ? ' room-rec-item--media' : '') + '">'
       + (kind === 'media' ? roomMediaArtMarkup(item) : '') + '<div class="room-rec-info">'
       + (kind === 'papers' || kind === 'media' ? '<a class="room-rec-title" href="' + qEscAttr(/^https:\/\//.test(item.url || '') ? item.url : '#') + '" target="_blank" rel="noopener noreferrer">' + qEsc(item.title) + '</a>' + (kind==='media'?'<p>'+qEsc(item.sentence)+'</p>':'')
         : '<button type="button" class="room-rec-title" data-rec-open="' + qEscAttr(item.id) + '">' + qEsc(item.title) + '</button><p>' + qEsc(item.sentence) + '</p>')
