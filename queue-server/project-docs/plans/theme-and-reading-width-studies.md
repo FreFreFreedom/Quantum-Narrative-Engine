@@ -1,7 +1,7 @@
 # Theme and reading-width studies
 
-Status: PLANNED / DESIGN OPTIONS, 2026-09-18. Not authorization to implement any
-theme or width control. User requested ten theme mockups (day, night, cyberpunk)
+Status: THEMES — DESIGN OPTIONS; WIDTH OPTION 2 — APPROVED and implemented,
+2026-09-18. No theme implementation authorized. User requested ten theme mockups (day, night, cyberpunk)
 and then discreet ways to adjust the Room's horizontal reading width.
 
 The temporary local HTML previews are throwaways, not published app artifacts.
@@ -63,4 +63,11 @@ panels open, without resizing the global chrome or forgetting the preferred widt
 It must work alongside the three automatic Room layouts approved in
 room-space-studies.md, not replace those states. Preserve drafts and reading position.
 
-Waiting on Antoine: preferred themes and preferred width control (or combining both).
+Antoine selected option 2. Implemented in the existing reading menu: 45–100%
+slider, 90% initial value, persisted alongside font and size in fmcns_room_type.
+Room and Side Talk messages/drafts share the measure; it has a 320px readable floor
+bounded by available width. Narrow panels never overflow, and the chosen percentage
+is not overwritten by opening a panel. No edge handles. Menu placement uses its
+actual height, including the new row. Layout-only updates keep transcript DOM intact.
+
+Waiting on Antoine: preferred themes only.

@@ -1094,6 +1094,12 @@ font-relative measure, compact draft above controls with attachments inside,
 full-height Side Talk, separately remembered reference/Side Talk widths and last
 open Side Talk per thread. No extra layout selector.
 
+Reading width, 2026-09-18: Antoine chose mockup #2, a discreet slider in the
+existing reading menu; no edge handles. Room/Side Talk text and draft width now
+use a saved percentage (45–100, initially 90) with a 320px floor capped at available
+space. Stored in fmcns_room_type alongside font/size; panels/chrome stay unchanged.
+Ten theme candidates remain unchosen; see plans/theme-and-reading-width-studies.md.
+
 Screenshot attachment repair, 2026-09-18: every Room/Side Talk image now enters
 pending chat attachments immediately, before independent automatic Library parsing.
 Library failure no longer prevents vision chat. Completion cannot reattach an image

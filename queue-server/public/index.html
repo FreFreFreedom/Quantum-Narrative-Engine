@@ -1065,7 +1065,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 /* The conversation itself is painted by studioEmbed() — the same markup a card's
    box gets. Only the frame changes: no rule above it, and the log takes every
    pixel the composer does not instead of stopping at its in-card ceiling. */
-.room-convo { flex:1; min-height:0; min-width:0; padding:0 18px 14px; display:flex; flex-direction:column; --room-reading-width:calc(var(--room-size) * 54); }
+.room-convo { flex:1; min-height:0; min-width:0; padding:0 18px 14px; display:flex; flex-direction:column; --room-reading-width:min(100%,max(320px,var(--room-width,90%))); }
 .room-convo .se-wrap { flex:1; min-height:0; display:flex; flex-direction:column; border-top:none; margin-top:0; padding-top:0; }
 .room-convo .se-log { max-height:none; flex:1; min-height:0; padding:var(--sp-6) 0 var(--sp-3); }
 /* Reading comfort is a setting, not a constant (his ask, 2026-09-09) — and one
@@ -1176,6 +1176,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-typesize { justify-content:space-between; }
 .room-typesize button { flex:none; width:30px; font-size:var(--fs-base); }
 .room-typesize span { font-family:var(--font-mono); font-size:var(--fs-sm); color:var(--c-ink-4); }
+.room-typewidth { border-top:1px solid var(--c-border); padding-top:8px; display:flex; flex-direction:column; gap:7px; font-size:var(--fs-sm); color:var(--c-ink-3); }
+.room-typewidth label { display:flex; justify-content:space-between; gap:12px; }
+.room-typewidth input { width:100%; accent-color:var(--c-accent); }
 /* The head goes entirely. Everything it held is in the toolbar one line above —
    the thread's name, the turn count, "start fresh" — and a view whose reason for
    existing is the conversation cannot offer to fold it away. Keeping it meant a
@@ -1226,6 +1229,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 #roomSideEmbed .se-head { display:flex; flex:none; }
 #roomSideEmbed .se-head-title { display:none; }
 #roomSideEmbed .se-log { padding-top:8px; }
+#roomSideEmbed .se-turn { max-width:var(--room-reading-width); margin-left:auto; margin-right:auto; }
 @media (min-width:821px) {
   .room-threads:not(.collapsed) { width:min(var(--threads-w,250px),25cqw); }
   .ws-room:has(.room-threads:not(.collapsed)) { --room-thread-space:25cqw; }
@@ -10407,11 +10411,12 @@ const ROOM_FONTS = [
 ];
 const ROOM_SIZE_MIN = 12;
 const ROOM_SIZE_MAX = 48;
-let roomType = { font: 'system', size: 14 };
+let roomType = { font: 'system', size: 14, width: 90 };
 function applyRoomType() {
   const f = ROOM_FONTS.find((x) => x[0] === roomType.font) || ROOM_FONTS[0];
   document.documentElement.style.setProperty('--room-font', f[2]);
   document.documentElement.style.setProperty('--room-size', roomType.size + 'px');
+  document.documentElement.style.setProperty('--room-width', roomType.width + '%');
 }
 function saveRoomType() {
   try { localStorage.setItem(ROOM_TYPE_KEY, JSON.stringify(roomType)); } catch (e) {}
@@ -10420,7 +10425,7 @@ function saveRoomType() {
   try {
     const saved = JSON.parse(localStorage.getItem(ROOM_TYPE_KEY) || 'null');
     if (saved && ROOM_FONTS.some((f) => f[0] === saved.font) && saved.size >= ROOM_SIZE_MIN && saved.size <= ROOM_SIZE_MAX) {
-      roomType = { font: saved.font, size: Number(saved.size) };
+      roomType = { font: saved.font, size: Number(saved.size), width: Number.isFinite(saved.width) ? Math.min(100,Math.max(45,saved.width)) : 90 };
     }
   } catch (e) {}
 })();
@@ -10444,6 +10449,8 @@ function openRoomTypeMenu(btn) {
     smaller.disabled=roomType.size<=ROOM_SIZE_MIN;
     bigger.disabled=roomType.size>=ROOM_SIZE_MAX;
     slider.value=String(roomType.size);
+    widthSlider.value=String(roomType.width);
+    widthReadout.textContent=roomType.width+'%';
     applyRoomType();
     saveRoomType();
   };
@@ -10470,13 +10477,24 @@ function openRoomTypeMenu(btn) {
   slider.setAttribute('aria-label','Conversation text size');slider.style.width='100%';
   slider.oninput=()=>{roomType.size=Number(slider.value);paint();};
   sizeRow.append(smaller, readout, bigger);
-  roomTypeMenu.append(fonts, sizeRow,slider);
+  const widthRow=document.createElement('div');
+  widthRow.className='room-typewidth';
+  const widthLabel=document.createElement('label');
+  widthLabel.htmlFor='roomReadingWidth';widthLabel.append('Reading width');
+  const widthReadout=document.createElement('span');
+  widthLabel.append(widthReadout);
+  const widthSlider=document.createElement('input');
+  widthSlider.id='roomReadingWidth';widthSlider.type='range';widthSlider.min=45;widthSlider.max=100;widthSlider.step=1;
+  widthSlider.oninput=()=>{roomType.width=Number(widthSlider.value);paint();};
+  widthRow.append(widthLabel,widthSlider);
+  roomTypeMenu.append(fonts, sizeRow,slider,widthRow);
   paint();
   const r = btn.getBoundingClientRect();
-  roomTypeMenu.style.left = Math.max(6, Math.min(window.innerWidth - 200, r.right - 190)) + 'px';
-  roomTypeMenu.style.top = Math.min(window.innerHeight - 110, r.bottom + 4) + 'px';
   roomTypeMenu.onmousedown = (ev) => ev.stopPropagation();
   document.body.appendChild(roomTypeMenu);
+  const menuRect=roomTypeMenu.getBoundingClientRect();
+  roomTypeMenu.style.left = Math.max(6, Math.min(window.innerWidth - menuRect.width - 6, r.right - menuRect.width)) + 'px';
+  roomTypeMenu.style.top = Math.max(6,Math.min(window.innerHeight - menuRect.height - 6, r.bottom + 4)) + 'px';
 }
 document.addEventListener('mousedown', (ev) => {
   if (roomTypeMenu && !roomTypeMenu.contains(ev.target)) killRoomTypeMenu();
