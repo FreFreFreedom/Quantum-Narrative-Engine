@@ -17785,14 +17785,12 @@ async function loadUsage() {
     <div class="uq-grid">
       <div class="uq-head"><span></span><span>5 h</span><span>Week</span></div>
       ${uqRow('Claude Max', pa)}
-      ${uqRow('Claude Pro', ant)}
       ${uqRow('Codex Plus', codex)}
       ${uqRow('Codex Pro', currentCodexQuota(u, 'codexSecond'))}
       ${money}
     </div>
     <div class="uq-shut">
       ${uqShutBar('Max', pa)}
-      ${uqShutBar('Pro', ant)}
       ${uqShutBar('Cx +', codex)}
       ${uqShutBar('Cx Pro', currentCodexQuota(u, 'codexSecond'))}
       ${cap && typeof cap.spentUsd === 'number' ? `<span class="uq-spend" title="Spent this month">$${cap.spentUsd.toFixed(2)}</span>` : ''}
