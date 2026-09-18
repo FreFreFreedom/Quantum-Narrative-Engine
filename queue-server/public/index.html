@@ -1613,15 +1613,15 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
   color:var(--c-ink-3); background:none; cursor:pointer; font-family:inherit; }
 .room-ana-chip:hover { border-color:var(--c-ink-4); color:var(--c-ink); }
 .room-ana-chip.on { background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); }
-.room-ana-item { padding:13px 0; border-bottom:1px solid var(--c-border); }
+.room-ana-item { padding:10px 0; border-bottom:1px solid var(--c-border); }
 .room-ana-item.is-carried { opacity:.5; }
 .room-ana-item.is-regenning { opacity:.5; }
 .room-ana-acts button[disabled] { cursor:default; opacity:.5; text-decoration:none; }
 .room-ana-eyebrow { font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
 .room-ana-scale { font-size:var(--fs-xs); letter-spacing:.06em; color:var(--c-ink-4); opacity:.6; margin-top:1px; }
-.room-ana-item h4 { font-family:var(--room-font); font-weight:400; font-size:var(--fs-md); line-height:1.25; margin:7px 0 5px; }
-.room-ana-item p { margin:0 0 6px; font-size:var(--fs-sm); color:var(--c-ink-3); }
-.room-ana-acts { display:flex; gap:12px; margin-top:8px; }
+.room-ana-item h4 { font-family:var(--room-font); font-weight:500; font-size:var(--fs-sm); line-height:1.3; margin:4px 0 4px; }
+.room-ana-item p { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; margin:0 0 5px; font-size:var(--fs-xs); line-height:1.4; color:var(--c-ink-3); }
+.room-ana-acts { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
 .room-ana-acts button { background:none; border:none; padding:0; cursor:pointer; font-family:inherit; font-size:var(--fs-xs); color:var(--c-accent); }
 .room-ana-acts button:hover { text-decoration:underline; }
 .room-ana-mine { font-family:var(--room-font); font-size:var(--fs-sm); background:var(--c-surface-2);
@@ -3349,7 +3349,6 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" data-room-more aria-haspopup="menu" aria-expanded="false" role="button">More…</button>
           <div class="room-secondary-tabs" id="roomSecondaryTabs" role="menu" hidden>
             <button type="button" data-room-pane="attached" role="menuitem">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
-            <button type="button" data-room-pane="passages" role="menuitem">Passages <span class="room-tabcount" id="roomPassCount"></span></button>
             <button type="button" data-room-pane="ideas" role="menuitem">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
             <button type="button" data-room-pane="papers" role="menuitem">Papers <span class="room-tabcount" id="roomPapersCount"></span></button>
             <button type="button" data-room-pane="apps" role="menuitem">Projects <span class="room-tabcount" id="roomAppsCount"></span></button>
@@ -3386,9 +3385,6 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div class="room-pane room-extract" id="roomExtract">
           <div id="roomExtractHost"></div>
-        </div>
-        <div class="room-pane room-ideas" id="roomPassages">
-          <div id="roomPassagesHost"></div>
         </div>
         <div class="room-pane room-ideas" id="roomIdeas">
           <div id="roomIdeasHost"></div>
@@ -9603,7 +9599,7 @@ const ROOM_ZONE_KEYS = { roomThreads: 'fmcns_room_threads_open', roomCards: 'fmc
 // Which of the right column's five panes is showing. One key where there used to
 // be five, because only one of them is open at a time now.
 const ROOM_PANE_KEY = 'fmcns_room_pane';
-const ROOM_PANES = { papers: 'roomPapers', apps: 'roomApps', attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', mind: 'roomMind', extract: 'roomExtract', interests: 'roomInterests' };
+const ROOM_PANES = { papers: 'roomPapers', apps: 'roomApps', attached: 'roomAttached', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', mind: 'roomMind', extract: 'roomExtract', interests: 'roomInterests' };
 // A tab carries its own count so a shut pane can still say it has something in
 // it — the whole reason five headings were worth losing.
 function setRoomTabCount(id, n) {
@@ -9621,7 +9617,6 @@ function setRoomTabCount(id, n) {
    drop the thing you are looking at from under you. */
 const ROOM_TAB_HAS = {
   attached: () => roomAttachedCards().length > 0 || roomLinks.length > 0 || roomPickOpen,
-  passages: () => roomPassages.length > 0,
   ideas: () => roomIdeasReports.length > 0 || roomIdeasRunning,
   // The one tab that shows even while empty: every other pane only ever holds
   // results, but this one holds a question box — hiding it until something has
@@ -11446,15 +11441,15 @@ function renderRoomAnalogies() {
       + '<h4>' + qEsc(c.title) + '</h4>'
       + (c.reading ? '<p>' + qEsc(c.reading) + '</p>' : '')
       + '<div class="room-ana-acts">'
-      +   '<button type="button" data-ana-bring="' + idx + '"' + (regenning ? ' disabled' : '') + '>↑ bring</button>'
-      +   (c.anchor_message_id ? '<button type="button" data-ana-jump="' + idx + '"' + (regenning ? ' disabled' : '') + '>where from</button>' : '')
+      +   '<button type="button" data-ana-bring="' + idx + '"' + (regenning ? ' disabled' : '') + '>Bring</button>'
+      +   (c.anchor_message_id ? '<button type="button" data-ana-jump="' + idx + '"' + (regenning ? ' disabled' : '') + '>Source</button>' : '')
       +   '<button type="button" data-ana-regen="' + qEscAttr(it.id) + '" title="Try another one in this spot"' + (regenning ? ' disabled' : '') + '>'
-      +     (regenning ? '↻ …' : '↻ refresh') + '</button>'
+      +     (regenning ? 'Refreshing…' : 'Refresh') + '</button>'
       +   '<button type="button" data-ana-drop="' + qEscAttr(it.id) + '" title="Forget this one"' + (regenning ? ' disabled' : '') + '>✕</button>'
       + '</div></div>';
   }).join('');
 
-  if (cards.length > 1) html += '<div class="room-ana-acts"><button type="button" data-ana-bringall="1">↑ bring all of them</button></div>';
+  if (cards.length > 1) html += '<div class="room-ana-acts"><button type="button" data-ana-bringall="1">Bring all</button></div>';
   html += '<div class="room-ana-ask">'
     + '<textarea class="searchbox" id="roomAnaInput" rows="1" placeholder="Ask for any number, about anything…"'
     + (roomAnaAsking ? ' disabled' : '') + '></textarea>'
