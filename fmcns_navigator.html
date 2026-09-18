@@ -1639,7 +1639,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-turn.has-analogy::before { content:''; position:absolute; left:-13px; top:7px; width:7px; height:7px;
   border-radius:50%; background:var(--c-accent); opacity:.7; }
 .se-compose { display:flex; align-items:flex-end; gap:8px; border-top:1px solid var(--c-border); margin-top:2px; padding-top:8px; }
-.se-attach { flex:none; align-self:center; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center;
+.se-attach { display:none !important; flex:none; align-self:center; width:28px; height:28px; padding:0; align-items:center; justify-content:center;
   border:0; background:transparent; color:var(--c-ink-4); border-radius:var(--r-sm); cursor:pointer; }
 .se-attach:hover:not(:disabled) { color:var(--c-ink); background:var(--c-hover-wash); }
 .se-attach:disabled { opacity:.35; cursor:default; }
@@ -1718,10 +1718,11 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    the composer pill itself. On Auto it reads as a plain, low-contrast "Auto"
    select, no different from any other muted control in the app; once a lane is
    picked, it takes the brand color so the override is legible at a glance. */
-.se-lanewrap { display:flex; align-items:center; gap:4px; align-self:center; flex:none; }
-.se-lanepick, .se-lanemodel { -webkit-appearance:none; appearance:none; background:none; border:1px solid var(--c-border-2); border-radius:var(--r-pill); color:var(--c-ink-4); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:3px 8px; cursor:pointer; max-width:88px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:none; }
-.se-lanepick:hover, .se-lanemodel:hover { border-color:var(--c-ink-4); color:var(--c-ink); }
-.se-lanepick.is-set { color:var(--c-brand); border-color:var(--c-brand); }
+.se-lanewrap { display:flex; align-items:center; gap:2px; align-self:center; flex:none; }
+.se-lanepick, .se-lanemodel { -webkit-appearance:none; appearance:none; background:transparent; border:0; border-radius:0; color:var(--c-ink-4); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:2px 0; cursor:pointer; max-width:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:none; }
+.se-lanepick:hover, .se-lanemodel:hover { color:var(--c-ink); }
+.se-lanepick.is-set { color:var(--c-brand); }
+.room-convo .se-lanepick { max-width:58px; padding-left:0; padding-right:0; background:transparent; }
 .se-lane-clear { background:none; border:none; color:var(--c-ink-4); font-size:var(--fs-sm); line-height:1; cursor:pointer; padding:2px; }
 .se-lane-clear:hover { color:var(--c-ink); }
 /* Interview mode (plan "room-clarifying-questions-and-interview-mode") — same
@@ -24109,7 +24110,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var tag = (!you && !plan && m.laneTag) ? m.laneTag : '';
       if (tag && m.checked) tag = tag + ' ↻ ' + m.checked;
       else if (tag && m.answered) tag = tag + ' ·2nd';
-      var who = you ? 'You' : plan ? 'Plan' : 'Studio';
+      var who = you ? 'You' : plan ? 'Plan' : '';
       // The lane tag: clickable. 'git' means a free repo lookup with no model; the
       // others are the model that answered. Clicking re-asks the last question on
       // a different lane (the router's forced path, triggered from here).
@@ -24163,7 +24164,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         ? '<button type="button" class="se-cmd se-answer-now-inline" data-se-answer-now="1">Answer now</button>'
         : '';
       html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + (idx === e.freshMsgIdx ? ' data-fresh="1"' : '') + '>'
-           +  '<div class="se-who">' + who + tagHtml + '</div>'
+           +  ((who || tagHtml) ? '<div class="se-who">' + who + tagHtml + '</div>' : '')
            +  foldHtml
            +  filesHtml
            +  (plan ? '<pre class="se-plan">' + renderedBody + '</pre>'
@@ -24185,7 +24186,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // Once tokens are arriving, they ARE the waiting indicator — the answer
       // writing itself is better than three dots. The dots stay for the gap
       // before the first token, and for lanes that don't stream at all.
-      html += '<div class="se-turn"><div class="se-who">Studio</div>'
+      html += '<div class="se-turn">'
            +  (e.stream
                 ? '<div class="se-body md">' + fmtBody(e.stream, true) + '<span class="se-cursor">▍</span></div>'
                 : '<div class="se-body se-dots"><span>·</span><span>·</span><span>·</span></div>'
