@@ -157,9 +157,10 @@ function* tailLines(fd) {
 export function readQuota(root = join(homedir(), '.codex', 'sessions'), now = Date.now()) {
   let fd;
   try {
+    const candidates=[];
     const dirs = (path, pattern) => readdirSync(path, { withFileTypes: true })
       .filter(e => e.isDirectory() && pattern.test(e.name)).map(e => e.name).sort().reverse();
-    // Visit dated folders newest first and stop at the newest populated day.
+    // Date folders describe creation, not last use; collect across all dates.
     for (const year of dirs(root, /^\d{4}$/)) {
       const yp = join(root, year);
       for (const month of dirs(yp, /^\d{2}$/)) {
@@ -171,24 +172,73 @@ export function readQuota(root = join(homedir(), '.codex', 'sessions'), now = Da
             .map(e => ({ path: join(dp, e.name), mtime: statSync(join(dp, e.name)).mtimeMs }))
             .sort((a, b) => b.mtime - a.mtime);
           if (!files.length) continue;
-          // Not just the newest file: a session that asked one short question holds no
-          // quota line at all, and anything touching an old transcript makes it the
-          // newest. Either way a single-file read gives up with the answer sitting in
-          // the file next to it. Five back is plenty and costs a tail read each.
-          for (const file of files.slice(0, 5)) {
+          candidates.push(...files);
+        }
+      }
+    }
+    // Resumed conversations keep their original date folder. Compare all
+    // recently modified transcripts, then choose by quota timestamp itself.
+    let latest=null;
+    for (const file of candidates.sort((a,b)=>b.mtime-a.mtime).slice(0,20)) {
             fd = openSync(file.path, 'r');
             const found = quotaFromLines(tailLines(fd), now);
             closeSync(fd);
             fd = undefined;
-            if (found) return found;
-          }
-          return null;
-        }
-      }
+            if(found && (!latest || Date.parse(found.at)>Date.parse(latest.at)))latest=found;
     }
+    return latest;
   } catch { /* missing sessions, permissions or a file disappearing */ }
   finally { if (fd !== undefined) { try { closeSync(fd); } catch {} } }
   return null;
+}
+
+const quotaReads=new Map();
+// Read-only account RPC: no model turn, prompt, API billing, or reset action.
+// Each account has its own child environment and cache; never reuse a reading
+// from the other login. Session logs remain a fallback when the CLI is offline.
+export async function readCurrentQuota(accountDir=join(homedir(),'.codex')) {
+  const cached=quotaReads.get(accountDir);
+  if(cached?.pending)return cached.pending;
+  if(cached && Date.now()-cached.checked<60000)return freshQuota(cached.value);
+  const entry={checked:Date.now(),value:cached?.value || null,pending:null};
+  quotaReads.set(accountDir,entry);
+  entry.pending=new Promise(resolve=>{
+    let child, timer, finished=false, buffer='';
+    const done=value=>{
+      if(finished)return;finished=true;clearTimeout(timer);
+      child?.stdin.destroy();child?.kill();
+      const fallback=readQuota(join(accountDir,'sessions'));
+      entry.value=value || (fallback && (!entry.value || Date.parse(fallback.at)>Date.parse(entry.value.at))?fallback:freshQuota(entry.value));
+      resolve(entry.value);
+    };
+    try {
+      child=spawn(resolveBin(),['app-server'],{env:spawnEnv({CODEX_HOME:accountDir}),stdio:['pipe','pipe','ignore']});
+      timer=setTimeout(()=>done(null),12000);
+      const send=value=>{if(!finished)child.stdin.write(JSON.stringify(value)+'\n');};
+      child.stdin.on('error',()=>done(null));child.on('error',()=>done(null));child.on('exit',()=>done(null));
+      child.stdout.on('data',chunk=>{
+        buffer+=chunk.toString();if(buffer.length>1000000){done(null);return;}
+        let newline;
+        while((newline=buffer.indexOf('\n'))>=0){
+          const line=buffer.slice(0,newline);buffer=buffer.slice(newline+1);
+          let message;try{message=JSON.parse(line);}catch{continue;}
+          if(message.id===1){
+            if(message.error){done(null);return;}
+            send({method:'initialized',params:{}});
+            send({id:2,method:'account/rateLimits/read'});
+          }else if(message.id===2){
+            const limits=message.result?.rateLimitsByLimitId?.codex || message.result?.rateLimits;
+            if(!limits || limits.limitId && limits.limitId!=='codex'){done(null);return;}
+            const convert=w=>w?{used_percent:w.usedPercent,window_minutes:w.windowDurationMins,resets_at:w.resetsAt}:null;
+            const value=parseQuota(JSON.stringify({timestamp:new Date().toISOString(),rate_limits:{limit_id:'codex',primary:convert(limits.primary),secondary:convert(limits.secondary),plan_type:limits.planType}}));
+            done(value?{...value,source:'live'}:null);return;
+          }
+        }
+      });
+      send({id:1,method:'initialize',params:{clientInfo:{name:'qne_quota',version:'1.0.0'}}});
+    }catch{done(null);}
+  });
+  try{return await entry.pending;}finally{entry.pending=null;}
 }
 
 // ─── Transcript parsing (Codex's JSONL) ─────────────────────────────────────

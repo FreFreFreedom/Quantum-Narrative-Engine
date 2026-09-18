@@ -643,9 +643,11 @@ async function usageForReport() {
     if (s && s.subscriptionAvailable) side = { session: s.session, week: s.week, subscriptionAvailable: true };
   } catch { /* unknown — the rail shows a dash */ }
   let codex = null;
-  try { codex = codexCli.readQuota(); } catch { /* quota must never break a heartbeat */ }
   let codexSecond = null;
-  try { codexSecond = codexCli.readQuota(join(homedir(), '.codex-second', 'sessions')); } catch { /* independent account, unknown is a dash */ }
+  try { [codex,codexSecond]=await Promise.all([
+    codexCli.readCurrentQuota(join(homedir(),'.codex')),
+    codexCli.readCurrentQuota(join(homedir(),'.codex-second')),
+  ]); } catch { /* quota must never break a heartbeat */ }
   return { ...usage, side, codex, codexSecond };
 }
 

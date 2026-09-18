@@ -1051,3 +1051,14 @@ The shared composer now labels even a single selection and explicitly maps these
 references to this message's chip order, not numbered paragraphs/citations inside
 the text or selections on older messages. Mixed Library references use the same
 mapping server-side. Missing numbers require clarification rather than guessing.
+
+Codex quotas, 2026-09-18: date folders record session creation, not last activity.
+The previous reader stopped at the newest populated day and missed resumed older
+sessions (Codex 2 showed 48% remaining instead of the latest 24%). readQuota now
+compares recent files across all dates, selecting by quota-event timestamp.
+Runner usage reports use readCurrentQuota: per-account cached read-only Codex
+app-server account/rateLimits/read, with corrected session logs as fallback.
+No model calls, account reset, or API-key billing. A missing five-hour window is
+unknown/not reported, never fabricated as 100%; the second account's current
+telemetry reports only a weekly window. Official protocol reference:
+https://developers.openai.com/codex/app-server .
