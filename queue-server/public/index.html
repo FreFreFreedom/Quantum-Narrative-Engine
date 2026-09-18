@@ -922,6 +922,11 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-tabs button.active { background:var(--c-surface-2); color:var(--c-ink); border-color:var(--c-border-2); }
 .room-tabcount { font-family:var(--font-mono); font-size:var(--fs-2xs); color:var(--c-ink-5); letter-spacing:0; }
 .room-tabs button.active .room-tabcount { color:var(--c-ink-4); }
+.room-secondary-tabs { position:absolute; z-index:var(--z-popover-top); right:8px; top:calc(100% + 4px); min-width:170px; padding:4px; background:var(--c-surface); border:1px solid var(--c-border-2); border-radius:var(--r-md); box-shadow:var(--sh-md); }
+.room-tabs { position:relative; }
+.room-tabs { overflow:visible; }
+.room-secondary-tabs[hidden] { display:none; }
+.room-secondary-tabs button { display:flex; width:100%; justify-content:space-between; text-align:left; border:0; }
 .room-pane { display:none; }
 .room-pane.is-active { display:block; }
 /* What the open pane can do, when it can do anything: a right-aligned row where
@@ -1628,6 +1633,17 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-attach .ic { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; }
 .se-filebar { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
 .se-filebar:empty { display:none; }
+.se-attachment-summary { display:flex; align-items:center; gap:6px; margin-top:6px; min-width:0; }
+.se-attachment-summary[hidden], .se-attachment-drawer[hidden] { display:none; }
+.se-attachment-summary-toggle { flex:none; border:1px solid var(--c-border-2); background:var(--c-surface-2); color:var(--c-ink-3); border-radius:var(--r-pill); padding:3px 9px; font:inherit; font-size:var(--fs-xs); cursor:pointer; }
+.se-attachment-summary-toggle:hover { color:var(--c-ink); border-color:var(--c-ink-4); }
+.se-attachment-preview { display:flex; gap:5px; min-width:0; overflow:hidden; }
+.se-attachment-preview .se-filechip, .se-attachment-preview .se-quoted, .se-attachment-preview .se-mark { max-width:13rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.se-attachment-drawer { max-height:190px; overflow-y:auto; padding:7px 8px; margin-top:5px; border:1px solid var(--c-border); border-radius:var(--r-sm); background:var(--c-bg); }
+.se-attachment-drawer .se-attachment-group { padding:0 0 5px; }
+.se-attachment-drawer .se-attachment-group:empty { display:none; }
+.se-attachment-drawer .se-attachment-group::before { content:attr(data-label); display:block; padding:2px 0 3px; color:var(--c-ink-5); font-size:var(--fs-2xs); letter-spacing:.06em; text-transform:uppercase; }
+.se-attachment-drawer .se-quotebar, .se-attachment-drawer .se-filebar, .se-attachment-drawer .se-interestbar { max-height:none; overflow:visible; }
 .se-filechip, .se-message-file { display:inline-flex; align-items:center; gap:5px; max-width:17rem; padding:3px 7px;
   border:1px solid var(--c-border-2); background:var(--c-surface-2); color:var(--c-ink-3); border-radius:var(--r-sm); font-size:var(--fs-xs); }
 .se-filechip span, .se-message-file span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -3307,17 +3323,21 @@ button:active { transform: translateY(1px) scale(.99); }
              and five headings before any content, in a 290px column. A tab strip
              says the same thing in one row and shows one pane at a time. -->
         <div class="room-tabs" id="roomTabs" role="tablist">
-          <button type="button" class="active" data-room-pane="attached" role="tab">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
-          <button type="button" data-room-pane="passages" role="tab">Passages <span class="room-tabcount" id="roomPassCount"></span></button>
-          <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
-          <button type="button" data-room-pane="papers" role="tab">Papers <span class="room-tabcount" id="roomPapersCount"></span></button>
-          <button type="button" data-room-pane="apps" role="tab">Projects <span class="room-tabcount" id="roomAppsCount"></span></button>
-          <button type="button" data-room-pane="analogies" role="tab">Analogies <span class="room-tabcount" id="roomAnaCount"></span></button>
-          <button type="button" data-room-pane="board" role="tab">Board <span class="room-tabcount" id="roomBoardCount"></span></button>
-          <button type="button" data-room-pane="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
-          <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
-          <button type="button" data-room-pane="interests" role="tab">Library</button>
-          <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
+          <button type="button" data-room-primary="discover" role="tab">Discover</button>
+          <button type="button" data-room-primary="library" role="tab">Library</button>
+          <button type="button" data-room-primary="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
+          <button type="button" data-room-more aria-haspopup="menu" aria-expanded="false" role="button">More…</button>
+          <div class="room-secondary-tabs" id="roomSecondaryTabs" role="menu" hidden>
+            <button type="button" data-room-pane="attached" role="menuitem">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
+            <button type="button" data-room-pane="passages" role="menuitem">Passages <span class="room-tabcount" id="roomPassCount"></span></button>
+            <button type="button" data-room-pane="ideas" role="menuitem">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
+            <button type="button" data-room-pane="papers" role="menuitem">Papers <span class="room-tabcount" id="roomPapersCount"></span></button>
+            <button type="button" data-room-pane="apps" role="menuitem">Projects <span class="room-tabcount" id="roomAppsCount"></span></button>
+            <button type="button" data-room-pane="analogies" role="menuitem">Analogies <span class="room-tabcount" id="roomAnaCount"></span></button>
+            <button type="button" data-room-pane="board" role="menuitem">Board <span class="room-tabcount" id="roomBoardCount"></span></button>
+            <button type="button" data-room-pane="mind" role="menuitem">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
+            <button type="button" data-room-pane="extract" role="menuitem">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
+          </div>
         </div>
         <div class="room-pane room-attached is-active" id="roomAttached">
           <div class="room-pane-acts">
@@ -10025,16 +10045,56 @@ function initRoom() {
       });
       const selectedTab = strip.querySelector('[data-room-pane="' + pane + '"]');
       if (selectedTab) selectedTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      const mode = pane === 'interests' ? recRead('library.mode', 'saved') : '';
+      strip.querySelectorAll('[data-room-primary]').forEach((b) => {
+        const key = b.getAttribute('data-room-primary');
+        const on = (key === 'discover' && pane === 'interests' && mode === 'discover')
+          || (key === 'library' && pane === 'interests' && mode !== 'discover')
+          || (key === 'side' && pane === 'side');
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      const moreBtn = strip.querySelector('[data-room-more]');
+      if (moreBtn) {
+        const on = pane !== 'interests' && pane !== 'side';
+        moreBtn.classList.toggle('active', on);
+        moreBtn.setAttribute('aria-expanded', String(!strip.querySelector('#roomSecondaryTabs')?.hidden));
+      }
       if (pane === 'interests') renderInterestLibrary();
       if (pane === 'papers' || pane === 'apps') openRoomRecommendations(pane);
     };
     strip.onclick = (ev) => {
+      const primary = ev.target.closest('[data-room-primary]');
+      if (primary) {
+        const key = primary.getAttribute('data-room-primary');
+        pane = key === 'side' ? 'side' : 'interests';
+        if (key === 'discover' || key === 'library') recSave('library.mode', key === 'discover' ? 'discover' : 'saved');
+        try { localStorage.setItem(ROOM_PANE_KEY, pane); } catch (e) {}
+        strip.querySelector('#roomSecondaryTabs')?.setAttribute('hidden', '');
+        apply();
+        return;
+      }
+      const more = ev.target.closest('[data-room-more]');
+      if (more) {
+        const menu = strip.querySelector('#roomSecondaryTabs');
+        if (menu) {
+          menu.hidden = !menu.hidden;
+          more.setAttribute('aria-expanded', String(!menu.hidden));
+        }
+        return;
+      }
       const b = ev.target.closest('[data-room-pane]');
       if (!b) return;
       pane = b.getAttribute('data-room-pane');
       try { localStorage.setItem(ROOM_PANE_KEY, pane); } catch (e) {}
+      const secondary = strip.querySelector('#roomSecondaryTabs');
+      if (secondary) secondary.hidden = true;
       apply();
     };
+    document.addEventListener('mousedown', (ev) => {
+      const menu = strip.querySelector('#roomSecondaryTabs');
+      if (menu && !menu.hidden && !strip.contains(ev.target)) { menu.hidden = true; apply(); }
+    }, true);
     apply();
   }
   const passHost = document.getElementById('roomPassagesHost');
@@ -10430,12 +10490,21 @@ function saveRoomType() {
   } catch (e) {}
 })();
 let roomTypeMenu = null;
+let roomTypePeekTimer = null;
+function scheduleRoomTypePeekClose() {
+  if (roomTypePeekTimer) clearTimeout(roomTypePeekTimer);
+  roomTypePeekTimer = setTimeout(() => {
+    roomTypePeekTimer = null;
+    if (roomTypeMenu && !roomTypeMenu.matches(':hover')) killRoomTypeMenu();
+  }, 180);
+}
 function killRoomTypeMenu() {
+  if (roomTypePeekTimer) { clearTimeout(roomTypePeekTimer); roomTypePeekTimer = null; }
   if (roomTypeMenu && roomTypeMenu.parentNode) roomTypeMenu.parentNode.removeChild(roomTypeMenu);
   roomTypeMenu = null;
 }
-function openRoomTypeMenu(btn) {
-  if (roomTypeMenu) { killRoomTypeMenu(); return; }
+function openRoomTypeMenu(btn, forceOpen, placement) {
+  if (roomTypeMenu) { if (forceOpen) return; killRoomTypeMenu(); return; }
   roomTypeMenu = document.createElement('div');
   roomTypeMenu.className = 'room-typemenu';
   const fonts = document.createElement('div');
@@ -10491,10 +10560,13 @@ function openRoomTypeMenu(btn) {
   paint();
   const r = btn.getBoundingClientRect();
   roomTypeMenu.onmousedown = (ev) => ev.stopPropagation();
+  roomTypeMenu.onmouseenter = () => { if (roomTypePeekTimer) { clearTimeout(roomTypePeekTimer); roomTypePeekTimer = null; } };
+  roomTypeMenu.onmouseleave = () => { if (forceOpen) scheduleRoomTypePeekClose(); };
   document.body.appendChild(roomTypeMenu);
   const menuRect=roomTypeMenu.getBoundingClientRect();
-  roomTypeMenu.style.left = Math.max(6, Math.min(window.innerWidth - menuRect.width - 6, r.right - menuRect.width)) + 'px';
-  roomTypeMenu.style.top = Math.max(6,Math.min(window.innerHeight - menuRect.height - 6, r.bottom + 4)) + 'px';
+  const right = placement === 'right';
+  roomTypeMenu.style.left = Math.max(6, Math.min(window.innerWidth - menuRect.width - 6, right ? r.right + 6 : r.right - menuRect.width)) + 'px';
+  roomTypeMenu.style.top = Math.max(6,Math.min(window.innerHeight - menuRect.height - 6, right ? r.top : r.bottom + 4)) + 'px';
 }
 document.addEventListener('mousedown', (ev) => {
   if (roomTypeMenu && !roomTypeMenu.contains(ev.target)) killRoomTypeMenu();
@@ -10536,10 +10608,10 @@ function openRoomMoreMenu(btn) {
       on: () => roomForkThread(roomSel) } : null,
     { label: 'Merge with conversations…', title: 'Create a new thread from this one and other conversations',
       on: openRoomMergePicker },
-    turns >= 4 ? { label: 'Start fresh', title: 'What was said is folded into a short recap and the thread carries on',
+    turns >= 4 ? { label: 'Compact', title: 'What was said is folded into a short recap and the thread carries on',
       on: roomStartFresh } : null,
     { sep: true },
-    { label: 'Font and text size', on: () => openRoomTypeMenu(btn) },
+    { label: 'Reading', title: 'Font, text size and reading width', hover: (menuItem) => openRoomTypeMenu(menuItem, true, 'right'), on: () => openRoomTypeMenu(btn) },
     { sep: true },
     { label: 'Delete this thread', danger: true, on: () => roomDeleteThread(roomSel) },
   ]);
@@ -14344,6 +14416,10 @@ function openMenu(anchor, items, opts) {
     b.className = 'umenu-item' + (it.danger ? ' is-danger' : '') + (it.checked ? ' is-on' : '');
     b.textContent = it.label;
     if (it.title) b.title = it.title;
+    if (it.hover) {
+      b.addEventListener('mouseenter', () => it.hover(b));
+      b.addEventListener('mouseleave', () => { if (roomTypeMenu) scheduleRoomTypePeekClose(); });
+    }
     if (it.disabled) b.disabled = true;
     b.onclick = (ev) => { ev.stopPropagation(); closeMenu(); if (it.on) it.on(); };
     el.appendChild(b);
@@ -22599,18 +22675,20 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +     '<span class="se-head-title">Talk it over</span>'
         +     '<span class="se-count"></span>'
         +     '<span class="se-head-acts">'
-        +       '<button type="button" class="se-iconbtn" data-se-act="reset" title="Start fresh — what you said so far is folded into a short recap">⟳</button>'
+        +       '<button type="button" class="se-iconbtn" data-se-act="reset" title="Compact — what you said so far is folded into a short recap">⟳</button>'
         +       '<button type="button" class="se-iconbtn" data-se-act="shut" title="Put the conversation away — nothing is lost">▾</button>'
         +     '</span>'
         +   '</div>'
         +   '<div class="se-log"></div>'
         +   '<span class="se-cost"></span>'
         +   '<div class="se-draftbox">'
-        +   '<div class="se-markbar"></div>'
-        +   '<div class="se-aboutbar"></div>'
-        +   '<div class="se-quotebar"></div>'
-        +   '<div class="se-filebar"></div>'
-        +   '<div class="se-interestbar" aria-live="polite"></div>'
+        +   '<div class="se-attachment-summary" hidden><button type="button" class="se-attachment-summary-toggle" aria-expanded="false">0 attached⌄</button><div class="se-attachment-preview"></div></div>'
+        +   '<div class="se-attachment-drawer" hidden>'
+        +     '<div class="se-attachment-group" data-label="Chapters"><div class="se-markbar"></div></div>'
+        +     '<div class="se-aboutbar"></div>'
+        +     '<div class="se-attachment-group" data-label="Quotes"><div class="se-quotebar"></div></div>'
+        +     '<div class="se-attachment-group" data-label="Files and screenshots"><div class="se-filebar"></div><div class="se-interestbar" aria-live="polite"></div></div>'
+        +   '</div>'
         +   '<div class="se-compose">'
         +     '<button type="button" class="se-more" data-se-act="cmds" title="What else this conversation can do" aria-label="What else this conversation can do">＋</button>'
         +     '<span class="se-lanewrap">'
@@ -22671,6 +22749,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function wireEmbed(host, e, opts, repaint){
     var input = host.querySelector('.se-input');
     var send = host.querySelector('.se-send');
+    var attachmentToggle = host.querySelector('.se-attachment-summary-toggle');
+    if(attachmentToggle){
+      attachmentToggle.onclick = function(ev){
+        ev.stopPropagation();
+        e.attachmentsOpen = !e.attachmentsOpen;
+        paintAttachmentSummary(host, e);
+      };
+    }
     input.addEventListener('focus',()=>{if(opts.captureInterests)referenceTarget={e,host,root:roomSel,repaint};});
     var say = function(text){
       var pending = (e.pendingAttachments || []).slice();
@@ -23486,6 +23572,28 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }
   }
 
+  function paintAttachmentSummary(host, e){
+    var summary = host.querySelector('.se-attachment-summary');
+    var drawer = host.querySelector('.se-attachment-drawer');
+    var toggle = host.querySelector('.se-attachment-summary-toggle');
+    var preview = host.querySelector('.se-attachment-preview');
+    if(!summary || !drawer || !toggle || !preview) return;
+    var quotes = e.quotes || [];
+    var marks = e.marks || [];
+    var files = e.pendingAttachments || [];
+    var imports = (e.interestBatches || []).filter(function(b){ return b.status !== 'undone' && b.status !== 'ordinary'; });
+    var total = quotes.length + marks.length + files.length + imports.length;
+    summary.hidden = !total;
+    drawer.hidden = !total || !e.attachmentsOpen;
+    toggle.setAttribute('aria-expanded', String(!!e.attachmentsOpen));
+    toggle.textContent = total + (total === 1 ? ' attached' : ' attached') + (e.attachmentsOpen ? '⌃' : '⌄');
+    var pieces = [];
+    quotes.slice(0, 2).forEach(function(q, i){ pieces.push('<span class="se-quoted"><span class="se-quoted-n">' + (i + 1) + '</span><span class="se-quoted-text">' + qEsc(q.reference ? (q.title || quoteText(q)) : quoteText(q)) + '</span></span>'); });
+    if(!quotes.length) marks.slice(0, 2).forEach(function(m){ pieces.push('<span class="se-mark"><span>' + qEsc(m.label || 'Chapter') + '</span></span>'); });
+    if(!pieces.length) files.slice(0, 2).forEach(function(a){ pieces.push('<span class="se-filechip"><span>' + qEsc(a.name || 'file') + '</span></span>'); });
+    preview.innerHTML = pieces.join('');
+  }
+
   function fillEmbed(host, e, opts){
     var log = host.querySelector('.se-log');
     // Hold the reading position. A repaint that yanks you to the bottom while you
@@ -23530,6 +23638,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       });
     }
     fillInterestImports(host, e, opts);
+    paintAttachmentSummary(host, e);
     // An answer that arrived whole (see sendTurn's arrivedWhole) gets to reveal
     // itself a beat at a time, once — on its rendered blocks (paragraphs, list
     // items…), never on the raw markdown source, so nothing about how it reads

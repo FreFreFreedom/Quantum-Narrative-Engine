@@ -1108,3 +1108,20 @@ Library failure no longer prevents vision chat. Completion cannot reattach an im
 already sent or removed. Failed imports retained on the server expose an owner-checked
 image retrieval route for Discuss image after refresh. The Library reader gets up
 to three vision attempts; no change to the user's chosen conversation model.
+
+Room menu wording, 2026-09-18: Antoine asked for the user-facing “Start fresh” action
+to be called Compact. Its recap-and-continue behavior is unchanged. The title-menu
+Reading action opens the existing font, text-size and reading-width controls on hover
+as well as click/keyboard. The broader menu/sidebar redesign remains unselected.
+
+Composer attachments, 2026-09-18: Antoine chose the Attachment drawer design. The
+shared Room/Side Talk composer keeps a compact count and short preview above the draft;
+the full Chapters, Quotes, Files and screenshots list opens in a bounded drawer. The
+existing attachment data and send behavior stay unchanged; drawer open state is local
+to the conversation entry.
+
+Room sidebar, 2026-09-18: Antoine chose the “Three places” layout. The visible right
+column destinations are Discover, Library and Side talks; Attached, Passages, World
+look, Papers, Projects, Analogies, Board, Mind and Extraction remain reachable under
+More. Discover uses the existing media discovery mode and Library uses the existing
+saved-reference mode; source panes are not deleted or merged in storage.

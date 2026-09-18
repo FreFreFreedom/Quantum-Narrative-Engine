@@ -1,6 +1,6 @@
 # Room sidebar and crowded composer studies
 
-PLANNED — design choices pending, not an implementation green light. 2026-09-18.
+PARTIALLY IMPLEMENTED — Antoine chose “Three places” for the Room sidebar and “Attachment drawer” for the composer on 2026-09-18. The selected presentation is shipped; cover/poster metadata work and deeper pane consolidation remain separate.
 
 Antoine asks for a much simpler right sidebar, about ten mockup choices, and cover/poster images on book, film and series recommendations. He also asks for composer mockups that remain compact with many attached quotes, chapters, screenshots and files. Keep current appearance: theme redesign was explicitly cancelled.
 
@@ -47,4 +47,6 @@ Use catalogue metadata, not generated cover artwork and not a model-invented ima
 
 Reuse `renderRoomRecommendations`, `renderInterestLibrary`, existing `referenceLibrary.js`, `interestLibrary.js`, `roomRecommendations.js`, and canonical `passages.js`. Discover reorganizes presentation only: current scopes, relevant shared Mind, background preparation, worker/provider choices, paper title-only rule and existing-vs-proposed project distinction stay. Save persists, Attach targets the last active Room/Side Talk draft and never sends. Automatic suggestion arrival must not reorder the card under the pointer or reset an open view. Sidebars retain independent width and open/closed state through `initSideResize`; reading-width choice stays. No personal save notes or named mixed collections; both were declined/deferred earlier.
 
-Pending decisions: sidebar choice or combination; composer choice; whether a particular destination may truly be removed versus relocated. These mockups are not a finished queue-ready implementation brief. Before build, inspect latest frontend (line numbers drift), specify exact routing, accessible names/keyboard order, attachment action mapping, data compatibility and responsive behavior. Mirror master HTML to public only for approved app changes. No app deploy for mockups alone.
+Selected implementation: the right Room column now shows Discover, Library, Side talks and More. Discover opens the existing Library discovery mode, Library opens saved references, and Side talks keeps its existing pane. Attached, Passages, World look, Papers, Projects, Analogies, Board, Mind and Extraction remain available under More; they are not deleted or merged at the data layer. The composer uses the Attachment drawer: a compact count and short preview above the draft, with the existing chapters, quotes, files and screenshot status rows inside a bounded drawer. Existing send and attachment data contracts remain unchanged.
+
+Remaining: recommendation cards still need real cover/poster metadata and source attribution in the running app. This plan's mockup catalogue links and matching rules remain the guide for that later pass. The larger title-menu redesign choices remain pending. Keep the three-place row and drawer behavior when implementing later artwork metadata; do not restore the old eleven-tab strip.
