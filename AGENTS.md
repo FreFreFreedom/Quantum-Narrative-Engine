@@ -581,9 +581,10 @@ reason will treat it as an obstacle.
 
 ### Ship directly — no local test phase (hard)
 
-Antoine reviews quality by using the app. When he asks for a change and says
-go (or gives any equivalent green light), build it and ship it immediately —
-never spend time on local verification:
+Antoine reviews quality by using the app. **A request to make a change is itself
+the green light to publish it.** Do not ask separately whether to deploy, wait
+for him to say “publish”, or leave a completed live-session change unshipped.
+Build it and ship it immediately — never spend time on local verification:
 
 1. Run only the zero-cost checks: `node --check` on every changed server file,
    and a syntax check of the inline scripts in `fmcns_navigator.html` (extract
@@ -767,9 +768,11 @@ For agents working in this repo — what QNE is, how to run things, the rules.
   (minimum env). There is no test suite and no linter — `node --check <file>` is
   the sanity check. Skip local boot/`curl`/browser verification: changes ship
   directly (see the ship-directly rule under "Working with Antoine").
-- **Git rules (hard)**: never push, never merge, never checkout/reset away work
-  on `develop`. Agent work lives on `agent/*` branches in worktrees; merging and
-  publishing are the human's call via the review screen.
+- **Git rules (hard)**: never merge, never checkout/reset away work on `develop`.
+  For a live-session change Antoine asks an agent to make, commit and push to
+  `develop` as required by **Ship directly** above; that request already carries
+  publishing permission. All other agent work lives on `agent/*` branches in
+  worktrees; unattended runs never push.
   - **Exception — the app's own publishing lane (Antoine's decision, 2026-08-19).**
     The Dispatch Queue publishes finished tasks by itself: the local runner commits
     the task's work (`scripts/queue-runner.js`), the server queues a `git_jobs` row,

@@ -1136,3 +1136,8 @@ column destinations are Discover, Library and Side talks; Attached, Passages, Wo
 look, Papers, Projects, Analogies, Board, Mind and Extraction remain reachable under
 More. Discover uses the existing media discovery mode and Library uses the existing
 saved-reference mode; source panes are not deleted or merged in storage.
+
+Publishing, 2026-09-18: an Antoine request to make a live-session change is also
+permission to publish it. Do not ask a second question about deployment or leave a
+completed change waiting locally; commit and push `develop` under the Ship directly
+rule. Unattended overnight work remains unshipped.
