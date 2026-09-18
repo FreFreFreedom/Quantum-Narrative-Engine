@@ -22656,21 +22656,27 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           try {
             if(kind === 'image'){
               var dataUrl = await roomImageDataUrl(file);
+              if(!e.pendingAttachments) e.pendingAttachments=[];
+              if(e.pendingAttachments.filter(a=>a.kind==='image').length>=4)throw new Error('You can send up to four images at once');
+              if(e.pendingAttachments.reduce((n,a)=>n+(a.dataUrl?.length||0),0)+dataUrl.length>18000000)throw new Error('Those images are too large to send together');
+              const attachedImage={kind:'image',name:file.name,mimeType:file.type,dataUrl:dataUrl};
               if(opts.captureInterests){
                 const bitmap = await createImageBitmap(file);
                 const tooLarge = bitmap.width > 10000 || bitmap.height > 10000 || bitmap.width * bitmap.height > 24000000;
                 bitmap.close();
                 if(tooLarge) throw new Error('That screenshot is too large. Crop it into smaller images.');
+                // Chat owns the attachment immediately. Optional Library reading
+                // must never hold the picture hostage or reattach it after Send.
+                e.pendingAttachments.push(attachedImage);e.note='';repaint();
                 let batch;
                 try { batch = await apiWrite('/api/convos/' + encodeURIComponent(e.convoId) + '/interest-imports', 'POST', {image:dataUrl,filename:file.name}); }
                 catch(err){
-                  if(!e.pendingAttachments) e.pendingAttachments = [];
-                  if(e.pendingAttachments.filter(a => a.kind === 'image').length < 4 && e.pendingAttachments.reduce((n,a) => n + (a.dataUrl?.length || 0), 0) + dataUrl.length <= 18000000)
-                    e.pendingAttachments.push({kind:'image',name:file.name,mimeType:file.type,dataUrl:dataUrl});
-                  throw err;
+                  e.note='Image attached. Automatic Library reading is unavailable.';repaint();return;
                 }
                 if(!e.interestImages) e.interestImages = {};
-                e.interestImages[batch.id] = {kind:'image',name:file.name,mimeType:file.type,dataUrl:dataUrl};
+                e.interestImages[batch.id] = attachedImage;
+                if(!e.interestChatReady)e.interestChatReady={};
+                e.interestChatReady[batch.id]=true;
                 e.interestChecked = 0;
                 e.note = ''; repaint(); return;
               }
@@ -23359,10 +23365,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         e.interestBatches = out.batches; e.interestChecked = Date.now();
         for(const batch of out.batches){
           const img = e.interestImages && e.interestImages[batch.id];
-          if(batch.status === 'ordinary' && img){
+          if(['ordinary','failed'].includes(batch.status) && img && !e.interestChatReady?.[batch.id]){
             if(!e.pendingAttachments) e.pendingAttachments = [];
             if(e.pendingAttachments.filter(a => a.kind === 'image').length < 4 && e.pendingAttachments.reduce((n,a) => n + (a.dataUrl?.length || 0), 0) + img.dataUrl.length <= 18000000){
-              e.pendingAttachments.push(img); delete e.interestImages[batch.id];
+              e.pendingAttachments.push(img);
+              if(!e.interestChatReady)e.interestChatReady={};e.interestChatReady[batch.id]=true;
             } else { e.note = 'Some images are waiting. Send or remove existing attachments first.'; }
           }
         }
@@ -23370,16 +23377,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       } catch(err){ if(current()) bar.textContent = err.message; }
       finally { e.interestFetching = false; }
     };
-    const batches = (e.interestBatches || []).filter(b => b.status !== 'undone' && (b.status !== 'ordinary' || e.interestImages?.[b.id]));
+    const batches = (e.interestBatches || []).filter(b => b.status !== 'undone' && b.status !== 'ordinary');
     bar.innerHTML = batches.map(b => {
       const r = b.result || {};
       const added = [['book','books'],['film','films'],['series','series']].filter(([k]) => r[k]).map(([k,label]) => r[k] + ' ' + label).join(', ');
       const status = b.status === 'done' ? (added ? 'Added ' + added : 'No new titles') + (r.duplicates ? ' · ' + r.duplicates + ' already saved' : '') + (b.entries.length ? ' · ' + b.entries.length + ' to review' : '')
-        : b.status === 'failed' ? b.error : b.status === 'ordinary' ? 'Ready to attach' : 'Reading screenshot…';
+        : b.status === 'failed' ? 'Library reading failed. '+(e.pendingAttachments?.includes(e.interestImages?.[b.id])?'Image ready for your message.':'You can still discuss the image.') : b.status === 'ordinary' ? 'Ready to attach' : 'Checking for Library titles…';
       return '<div class="interest-import" data-import="' + qEscAttr(b.id) + '"><span title="' + qEscAttr(b.filename) + '">' + qEsc(status) + '</span>'
         + (b.retryable ? '<button data-retry>Retry</button>' : '')
         + (b.status === 'done' ? '<button data-library>' + (b.entries.length ? 'Review' : 'Library') + '</button>' : '')
-        + (e.interestImages?.[b.id] ? '<button data-discuss title="Attach this image to your next message">Discuss image</button>' : '')
+        + ((e.interestImages?.[b.id] || b.imageAvailable) && !e.pendingAttachments?.includes(e.interestImages?.[b.id]) ? '<button data-discuss title="Attach this image to your next message">Discuss image</button>' : '')
         + '<button data-undo>' + (['queued','reading'].includes(b.status) ? 'Cancel' : 'Undo') + '</button></div>';
     }).join('');
     bar.querySelectorAll('[data-import]').forEach(row => {
@@ -23399,11 +23406,17 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(panel && button && (isRoomNarrow() ? !panel.classList.contains('open') : panel.classList.contains('collapsed'))) button.click();
         document.querySelector('[data-room-pane="interests"]')?.click();
       };
-      const discuss = row.querySelector('[data-discuss]'); if(discuss) discuss.onclick = () => {
-        const img = e.interestImages?.[id]; if(!img) return;
+      const discuss = row.querySelector('[data-discuss]'); if(discuss) discuss.onclick = async () => {
+        let img=e.interestImages?.[id];
+        if(!img){
+          try{discuss.disabled=true;img=await api('/api/convos/interest-imports/'+encodeURIComponent(id)+'/image');if(!e.interestImages)e.interestImages={};e.interestImages[id]=img;}
+          catch(err){e.note=err.message;fillEmbed(host,e,opts);return;}
+          finally{discuss.disabled=false;}
+        }
+        if(e.pendingAttachments?.includes(img))return;
         if(!e.pendingAttachments) e.pendingAttachments = [];
         if(e.pendingAttachments.filter(a => a.kind === 'image').length >= 4 || e.pendingAttachments.reduce((n,a) => n + (a.dataUrl?.length || 0), 0) + img.dataUrl.length > 18000000){ e.note = 'Send or remove existing image attachments first.'; fillEmbed(host,e,opts); return; }
-        e.pendingAttachments.push(img); delete e.interestImages[id]; fillEmbed(host,e,opts);
+        e.pendingAttachments.push(img);if(!e.interestChatReady)e.interestChatReady={};e.interestChatReady[id]=true;fillEmbed(host,e,opts);
       };
     });
     if(!e.interestFetching && (!e.interestChecked || Date.now() - e.interestChecked > 5000)) void refresh();

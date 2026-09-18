@@ -92,9 +92,14 @@ function batchFor(owner, id) {
 function publicBatch(b) {
   return { id: b.id, convoId: b.convo_id, filename: b.filename, status: b.status,
     error: b.error, result: b.result ? JSON.parse(b.result) : null,
-    retryable: b.status === 'failed' && !!b.image,
+    retryable: b.status === 'failed' && !!b.image, imageAvailable: !!b.image,
     entries: db.prepare('SELECT id,status,observed,candidate FROM interest_entries WHERE batch_id=? AND status=?').all(b.id, 'review')
       .map(e => ({ ...e, candidate: JSON.parse(e.candidate) })) };
+}
+export function importImage(owner,id) {
+  const b=batchFor(owner,id);checkConvo(owner,b.convo_id);
+  if(!b.image)fail('Please attach the screenshot again.',404);
+  return {kind:'image',name:b.filename,mimeType:b.image.match(/^data:([^;]+);/)?.[1] || 'image/png',dataUrl:b.image};
 }
 export function importStatus(owner, convoId) {
   checkConvo(owner, convoId);

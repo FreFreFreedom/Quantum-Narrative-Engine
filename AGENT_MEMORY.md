@@ -1082,3 +1082,10 @@ capped at 22), with a slider and disabled end-stop buttons. A reflow-generated s
 no longer dismisses the font menu. Layout changes are NOT approved: Antoine asked
 for throwaway mockups; wide page / reading+references / side-by-side alternatives
 are recorded in plans/room-space-studies.md for later choice.
+
+Screenshot attachment repair, 2026-09-18: every Room/Side Talk image now enters
+pending chat attachments immediately, before independent automatic Library parsing.
+Library failure no longer prevents vision chat. Completion cannot reattach an image
+already sent or removed. Failed imports retained on the server expose an owner-checked
+image retrieval route for Discuss image after refresh. The Library reader gets up
+to three vision attempts; no change to the user's chosen conversation model.

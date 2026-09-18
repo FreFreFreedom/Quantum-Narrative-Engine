@@ -55,6 +55,7 @@ export function conversationsRoutes() {
   };
   router.get('/interests', interestRoute((req, owner) => ({ items: interests.listInterests(owner, req.query) })));
   router.get('/interest-review', interestRoute((req, owner) => ({ entries: interests.pendingInterestReview(owner) })));
+  router.get('/interest-imports/:batchId/image', interestRoute((req, owner) => interests.importImage(owner,req.params.batchId)));
   router.patch('/interests/:itemId', interestRoute((req, owner) => interests.changeInterest(owner, req.params.itemId, req.body || {})));
   router.delete('/interests/:itemId', interestRoute((req, owner) => interests.changeInterest(owner, req.params.itemId, {}, true)));
   router.post('/interest-entries/:entryId', interestRoute((req, owner) => interests.resolveInterestEntry(owner, req.params.entryId, req.body || {})));
