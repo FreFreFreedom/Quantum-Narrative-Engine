@@ -21946,6 +21946,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return laneCatalogPromise;
   }
   var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google', openai: 'ChatGPT (billed)', codex: 'ChatGPT' };
+  var GOOGLE_LANE_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
   // Codex's models, from the CLI's own list (2026-09-13). Same set the queue offers.
   var CODEX_LANE_MODELS = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-reserve'];
 
@@ -22782,7 +22783,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +     ((opts.type === 'open' || opts.type === 'side')
               ? '<button type="button" class="se-attach" title="Add an image, PDF or text file" aria-label="Add an image, PDF or text file"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-upload"/></svg></button><input type="file" class="se-file-input" hidden multiple accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.md,.txt,.csv,.json,.js,.mjs,.cjs,.ts,.tsx,.jsx,.html,.css,.xml,.yaml,.yml,.log,.srt">'
               : '')
-        +     '<textarea class="se-input" rows="1" placeholder="Write…"></textarea>'
+        +     '<textarea class="se-input" rows="1" placeholder="…"></textarea>'
         +     '<span class="se-spend" hidden></span>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
         +   '</div>'
@@ -23039,7 +23040,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   function laneModelsFor(provider, catalog){
     if(provider === 'opencode') return ((catalog && catalog.opencode && catalog.opencode.models) || []).map(function(m){ return (m && m.id) || m; });
-    if(provider === 'google-ai-studio') return ((catalog && catalog.google && catalog.google.models) || []).map(function(m){ return m.id; });
+    if(provider === 'google-ai-studio') {
+      var googleModels = ((catalog && catalog.google && catalog.google.models) || []).map(function(m){ return (m && m.id) || m; }).filter(Boolean);
+      return googleModels.length ? googleModels : GOOGLE_LANE_MODELS.slice();
+    }
     if(provider === 'openai') return ((catalog && catalog.openai && catalog.openai.models) || []).map(function(m){ return m.id; });
     // Codex runs through the Mac, so the server has no list to hand over — the same
     // set the queue's own picker carries.
