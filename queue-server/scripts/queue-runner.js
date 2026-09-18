@@ -38,7 +38,7 @@ import {
 import { streamEventToChunks, eventActivity, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
 import * as codexCli from '../server/src/services/providers/codex.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
-import { getClaudeUsage, getSideClaudeUsage } from '../server/src/services/claudeUsage.js';
+import { getClaudeUsage, getSideClaudeUsage, getClaudeProfileUsage } from '../server/src/services/claudeUsage.js';
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
@@ -648,7 +648,8 @@ async function usageForReport() {
     codexCli.readCurrentQuota(join(homedir(),'.codex')),
     codexCli.readCurrentQuota(join(homedir(),'.codex-second')),
   ]); } catch { /* quota must never break a heartbeat */ }
-  return { ...usage, side, codex, codexSecond };
+  const [claudeMax,claudePro]=await Promise.all(['max','pro'].map(p=>getClaudeProfileUsage(p).catch(()=>null)));
+  return { ...usage, side, codex, codexSecond, claudeMax, claudePro };
 }
 
 // This Mac's OpenCode is logged into providers the container never can be

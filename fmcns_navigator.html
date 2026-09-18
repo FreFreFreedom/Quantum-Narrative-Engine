@@ -17649,10 +17649,10 @@ function usageFullHtml(u) {
   </div>`;
 
   return `<div class="uq-panel">
-    ${lane('Building account', 'Runs your tasks — the account that writes code.', build, 'No reading.')}
+    ${[['Claude Max',u.claudeMax],['Claude Pro',u.claudePro]].map(([name,q])=>lane(name,'Your named terminal account.',usageFullRow('Next 5 hours',q?.session)+usageFullRow('This week',q?.week),'No reading.')).join('')}
     ${['codex', 'codexSecond'].map((key, i) => {
       const q = currentCodexQuota(u, key);
-      return lane(i ? 'Codex 2' : 'Codex', 'ChatGPT subscription — remaining allowance.',
+      return lane(i ? 'Codex Pro' : 'Codex Plus', 'ChatGPT subscription — remaining allowance.',
         usageFullRow('Next 5 hours', q?.session) + usageFullRow('This week', q?.week), '—');
     }).join('')}
     ${lane('Paid lane', 'Real money, Idea Studio.', paid, 'Off.')}
@@ -17771,8 +17771,8 @@ async function loadUsage() {
   // reading arrives under `side` from the runner — the only machine holding that
   // token — and is simply absent when Anthropic is rate-limiting it, which it does
   // hard. An absent account draws a dash, never a zero: a zero would read as "spent".
-  const pa = u;
-  const ant = u.side || null;
+  const pa = u.claudeMax || null;
+  const ant = u.claudePro || null;
   const codex = currentCodexQuota(u);
 
   const cap = u.openai;
@@ -17783,17 +17783,17 @@ async function loadUsage() {
   host.innerHTML = `
     <div class="uq-grid">
       <div class="uq-head"><span></span><span>5 h</span><span>Week</span></div>
-      ${uqRow('PA', pa)}
-      ${uqRow('Antoine', ant)}
-      ${uqRow('Codex', codex)}
-      ${uqRow('Codex 2', currentCodexQuota(u, 'codexSecond'))}
+      ${uqRow('Claude Max', pa)}
+      ${uqRow('Claude Pro', ant)}
+      ${uqRow('Codex Plus', codex)}
+      ${uqRow('Codex Pro', currentCodexQuota(u, 'codexSecond'))}
       ${money}
     </div>
     <div class="uq-shut">
-      ${uqShutBar('PA', pa)}
-      ${uqShutBar('Ant', ant)}
-      ${uqShutBar('Codex', codex)}
-      ${uqShutBar('Cx 2', currentCodexQuota(u, 'codexSecond'))}
+      ${uqShutBar('Max', pa)}
+      ${uqShutBar('Pro', ant)}
+      ${uqShutBar('Cx +', codex)}
+      ${uqShutBar('Cx Pro', currentCodexQuota(u, 'codexSecond'))}
       ${cap && typeof cap.spentUsd === 'number' ? `<span class="uq-spend" title="Spent this month">$${cap.spentUsd.toFixed(2)}</span>` : ''}
     </div>`;
 }

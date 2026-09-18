@@ -1062,3 +1062,10 @@ No model calls, account reset, or API-key billing. A missing five-hour window is
 unknown/not reported, never fabricated as 100%; the second account's current
 telemetry reports only a weekly window. Official protocol reference:
 https://developers.openai.com/codex/app-server .
+
+Antoine's current terminal aliases: claudemax uses ~/.claude-max, claudepro
+uses ~/.claude-pro, codexplus uses ~/.codex, codexpro uses ~/.codex-second.
+Quota rows now use these names. Claude display readings use profile-specific
+credential files or the matching hashed macOS Keychain service; never substitute
+the default account's credentials. These display profiles are separate from the
+existing task-engine account settings and quota admission gates, which stay intact.

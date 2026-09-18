@@ -16,6 +16,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 const HOME = process.env.HOME || '/root';
 const PROJECTS_DIR = resolve(HOME, '.claude', 'projects');
@@ -111,15 +112,32 @@ async function computeTokens() {
 // Read the OAuth token out of the macOS Keychain. Non-darwin platforms and any
 // failure (no entry, user denied access, `security` missing) resolve to null so the
 // caller simply falls through to the env var.
-function keychainToken() {
+function keychainToken(service = 'Claude Code-credentials') {
   if (process.platform !== 'darwin') return Promise.resolve(null);
   return new Promise((res) => {
-    execFile('security', ['find-generic-password', '-s', 'Claude Code-credentials', '-w'], { timeout: 5000 }, (err, stdout) => {
+    execFile('security', ['find-generic-password', '-s', service, '-w'], { timeout: 5000 }, (err, stdout) => {
       if (err) return res(null);
       try { res(JSON.parse(String(stdout).trim())?.claudeAiOauth?.accessToken || null); }
       catch { res(null); }
     });
   });
+}
+
+const profileReadings=new Map();
+// These display profiles are separate from the runner's task-account gates.
+// The service suffix matches Claude Code's CLAUDE_CONFIG_DIR keychain naming.
+export async function getClaudeProfileUsage(profile) {
+  if(!['max','pro'].includes(profile))return null;
+  const cached=profileReadings.get(profile);
+  if(cached && Date.now()-cached.at<cached.ttl)return cached.data;
+  const dir=resolve(HOME,'.claude-'+profile);
+  let token=null;
+  try{token=JSON.parse(await readFile(join(dir,'.credentials.json'),'utf8'))?.claudeAiOauth?.accessToken;}catch{}
+  if(!token)token=await keychainToken('Claude Code-credentials-'+createHash('sha256').update(dir.normalize('NFC')).digest('hex').slice(0,8));
+  const {data,throttled}=await fetchUsageForToken(token);
+  const value=data?{...data,generatedAt:new Date().toISOString()}:null;
+  profileReadings.set(profile,{at:Date.now(),ttl:throttled?600000:180000,data:value});
+  return value;
 }
 
 // Set by the most recent MAIN-account read only — the side account's own read

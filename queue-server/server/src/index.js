@@ -398,6 +398,8 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
       openai,
       codex: runnerStatus().connected ? freshQuota(fromRunner?.codex) : null,
       codexSecond: runnerStatus().connected ? freshQuota(fromRunner?.codexSecond) : null,
+      claudeMax: runnerStatus().connected ? fromRunner?.claudeMax ?? null : null,
+      claudePro: runnerStatus().connected ? fromRunner?.claudePro ?? null : null,
       schedulerLimitResetAt: queueDeferUntil(),
     });
   } catch (err) {
