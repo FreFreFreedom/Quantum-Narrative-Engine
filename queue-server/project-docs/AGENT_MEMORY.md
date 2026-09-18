@@ -1109,16 +1109,19 @@ already sent or removed. Failed imports retained on the server expose an owner-c
 image retrieval route for Discuss image after refresh. The Library reader gets up
 to three vision attempts; no change to the user's chosen conversation model.
 
-Room menu wording, 2026-09-18: Antoine asked for the user-facing “Start fresh” action
-to be called Compact. Its recap-and-continue behavior is unchanged. The title-menu
-Reading action opens the existing font, text-size and reading-width controls on hover
-as well as click/keyboard. The broader menu/sidebar redesign remains unselected.
+Room menu wording, 2026-09-18: Antoine chose the first compact title-menu mockup.
+The user-facing “Start fresh” action is called Compact, with the same recap-and-continue
+behavior. The menu uses short icon-and-label rows: Rename, Auto-title, Star, Fork,
+Merge…, Compact, Reading and Delete. Reading opens the existing font, text-size and
+reading-width controls on hover as well as click/keyboard.
 
-Composer attachments, 2026-09-18: Antoine chose the Attachment drawer design. The
-shared Room/Side Talk composer keeps a compact count and short preview above the draft;
-the full Chapters, Quotes, Files and screenshots list opens in a bounded drawer. The
-existing attachment data and send behavior stay unchanged; drawer open state is local
-to the conversation entry.
+Composer attachments, 2026-09-18: Antoine first chose the Attachment drawer design,
+then asked to restore the earlier visible attachment rows. The current shared Room/Side
+Talk composer keeps the existing chapter, quote, file and screenshot rows visible; the
+temporary drawer state remains internal only. The cost marker sits directly before the
+send button at the right. Interview is behind the existing plus/tools control, and the
+model lane selector is a smaller native-style control. Attachment data and send behavior
+stay unchanged.
 
 Room sidebar, 2026-09-18: Antoine chose the “Three places” layout. The visible right
 column destinations are Discover, Library and Side talks; Attached, Passages, World

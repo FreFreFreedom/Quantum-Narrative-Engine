@@ -2,7 +2,7 @@
 
 - [Room sidebar and composer studies](room-sidebar-and-composer-studies.md) — **PARTIAL / SELECTED LAYOUT SHIPPED**, 2026-09-18. Three visible Room places plus More; Attachment drawer selected and shipped. Cover/poster metadata remains.
 
-- [Compact Room menu](room-menu-studies.md) — **PARTIAL / LARGER REDESIGN PENDING**, 2026-09-18. “Compact” naming and hover Reading submenu shipped; the two larger menu mockups remain unselected.
+- [Compact Room menu](room-menu-studies.md) — **IMPLEMENTED**, 2026-09-18. First short icon-and-label menu selected and shipped; Reading opens on hover.
 
 - [Theme and reading-width studies](theme-and-reading-width-studies.md) — **WIDTH IMPLEMENTED / THEMES CANCELLED**, 2026-09-18. Antoine rejected the theme mockups and cancelled this theme work. Keep existing themes and the implemented reading-menu width slider.
 
