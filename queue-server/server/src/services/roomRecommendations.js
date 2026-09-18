@@ -37,7 +37,14 @@ export function bindRecommendations(database, { start = true, generateForTest = 
     .filter(row => json(row.details || '{}').mediaVersion !== MEDIA_RECOMMENDATION_VERSION);
   if (staleMedia.length) {
     const drop = db.prepare('DELETE FROM recommendations WHERE id=?');
-    db.transaction(() => staleMedia.forEach(row => drop.run(row.id)))();
+    db.exec('BEGIN');
+    try {
+      staleMedia.forEach(row => drop.run(row.id));
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
     db.prepare("UPDATE recommendation_requests SET status='done',note='' WHERE collection_id IN (SELECT id FROM recommendation_collections WHERE kind='media')").run();
     db.prepare("UPDATE recommendation_collections SET fingerprint='',due_at=0 WHERE kind='media'").run();
   }
