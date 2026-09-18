@@ -1,5 +1,7 @@
 # Plan Backlog
 
+- [Theme and reading-width studies](theme-and-reading-width-studies.md) — **DESIGN OPTIONS**, 2026-09-18. Ten day/night themes including five cyberpunk variants; two discreet interactive width controls. No live implementation approved.
+
 Permanent home for implementation plans for QNE. Each file here is a **self-contained
 brief**: enough context, decisions, file references, implementation detail, risks and
 testing steps that a coding agent (Claude Code, OpenCode, or another) can implement it
