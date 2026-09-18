@@ -3354,7 +3354,6 @@ button:active { transform: translateY(1px) scale(.99); }
             <button type="button" data-room-pane="papers" role="menuitem">Papers <span class="room-tabcount" id="roomPapersCount"></span></button>
             <button type="button" data-room-pane="apps" role="menuitem">Projects <span class="room-tabcount" id="roomAppsCount"></span></button>
             <button type="button" data-room-pane="analogies" role="menuitem">Analogies <span class="room-tabcount" id="roomAnaCount"></span></button>
-            <button type="button" data-room-pane="board" role="menuitem">Board <span class="room-tabcount" id="roomBoardCount"></span></button>
             <button type="button" data-room-pane="mind" role="menuitem">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
             <button type="button" data-room-pane="extract" role="menuitem">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
           </div>
@@ -3401,9 +3400,6 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div class="room-pane room-ideas" id="roomSide">
           <div id="roomSideHost"></div>
-        </div>
-        <div class="room-pane room-ideas" id="roomBoard">
-          <div id="roomBoardHost"></div>
         </div>
       </div>
     </div>
@@ -9607,7 +9603,7 @@ const ROOM_ZONE_KEYS = { roomThreads: 'fmcns_room_threads_open', roomCards: 'fmc
 // Which of the right column's five panes is showing. One key where there used to
 // be five, because only one of them is open at a time now.
 const ROOM_PANE_KEY = 'fmcns_room_pane';
-const ROOM_PANES = { papers: 'roomPapers', apps: 'roomApps', attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', board: 'roomBoard', mind: 'roomMind', extract: 'roomExtract', interests: 'roomInterests' };
+const ROOM_PANES = { papers: 'roomPapers', apps: 'roomApps', attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', mind: 'roomMind', extract: 'roomExtract', interests: 'roomInterests' };
 // A tab carries its own count so a shut pane can still say it has something in
 // it — the whole reason five headings were worth losing.
 function setRoomTabCount(id, n) {
@@ -9634,9 +9630,6 @@ const ROOM_TAB_HAS = {
   // Same reasoning as analogies above: the pane holds the action that opens the
   // first side talk, so hiding it while empty makes it unreachable.
   side: () => !!roomSel,
-  // Same again: the pane holds the action that keeps the first card, so hiding
-  // it while the wall/board is empty makes it unreachable.
-  board: () => !!roomSel,
   mind: () => roomMind.length > 0,
   extract: () => roomExtractChunks.length > 0 || !!(roomExtractStatus && roomExtractStatus.total),
 };
