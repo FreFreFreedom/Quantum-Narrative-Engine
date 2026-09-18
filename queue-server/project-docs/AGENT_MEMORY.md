@@ -1076,3 +1076,9 @@ markup and defers changed transcript markup while selecting (composer updates
 continue). Quote menus refresh after selection/keyboard changes, cancel old timers,
 preserve selection on pointer-down, and reject stale text or cross-message attribution.
 Selection-menu clicks bypass the generic drag-click suppressor. Shared Room/Side Talk path.
+
+Room reading/space, 2026-09-18: font size now supports 12–48px (previously silently
+capped at 22), with a slider and disabled end-stop buttons. A reflow-generated scroll
+no longer dismisses the font menu. Layout changes are NOT approved: Antoine asked
+for throwaway mockups; wide page / reading+references / side-by-side alternatives
+are recorded in plans/room-space-studies.md for later choice.

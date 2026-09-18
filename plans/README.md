@@ -28,6 +28,7 @@ status here.
 
 | Plan | What is left | State |
 |---|---|---|
+| [room-space-studies.md](room-space-studies.md) | Three throwaway Room layout options: wider page, reading with references, side-by-side conversations. Awaiting Antoine's choice; no layout implementation authorized. Text-size fix separate. | **DESIGN OPTIONS** 2026-09-18 |
 | [room-reference-library.md](room-reference-library.md) | Shared Library for media, saved papers/projects and kept passages; Save/Attach into Room or Side Talk drafts. Relevant shared Mind informs recommendations. Personal save-notes declined; named collections deferred. | **IMPLEMENTED** 2026-09-17 |
 | [room-media-recommendations.md](room-media-recommendations.md) | Library → Discover: automatic book/film/series recommendations from the open Room, its Side Talks, saved interests and relevant Mind. Taste, conversation and structural analogies; Save and Attach. | **IMPLEMENTED** 2026-09-17 |
 | [room-research-and-invention-recommendations.md](room-research-and-invention-recommendations.md) | Papers preserved; Projects extends Apps with source-backed existing apps, projects and non-software initiatives alongside ideas to build. Shared Save/Attach and Mind context. | **IMPLEMENTED** 2026-09-17 |

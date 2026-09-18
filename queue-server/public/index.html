@@ -10384,7 +10384,7 @@ const ROOM_FONTS = [
   ['mono', 'Mono', 'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'],
 ];
 const ROOM_SIZE_MIN = 12;
-const ROOM_SIZE_MAX = 22;
+const ROOM_SIZE_MAX = 48;
 let roomType = { font: 'system', size: 14 };
 function applyRoomType() {
   const f = ROOM_FONTS.find((x) => x[0] === roomType.font) || ROOM_FONTS[0];
@@ -10398,7 +10398,7 @@ function saveRoomType() {
   try {
     const saved = JSON.parse(localStorage.getItem(ROOM_TYPE_KEY) || 'null');
     if (saved && ROOM_FONTS.some((f) => f[0] === saved.font) && saved.size >= ROOM_SIZE_MIN && saved.size <= ROOM_SIZE_MAX) {
-      roomType = { font: saved.font, size: saved.size };
+      roomType = { font: saved.font, size: Number(saved.size) };
     }
   } catch (e) {}
 })();
@@ -10419,6 +10419,9 @@ function openRoomTypeMenu(btn) {
   const paint = () => {
     fonts.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.font === roomType.font));
     readout.textContent = roomType.size + 'px';
+    smaller.disabled=roomType.size<=ROOM_SIZE_MIN;
+    bigger.disabled=roomType.size>=ROOM_SIZE_MAX;
+    slider.value=String(roomType.size);
     applyRoomType();
     saveRoomType();
   };
@@ -10440,8 +10443,12 @@ function openRoomTypeMenu(btn) {
   smaller.type = 'button'; smaller.textContent = '−'; smaller.title = 'Smaller'; smaller.onclick = step(-1);
   const bigger = document.createElement('button');
   bigger.type = 'button'; bigger.textContent = '+'; bigger.title = 'Bigger'; bigger.onclick = step(1);
+  const slider=document.createElement('input');
+  slider.type='range';slider.min=ROOM_SIZE_MIN;slider.max=ROOM_SIZE_MAX;slider.step=1;
+  slider.setAttribute('aria-label','Conversation text size');slider.style.width='100%';
+  slider.oninput=()=>{roomType.size=Number(slider.value);paint();};
   sizeRow.append(smaller, readout, bigger);
-  roomTypeMenu.append(fonts, sizeRow);
+  roomTypeMenu.append(fonts, sizeRow,slider);
   paint();
   const r = btn.getBoundingClientRect();
   roomTypeMenu.style.left = Math.max(6, Math.min(window.innerWidth - 200, r.right - 190)) + 'px';
@@ -10452,7 +10459,9 @@ function openRoomTypeMenu(btn) {
 document.addEventListener('mousedown', (ev) => {
   if (roomTypeMenu && !roomTypeMenu.contains(ev.target)) killRoomTypeMenu();
 }, true);
-window.addEventListener('scroll', killRoomTypeMenu, true);
+// Font reflow can move the transcript's scroll position. That is not dismissal.
+window.addEventListener('resize', killRoomTypeMenu);
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape')killRoomTypeMenu();});
 
 // The toolbar's ⋯ — the thread actions that are used once in a while, kept out of
 // the row where the everyday ones live. Same shape as the Room's other menu (the
