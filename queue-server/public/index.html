@@ -1577,7 +1577,9 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-rec-controls { display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-bottom:8px; }
 .room-rec-controls select { min-width:0; flex:1; font:inherit; color:inherit; background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:5px; padding:4px; }
 .room-rec-list { overflow-y:auto; flex:1; min-height:40px; }
-.room-rec-item { position:relative; padding:10px 24px 10px 0; border-bottom:1px solid var(--c-border-2); }
+.room-rec-item { position:relative; display:grid; grid-template-columns:48px minmax(0,1fr); gap:9px; padding:10px 24px 10px 0; border-bottom:1px solid var(--c-border-2); }
+.room-rec-art { width:48px; height:68px; border-radius:5px; background:var(--c-surface-2); border:1px solid var(--c-border-2); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; color:var(--c-ink-5); font-size:9px; text-transform:uppercase; letter-spacing:.04em; text-align:center; }
+.room-rec-info { min-width:0; }
 .room-rec-title { font:inherit; text-align:left; color:var(--c-ink); line-height:1.5; background:none; border:0; padding:0; cursor:pointer; text-decoration:none; }
 .room-rec-title:hover { text-decoration:underline; }
 .room-rec-item p { margin:5px 0 0; font-size:12px; line-height:1.5; color:var(--c-ink-3); }
@@ -1593,6 +1595,12 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-rec-steering { font-size:11px; margin-top:6px; }
 .room-rec-steering summary { cursor:pointer; color:var(--c-ink-3); }
 .room-rec-steering textarea { box-sizing:border-box; margin:6px 0; }
+#roomDropZone { display:none !important; }
+#roomInterests > .room-tabs { display:none; }
+.interest-item--passage .interest-passage { margin:6px 0 10px; color:var(--c-ink); line-height:1.5; }
+.interest-item--media { display:grid; grid-template-columns:48px minmax(0,1fr); gap:9px; }
+.interest-item--media .interest-media-info { min-width:0; }
+.interest-art { width:48px; height:68px; border-radius:5px; background:var(--c-surface-2); border:1px solid var(--c-border-2); background-size:cover; background-position:center; }
 #roomPapers.is-active,#roomApps.is-active { display:flex; flex-direction:column; min-height:0; flex:1; }
 /* Analogies beside the Room. Not the world-look's question (what could be built)
    but the other one: where is this relation already living, under other names.
@@ -11154,6 +11162,52 @@ async function recAction(kind, action) {
   catch (e) { roomRecErrors[key] = e.message || 'Could not update recommendations.'; if (recScope(kind) === scope) renderRoomRecommendations(kind); return; }
   if (recScope(kind) === scope) await loadRoomRecommendations(kind);
 }
+const roomMediaArtCache = new Map();
+const roomMediaArtPending = new Map();
+function roomMediaKind(item) {
+  const raw = String(item?.kind || item?.type || item?.details?.kind || '').toLowerCase();
+  if (raw.includes('series') || raw.includes('tv') || raw.includes('show')) return 'series';
+  if (raw.includes('film') || raw.includes('movie')) return 'film';
+  return 'book';
+}
+function roomMediaArtKey(item) { return [roomMediaKind(item), item?.title || '', item?.creator || ''].join('|').toLowerCase(); }
+async function roomFindMediaArt(item) {
+  const key = roomMediaArtKey(item);
+  if (roomMediaArtCache.has(key)) return roomMediaArtCache.get(key);
+  if (roomMediaArtPending.has(key)) return roomMediaArtPending.get(key);
+  const title = String(item?.title || '').trim(); if (!title) return '';
+  const kind = roomMediaKind(item);
+  const task = (async () => {
+    try {
+      if (kind === 'series') {
+        const r = await fetch('https://api.tvmaze.com/singlesearch/shows?q=' + encodeURIComponent(title));
+        if (r.ok) { const j = await r.json(); const u = j?.image?.medium || j?.image?.original || ''; roomMediaArtCache.set(key, u); return u; }
+      } else if (kind === 'book') {
+        const q = title + (item?.creator ? ' ' + item.creator : '');
+        const r = await fetch('https://openlibrary.org/search.json?title=' + encodeURIComponent(q) + '&limit=1&fields=cover_i');
+        if (r.ok) { const j = await r.json(); const id = j?.docs?.[0]?.cover_i; const u = id ? 'https://covers.openlibrary.org/b/id/' + id + '-M.jpg?default=false' : ''; roomMediaArtCache.set(key, u); return u; }
+      } else {
+        const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title));
+        if (r.ok) { const j = await r.json(); const u = j?.thumbnail?.source || j?.originalimage?.source || ''; roomMediaArtCache.set(key, u); return u; }
+      }
+    } catch (_) {}
+    roomMediaArtCache.set(key, ''); return '';
+  })();
+  roomMediaArtPending.set(key, task);
+  const out = await task; roomMediaArtPending.delete(key); return out;
+}
+function roomMediaArtMarkup(item, className) {
+  return '<div class="' + (className || 'room-rec-art') + '" data-media-art="' + qEscAttr(roomMediaArtKey(item)) + '" aria-hidden="true">' + qEsc(roomMediaKind(item)) + '</div>';
+}
+async function roomLoadMediaArt(host, items) {
+  if (!host) return;
+  await Promise.all(items.map(async item => {
+    const url = await roomFindMediaArt(item); if (!url) return;
+    const wanted = roomMediaArtKey(item);
+    const el = Array.from(host.querySelectorAll('[data-media-art]')).find(node => node.dataset.mediaArt === wanted);
+    if (el) { el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")'; el.textContent = ''; el.title = 'Artwork from a public catalogue'; }
+  }));
+}
 function renderRoomRecommendations(kind) {
   const host = recHost(kind), scope = recScope(kind), key = recKey(kind, scope);
   if (!host) return;
@@ -11174,16 +11228,17 @@ function renderRoomRecommendations(kind) {
     + '<select data-rec-scope aria-label="Recommendation collection"'+(kind==='media'?' hidden':'')+'><option value="thread"' + (scope !== 'all' ? ' selected' : '') + '>This conversation</option><option value="all"' + (scope === 'all' ? ' selected' : '') + '>All conversations</option></select>'
     + '<button type="button" class="room-ana-chip" data-rec-auto title="Change when recommendations arrive">' + (settings.automatic ? 'As you talk' : 'Only when asked') + '</button></div>'
     + '<div class="room-rec-list">' + (items.length ? items.map(item => '<article class="room-rec-item">'
+      + (kind === 'media' ? roomMediaArtMarkup(item) : '') + '<div class="room-rec-info">'
       + (kind === 'papers' || kind === 'media' ? '<a class="room-rec-title" href="' + qEscAttr(/^https:\/\//.test(item.url || '') ? item.url : '#') + '" target="_blank" rel="noopener noreferrer">' + qEsc(item.title) + '</a>' + (kind==='media'?'<p>'+qEsc(item.sentence)+'</p>':'')
         : '<button type="button" class="room-rec-title" data-rec-open="' + qEscAttr(item.id) + '">' + qEsc(item.title) + '</button><p>' + qEsc(item.sentence) + '</p>')
       + (kind==='apps'?'<small>'+qEsc(item.details?.origin || 'Idea to build')+'</small> '+(item.url?'<a href="'+qEscAttr(/^https:\/\//.test(item.url)?item.url:'#')+'" target="_blank" rel="noopener noreferrer">Website</a>':''):'')
       + '<div class="interest-import"><button data-rec-save="'+qEscAttr(item.id)+'"'+(item.saved?' disabled':'')+'>'+(item.saved?'Saved':'Save')+'</button><button data-rec-attach="'+qEscAttr(item.id)+'">Attach</button></div>'
-      + '<details class="room-rec-menu"><summary aria-label="Recommendation actions" title="Actions">⋯</summary><button type="button" data-rec-dismiss="' + qEscAttr(item.id) + '">Dismiss</button></details></article>').join('')
+      + '</div><details class="room-rec-menu"><summary aria-label="Recommendation actions" title="Actions">⋯</summary><button type="button" data-rec-dismiss="' + qEscAttr(item.id) + '">Dismiss</button></details></article>').join('')
       : (status ? '' : '<div class="room-rec-status">Nothing yet.</div>')) + '</div>'
     + '<div class="room-rec-status" role="status">' + qEsc(status) + '</div>'
-    + (pending.length ? '<div class="room-rec-requests">' + pending.map(r => '<span>' + (r.target ? qEsc(r.delivered + ' / ' + r.target) : '')
-      + (['paused','waiting'].includes(r.status) ? ' <button type="button" data-rec-resume="' + qEscAttr(r.id) + '">Retry</button>' : '')
-      + (r.status !== 'paused' ? ' <button type="button" data-rec-stop="' + qEscAttr(r.id) + '">Stop</button>' : '') + '</span>').join('') + '</div>' : '')
+    + (pending.length ? '<div class="room-rec-requests"><span>' + pending.length + (pending.length === 1 ? ' request' : ' requests') + ' in progress</span>'
+      + (latest && ['paused','waiting'].includes(latest.status) ? ' <button type="button" data-rec-resume="' + qEscAttr(latest.id) + '">Retry</button>' : '')
+      + (latest && latest.status !== 'paused' ? ' <button type="button" data-rec-stop="' + qEscAttr(latest.id) + '">Stop</button>' : '') + '</div>' : '')
     + '<form class="room-rec-ask"><input data-rec-ask aria-label="Ask for recommendations" placeholder="Ask for more…" value="' + qEscAttr(recRead(key + '.draft', '')) + '"><button type="submit" title="Ask">↑</button></form>'
     + '<details class="room-rec-steering"' + (recRead(key + '.directionOpen', '') === '1' ? ' open' : '') + '><summary>Direction</summary><textarea data-rec-steer aria-label="Recommendation direction" placeholder="What to look for">' + qEsc(recRead(key + '.steeringDraft', settings.steering || '')) + '</textarea><button type="button" data-rec-save-steer>Save</button></details>';
   const list = host.querySelector('.room-rec-list');
@@ -11226,6 +11281,7 @@ function renderRoomRecommendations(kind) {
     finally { b.disabled = false; }
   });
   if(kind!=='media')setRoomTabCount(kind === 'papers' ? 'roomPapersCount' : 'roomAppsCount', items.length);
+  if (kind === 'media' && items.length) roomLoadMediaArt(host, items);
 }
 setInterval(() => { if (coreOpen() && coreView === 'room') refreshVisibleRecommendations(); }, 15000);
 
@@ -12547,9 +12603,7 @@ async function renderInterestLibrary() {
   const host = document.getElementById('roomInterests'); if (!host) return;
   const request = ++interestLibraryRequest;
   const discover=recRead('library.mode','saved')==='discover';
-  const modes='<div class="room-tabs"><button data-library-mode="saved" class="'+(!discover?'active':'')+'">Saved</button><button data-library-mode="discover" class="'+(discover?'active':'')+'">Discover</button></div>';
-  host.innerHTML = modes + (discover?'<div class="room-rec-host" id="roomMediaHost"></div>':'<div class="interest-filter"><input aria-label="Search library" placeholder="Search library"><select aria-label="Reference kind"><option value="">All</option><option value="book">Books</option><option value="film">Films</option><option value="series">Series</option><option value="paper">Papers</option><option value="project">Projects</option><option value="passage">Passages</option></select></div><div class="interest-results">Loading…</div>');
-  host.querySelectorAll('[data-library-mode]').forEach(b=>b.onclick=()=>{recSave('library.mode',b.dataset.libraryMode);renderInterestLibrary();});
+  host.innerHTML = discover?'<div class="room-rec-host" id="roomMediaHost"></div>':'<div class="interest-filter"><input aria-label="Search library" placeholder="Search library"><select aria-label="Reference kind"><option value="">All</option><option value="book">Books</option><option value="film">Films</option><option value="series">Series</option><option value="paper">Papers</option><option value="project">Projects</option><option value="passage">Passages</option></select></div><div class="interest-results">Loading…</div>';
   if(discover){openRoomRecommendations('media');return;}
   const search = host.querySelector('input'), filter = host.querySelector('select');
   search.value = interestLibraryQuery; filter.value = interestLibraryKind;
@@ -12564,7 +12618,14 @@ async function renderInterestLibrary() {
     if (request !== interestLibraryRequest) return;
     const results = host.querySelector('.interest-results');
     results.innerHTML = review.entries.map(e => '<div class="interest-item" data-review="' + qEscAttr(e.id) + '"><div>' + qEsc(e.observed || e.candidate.title || 'Unclear title') + '</div><small>Needs review · ' + qEsc(e.filename) + '</small><button data-edit>Review</button> <button data-dismiss>Dismiss</button></div>').join('')
-      + out.items.map(w => '<div class="interest-item" data-interest="' + qEscAttr(w.id) + '"><div>' + (w.url&&/^https:\/\//.test(w.url)?'<a href="'+qEscAttr(w.url)+'" target="_blank" rel="noopener noreferrer">'+qEsc(w.title)+'</a>':qEsc(w.title)) + '</div>'+(w.kind==='paper'?'':'<small>' + qEsc([w.kind,w.creator,w.year,w.state,w.origin].filter(Boolean).join(' · ')) + '</small>')+(w.excerpt?'<p>'+qEsc(w.excerpt)+'</p>':'')+'<button data-attach>Attach</button> '+(w.type==='media'?'<button data-edit>Edit</button> ':'')+'<details class="room-rec-menu"><summary title="Actions">⋯</summary><button data-remove title="'+(w.type==='passage'?'Forget this kept passage in both Library and Passages':'Remove from library')+'">Remove</button></details></div>').join('')
+      + out.items.map(w => {
+        const passage = w.kind === 'passage' || w.type === 'passage';
+        const media = w.type === 'media' || ['book','film','series'].includes(w.kind);
+        const art = media ? roomMediaArtMarkup(w, 'interest-art') : '';
+        const title = w.url&&/^https:\/\//.test(w.url)?'<a href="'+qEscAttr(w.url)+'" target="_blank" rel="noopener noreferrer">'+qEsc(w.title)+'</a>':qEsc(w.title);
+        const text = passage ? (w.excerpt || w.title || '') : (w.excerpt ? '<p>'+qEsc(w.excerpt)+'</p>' : '');
+        return '<div class="interest-item '+(passage?'interest-item--passage ':'')+(media?'interest-item--media':'')+'" data-interest="' + qEscAttr(w.id) + '">'+art+'<div class="'+(media?'interest-media-info':'')+'">'+(passage?'':'<div>'+title+'</div>')+(w.kind==='paper'||passage?'':'<small>' + qEsc([w.kind,w.creator,w.year,w.state,w.origin].filter(Boolean).join(' · ')) + '</small>')+(passage?'<div class="interest-passage">'+qEsc(text)+'</div>':text)+'<button data-attach>Attach</button> '+(w.type==='media'?'<button data-edit>Edit</button> ':'')+'<details class="room-rec-menu"><summary title="Actions">⋯</summary><button data-remove title="'+(passage?'Forget this kept passage in both Library and Passages':'Remove from library')+'">Remove</button></details></div></div>';
+      }).join('')
       + (!out.items.length && !review.entries.length ? '<div class="room-empty">No saved interests.</div>' : '')
       + '<div class="interest-item">' + (interestLibraryOffset ? '<button data-prev>Previous</button> ' : '') + (out.items.length === 40 ? '<button data-next>More</button>' : '') + '</div>';
     results.querySelectorAll('[data-review]').forEach(el => {
@@ -12585,6 +12646,8 @@ async function renderInterestLibrary() {
     const prev = results.querySelector('[data-prev]'), next = results.querySelector('[data-next]');
     if (prev) prev.onclick = () => { interestLibraryOffset = Math.max(0, interestLibraryOffset - 40); renderInterestLibrary(); };
     if (next) next.onclick = () => { interestLibraryOffset += 40; renderInterestLibrary(); };
+    const mediaItems = out.items.filter(w => w.type === 'media' || ['book','film','series'].includes(w.kind));
+    if (mediaItems.length) roomLoadMediaArt(results, mediaItems);
   } catch (err) { if (request === interestLibraryRequest) host.querySelector('.interest-results').textContent = err.message; }
 }
 
