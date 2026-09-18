@@ -1,7 +1,10 @@
 # Theme and reading-width studies
 
-Status: THEMES — DESIGN OPTIONS; WIDTH OPTION 2 — APPROVED and implemented,
-2026-09-18. No theme implementation authorized. User requested ten theme mockups (day, night, cyberpunk)
+Status: THEMES — REJECTED / CANCELLED; WIDTH OPTION 2 — APPROVED and implemented,
+2026-09-18. Antoine disliked the theme mockups and said to forget this part of the
+project. Do not implement or revive these theme candidates unless he asks again.
+The existing live themes and the implemented width slider stay unchanged.
+Originally, user requested ten theme mockups (day, night, cyberpunk)
 and then discreet ways to adjust the Room's horizontal reading width.
 
 The temporary local HTML previews are throwaways, not published app artifacts.
@@ -70,4 +73,4 @@ bounded by available width. Narrow panels never overflow, and the chosen percent
 is not overwritten by opening a panel. No edge handles. Menu placement uses its
 actual height, including the new row. Layout-only updates keep transcript DOM intact.
 
-Waiting on Antoine: preferred themes only.
+Nothing waiting on Antoine. Theme work cancelled; width work complete.
