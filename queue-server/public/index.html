@@ -1703,11 +1703,12 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    already carries badges and buttons, and pills here would read as a toolbar.
    Hidden until the ＋ opens them — a spelled-out row of seven is clutter,
    not a control. */
-.se-cmds { display:none; flex-wrap:wrap; align-items:center; gap:0 6px; margin-top:7px; }
+.se-cmds { display:none; flex-wrap:wrap; align-items:center; gap:5px; margin-top:7px; }
 .se-wrap.cmds-open .se-cmds { display:flex; }
-.se-cmd { background:none; border:none; padding:1px 0; cursor:pointer; font-family:inherit; font-size:var(--room-size); color:var(--c-ink-4); }
-.se-cmd:hover:not(:disabled) { color:var(--c-ink); text-decoration:underline; }
+.se-cmd { background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:var(--r-pill); padding:4px 8px; cursor:pointer; font-family:inherit; font-size:var(--fs-xs); line-height:1.2; color:var(--c-ink-3); }
+.se-cmd:hover:not(:disabled) { color:var(--c-ink); border-color:var(--c-ink-4); }
 .se-cmd:disabled { opacity:.4; cursor:default; }
+.se-dot { display:none; }
  .se-dot { font-size:var(--fs-sm); color:var(--c-ink-5); }
  .se-cost { display:block; font-size:var(--fs-xs); color:var(--c-ink-4); margin-top:6px; }
  /* Lane tag on an assistant message: which model/lookup answered. Clickable to
@@ -22552,14 +22553,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // button is never shown just to explain that it does nothing.
   var ACT_CHIPS = {
     world_pick: {
-      fold:    ['✍️ Fold into this idea', 'Rewrite this one idea with everything we worked out here. What it said before is kept.'],
-      more:    ['✨ More ideas from here', 'New ideas shaped by where this conversation went. They land beside this one.'],
-      reframe: ['🔄 Change the question', 'Rewrite the question these ideas answer, when the brainstorm shows we were solving the wrong thing.'],
+      fold:    ['Fold in', 'Rewrite this one idea with everything we worked out here. What it said before is kept.'],
+      more:    ['More ideas', 'New ideas shaped by where this conversation went. They land beside this one.'],
+      reframe: ['Reframe', 'Rewrite the question these ideas answer, when the brainstorm shows we were solving the wrong thing.'],
     },
     other: {
-      fold:    ['✍️ Fold this in', 'Rewrite this thing itself with everything we worked out here. What it said before is kept.'],
-      more:    ['✨ More ideas from here', 'New ideas from this conversation, saved to your notebook as seeds.'],
-      reframe: ['🔄 Rewrite why it exists', 'Rewrite what this is for — its purpose, not what it does.'],
+      fold:    ['Fold in', 'Rewrite this thing itself with everything we worked out here. What it said before is kept.'],
+      more:    ['More ideas', 'New ideas from this conversation, saved to your notebook as seeds.'],
+      reframe: ['Reframe', 'Rewrite what this is for — its purpose, not what it does.'],
     },
   };
 
@@ -22570,14 +22571,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var set = world ? ACT_CHIPS.world_pick : ACT_CHIPS.other;
     var rows = [];
     (e.acts || []).forEach(function(act){ if(set[act]) rows.push(['/' + act, set[act][0], set[act][1]]); });
-    rows.push(['/grill-me', 'Me interrogate you', 'Sharp questions, one at a time.']);
-    rows.push(['/compare', world ? 'Compare the other options' : 'Compare the attached ideas', '']);
+    rows.push(['/grill-me', 'Interview', 'Sharp questions, one at a time.']);
+    rows.push(['/compare', world ? 'Compare' : 'Compare attached', '']);
     // The two places a conversation can land that are NOT work: an idea card to
     // sharpen later, or a document the rest of the app can read afterwards.
-    rows.push(['/seed', 'Save it as an idea', 'Saves what we arrived at to your notebook.']);
-    rows.push(['/note', 'Write it down', 'Saves it as a document the whole app can read.']);
-    rows.push(['/plan', 'Write the brief', 'Turn this into a brief for the coding agent.']);
-    if(!world) rows.push(['/handoff', 'Send it to the queue', 'Queues it as a task, set aside for you to approve.']);
+    rows.push(['/seed', 'Save idea', 'Saves what we arrived at to your notebook.']);
+    rows.push(['/note', 'Keep note', 'Saves it as a document the whole app can read.']);
+    rows.push(['/plan', 'Make brief', 'Turn this into a brief for the coding agent.']);
+    if(!world) rows.push(['/handoff', 'Queue', 'Queues it as a task, set aside for you to approve.']);
     return rows;
   }
 
