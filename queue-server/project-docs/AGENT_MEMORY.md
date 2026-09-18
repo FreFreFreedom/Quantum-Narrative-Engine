@@ -28,6 +28,13 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-09-18 — Media recommendation quality.** Room media discovery now turns the
+live Room and Side Talk structure into catalogue searches, then ranks verified Google
+Books and TMDB results. Cards use larger supplied covers/posters, compact metadata, and
+one spoiler-light sentence combining the premise with why it belongs in this thread.
+Candidates without a public summary are excluded. The first run replaces old generated
+media cards but preserves anything Antoine saved to the Library.
+
 **2026-09-18 — Room reference panel cleanup.** The Room right panel now has one primary
 Discover/Library/Side talks path with the old pane list behind More; Library no longer
 repeats Saved/Discover as a second tab row. Media recommendations and saved media use

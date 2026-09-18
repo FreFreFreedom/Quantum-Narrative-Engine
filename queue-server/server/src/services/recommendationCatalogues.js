@@ -37,10 +37,12 @@ function book(item, query) {
   if (!v.title) return null;
   const author = Array.isArray(v.authors) ? v.authors.join(', ') : '';
   const year = String(v.publishedDate || '').slice(0, 4);
+  const summary = clean(v.description || '').slice(0, 700);
+  const artwork = String(v.imageLinks?.thumbnail || v.imageLinks?.smallThumbnail || '').replace(/^http:/, 'https:');
   return { title: v.title, url: v.infoLink || `https://books.google.com/books?id=${encodeURIComponent(item.id || '')}`,
     key: `google-books:${item.id || `${v.title}|${author}`}`,
-    sentence: author ? `${author}${year ? ` · ${year}` : ''}. Found in the book catalogue for ${query}.` : `Found in the book catalogue for ${query}.`,
-    details: { kind: 'book', creator: author, year, origin: 'Google Books' } };
+    sentence: summary || (author ? `${author}${year ? ` · ${year}` : ''}.` : ''),
+    details: { kind: 'book', creator: author, year, origin: 'Google Books', summary, artwork } };
 }
 
 function screen(item, kind, query) {
@@ -48,10 +50,12 @@ function screen(item, kind, query) {
   const title = item.title || item.name;
   const year = String(item.release_date || item.first_air_date || '').slice(0, 4);
   const votes = Number(item.vote_count || 0);
+  const summary = clean(item.overview || '').slice(0, 700);
+  const artwork = item.poster_path ? `https://image.tmdb.org/t/p/w342${item.poster_path}` : '';
   return { title, url: `https://www.themoviedb.org/${kind === 'film' ? 'movie' : 'tv'}/${item.id}`,
     key: `tmdb:${kind}:${item.id}`,
-    sentence: `${year || 'Release year unavailable'}${votes ? ` · ${Math.round(Number(item.vote_average || 0) * 10) / 10}/10 from ${votes.toLocaleString()} ratings` : ''}. Found for ${query}.`,
-    details: { kind, creator: '', year, origin: 'TMDB', rating: Number(item.vote_average || 0), votes } };
+    sentence: summary,
+    details: { kind, creator: '', year, origin: 'TMDB', rating: Number(item.vote_average || 0), votes, summary, artwork } };
 }
 
 function rank(items) {
@@ -62,9 +66,10 @@ function rank(items) {
   });
 }
 
-export async function catalogueMedia(text, instruction = '', { limit = 6 } = {}) {
-  const queries = catalogueQueries(text, instruction);
-  const searches = (queries.length ? queries : ['society']).slice(0, 4);
+export async function catalogueMedia(text, instruction = '', { limit = 6, queries: plannedQueries = [] } = {}) {
+  const queries = unique((Array.isArray(plannedQueries) ? plannedQueries : []).map(clean));
+  const fallbackQueries = catalogueQueries(text, instruction);
+  const searches = (queries.length ? queries : fallbackQueries.length ? fallbackQueries : ['society']).slice(0, 4);
   const rounds = await Promise.all(searches.map(async query => {
     const [books, films, series] = await Promise.all([
       getJson(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=12&printType=books&orderBy=relevance`),

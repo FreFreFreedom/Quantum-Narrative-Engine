@@ -1580,12 +1580,14 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 /* Only media has a cover. Giving Papers and Projects its empty cover column made
    their words collapse into a narrow strip despite the pane having room. */
 .room-rec-item { position:relative; min-width:0; width:100%; padding:10px 24px 10px 0; border-bottom:1px solid var(--c-border-2); }
-.room-rec-item--media { display:grid; grid-template-columns:48px minmax(0,1fr); gap:9px; }
-.room-rec-art { width:48px; height:68px; border-radius:5px; background:var(--c-surface-2); border:1px solid var(--c-border-2); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; color:var(--c-ink-5); font-size:9px; text-transform:uppercase; letter-spacing:.04em; text-align:center; }
+.room-rec-item--media { display:grid; grid-template-columns:64px minmax(0,1fr); gap:11px; padding-top:12px; padding-bottom:12px; }
+.room-rec-art { width:64px; height:92px; border-radius:6px; background:var(--c-surface-2); border:1px solid var(--c-border-2); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; color:var(--c-ink-5); font-size:9px; text-transform:uppercase; letter-spacing:.04em; text-align:center; }
 .room-rec-info { min-width:0; width:100%; }
 .room-rec-title { display:block; width:100%; font:inherit; text-align:left; color:var(--c-ink); line-height:1.5; background:none; border:0; padding:0; cursor:pointer; text-decoration:none; }
 .room-rec-title:hover { text-decoration:underline; }
-.room-rec-item p { margin:5px 0 0; font-size:12px; line-height:1.5; color:var(--c-ink-3); }
+.room-rec-item--media .room-rec-title { font-weight:600; line-height:1.3; }
+.room-rec-meta { margin-top:2px; color:var(--c-ink-5); font-size:var(--fs-2xs); text-transform:capitalize; }
+.room-rec-item p { margin:5px 0 0; font-size:12px; line-height:1.45; color:var(--c-ink-3); }
 .room-rec-menu { position:absolute; right:2px; top:10px; }
 .room-rec-menu summary { list-style:none; cursor:pointer; padding:0 4px; }
 .room-rec-menu button { position:absolute; right:0; z-index:2; background:var(--c-surface-2); color:var(--c-ink); border:1px solid var(--c-border-2); padding:5px 10px; }
@@ -11168,6 +11170,8 @@ function roomMediaKind(item) {
 function roomMediaArtKey(item) { return [roomMediaKind(item), item?.title || '', item?.creator || ''].join('|').toLowerCase(); }
 async function roomFindMediaArt(item) {
   const key = roomMediaArtKey(item);
+  const supplied = String(item?.artwork || item?.details?.artwork || '');
+  if (/^https:\/\//.test(supplied)) { roomMediaArtCache.set(key, supplied); return supplied; }
   if (roomMediaArtCache.has(key)) return roomMediaArtCache.get(key);
   if (roomMediaArtPending.has(key)) return roomMediaArtPending.get(key);
   const title = String(item?.title || '').trim(); if (!title) return '';
@@ -11192,7 +11196,9 @@ async function roomFindMediaArt(item) {
   const out = await task; roomMediaArtPending.delete(key); return out;
 }
 function roomMediaArtMarkup(item, className) {
-  return '<div class="' + (className || 'room-rec-art') + '" data-media-art="' + qEscAttr(roomMediaArtKey(item)) + '" aria-hidden="true">' + qEsc(roomMediaKind(item)) + '</div>';
+  const supplied = String(item?.artwork || item?.details?.artwork || '');
+  const style = /^https:\/\//.test(supplied) ? ' style="background-image:url(&quot;' + qEscAttr(supplied) + '&quot;)"' : '';
+  return '<div class="' + (className || 'room-rec-art') + '" data-media-art="' + qEscAttr(roomMediaArtKey(item)) + '" aria-hidden="true"' + style + '>' + (style ? '' : qEsc(roomMediaKind(item))) + '</div>';
 }
 async function roomLoadMediaArt(host, items) {
   if (!host) return;
@@ -11224,7 +11230,7 @@ function renderRoomRecommendations(kind) {
     + '<button type="button" class="room-ana-chip" data-rec-auto title="Change when recommendations arrive">' + (settings.automatic ? 'As you talk' : 'Only when asked') + '</button></div>'
     + '<div class="room-rec-list">' + (items.length ? items.map(item => '<article class="room-rec-item' + (kind === 'media' ? ' room-rec-item--media' : '') + '">'
       + (kind === 'media' ? roomMediaArtMarkup(item) : '') + '<div class="room-rec-info">'
-      + (kind === 'papers' || kind === 'media' ? '<a class="room-rec-title" href="' + qEscAttr(/^https:\/\//.test(item.url || '') ? item.url : '#') + '" target="_blank" rel="noopener noreferrer">' + qEsc(item.title) + '</a>' + (kind==='media'?'<p>'+qEsc(item.sentence)+'</p>':'')
+      + (kind === 'papers' || kind === 'media' ? '<a class="room-rec-title" href="' + qEscAttr(/^https:\/\//.test(item.url || '') ? item.url : '#') + '" target="_blank" rel="noopener noreferrer">' + qEsc(item.title) + '</a>' + (kind==='media'?'<div class="room-rec-meta">'+qEsc([roomMediaKind(item),item.details?.creator,item.details?.year].filter(Boolean).join(' · '))+'</div><p>'+qEsc(item.sentence)+'</p>':'')
         : '<button type="button" class="room-rec-title" data-rec-open="' + qEscAttr(item.id) + '">' + qEsc(item.title) + '</button><p>' + qEsc(item.sentence) + '</p>')
       + (kind==='apps'?'<small>'+qEsc(item.details?.origin || 'Idea to build')+'</small> '+(item.url?'<a href="'+qEscAttr(/^https:\/\//.test(item.url)?item.url:'#')+'" target="_blank" rel="noopener noreferrer">Website</a>':''):'')
       + '<div class="interest-import"><button data-rec-save="'+qEscAttr(item.id)+'"'+(item.saved?' disabled':'')+'>'+(item.saved?'Saved':'Save')+'</button><button data-rec-attach="'+qEscAttr(item.id)+'">Attach</button></div>'

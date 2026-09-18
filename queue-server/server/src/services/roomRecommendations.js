@@ -15,6 +15,7 @@ let db, timer, busy = false;
 let activeMediaScope = null;
 let generate = generateText, search = searchPapers;
 let discover=discoverReferences;
+const MEDIA_RECOMMENDATION_VERSION = 2;
 const json = (s, fallback = {}) => { try { return JSON.parse(s); } catch { return fallback; } };
 const hash = s => createHash('sha256').update(s).digest('hex');
 const cut = (s, n) => String(s || '').slice(0, n);
@@ -28,9 +29,22 @@ export function bindRecommendations(database, { start = true, generateForTest = 
   bindReferenceLibrary(db);
   try { db.exec("ALTER TABLE recommendations ADD COLUMN details TEXT NOT NULL DEFAULT '{}' "); } catch {}
   bindRecommendationPapers(db);
+  // Media v2 replaces catalogue keyword hits with model-ranked works carrying a
+  // spoiler-light premise + thread connection. Saved Library snapshots remain;
+  // only the replaceable recommendation shelf is refreshed.
+  const staleMedia = db.prepare(`SELECT r.id,r.details FROM recommendations r
+    JOIN recommendation_collections c ON c.id=r.collection_id WHERE c.kind='media'`).all()
+    .filter(row => json(row.details || '{}').mediaVersion !== MEDIA_RECOMMENDATION_VERSION);
+  if (staleMedia.length) {
+    const drop = db.prepare('DELETE FROM recommendations WHERE id=?');
+    db.transaction(() => staleMedia.forEach(row => drop.run(row.id)))();
+    db.prepare("UPDATE recommendation_requests SET status='done',note='' WHERE collection_id IN (SELECT id FROM recommendation_collections WHERE kind='media')").run();
+    db.prepare("UPDATE recommendation_collections SET fingerprint='',due_at=0 WHERE kind='media'").run();
+  }
   db.prepare("UPDATE recommendation_requests SET status='queued' WHERE status='running'").run();
-  // Catalogue-backed media no longer needs an AI helper. Wake shelves that were
-  // paused or waiting under the former helper-only path when this version boots.
+  // Wake shelves that were paused or waiting under an older recommendation path.
+  // The catalogues now verify identity and premise; the helper ranks the verified
+  // works and writes their thread-specific connection.
   db.prepare(`UPDATE recommendation_requests
     SET status='queued', attempts=0, retry_at=0, note=''
     WHERE collection_id IN (SELECT id FROM recommendation_collections WHERE kind='media')
@@ -86,7 +100,7 @@ function mediaCatalogueContext(scope) {
     for (const message of messagesFor(thread.id)) {
       if (message.role !== 'user') continue;
       refs.push(message.id);
-      parts.push(message.text);
+      parts.push(`[${message.id}] ${message.text}`);
     }
   }
   return { text: parts.join('\n'), refs, fingerprint: signature(scope) };
@@ -264,15 +278,26 @@ async function runRequest(request) {
   let count = 0;
   if (c.kind === 'media') {
     const saved = ['book', 'film', 'series'].flatMap(kind => listReferences('antoine', { kind, limit: 100 }).items);
-    const candidates = await catalogueMedia(context.text, request.instruction, { limit: Math.max(need * 3, 12) });
-    for (const item of candidates) {
+    const queryPlan = await model(`${basis}\nPrepare four short public-catalogue searches for books, films or TV series that connect strongly to this thread. Search for the underlying roles, relationships and pressures, not copied words from the conversation. Keep each query useful in Google Books and TMDB. Avoid personal names and private quotes. Return {"queries":["..."]}.`, 700);
+    const plannedQueries = Array.isArray(queryPlan.queries) ? queryPlan.queries.filter(q => typeof q === 'string' && q.trim()).slice(0, 4) : [];
+    const candidates = await catalogueMedia(context.text, request.instruction, { limit: Math.max(need * 5, 24), queries: plannedQueries });
+    const eligible = candidates.filter(item =>
+      item.details?.summary
+      && !prior.some(old => old.dedupe === item.key || normalized(old.title) === normalized(item.title))
+      && !saved.some(work => normalized(work.title) === normalized(item.title))
+      && !referenceSaved('antoine', item.key));
+    const picked = await model(`${basis}\nSaved interests are signals, not proof they were read, watched or liked: ${JSON.stringify(saved.slice(0, 120).map(w => ({kind:w.kind,title:w.title,creator:w.creator,year:w.year})))}.
+Choose up to ${need} genuinely strong recommendations from the verified catalogue candidates below. Do not fill the quota with weak matches. Structural analogy may connect different subjects when the roles, relationships and pressures match. Avoid spoilers beyond the public premise.
+For each choice, write exactly one short sentence, at most 34 words: first state the premise, then connect it directly to the live thread. Use only the catalogue summary for plot facts. Cite one to eight actual OWNER source_message_ids from the research context. Return {"items":[{"key":"exact candidate key","sentence":"premise; relevance to this thread","reason":"private ranking reason","source_message_ids":["..."]}]}. Candidates: ${JSON.stringify(eligible.slice(0, 40))}`, 2600);
+    for (const pick of (Array.isArray(picked.items) ? picked.items : [])) {
       if (!active(request.id) || count >= need) break;
-      if (prior.some(old => old.dedupe === item.key || normalized(old.title) === normalized(item.title))) continue;
-      if (saved.some(work => normalized(work.title) === normalized(item.title))) continue;
-      if (referenceSaved('antoine', item.key)) continue;
-      if (storeItem(c, { ...item, reason: `Catalogue match for this conversation.`, source_message_ids: context.refs.slice(0, 1) }, context, request.id)) count++;
+      const item = eligible.find(candidate => candidate.key === pick.key);
+      if (!item || !pick.sentence) continue;
+      if (storeItem(c, { ...item, sentence: cut(pick.sentence, 450), reason: cut(pick.reason, 2000),
+        source_message_ids: pick.source_message_ids, details: { ...item.details, mediaVersion: MEDIA_RECOMMENDATION_VERSION } }, context, request.id)) count++;
     }
     if (!count && !candidates.length) throw new Error('The book and screen catalogues are unavailable.');
+    if (!count && candidates.length) throw new Error('No strong book or screen recommendation was found for this thread yet.');
   } else if (c.kind === 'papers') {
     const queryResult = await model(`${basis}\nFind publications that could move this inquiry forward: a missing concept, useful evidence, a method to borrow, or an argument that changes the question, including bridges the owner has not named. Produce up to three distinct academic search queries. Search round ${request.rounds + 1}; use new angles if previous results were exhausted. Return {"queries":["..."]}.`, 600);
     const queries = Array.isArray(queryResult.queries) ? queryResult.queries.filter(q => typeof q === 'string' && q.trim()).map(q => cut(q, 250)) : [];

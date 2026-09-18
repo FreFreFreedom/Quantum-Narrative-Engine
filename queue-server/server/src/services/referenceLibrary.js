@@ -42,7 +42,7 @@ export function resolveReference(owner, ref) {
       return {type:'recommendation',id:r.id,kind:r.kind==='papers'?'paper':r.kind==='media'?(details.kind || 'book'):'project',title:r.title,
         sentence:r.kind==='papers'?'':r.sentence,url:r.url,origin:r.kind==='papers'?'Paper':details.origin || 'Idea to build',
         creator:details.creator || '',year:details.year || '',checkedAt:details.checkedAt || null,
-        status:details.status || '',evidence:details.evidence || '',abstract:details.abstract || '',state:'interested',identity:r.dedupe};
+        status:details.status || '',evidence:details.evidence || '',abstract:details.abstract || '',summary:details.summary || '',artwork:details.artwork || '',state:'interested',identity:r.dedupe};
     }
   }
   fail('This reference is no longer available. Remove it from the draft.',404);
