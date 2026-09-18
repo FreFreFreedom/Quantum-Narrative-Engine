@@ -16,7 +16,9 @@ export function catalogueQueries(text, instruction = '') {
     .map(line => line.trim()).filter(line => line.split(' ').length >= 2)
     .sort((a, b) => b.length - a.length).slice(0, 2)
     .map(line => line.split(' ').slice(0, 6).join(' '));
-  return unique([...phrases, ranked.slice(0, 4).join(' '), ...ranked.slice(0, 6)]).filter(query => query.length >= 3).slice(0, 4);
+  // Lead with recurring subject words. Opening sentences are often practical
+  // (“I am starting…”) and make poor catalogue searches.
+  return unique([ranked.slice(0, 4).join(' '), ...phrases, ...ranked.slice(0, 6)]).filter(query => query.length >= 3).slice(0, 4);
 }
 
 async function getJson(url) {
@@ -62,17 +64,20 @@ function rank(items) {
 
 export async function catalogueMedia(text, instruction = '', { limit = 6 } = {}) {
   const queries = catalogueQueries(text, instruction);
-  const query = queries[0] || 'society';
-  const [books, films, series] = await Promise.all([
-    getJson(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=12&printType=books&orderBy=relevance`),
-    tmdbFetch('/search/movie', { query }),
-    tmdbFetch('/search/tv', { query }),
-  ]);
-  const candidates = [
-    ...(books?.items || []).map(item => book(item, query)).filter(Boolean),
-    ...(films?.results || []).map(item => screen(item, 'film', query)).filter(Boolean),
-    ...(series?.results || []).map(item => screen(item, 'series', query)).filter(Boolean),
-  ];
+  const searches = (queries.length ? queries : ['society']).slice(0, 4);
+  const rounds = await Promise.all(searches.map(async query => {
+    const [books, films, series] = await Promise.all([
+      getJson(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=12&printType=books&orderBy=relevance`),
+      tmdbFetch('/search/movie', { query }),
+      tmdbFetch('/search/tv', { query }),
+    ]);
+    return [
+      ...(books?.items || []).map(item => book(item, query)).filter(Boolean),
+      ...(films?.results || []).map(item => screen(item, 'film', query)).filter(Boolean),
+      ...(series?.results || []).map(item => screen(item, 'series', query)).filter(Boolean),
+    ];
+  }));
+  const candidates = rounds.flat();
   const seen = new Set();
   const real = rank(candidates).filter(item => {
     const key = `${item.details.kind}:${clean(item.title).toLowerCase()}`;
