@@ -1065,7 +1065,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 /* The conversation itself is painted by studioEmbed() — the same markup a card's
    box gets. Only the frame changes: no rule above it, and the log takes every
    pixel the composer does not instead of stopping at its in-card ceiling. */
-.room-convo { flex:1; min-height:0; padding:0 18px 14px; display:flex; flex-direction:column; }
+.room-convo { flex:1; min-height:0; min-width:0; padding:0 18px 14px; display:flex; flex-direction:column; --room-reading-width:calc(var(--room-size) * 54); }
 .room-convo .se-wrap { flex:1; min-height:0; display:flex; flex-direction:column; border-top:none; margin-top:0; padding-top:0; }
 .room-convo .se-log { max-height:none; flex:1; min-height:0; padding:var(--sp-6) 0 var(--sp-3); }
 /* Reading comfort is a setting, not a constant (his ask, 2026-09-09) — and one
@@ -1075,7 +1075,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 /* An answer is a page, not a log line: it stops at the reading measure however wide the
    window gets, and gets the line-height a serif needs. The composer keeps the same face
    so what you type looks like what comes back. */
-.room-convo .se-body, .room-convo .se-recap-body { line-height:1.62; max-width:var(--measure); }
+.room-convo .se-body, .room-convo .se-recap-body { line-height:1.62; max-width:none; overflow-wrap:anywhere; }
 .room-convo .se-body p { margin:0 0 .75em; }
 .room-convo .se-body p:last-child { margin-bottom:0; }
 .room-convo .se-body { line-height:1.62; }
@@ -1184,36 +1184,55 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    it, and the count is in the toolbar, so it repeated two facts on a line of its
    own directly above the composer. */
 .room-convo .se-head, .room-convo .se-cost { display:none; }
-/* ChatGPT-style reading column: every turn and the composer share one centered
-   ~48rem measure, wide enough to read comfortably without the eye crossing the
-   whole panel. Only this room gets it — the in-card studio keeps the plain,
-   full-width column described above, since a 330px architecture panel has no
-   room to spare on a second margin. */
-#roomConvo .se-turn { max-width:48rem; margin:0 auto; padding:14px 18px; border-top:none; }
-#roomConvo .se-turn.plan { max-width:calc(48rem + 18px); }
+/* Reading width follows the reader's font size and available panel space.
+   Conversation and draft share a measure; card studios keep their own layout. */
+#roomConvo .se-turn { max-width:var(--room-reading-width); margin:0 auto; padding:14px 6px; border-top:none; }
+#roomConvo .se-turn.plan { max-width:var(--room-reading-width); }
 /* A message from you reads as a bubble, right-aligned — everything else (the
    assistant, a plan) stays full-width plain text, the ChatGPT split. */
 #roomConvo .se-turn.you { display:flex; flex-direction:column; align-items:flex-end; }
 #roomConvo .se-turn.you .se-who { align-self:flex-end; }
 #roomConvo .se-turn.you .se-body { display:inline-block; max-width:80%; text-align:left; background:var(--c-surface-2); border-radius:var(--r-lg); padding:9px 14px; }
-.room-convo .se-pin, .room-convo .se-note, .room-convo .se-before { max-width:48rem; margin:0 auto; padding-left:18px; padding-right:18px; }
-/* The composer as a pill, centered under the same measure, always the last
-   thing in the flex column — .se-log is what scrolls, so this never moves. */
-.room-convo .se-compose { max-width:48rem; margin:8px auto 0; width:100%; gap:8px; border:1px solid var(--c-border-2); border-radius:var(--r-pill); background:var(--c-surface); box-shadow:var(--sh-xs); padding:8px; align-items:center; }
+.room-convo .se-pin, .room-convo .se-note, .room-convo .se-before { max-width:var(--room-reading-width); margin:0 auto; padding-left:6px; padding-right:6px; }
+/* Attachments and draft share one compact box; the transcript scrolls separately. */
+.se-draftbox { display:contents; }
+.room-convo .se-draftbox { display:block; flex:none; width:100%; max-width:var(--room-reading-width); margin:8px auto 0; border:1px solid var(--c-border-2); border-radius:var(--r-lg); background:var(--c-surface); box-shadow:var(--sh-xs); padding:10px 12px; max-height:48%; overflow-y:auto; }
+.room-convo .se-compose { margin:0; width:100%; gap:8px; border:0; padding:0; align-items:center; }
 /* The composer holds a lane pill, a clear, the ＋ and the send button. Given a
    narrow column those took every pixel and left the box you type in at zero
    width. The box now claims a floor of its own and the lane pill is what gives
    way — it can say "ChatGPT" or "Cha…" and still be the same control, which the
    thing you are writing in cannot. */
-.room-convo .se-compose { flex-wrap:nowrap; }
-.room-convo .se-input { border-bottom:none; padding:6px 0; flex:1 1 6rem; min-width:6rem; }
+.room-convo .se-compose { flex-wrap:wrap; }
+.room-convo .se-input { order:-1; border-bottom:none; padding:6px 0; flex:1 0 100%; width:100%; min-width:0; }
+.room-convo .se-spend { margin-left:auto; }
+.room-convo .se-send { margin-left:auto; }
+.room-convo .se-lanewrap { flex:0 1 auto; max-width:calc(100% - 78px); }
+.room-convo .se-quotebar, .room-convo .se-filebar, .room-convo .se-interestbar { max-height:100px; overflow-y:auto; max-width:100%; }
 .room-convo .se-lanepick, .room-convo .se-lanemodel { min-width:0; }
 .room-convo .se-input:focus { border-bottom:none; }
 .room-convo .se-send { border-radius:var(--r-pill); width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; flex:none;
   background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); }
 .room-convo .se-send:hover:not(:disabled) { background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); opacity:.88; }
 .room-convo .se-send:disabled { background:var(--c-surface-3); border-color:transparent; color:var(--c-ink-4); opacity:1; }
-.room-convo .se-cmds { max-width:48rem; margin:6px auto 0; padding:0 18px; }
+.room-convo .se-cmds { max-width:var(--room-reading-width); margin:6px auto 0; padding:0 6px; }
+/* One Room, three automatic states. The same panel and tab strip are reused. */
+.ws-room { container-type:inline-size; }
+.room-cards.side-layout { display:flex; flex-direction:column; overflow:hidden; }
+#roomSide.is-active, #roomSideHost, #roomSideEmbed { flex:1; min-height:0; min-width:0; }
+#roomSide.is-active, #roomSideHost { display:flex; flex-direction:column; }
+#roomSideHost .room-side-list { flex:none; max-height:20%; overflow-y:auto; }
+#roomSideEmbed.room-convo { padding:0; }
+#roomSideEmbed .se-head { display:flex; flex:none; }
+#roomSideEmbed .se-head-title { display:none; }
+#roomSideEmbed .se-log { padding-top:8px; }
+@media (min-width:821px) {
+  .room-threads:not(.collapsed) { width:min(var(--threads-w,250px),25cqw); }
+  .ws-room:has(.room-threads:not(.collapsed)) { --room-thread-space:25cqw; }
+  .room-cards:not(.collapsed) { width:min(var(--cards-w,340px),max(250px,calc(100cqw - var(--room-thread-space,0px) - 320px))); }
+  .room-cards.side-layout:not(.collapsed) { width:min(var(--cards-w,44cqw),max(250px,calc(100cqw - var(--room-thread-space,0px) - 320px))); }
+  .room-cards.side-layout.collapsed.peek { width:min(var(--cards-w,44cqw),80cqw); }
+}
 /* Every embed — Room, Side Talks, a card's own studio — collapses the seven
    text-link commands behind one ＋ toggle. A spelled-out row of them read as
    a wall of small text wherever it showed, not just here. */
@@ -9617,7 +9636,8 @@ const SIDE_WIDE = '(min-width: 821px)';
 function initSideResize({ panel, handle, prop, key, min, max, grows }) {
   if (!panel || !handle) return () => {};
   const wide = () => window.matchMedia(SIDE_WIDE).matches;
-  const read = () => { try { return Number(localStorage.getItem(key)) || 0; } catch (e) { return 0; } };
+  const storageKey = () => typeof key === 'function' ? key() : key;
+  const read = () => { try { return Number(localStorage.getItem(storageKey())) || 0; } catch (e) { return 0; } };
   const apply = () => {
     const w = read();
     // Out of range, unset, or a narrow window: hand the width back to the stylesheet,
@@ -9656,7 +9676,7 @@ function initSideResize({ panel, handle, prop, key, min, max, grows }) {
     // reads whatever the width transition happens to be part-way through, so a quick
     // drag used to store the width it started from and the panel sprang back on the
     // next load.
-    try { localStorage.setItem(key, String(Math.round(live))); } catch (e) {}
+    try { localStorage.setItem(storageKey(), String(Math.round(live))); } catch (e) {}
   });
   // Crossing the breakpoint puts the kept width back, or takes it away.
   window.addEventListener('resize', apply);
@@ -9672,7 +9692,7 @@ function initSidebarWidths() {
   const q = (sel) => document.querySelector(sel);
   applyRoomCardsWidth = initSideResize({
     panel: el('roomCards'), handle: el('roomCardsResize'),
-    prop: '--cards-w', key: 'fmcns_room_cards_width', min: 250, max: 480, grows: 'left',
+    prop: '--cards-w', key: () => el('roomCards').classList.contains('side-layout') ? 'fmcns_room_side_width' : 'fmcns_room_cards_width', min: 250, max: 900, grows: 'left',
   });
   initSideResize({
     panel: el('roomThreads'), handle: el('roomThreadsResize'),
@@ -9988,6 +10008,8 @@ function initRoom() {
     let pane = 'attached';
     try { const saved = localStorage.getItem(ROOM_PANE_KEY); if (saved && ROOM_PANES[saved]) pane = saved; } catch (e) {}
     const apply = () => {
+      document.getElementById('roomCards').classList.toggle('side-layout', pane === 'side');
+      applyRoomCardsWidth();
       Object.entries(ROOM_PANES).forEach(([k, id]) => {
         const el = document.getElementById(id);
         if (el) el.classList.toggle('is-active', k === pane);
@@ -11346,6 +11368,7 @@ function renderRoomAnalogies() {
    the main thread; nothing here ever sends in his name. */
 let roomSides = [];
 let roomSideOpenId = null;
+const roomSidePositions = new Map();
 let roomSideListCollapsed = (function () { try { return localStorage.getItem('fmcns.roomSideListCollapsed') === '1'; } catch (e) { return false; } })();
 
 async function loadRoomSides() {
@@ -11355,6 +11378,9 @@ async function loadRoomSides() {
     const out = await api('/api/convos/' + encodeURIComponent(want) + '/sides');
     if (roomSel !== want) return;   // a different thread was picked mid-flight
     roomSides = out.sides || [];
+    if (!roomSideOpenId) {
+      try { roomSideOpenId = localStorage.getItem('fmcns.roomSideOpen.' + want); } catch (e) {}
+    }
     if (roomSideOpenId && !roomSides.some(s => s.id === roomSideOpenId)) roomSideOpenId = null;
   } catch (e) { if (roomSel === want) roomSides = []; }
   renderRoomSide();
@@ -11371,6 +11397,7 @@ function roomShowPane(id) {
 
 function roomSideOpen(id) {
   roomSideOpenId = id;
+  try { localStorage.setItem('fmcns.roomSideOpen.' + roomSel, id); } catch (e) {}
   roomShowPane('side');
   renderRoomSide();
 }
@@ -11424,6 +11451,13 @@ function renderRoomSide() {
   if (!roomSel) { host.innerHTML = ''; return; }
 
   const open = roomSides.find(s => s.id === roomSideOpenId) || null;
+  // Keep the live conversation node (selection, draft and reading position) on
+  // refreshes of the surrounding list. Cache other Side Talks' reading positions.
+  const previous = host.querySelector('#roomSideEmbed');
+  const previousLog = previous && previous.querySelector('.se-log');
+  if (previousLog && previous.dataset.sideId) roomSidePositions.set(previous.dataset.sideId, previousLog.scrollTop);
+  const reuse = previous && open && previous.dataset.sideId === open.id;
+  if (reuse) previous.remove();
   const listCollapsed = roomSideListCollapsed && roomSides.length > 0;
   let html = '<div class="room-ana-acts room-side-new">'
     + '<button type="button" data-side-new="1">+ Aside</button>'
@@ -11442,10 +11476,11 @@ function renderRoomSide() {
   }
 
   if (open) {
-    html += '<div class="room-side-open" id="roomSideEmbed"></div>'
+    html += '<div class="room-side-open room-convo" id="roomSideEmbed"></div>'
       + '<div class="room-ana-acts"><button type="button" data-side-bring="1">↑ bring</button></div>';
   }
   host.innerHTML = html;
+  if (reuse) host.querySelector('#roomSideEmbed').replaceWith(previous);
 
   const newBtn = host.querySelector('[data-side-new]');
   if (newBtn) newBtn.onclick = () => roomSideCreate({ mode: 'empty' });
@@ -11474,8 +11509,13 @@ function renderRoomSide() {
   if (open) {
     const embedHost = document.getElementById('roomSideEmbed');
     if (embedHost) {
+      embedHost.dataset.sideId = open.id;
       window.studioEmbedOpen('side', open.subject_id);
       window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '', slim: true, showLane: true, captureInterests: true });
+      if (!reuse && roomSidePositions.has(open.id)) {
+        const log = embedHost.querySelector('.se-log');
+        if (log) log.scrollTop = roomSidePositions.get(open.id);
+      }
     }
   }
 }
@@ -22547,6 +22587,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +   '</div>'
         +   '<div class="se-log"></div>'
         +   '<span class="se-cost"></span>'
+        +   '<div class="se-draftbox">'
         +   '<div class="se-markbar"></div>'
         +   '<div class="se-aboutbar"></div>'
         +   '<div class="se-quotebar"></div>'
@@ -22575,6 +22616,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +     '<textarea class="se-input" rows="1" placeholder="Say what you\'re thinking…"></textarea>'
         +     '<span class="se-spend" hidden></span>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
+        +   '</div>'
         +   '</div>'
         +   '<div class="se-cmds"></div>'
         + '</div>';

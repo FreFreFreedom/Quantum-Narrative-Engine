@@ -1087,9 +1087,12 @@ Selection-menu clicks bypass the generic drag-click suppressor. Shared Room/Side
 
 Room reading/space, 2026-09-18: font size now supports 12–48px (previously silently
 capped at 22), with a slider and disabled end-stop buttons. A reflow-generated scroll
-no longer dismisses the font menu. Layout changes are NOT approved: Antoine asked
-for throwaway mockups; wide page / reading+references / side-by-side alternatives
-are recorded in plans/room-space-studies.md for later choice.
+no longer dismisses the font menu. Antoine subsequently approved all three mockups
+as automatic states of one Room: wide page with panels shut, reading beside
+references, and side-by-side Side Talk. See plans/room-space-studies.md: shared
+font-relative measure, compact draft above controls with attachments inside,
+full-height Side Talk, separately remembered reference/Side Talk widths and last
+open Side Talk per thread. No extra layout selector.
 
 Screenshot attachment repair, 2026-09-18: every Room/Side Talk image now enters
 pending chat attachments immediately, before independent automatic Library parsing.
