@@ -29,6 +29,12 @@ export function bindRecommendations(database, { start = true, generateForTest = 
   try { db.exec("ALTER TABLE recommendations ADD COLUMN details TEXT NOT NULL DEFAULT '{}' "); } catch {}
   bindRecommendationPapers(db);
   db.prepare("UPDATE recommendation_requests SET status='queued' WHERE status='running'").run();
+  // Catalogue-backed media no longer needs an AI helper. Wake shelves that were
+  // paused or waiting under the former helper-only path when this version boots.
+  db.prepare(`UPDATE recommendation_requests
+    SET status='queued', attempts=0, retry_at=0, note=''
+    WHERE collection_id IN (SELECT id FROM recommendation_collections WHERE kind='media')
+      AND status IN ('waiting','paused')`).run();
   clearInterval(timer);
   if (!start) return;
   timer = setInterval(() => tick().catch(e => console.error('[recommendations]', e.message)), 5000);
