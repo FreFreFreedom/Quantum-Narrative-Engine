@@ -338,7 +338,7 @@ export async function tick() {
     const request = db.prepare(`SELECT r.* FROM recommendation_requests r
       JOIN recommendation_collections c ON c.id=r.collection_id
       WHERE r.status IN ('queued','waiting') AND r.retry_at<=?
-      ORDER BY r.manual DESC, (c.scope=?) DESC, r.created_at LIMIT 1`).get(now,activeMediaScope || '');
+      ORDER BY r.manual DESC, (c.kind='media') DESC, (c.scope=?) DESC, r.created_at LIMIT 1`).get(now,activeMediaScope || '');
     if (!request) return;
     db.prepare("UPDATE recommendation_requests SET status='running',note='Reading and finding recommendations…' WHERE id=?").run(request.id);
     notify();
