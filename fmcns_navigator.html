@@ -1704,13 +1704,13 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    Hidden until the ＋ opens them — a spelled-out row of seven is clutter,
    not a control. */
 .se-wrap { position:relative; }
-.se-cmds { display:none; position:absolute; left:8px; bottom:54px; z-index:20; flex-direction:column; align-items:stretch; gap:0; width:220px; max-width:calc(100% - 16px); margin:0; padding:5px; background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:var(--r-md); box-shadow:0 8px 24px rgba(0,0,0,.28); }
+.se-cmds { display:none; position:absolute; left:8px; bottom:54px; z-index:20; flex-direction:column; align-items:stretch; gap:2px; width:280px; max-width:calc(100% - 16px); margin:0; padding:7px; background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:var(--r-md); box-shadow:0 8px 24px rgba(0,0,0,.28); }
 .se-wrap.cmds-open .se-cmds { display:flex; }
-.se-cmd { width:100%; background:transparent; border:0; border-radius:var(--r-sm); padding:7px 9px; cursor:pointer; font-family:inherit; font-size:var(--fs-xs); line-height:1.2; text-align:left; color:var(--c-ink-2); }
+.se-cmd { width:100%; background:transparent; border:0; border-radius:var(--r-sm); padding:9px 11px; cursor:pointer; font-family:inherit; font-size:var(--fs-sm); line-height:1.25; text-align:left; color:var(--c-ink-2); }
 .se-cmd:hover:not(:disabled) { color:var(--c-ink); background:var(--c-hover-wash); }
 .se-cmd:disabled { opacity:.4; cursor:default; }
 .se-dot { display:none; }
-.room-convo .se-cmds { max-width:220px; margin:0; padding:5px; }
+.room-convo .se-cmds { max-width:280px; margin:0; padding:7px; }
  .se-dot { font-size:var(--fs-sm); color:var(--c-ink-5); }
  .se-cost { display:block; font-size:var(--fs-xs); color:var(--c-ink-4); margin-top:6px; }
  /* Lane tag on an assistant message: which model/lookup answered. Clickable to
