@@ -1,6 +1,6 @@
 # Better Call Saul: institutional decay and visual aesthetics
 
-Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 28 turns · last said 2026-09-19T03:32:54.589Z
+Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 31 turns · last said 2026-09-19T03:56:08.702Z
 
 ## you
 
@@ -529,3 +529,27 @@ Can you tell me more about this please ? its interesting..
 * What does not exist anywhere today is a **Legislative Feedback Ledger**: an instrument that directly tethers the passage of any criminal penalty to the immediate physical capacity and trial cost of the local court.
 * Picture a parliament or congress where a statute cannot be voted into law unless the system displays a live simulation of its trial load—showing the exact number of jury hours required and cutting off prosecutors from offering reduced plea discounts on that specific charge.
 * When you remove the ability to hide extreme laws behind secret hallway deals, you force the state to look at the true human bill before it claims the moral right to punish.
+
+## you
+
+Im very interested in these books.. explore the relevance of what they are talking about please in about 500 to 800 words for each books please
+
+## the room
+
+That model refused the request: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later. Try another model in the dropdown — and tell Claude Code, because this one is a bug rather than a limit.
+
+## you
+
+Im very interested in these books.. explore the relevance of what they are talking about please in about 500 to 800 words for each books please
+
+## the room
+
+That model is rate-limited right now — wait a moment, or pick another one in the model dropdown.
+
+## you
+
+Im very interested in these books.. explore the relevance of what they are talking about please in about 500 to 800 words for each books please
+
+## the room
+
+That model is rate-limited right now — wait a moment, or pick another one in the model dropdown.
