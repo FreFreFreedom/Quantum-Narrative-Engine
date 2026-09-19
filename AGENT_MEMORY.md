@@ -28,6 +28,13 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-09-19 — Amazon book tabs mean author YouTube searches.** When Antoine asks
+to do the YouTube searches for the books open on Amazon in Edge, search the author
+names rather than the book titles. Open one YouTube results tab per unique author;
+if a book has several authors, each author gets a separate search. Keep the Amazon
+tabs open, avoid duplicate author searches, and never fold several authors into one
+query. The current Codex profile also has the `amazon-author-youtube` skill for this.
+
 **2026-09-19 — Visual retry keeps the image, the next prompt does not.** A sent
 Room or Side Talk image/document leaves the composer even when generation fails, so it
 cannot leak into the next new prompt. The in-session Answer again action keeps the sent
