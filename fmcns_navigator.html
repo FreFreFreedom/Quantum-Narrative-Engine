@@ -11236,23 +11236,26 @@ function renderRoomRecommendations(kind) {
       + '<div class="interest-import"><button data-rec-save="'+qEscAttr(item.id)+'"'+(item.saved?' disabled':'')+'>'+(item.saved?'Saved':'Save')+'</button><button data-rec-attach="'+qEscAttr(item.id)+'">Attach</button></div>'
       + '</div><details class="room-rec-menu"><summary aria-label="Recommendation actions" title="Actions">⋯</summary><button type="button" data-rec-dismiss="' + qEscAttr(item.id) + '">Dismiss</button></details></article>').join('')
       : (status ? '' : '<div class="room-rec-status">Nothing yet.</div>')) + '</div>'
-    + '<div class="room-rec-status" role="status">' + qEsc(status) + '</div>'
-    + (pending.length ? '<div class="room-rec-requests"><span>' + pending.length + (pending.length === 1 ? ' request' : ' requests') + ' in progress</span>'
-      + (latest && ['paused','waiting'].includes(latest.status) ? ' <button type="button" data-rec-resume="' + qEscAttr(latest.id) + '">Retry</button>' : '')
-      + (latest && latest.status !== 'paused' ? ' <button type="button" data-rec-stop="' + qEscAttr(latest.id) + '">Stop</button>' : '') + '</div>' : '')
-    + '<form class="room-rec-ask"><input data-rec-ask aria-label="Ask for recommendations" placeholder="Ask for more…" value="' + qEscAttr(recRead(key + '.draft', '')) + '"><button type="submit" title="Ask">↑</button></form>'
-    + '<details class="room-rec-steering"' + (recRead(key + '.directionOpen', '') === '1' ? ' open' : '') + '><summary>Direction</summary><textarea data-rec-steer aria-label="Recommendation direction" placeholder="What to look for">' + qEsc(recRead(key + '.steeringDraft', settings.steering || '')) + '</textarea><button type="button" data-rec-save-steer>Save</button></details>';
+    + (kind === 'media' ? '' : '<div class="room-rec-status" role="status">' + qEsc(status) + '</div>'
+      + (pending.length ? '<div class="room-rec-requests"><span>' + pending.length + (pending.length === 1 ? ' request' : ' requests') + ' in progress</span>'
+        + (latest && ['paused','waiting'].includes(latest.status) ? ' <button type="button" data-rec-resume="' + qEscAttr(latest.id) + '">Retry</button>' : '')
+        + (latest && latest.status !== 'paused' ? ' <button type="button" data-rec-stop="' + qEscAttr(latest.id) + '">Stop</button>' : '') + '</div>' : '')
+      + '<form class="room-rec-ask"><input data-rec-ask aria-label="Ask for recommendations" placeholder="Ask for more…" value="' + qEscAttr(recRead(key + '.draft', '')) + '"><button type="submit" title="Ask">↑</button></form>'
+      + '<details class="room-rec-steering"' + (recRead(key + '.directionOpen', '') === '1' ? ' open' : '') + '><summary>Direction</summary><textarea data-rec-steer aria-label="Recommendation direction" placeholder="What to look for">' + qEsc(recRead(key + '.steeringDraft', settings.steering || '')) + '</textarea><button type="button" data-rec-save-steer>Save</button></details>');
   const list = host.querySelector('.room-rec-list');
   list.scrollTop = Number(recRead(key + '.scroll', '0')) || 0;
   list.onscroll = () => recSave(key + '.scroll', list.scrollTop);
   host.querySelector('[data-rec-scope]').onchange = e => { recSave(kind + '.scope', e.target.value); openRoomRecommendations(kind); };
   host.querySelector('[data-rec-auto]').onclick = () => recAction(kind, () => apiWrite('/api/recommendations/settings', 'PATCH', { kind, scope, automatic: !settings.automatic }));
   const input = host.querySelector('[data-rec-ask]');
-  input.oninput = () => recSave(key + '.draft', input.value);
+  if (input) input.oninput = () => recSave(key + '.draft', input.value);
   if (focused) { const target = host.querySelector(focusSelector); target.focus(); target.setSelectionRange(...cursor); }
-  host.querySelector('[data-rec-steer]').oninput = e => recSave(key + '.steeringDraft', e.target.value);
-  host.querySelector('.room-rec-steering').ontoggle = e => recSave(key + '.directionOpen', e.target.open ? '1' : '0');
-  host.querySelector('form').onsubmit = async e => {
+  const steering = host.querySelector('[data-rec-steer]');
+  if (steering) steering.oninput = e => recSave(key + '.steeringDraft', e.target.value);
+  const steeringPanel = host.querySelector('.room-rec-steering');
+  if (steeringPanel) steeringPanel.ontoggle = e => recSave(key + '.directionOpen', e.target.open ? '1' : '0');
+  const requestForm = host.querySelector('form');
+  if (requestForm) requestForm.onsubmit = async e => {
     e.preventDefault();
     const text = input.value;
     await recAction(kind, async () => {
@@ -11260,7 +11263,8 @@ function renderRoomRecommendations(kind) {
       recSave(key + '.draft', '');
     });
   };
-  host.querySelector('[data-rec-save-steer]').onclick = () => recAction(kind, () => apiWrite('/api/recommendations/settings', 'PATCH', { kind, scope, steering: host.querySelector('[data-rec-steer]').value }));
+  const saveSteering = host.querySelector('[data-rec-save-steer]');
+  if (saveSteering) saveSteering.onclick = () => recAction(kind, () => apiWrite('/api/recommendations/settings', 'PATCH', { kind, scope, steering: host.querySelector('[data-rec-steer]').value }));
   host.querySelectorAll('[data-rec-dismiss]').forEach(b => b.onclick = () => recAction(kind, () => apiWrite('/api/recommendations/' + encodeURIComponent(b.dataset.recDismiss), 'DELETE')));
   host.querySelectorAll('[data-rec-save]').forEach(b=>b.onclick=()=>recAction(kind,async()=>{await apiWrite('/api/recommendations/library/save','POST',{type:'recommendation',id:b.dataset.recSave});}));
   host.querySelectorAll('[data-rec-attach]').forEach(b=>b.onclick=async()=>{try{const out=await window.studioReferenceAttach({type:'recommendation',id:b.dataset.recAttach});b.textContent='Attached to '+out.destination;}catch(err){b.textContent=err.message;}});

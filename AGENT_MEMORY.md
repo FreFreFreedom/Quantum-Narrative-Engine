@@ -33,7 +33,9 @@ live Room and Side Talk structure into catalogue searches, then ranks verified G
 Books and TMDB results. Cards use larger supplied covers/posters, compact metadata, and
 one spoiler-light sentence combining the premise with why it belongs in this thread.
 Candidates without a public summary are excluded. The first run replaces old generated
-media cards but preserves anything Antoine saved to the Library.
+media cards but preserves anything Antoine saved to the Library. Discover does not show
+helper state, queued-request counts, Retry, Stop, manual-request or Direction controls;
+background preparation stays automatic and quiet.
 
 **2026-09-18 — Room reference panel cleanup.** The Room right panel now has one primary
 Discover/Library/Side talks path with the old pane list behind More; Library no longer
