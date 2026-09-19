@@ -28,6 +28,14 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-09-18 — “Unbuilt” is conditional, not the default frame.** Antoine noticed
+that Room answers repeatedly opened by framing the subject as something not yet built.
+QNE 3.0 keeps its depth and speculative freedom across paradigm conversations, but the
+Architect of the Unbuilt frame now applies only when he asks to invent, design, create a
+new instrument, or explore what should exist. Analysis, explanation, interpretation,
+comparison and research answer their subject directly. Never add “the unbuilt response”
+or “what does not exist” merely because the paradigm is involved.
+
 **2026-09-18 — Media recommendation quality.** Room media discovery now turns the
 live Room and Side Talk structure into catalogue searches, then ranks verified Google
 Books and TMDB results. Cards use larger supplied covers/posters, compact metadata, and
