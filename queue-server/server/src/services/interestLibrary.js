@@ -55,6 +55,7 @@ export function bindInterestLibrary(database) {
     CREATE TABLE IF NOT EXISTS interest_imports (
       id TEXT PRIMARY KEY, owner TEXT NOT NULL, convo_id TEXT NOT NULL, hash TEXT NOT NULL,
       filename TEXT NOT NULL, status TEXT NOT NULL, image TEXT, result TEXT, error TEXT,
+      attempts INTEGER NOT NULL DEFAULT 0, retry_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(owner,convo_id,hash)
     );
     CREATE TABLE IF NOT EXISTS interest_entries (
@@ -65,8 +66,10 @@ export function bindInterestLibrary(database) {
     CREATE INDEX IF NOT EXISTS interest_entries_work ON interest_entries(work_id);
     CREATE INDEX IF NOT EXISTS interest_imports_owner ON interest_imports(owner,convo_id);
   `);
+  try { db.exec('ALTER TABLE interest_imports ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0'); } catch {}
+  try { db.exec('ALTER TABLE interest_imports ADD COLUMN retry_at TEXT'); } catch {}
   // One server owns this SQLite queue; resume interrupted reads after boot.
-  db.prepare("UPDATE interest_imports SET status='queued' WHERE status='reading'").run();
+  db.prepare("UPDATE interest_imports SET status='queued',retry_at=NULL WHERE status='reading'").run();
   const timer = setInterval(() => { purge(); void drain(); }, 15000);
   timer.unref();
   purge();
@@ -131,7 +134,7 @@ export function createInterestImport(owner, convoId, input) {
   const recent = db.prepare("SELECT count(*) AS n FROM interest_imports WHERE owner=? AND created_at>datetime('now','-1 hour')").get(owner).n;
   if (queued >= 24 || recent >= 60) fail('Too many screenshots waiting. Try again later.', 429);
   if (old) {
-    db.prepare("UPDATE interest_imports SET status='queued',image=?,error=NULL,result=NULL,created_at=CURRENT_TIMESTAMP WHERE id=?").run(image, old.id);
+    db.prepare("UPDATE interest_imports SET status='queued',image=?,error=NULL,result=NULL,attempts=0,retry_at=NULL,created_at=CURRENT_TIMESTAMP WHERE id=?").run(image, old.id);
     void drain(); return publicBatch(batchFor(owner, old.id));
   }
   const id = randomUUID();
@@ -164,8 +167,8 @@ async function drain() {
   working = true;
   try {
     let b;
-    while ((b = db.prepare("SELECT * FROM interest_imports WHERE status='queued' AND image IS NOT NULL ORDER BY created_at LIMIT 1").get())) {
-      db.prepare("UPDATE interest_imports SET status='reading' WHERE id=?").run(b.id);
+    while ((b = db.prepare("SELECT * FROM interest_imports WHERE status='queued' AND image IS NOT NULL AND (retry_at IS NULL OR retry_at<=CURRENT_TIMESTAMP) ORDER BY created_at LIMIT 1").get())) {
+      db.prepare("UPDATE interest_imports SET status='reading',attempts=attempts+1,retry_at=NULL WHERE id=?").run(b.id);
       try {
         const result = await readInterestScreenshot(b.image);
         if (batchFor(b.owner, b.id).status !== 'reading') continue;
@@ -183,12 +186,18 @@ async function drain() {
             db.prepare('INSERT INTO interest_entries(id,batch_id,owner,work_id,status,observed,candidate) VALUES(?,?,?,?,?,?,?)')
               .run(randomUUID(), b.id, b.owner, saved?.id || null, saved ? 'saved' : 'review', observed, JSON.stringify(c));
           }
-          db.prepare('UPDATE interest_imports SET status=?,image=NULL,result=?,error=NULL WHERE id=?')
+          db.prepare('UPDATE interest_imports SET status=?,image=NULL,result=?,error=NULL,retry_at=NULL WHERE id=?')
             .run(result.recognised ? 'done' : 'ordinary', JSON.stringify(counts), b.id);
         });
       } catch (err) {
-        db.prepare("UPDATE interest_imports SET status='failed',error=? WHERE id=? AND status='reading'")
-          .run('Could not read this screenshot. Try again.', b.id);
+        const current = batchFor(b.owner, b.id);
+        if (Number(current.attempts || 0) < 3) {
+          db.prepare("UPDATE interest_imports SET status='queued',error=?,retry_at=datetime('now','+1 minute') WHERE id=? AND status='reading'")
+            .run('The Library reader will try again quietly.', b.id);
+        } else {
+          db.prepare("UPDATE interest_imports SET status='failed',error=?,retry_at=NULL WHERE id=? AND status='reading'")
+            .run('Could not read this screenshot.', b.id);
+        }
       }
     }
   } finally { working = false; }
@@ -198,7 +207,7 @@ export function changeImport(owner, id, action) {
   if (action === 'retry') {
     throttle(owner);
     if (b.status !== 'failed' || !b.image) fail('Please drop the screenshot again.');
-    db.prepare("UPDATE interest_imports SET status='queued',error=NULL WHERE id=?").run(id);
+    db.prepare("UPDATE interest_imports SET status='queued',error=NULL,attempts=0,retry_at=NULL WHERE id=?").run(id);
     void drain();
   } else if (action === 'undo') {
     transaction(() => {

@@ -21,6 +21,13 @@ the transcript, but their base64 bytes do not, so reopening an old conversation 
 download every image again. If the image-reading lane is unavailable, the turn says so;
 it must never answer blind as if it had seen the picture.
 
+Revised 2026-09-19: once a message is accepted, its image or document leaves the composer
+even if the selected model is rate-limited; it never leaks into the next new prompt. The
+browser keeps a private, session-only copy with that sent turn so Answer again can resend the
+same visual prompt. That retry offers the individual Google and paid OpenAI vision models
+and carries the image; it cannot silently become a text-only question about some unrelated
+title, and an OpenAI choice cannot be overwritten by the old Gemini shortcut.
+
 The implementation lives in:
 
 - `fmcns_navigator.html` — shared composer control, preview/removal chips, document
@@ -35,4 +42,3 @@ The implementation lives in:
 Supported text-bearing files are PDF, Markdown, plain text, CSV, JSON, common web/code
 files, XML, YAML, logs and subtitles. Word documents and scanned PDFs still need a real
 extraction or OCR path; they are not accepted under a label the Room cannot actually read.
-

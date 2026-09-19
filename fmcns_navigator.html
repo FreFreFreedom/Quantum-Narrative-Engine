@@ -22136,7 +22136,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     e.msgs.push({ role: 'user', kind: 'chat', text: text,
       body: carriedQuotes && typed ? typed : undefined,
       quotes: carriedQuotes && typed ? carriedQuotes : undefined,
-      attachments: attachmentMeta || undefined });
+      attachments: attachmentMeta || undefined,
+      // Raw image bytes stay only in this browser session. They let the small
+      // answer-again button retry the same visual question on another model,
+      // without putting the image back into the next-message composer.
+      retryAttachments: carriedAttachments || undefined });
     if(repaint) repaint();
     var sentAt = e.msgs.length;
     e.stream = '';
@@ -22197,7 +22201,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             ? 'No plan yet — ask for the brief first, then send it to the queue.'
             : (d.message || d.text || 'Something went wrong (' + d.error + ').');
           e.msgs.push({ role: 'assistant', kind: 'chat', text: msg });
-          if(carriedAttachments) e.pendingAttachments = carriedAttachments;
         } else if(d.prompt){
           e.promptId = (d.prompt.id || d.prompt.prompt_id) || e.promptId;
           e.msgs.push({ role: 'assistant', kind: 'chat', text: d.already
@@ -23279,6 +23282,28 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
      cannot answer today stay visible and greyed, with the reason in words — hiding
      one makes it look as though the app never had it. */
   function openLaneMenu(btn, e, text, repaint, carried){
+    var visualRetry = !!(carried && carried.attachments && carried.attachments.some(function(a){ return a.kind === 'image' && a.dataUrl; }));
+    if(visualRetry){
+      // Only show lanes that can actually receive the image. Both choices are
+      // exact: selecting OpenAI must never fall back into the old Gemini vision
+      // shortcut, and selecting one Gemini model must never call the other one.
+      var visionProviders = ['google-ai-studio', 'openai'];
+      var visionItems = [];
+      visionProviders.forEach(function(provider){
+        if(!laneAvailable(provider, laneCatalog)) return;
+        laneModelsFor(provider, laneCatalog).forEach(function(model){
+          visionItems.push({
+            label: (LANE_LABELS[provider] || provider) + ' · ' + model,
+            on: function(){
+              if(!e.busy) sendTurn(e, text, repaint, null,
+                { provider: provider, model: model, account: null }, carried);
+            }
+          });
+        });
+      });
+      window.openMenu(btn, visionItems);
+      return;
+    }
     var items = reaskLanes().map(function(row){
       var provider = row[0];
       var off = provider && !laneAvailable(provider, laneCatalog);
@@ -23291,6 +23316,20 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var lane = null;
           if(provider){
             var models = laneModelsFor(provider, laneCatalog);
+            if(models.length > 1){
+              setTimeout(function(){
+                window.openMenu(btn, models.map(function(model){
+                  return {
+                    label: (LANE_LABELS[provider] || row[1]) + ' · ' + model,
+                    on: function(){
+                      if(!e.busy) sendTurn(e, text, repaint, null,
+                        { provider: provider, model: model, account: null }, carried);
+                    }
+                  };
+                }));
+              }, 0);
+              return;
+            }
             lane = { provider: provider, model: models.length ? models[0] : null, account: null };
           }
           sendTurn(e, text, repaint, null, lane, carried);
@@ -23605,7 +23644,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       } catch(err){ if(current()) bar.textContent = err.message; }
       finally { e.interestFetching = false; }
     };
-    const batches = (e.interestBatches || []).filter(b => b.status !== 'undone' && b.status !== 'ordinary');
+    // Library reading is optional background work. A failed read must never put
+    // an error under an image that is already attached and ready for chat.
+    const batches = (e.interestBatches || []).filter(b => !['undone','ordinary','failed'].includes(b.status));
     bar.innerHTML = batches.map(b => {
       const r = b.result || {};
       const added = [['book','books'],['film','films'],['series','series']].filter(([k]) => r[k]).map(([k,label]) => r[k] + ' ' + label).join(', ');
@@ -23747,8 +23788,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         ev.stopPropagation();
         if(e.busy) return;
         var m = e.msgs[Number(b.getAttribute('data-se-redo'))];
-        if(m && m.text) openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); },
-          m.body ? { body: m.body, quotes: m.quotes } : undefined);
+        if(m && m.text){
+          var carried = (m.body || (m.retryAttachments && m.retryAttachments.length))
+            ? { body: m.body || m.text, quotes: m.quotes || [], attachments: m.retryAttachments || [] }
+            : undefined;
+          openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); }, carried);
+        }
       };
     });
     log.querySelectorAll('[data-se-rewind]').forEach(function(b){

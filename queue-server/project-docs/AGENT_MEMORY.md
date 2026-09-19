@@ -28,6 +28,14 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-09-19 — Visual retry keeps the image, the next prompt does not.** A sent
+Room or Side Talk image/document leaves the composer even when generation fails, so it
+cannot leak into the next new prompt. The in-session Answer again action keeps the sent
+image privately with its user turn and offers the individual Google and paid OpenAI vision
+models; the selected provider and model are no longer overwritten by the Gemini shortcut.
+Optional Library reading retries temporary failures quietly and does not print a failure
+under a valid chat image.
+
 **2026-09-18 — “Unbuilt” is conditional, not the default frame.** Antoine noticed
 that Room answers repeatedly opened by framing the subject as something not yet built.
 QNE 3.0 keeps its depth and speculative freedom across paradigm conversations, but the

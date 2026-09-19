@@ -751,14 +751,20 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // the call go through blind, exactly as it would with none at all — never
   // fail, and never swap in some other provider expecting it to see.
   if (images && images.length) {
+    // The answer-again menu may name one exact Google model. Keep that choice:
+    // the old vision shortcut always overwrote it with Flash, so choosing Flash
+    // Lite still called Flash and returned the same rate limit.
+    const requestedVisionModel = explicitProvider === 'google-ai-studio' && explicitModel
+      ? explicitModel
+      : null;
     // The stronger model first, the 500-a-day one behind it. Reading a picture
     // against a page of conversation and answering in a fixed shape is more than
     // flash-lite could hold — live, 2026-09-13, it kept returning the quoted line
     // and then stopping, with no reading at all. Looking is rare enough that
     // twenty a day is not a constraint.
-    const visionModel = !benched('google-ai-studio', 'gemini-flash-latest')
+    const visionModel = requestedVisionModel || (!benched('google-ai-studio', 'gemini-flash-latest')
       ? 'gemini-flash-latest'
-      : (!benched('google-ai-studio', 'gemini-flash-lite-latest') ? 'gemini-flash-lite-latest' : null);
+      : (!benched('google-ai-studio', 'gemini-flash-lite-latest') ? 'gemini-flash-lite-latest' : null));
     if (!process.env.GOOGLE_AI_STUDIO_API_KEY || !visionModel) {
       if (requireVision) return { error: 'vision_unavailable', message: 'The image-reading lane is unavailable right now. Your image was not sent blind.' };
       images = null;
@@ -1275,6 +1281,34 @@ export async function generateTextStream({
   cacheKey = null, tailReminder = null, onStatus = null, images = null, requireVision = false,
   strictModel = false,
 }) {
+  // A hand-picked paid OpenAI model can see the image too. This has to happen
+  // before the general vision fork below: that fork deliberately defaults every
+  // other image to Gemini, which used to erase an explicit OpenAI retry choice.
+  // Keep the same paid-lane switch and monthly-cap guards as an ordinary OpenAI
+  // Room turn; an exact pick fails plainly instead of silently changing models.
+  if (images && images.length && explicitProvider === 'openai' && explicitModel) {
+    const unavailable = (message) => {
+      if (strictModel) return { error: 'selected_model_unavailable', message };
+      return { error: 'openai_unavailable', message };
+    };
+    const why = openAiStudioBlockReason();
+    if (why || !openAiStudioEnabled()) {
+      return unavailable(`The paid OpenAI lane is switched off (${why || 'not enabled'}).`);
+    }
+    const cap = capStateSync();
+    if (cap.blocked) return unavailable('The paid OpenAI monthly budget is used up.');
+    const result = await runAttempt({
+      provider: 'openai', model: explicitModel, prompt, maxTokens, label, timeoutMs,
+      feature, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap,
+      cacheKey, tailReminder, onUsage, images,
+    });
+    if (result?.text) {
+      recordSideCall();
+      if (onToken) onToken(result.text);
+      return { ...result, provider: 'openai', model: explicitModel };
+    }
+    return unavailable(result?.message || 'The selected OpenAI model did not answer.');
+  }
   // Vision requests are deliberately one-shot. generateText() already owns the
   // image-capable-lane rule and sends data URLs in the provider's multimodal
   // shape; the paid streaming branch below is text-only. Keeping the fork here

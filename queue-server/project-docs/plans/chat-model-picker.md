@@ -6,6 +6,11 @@
 > (the lane catalog is fetched from `/api/travaux/providers`, not `/api/queue/providers`).
 > Status corrected 2026-09-07 — it had said PLANNED for two weeks after shipping.
 
+> Revised 2026-09-19: Answer again now opens the chosen provider's individual
+> models instead of silently taking its first model. A visual retry shows the
+> available Google and paid OpenAI vision models directly, keeps the screenshot,
+> and sends it only to the exact selected model.
+
 # Manual model picker in the chat Room (override automatic routing)
 
 ## Where you are
