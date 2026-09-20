@@ -22849,6 +22849,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(sendTurn(e, withQuote(e, actualText), repaint, opts.onDone, undefined,
                   { body: actualText, quotes: (e.quotes || []).slice(), attachments: pending })){
         input.value = ''; e.quotes = []; e.pendingAttachments = []; e.draft = '';
+        clearFinishedImports(e, repaint);
         saveDraft(e);
         grow(input);
       }
@@ -23620,6 +23621,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Everything that changes between repaints, written into a scaffold that stays
   // put — so the composer keeps the caret, the selection and any IME state while
   // an answer lands beside it.
+  // A finished screenshot row has said everything it has to say once a message
+  // goes out, so sending clears it. Nothing is undone — every title it read is
+  // already in the Library, removable there one by one.
+  function clearFinishedImports(e, repaint){
+    const done = (e.interestBatches || []).filter(b => b.status === 'done');
+    if(!done.length) return;
+    for(const b of done){
+      b.status = 'dismissed';
+      if(e.interestImages) delete e.interestImages[b.id];
+      apiWrite('/api/convos/interest-imports/' + encodeURIComponent(b.id) + '/dismiss', 'POST', {}).catch(()=>{});
+    }
+    e.interestChecked = Date.now();
+    if(repaint) repaint();
+  }
+
   function fillInterestImports(host, e, opts){
     const bar = host.querySelector('.se-interestbar');
     if(!bar || !opts.captureInterests || !e.convoId) return;
@@ -23646,7 +23662,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     };
     // Library reading is optional background work. A failed read must never put
     // an error under an image that is already attached and ready for chat.
-    const batches = (e.interestBatches || []).filter(b => !['undone','ordinary','failed'].includes(b.status));
+    const batches = (e.interestBatches || []).filter(b => !['undone','ordinary','failed','dismissed'].includes(b.status));
     bar.innerHTML = batches.map(b => {
       const r = b.result || {};
       const added = [['book','books'],['film','films'],['series','series']].filter(([k]) => r[k]).map(([k,label]) => r[k] + ' ' + label).join(', ');
@@ -23703,7 +23719,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var quotes = e.quotes || [];
     var marks = e.marks || [];
     var files = e.pendingAttachments || [];
-    var imports = (e.interestBatches || []).filter(function(b){ return b.status !== 'undone' && b.status !== 'ordinary'; });
+    var imports = (e.interestBatches || []).filter(function(b){ return b.status !== 'undone' && b.status !== 'ordinary' && b.status !== 'dismissed'; });
     var total = quotes.length + marks.length + files.length + imports.length;
     // Keep the original attachment rows visible. The compact drawer state is
     // retained in the entry for future expansion, but the current Room view

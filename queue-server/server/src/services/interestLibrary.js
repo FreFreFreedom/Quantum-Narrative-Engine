@@ -70,10 +70,29 @@ export function bindInterestLibrary(database) {
   try { db.exec('ALTER TABLE interest_imports ADD COLUMN retry_at TEXT'); } catch {}
   // One server owns this SQLite queue; resume interrupted reads after boot.
   db.prepare("UPDATE interest_imports SET status='queued',retry_at=NULL WHERE status='reading'").run();
+  clearReviewBacklog();
   const timer = setInterval(() => { purge(); void drain(); }, 15000);
   timer.unref();
   purge();
   setTimeout(() => void drain(), 1000).unref();
+}
+
+// Entries parked by the old review rule are saved outright, so nothing is left
+// waiting after the switch. Self-emptying: once run, no 'review' rows remain.
+function clearReviewBacklog() {
+  const rows = db.prepare("SELECT id,owner,candidate FROM interest_entries WHERE status='review'").all();
+  if (!rows.length) return;
+  try {
+    transaction(() => {
+      for (const row of rows) {
+        let c = null;
+        try { c = candidate(JSON.parse(row.candidate)); } catch (_) { c = null; }
+        const saved = c && c.title && c.kind ? saveWork(row.owner, c, true) : null;
+        db.prepare("UPDATE interest_entries SET status=?,work_id=? WHERE id=?")
+          .run(saved ? 'saved' : 'dismissed', saved?.id || null, row.id);
+      }
+    });
+  } catch (err) { console.error('[interests] could not clear review backlog', err.message); }
 }
 
 function purge() {
@@ -129,7 +148,7 @@ export function createInterestImport(owner, convoId, input) {
   if (!width || !height || width > 10000 || height > 10000 || width * height > 24000000) fail('That image is too large or unreadable. Crop it into smaller screenshots.');
   const hash = createHash('sha256').update(bytes).digest('hex');
   const old = db.prepare('SELECT * FROM interest_imports WHERE owner=? AND convo_id=? AND hash=?').get(owner, convoId, hash);
-  if (old && !['undone','failed'].includes(old.status)) return publicBatch(old);
+  if (old && !['undone','failed','dismissed'].includes(old.status)) return publicBatch(old);
   const queued = db.prepare("SELECT count(*) AS n FROM interest_imports WHERE status IN ('queued','reading')").get().n;
   const recent = db.prepare("SELECT count(*) AS n FROM interest_imports WHERE owner=? AND created_at>datetime('now','-1 hour')").get(owner).n;
   if (queued >= 24 || recent >= 60) fail('Too many screenshots waiting. Try again later.', 429);
@@ -177,14 +196,15 @@ async function drain() {
           if (result.recognised) for (const raw of result.rows) {
             const c = candidate(raw);
             const observed = clean(raw.observed, 1000);
-            // A literal title must appear in the observed row; no inferred titles.
-            const safe = raw.uncertain === false && observed && norm(observed).includes(norm(c.title)) && c.title && c.kind
-              && (!c.creator || norm(observed).includes(norm(c.creator))) && (!c.year || norm(observed).includes(norm(c.year)));
-            const saved = safe ? saveWork(b.owner, c) : null;
+            // Every readable row is saved outright — no review queue. Antoine's rule
+            // (2026-09-19): a row waiting for confirmation is worse than a wrong row
+            // he can edit or remove in the Library. Only a row with no title or no
+            // kind at all has nothing to save, and it is dropped rather than parked.
+            const saved = c.title && c.kind ? saveWork(b.owner, c, true) : null;
             if (saved) { if (saved.added) counts[c.kind]++; else counts.duplicates++; }
             else counts.review++;
             db.prepare('INSERT INTO interest_entries(id,batch_id,owner,work_id,status,observed,candidate) VALUES(?,?,?,?,?,?,?)')
-              .run(randomUUID(), b.id, b.owner, saved?.id || null, saved ? 'saved' : 'review', observed, JSON.stringify(c));
+              .run(randomUUID(), b.id, b.owner, saved?.id || null, saved ? 'saved' : 'dismissed', observed, JSON.stringify(c));
           }
           db.prepare('UPDATE interest_imports SET status=?,image=NULL,result=?,error=NULL,retry_at=NULL WHERE id=?')
             .run(result.recognised ? 'done' : 'ordinary', JSON.stringify(counts), b.id);
@@ -209,6 +229,10 @@ export function changeImport(owner, id, action) {
     if (b.status !== 'failed' || !b.image) fail('Please drop the screenshot again.');
     db.prepare("UPDATE interest_imports SET status='queued',error=NULL,attempts=0,retry_at=NULL WHERE id=?").run(id);
     void drain();
+  } else if (action === 'dismiss') {
+    // Clears the strip above the composer and keeps every title it saved. Sent
+    // once a message goes out: the result has been seen, so the row is done.
+    db.prepare("UPDATE interest_imports SET status='dismissed',image=NULL WHERE id=? AND status='done'").run(id);
   } else if (action === 'undo') {
     transaction(() => {
       db.prepare('DELETE FROM interest_entries WHERE batch_id=? AND owner=?').run(id, owner);
