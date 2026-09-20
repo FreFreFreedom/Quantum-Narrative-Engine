@@ -11,6 +11,18 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The murder board in homicide policing is a self-updating logic puzzle that acts as both mirror and mask for institutional priorities and political closure.
+
+Derived from David Simon's Homicide: A Year on the Killing Streets. The board tracks not only solved cases but which failures are absorbed, which names hang like curses, and the exact mechanics by which detectives slide from idealism to operational numbness under systemic pressure.
+
+## A murder epidemic in neglected urban areas is not a failure of individual policing or culture, but an administrative failure: the institutional atrophy of the state's capacity to respond to death.
+
+Grounded in Jill Leovy's Ghettoside thesis. When the state fails to maintain the baseline justice circuit for a population, violence proliferates not from random chaos, but as a structured, localized system of self-policing and retaliation that fills the vacuum left by the state's absence.
+
+## An institution is an autonomous, predatory organism whose primal imperative is self-preservation, consuming its creators and expelling moral clarity as a foreign contagion.
+
+Derived from the structural analysis of The Wire. Institutions like the police, schools, and drug empires are not neutral containers; they possess appetites and aggressive defense reflexes against anyone attempting to solve the core problems they were ostensibly created to address.
+
 ## Macro-disasters are upward echoes of micro-neglect, where the demand for predatory supply is collectively generated at the base.
 
 Top-down horrors—such as the opioid crisis or urban deindustrialization—are not forged solely by lawmakers, but act as the macro crystallization of daily micro-habits of emotional neglect and silence. Just as market demand creates supply, collective inner postures generate the societal structures that mirror them, requiring us to reverse-engineer macro policies back to individual and family kitchens.
