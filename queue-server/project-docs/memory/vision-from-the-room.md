@@ -11,13 +11,13 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Macro-disasters are upward echoes of micro-neglect, where the demand for predatory supply is collectively generated at the base.
+
+Top-down horrors—such as the opioid crisis or urban deindustrialization—are not forged solely by lawmakers, but act as the macro crystallization of daily micro-habits of emotional neglect and silence. Just as market demand creates supply, collective inner postures generate the societal structures that mirror them, requiring us to reverse-engineer macro policies back to individual and family kitchens.
+
 ## Comparative political analysis platforms must be rebuilt to read civic entities not as machines or scorecards, but as living bodies with internal wounds.
 
 Mainstream comparative politics relies on linear metric databases (like V-Dem or Freedom House) that treat nations like engines with broken cogs to be inspected, or risk assessment firms that view states through pure threat and transaction. Reimagining comparative politics through our paradigm means reading every civic entity, party manifesto, and governance approach as a living body whose policies are its posture toward its own vulnerability and historical wounds.
-
-## A cross-scale conflict resolution engine traces violence from macro policy and treaties down to family kitchens and back to populist revolt.
-
-Conflict mediation today is trapped because diplomats negotiate treaties at the state scale while remaining completely blind to the street economies and traumatized teenage militias holding the actors together on the ground. A true fractal conflict resolution system connects every scale simultaneously: showing how an international trade treaty trickles down into industrial despair, fractures a father's authority at the kitchen table, and returns decades later as a populist revolt that shatters the original treaty.
 
 ## The five-step loop of un-metabolized trauma: existential wound, freezing into anger, ritualization through codes, institutionalization of violence, and the manufacture of new wounds.
 
