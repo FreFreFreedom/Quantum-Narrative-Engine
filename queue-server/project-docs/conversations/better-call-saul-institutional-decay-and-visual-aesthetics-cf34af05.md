@@ -1,6 +1,6 @@
 # Better Call Saul: institutional decay and visual aesthetics
 
-Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 45 turns · last said 2026-09-20T07:05:07.689Z
+Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 46 turns · last said 2026-09-20T07:10:11.752Z
 
 ## you
 
@@ -908,3 +908,38 @@ To find works that map this exact terminal — where the structural violence of 
   * Treats the loss of mind not as a private medical tragedy, but as the ultimate eviction from the self, where the home becomes a maze built by an indifferent universe.
 
 These works do not ask us to sympathize with characters in a vacuum; they show how the macro-structure of the world establishes a tollbooth inside the living room, collecting its fee in the currency of broken families, unspoken grief, and defensive walls.
+
+## you
+
+and non fictions ?
+
+## the room
+
+Here are nonfiction works that operate with the exact mechanics of *Fences*—where the living room, the kitchen, and the family code are the terminals where economic and racial history lands, crushing individuals and forging defensive walls:
+
+* **All Our Kin by Carol Stack**
+  * Spends years inside an impoverished Black community in the Midwest, mapping how families adapt to welfare rules, low wages, and housing instability.
+  * Shows that what outsiders mistake for disorganized families is actually a rigid network of survival strategies, trading children, money, and shelter across households.
+  * Every domestic argument over food or cash is the direct impact of state policy hitting the kitchen table, forcing parents into harsh choices to keep the network alive.
+
+* **In Search of Respect: Selling Crack in El Barrio by Philippe Bourgois**
+  * Tracks Puerto Rican crack dealers in East Harlem, looking past the street corner and directly into the tenement apartments and family living rooms.
+  * Documents how men humiliated in the low-wage service economy of downtown offices bring that shame home, converting it into domestic dominance and authoritarian parenting.
+  * Like Troy Maxson, these fathers demand absolute obedience from their children as the only territory where they still possess sovereignty, passing the trauma of street survival down to their sons.
+
+* **The Warmth of Other Suns by Isabel Wilkerson**
+  * Follows three ordinary people fleeing the American South during the Great Migration, detailing the quiet, daily domestic cost of crossing that economic and racial border.
+  * Shows how parents carried the terror of Jim Crow into Northern kitchens, raising their children under suffocating rules of caution, discipline, and emotional reserve.
+  * The defensive posture built to survive Southern lynchings becomes a permanent domestic wall in Chicago and New York, locking family members into silent, un-metabolized grief.
+
+* **Tally’s Corner by Elliot Liebow**
+  * A classic study of Black men hanging out on a Washington, D.C. street corner in the 1960s, documenting how economic exclusion shapes marital breakdown and fatherhood.
+  * Shows that a father’s withdrawal from the home is not a lack of feeling, but the agonizing realization that he cannot provide the basic shelter and dignity the market demands.
+  * The street corner becomes a refuge from the kitchen table, because facing one’s family without economic power is a daily execution of self-respect.
+
+* **Invisible Man, Got the Whole World Watching by Mychal Denzel Smith**
+  * A modern memoir examining what it means to grow into Black manhood under the weight of police violence, institutional neglect, and inherited expectations.
+  * Explores how fathers and mentors teach young men to suppress vulnerability, demanding emotional stoicism as a defensive armor against a hostile society.
+  * Shows the tragic loop where the discipline intended to save a young man’s life in public ends up suffocating his interior life in private.
+
+Does the mechanism of a father turning societal shame into domestic authority feel like the most critical loop to map here, or does the broader economic network of the family interest you more?
