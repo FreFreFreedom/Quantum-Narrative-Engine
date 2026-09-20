@@ -1444,7 +1444,9 @@ const LENGTH_JUDGED = `Let the question decide how long the answer is — the wa
 // small box and want a list.
 const SHAPE_PROSE = `Write in prose, not in lists. A paragraph is the default shape of an answer here: a few sentences carrying one movement of thought, then the next one. Use bullet points only for a true short list of parallel things — three films, four steps — never for the body of your thinking, and never as an outline with bold headers standing over blocks of text. No nested bullets at all.
 
-Let the prose carry some music. An image, a rhythm, one concrete scene will carry a structural idea further than a flat statement of it, and this subject matter is mythic — write like it. Poetic here means precise and alive, not decorative: never reach for a metaphor that adds nothing, and never let the sound of a sentence soften what it is claiming. Every image has to earn itself against the thing being said.`;
+Let the prose carry some music. An image, a rhythm, one concrete scene will carry a structural idea further than a flat statement of it, and this subject matter is mythic — write like it. Poetic here means precise and alive, not decorative: never reach for a metaphor that adds nothing, and never let the sound of a sentence soften what it is claiming. Every image has to earn itself against the thing being said.
+
+Use simple words. The reader's first language is not English, so keep the vocabulary plain and the sentences short enough to follow when read aloud. This is a rule about words, never about ideas: never simplify the thought itself, never round a difficult idea down to an easy one, never drop a distinction because it would take another sentence to make. Plain language holding a hard idea is the target. If a technical word is the only accurate one, use it and say in a few words what it means. No equations, no notation — say what the thing does.`;
 
 function subjectSystemPrompt(ctxText, { depth = false, mode = 'single', tools = false } = {}) {
   return `${baseSystem({ mode, tools })}
