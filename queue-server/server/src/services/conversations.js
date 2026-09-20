@@ -1433,10 +1433,23 @@ function studioPersona() {
 const LENGTH_TERSE = `Keep answers short unless the user asks for detail.`;
 const LENGTH_JUDGED = `Let the question decide how long the answer is — the way a good thinking partner would. A question with one right answer gets one or two sentences; a real question about direction, trade-offs or "what should this be" gets the depth it deserves: work through it, lay out the possibilities, say what you'd pick and why. Do not pad, and do not compress something that needs room. Never end with a summary of what you just said.`;
 
+// The SHAPE of an answer, as opposed to its length. Added 2026-09-19 after a Gemini
+// turn in the Room came back as four levels of nested bullets with bold headers —
+// a shape no rule had asked for and none forbade, so each model was defaulting to
+// its own habit. Bullets also quietly flatten the thinking: a list asserts items
+// side by side and never has to say how one leads to the next, which is exactly the
+// part Antoine reads for. Prose is the default here, and the register is allowed to
+// be beautiful, because the subject matter is myth and structure rather than status
+// reporting. Only the conversational lane gets this — the terse card turns land in a
+// small box and want a list.
+const SHAPE_PROSE = `Write in prose, not in lists. A paragraph is the default shape of an answer here: a few sentences carrying one movement of thought, then the next one. Use bullet points only for a true short list of parallel things — three films, four steps — never for the body of your thinking, and never as an outline with bold headers standing over blocks of text. No nested bullets at all.
+
+Let the prose carry some music. An image, a rhythm, one concrete scene will carry a structural idea further than a flat statement of it, and this subject matter is mythic — write like it. Poetic here means precise and alive, not decorative: never reach for a metaphor that adds nothing, and never let the sound of a sentence soften what it is claiming. Every image has to earn itself against the thing being said.`;
+
 function subjectSystemPrompt(ctxText, { depth = false, mode = 'single', tools = false } = {}) {
   return `${baseSystem({ mode, tools })}
 
-${depth ? LENGTH_JUDGED : LENGTH_TERSE}
+${depth ? `${LENGTH_JUDGED}\n\n${SHAPE_PROSE}` : LENGTH_TERSE}
 
 === SUBJECT CONTEXT ===
 ${ctxText}`;
