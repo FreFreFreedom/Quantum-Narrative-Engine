@@ -377,6 +377,14 @@ export function conversationsRoutes() {
     res.json({ chat_override: lane });
   });
 
+  // POST /api/convos/:id/stop — the Stop button, sent just before the browser drops
+  // the streaming request. Without it a dropped connection and a deliberate stop are
+  // the same event, and the app has to guess (it used to guess "cancel", and lost
+  // finished answers).
+  router.post('/:id/stop', (req, res) => {
+    res.json(convos.markTurnCancelled(req.params.id));
+  });
+
   // POST /api/convos/:id/clarification-mode — body: { mode: 'normal'|'interview' }.
   // The Interview switch in the composer, and the narrow natural-language start/
   // end phrases in sendMessage, both land here (or its sibling /answer-now).
@@ -408,7 +416,12 @@ export function conversationsRoutes() {
     const write = (obj) => { try { res.write(JSON.stringify(obj) + '\n'); res.flush?.(); } catch {} };
     const cancel = new AbortController();
     const clientGone = () => cancel.signal.aborted;
-    res.on('close', () => { if (!res.writableFinished) cancel.abort(); });
+    // Only an explicit Stop cancels. A connection that simply closed (a proxy
+    // giving up on a long stream) lets the turn run to its end and save, so the
+    // answer is there when the Room asks for it. See markTurnCancelled().
+    res.on('close', () => {
+      if (!res.writableFinished && convos.turnCancelledRecently(req.params.id)) cancel.abort();
+    });
 
     try {
       const out = await convos.answerNow(req.params.id, {
@@ -553,7 +566,12 @@ export function conversationsRoutes() {
     // question instead of saving an answer nobody waited for.
     const cancel = new AbortController();
     const clientGone = () => cancel.signal.aborted;
-    res.on('close', () => { if (!res.writableFinished) cancel.abort(); });
+    // Only an explicit Stop cancels. A connection that simply closed (a proxy
+    // giving up on a long stream) lets the turn run to its end and save, so the
+    // answer is there when the Room asks for it. See markTurnCancelled().
+    res.on('close', () => {
+      if (!res.writableFinished && convos.turnCancelledRecently(req.params.id)) cancel.abort();
+    });
 
     try {
       const out = await convos.sendMessage(req.params.id, {

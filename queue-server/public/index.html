@@ -22358,6 +22358,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function stopTurn(e){
     if(!e.busy || !e.abort) return;
     e.cancelled = true;
+    // Say it out loud before dropping the connection: the server treats a closed
+    // stream as a network accident and lets the turn finish, so only this call
+    // tells it the stop was deliberate (2026-09-21).
+    if(e.convoId){
+      try { apiWrite('/api/convos/' + e.convoId + '/stop', 'POST', {}).catch(function(){}); } catch(err) {}
+    }
     e.abort.abort();
   }
 

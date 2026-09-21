@@ -1452,6 +1452,27 @@ export function helperWaitFor(lane, base = 120_000, askedWords = 0) {
 // While the Mac is thinking nothing crosses the wire, and a long silence can be cut
 // by the proxy between the browser and the server. A short line every 20s keeps the
 // stream alive and tells the person what is happening instead of nothing at all.
+// STOPPING A TURN IS A DECISION, NOT A DROPPED CABLE. The streaming route used to
+// abort the whole turn whenever the response body closed — and a proxy closing a
+// long-lived stream looks exactly like that, so a seven-minute answer was thrown
+// away unsaved while the Room sat waiting for a message that would never come
+// (2026-09-21). The Stop button now says so explicitly, just before it drops the
+// connection, and only that says cancel. A connection that merely dies lets the
+// turn finish and save, and the Room picks the answer up by polling.
+const cancelledTurns = new Map();
+const CANCEL_WINDOW_MS = 20_000;
+export function markTurnCancelled(convoId) {
+  if (!convoId) return { ok: false };
+  cancelledTurns.set(convoId, Date.now());
+  return { ok: true };
+}
+export function turnCancelledRecently(convoId) {
+  const at = cancelledTurns.get(convoId);
+  if (!at) return false;
+  if (Date.now() - at > CANCEL_WINDOW_MS) { cancelledTurns.delete(convoId); return false; }
+  return true;
+}
+
 function keepAwake(onStatus, lane) {
   if (!onStatus) return () => {};
   const who = lane?.model ? `${lane.model}` : 'the model';
