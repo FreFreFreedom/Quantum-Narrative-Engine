@@ -774,6 +774,8 @@ async function runHelperJobs() {
       out = await codexCli.runToolless({
         prompt: job.prompt,
         model: cxModel,
+        // The Room's own dial (2026-09-21). Null keeps the CLI's default.
+        effort: job.effort || null,
         timeoutMs: Number.isFinite(job.timeout_ms) && job.timeout_ms > 0 ? Math.min(job.timeout_ms, 600_000) : 120_000,
         cwd: RUNNER_REPO,
       });
@@ -838,12 +840,13 @@ async function runHelperJobs() {
   const timeoutMs = Number.isFinite(job.timeout_ms) && job.timeout_ms > laneDefaultMs
     ? Math.min(job.timeout_ms, 600_000)
     : laneDefaultMs;
-  console.log(`  helper ${job.label || job.feature} → claude:${model}${side ? ' (second account)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
+  console.log(`  helper ${job.label || job.feature} → claude:${model}${job.effort ? `/${job.effort}` : ''}${side ? ' (second account)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
   let out = null;
   try {
     out = await claudeCli.runToolless({
       prompt: job.prompt,
       model,
+      effort: job.effort || null,
       timeoutMs,
       cwd: RUNNER_REPO,
       env: claudeCli.spawnEnv(side ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}),

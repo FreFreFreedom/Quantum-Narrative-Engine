@@ -1220,7 +1220,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-convo .se-send { margin-left:0; }
 .room-convo .se-lanewrap { flex:0 1 auto; max-width:calc(100% - 78px); }
 .room-convo .se-quotebar, .room-convo .se-filebar, .room-convo .se-interestbar { max-height:100px; overflow-y:auto; max-width:100%; }
-.room-convo .se-lanepick, .room-convo .se-lanemodel { min-width:0; }
+.room-convo .se-lanepick, .room-convo .se-lanemodel, .room-convo .se-laneeffort { min-width:0; }
 .room-convo .se-lanepick { max-width:72px; padding-left:5px; padding-right:4px; border-color:transparent; background:var(--c-surface-2); }
 .room-convo .se-interview { display:none; }
 .room-convo .se-input:focus { border-bottom:none; }
@@ -1727,8 +1727,8 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    select, no different from any other muted control in the app; once a lane is
    picked, it takes the brand color so the override is legible at a glance. */
 .se-lanewrap { display:flex; align-items:center; gap:2px; align-self:center; flex:none; }
-.se-lanepick, .se-lanemodel { -webkit-appearance:none; appearance:none; background:transparent; border:0; border-radius:0; color:var(--c-ink-4); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:2px 0; cursor:pointer; max-width:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:none; }
-.se-lanepick:hover, .se-lanemodel:hover { color:var(--c-ink); }
+.se-lanepick, .se-lanemodel, .se-laneeffort { -webkit-appearance:none; appearance:none; background:transparent; border:0; border-radius:0; color:var(--c-ink-4); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:2px 0; cursor:pointer; max-width:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:none; }
+.se-lanepick:hover, .se-lanemodel:hover, .se-laneeffort:hover { color:var(--c-ink); }
 .se-lanepick.is-set { color:var(--c-brand); }
 .room-convo .se-lanepick { max-width:58px; padding-left:0; padding-right:0; background:transparent; }
 .se-lane-clear { background:none; border:none; color:var(--c-ink-4); font-size:var(--fs-sm); line-height:1; cursor:pointer; padding:2px; }
@@ -21953,6 +21953,29 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   var GOOGLE_LANE_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
   // Codex's models, from the CLI's own list (2026-09-13). Same set the queue offers.
   var CODEX_LANE_MODELS = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-reserve'];
+  // The two Claude subscriptions are picked by tier name, not by a catalogue id —
+  // the runner turns it into claude:<name> itself. Same three the queue offers.
+  var CLAUDE_LANE_MODELS = ['haiku', 'sonnet', 'opus'];
+  // How hard the chosen model may think. Only the lanes with a dial have one:
+  // Claude takes --effort and stops at high; Codex takes the same words through
+  // its own config and goes further on its bigger models (his ask, 2026-09-21).
+  var LANE_EFFORT_LADDER = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'];
+  var LANE_EFFORT_LABELS = {
+    low: 'Low — answer quickly', medium: 'Medium — the usual',
+    high: 'High — think longer', xhigh: 'Very high', max: 'Max', ultra: 'Ultra — deepest'
+  };
+  var CODEX_EFFORT_CEILING = {
+    'gpt-6-astra': 'ultra', 'gpt-5.6-sol': 'ultra', 'gpt-5.6-terra': 'ultra',
+    'gpt-5.6-luna': 'max', 'gpt-5.5': 'xhigh', 'gpt-reserve': 'max'
+  };
+  function laneHasEffort(provider){
+    return provider === 'claude-code' || provider === 'claude-side' || provider === 'codex';
+  }
+  function laneEffortLevels(provider, model){
+    if(provider !== 'codex') return ['low', 'medium', 'high'];
+    var top = LANE_EFFORT_LADDER.indexOf(CODEX_EFFORT_CEILING[model || 'gpt-6-astra'] || 'high');
+    return LANE_EFFORT_LADDER.slice(0, top + 1);
+  }
 
   function laneTagFor(provider, model){
     var label = LANE_LABELS[provider] || provider;
@@ -22783,6 +22806,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +         '<option value="openai">ChatGPT — billed per use</option>'
         +       '</select>'
         +       '<select class="se-lanemodel" style="display:none"></select>'
+        +       '<select class="se-laneeffort" style="display:none" title="How hard it may think"></select>'
         +       '<button type="button" class="se-lane-clear" style="display:none" title="Back to Auto">✕</button>'
         +     '</span>'
         +     '<button type="button" class="se-interview" title="Ask me questions before you answer">Interview</button>'
@@ -22962,6 +22986,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // Auto (empty value) clears the pin; OpenCode/Google also need a model choice.
     var lanePick = host.querySelector('.se-lanepick');
     var laneModel = host.querySelector('.se-lanemodel');
+    var laneEffort = host.querySelector('.se-laneeffort');
     var laneClear = host.querySelector('.se-lane-clear');
     if(lanePick){
       ensureLaneCatalog().then(function(){
@@ -22982,17 +23007,30 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         else {
           var models = laneModelsFor(v, laneCatalog);
           var model = models.length ? models[0] : null;
-          e.lane = { provider: v, model: model, tag: laneTagFor(v, model) };
+          e.lane = { provider: v, model: model, effort: null, tag: laneTagFor(v, model) };
         }
         persistLane(e, e.lane);
         fillEmbed(host, e, opts);
       };
       laneModel.onchange = function(){
         if(!e.lane) return;
-        e.lane = { provider: e.lane.provider, model: laneModel.value, tag: laneTagFor(e.lane.provider, laneModel.value) };
+        // A Codex model that will not go as deep as the level already chosen keeps
+        // the level only if it can honour it — otherwise the dial drops to Auto
+        // rather than sending a level the CLI would refuse.
+        var keep = e.lane.effort && laneEffortLevels(e.lane.provider, laneModel.value).indexOf(e.lane.effort) >= 0
+          ? e.lane.effort : null;
+        e.lane = { provider: e.lane.provider, model: laneModel.value, effort: keep, tag: laneTagFor(e.lane.provider, laneModel.value) };
         persistLane(e, e.lane);
         fillEmbed(host, e, opts);
       };
+      if(laneEffort){
+        laneEffort.onchange = function(){
+          if(!e.lane) return;
+          e.lane = { provider: e.lane.provider, model: e.lane.model || null, effort: laneEffort.value || null, tag: e.lane.tag };
+          persistLane(e, e.lane);
+          fillEmbed(host, e, opts);
+        };
+      }
       laneClear.onclick = function(ev){
         ev.stopPropagation();
         e.lane = null;
@@ -23036,7 +23074,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function persistLane(e, lane){
     if(!e.convoId) return;
     apiWrite('/api/convos/' + e.convoId + '/lane', 'POST',
-      lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null } : { provider: null }
+      lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null } : { provider: null }
     ).catch(function(){});
   }
   // The free providers beyond Google that have a key on the server (Cerebras,
@@ -23059,6 +23097,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var cx = (catalog && catalog.codex && catalog.codex.models) || [];
       return cx.length ? cx.map(function(m){ return m.id; }) : CODEX_LANE_MODELS.slice();
     }
+    if(provider === 'claude-code' || provider === 'claude-side') return CLAUDE_LANE_MODELS.slice();
     var f = freeApiLane(provider, catalog);
     if(f) return f.models.map(function(m){ return m.id; });
     return [];
@@ -24021,9 +24060,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // "this does not work". Say what is actually missing instead.
         opt.title = off ? (laneOffReason(opt.value) || '') : '';
       });
-      var needsModel = !!(e.lane && (e.lane.provider === 'opencode' || e.lane.provider === 'google-ai-studio'));
+      // Every lane that HAS more than one model offers the choice — Claude's three
+      // tiers and Codex's six were reachable from the queue's panel and nowhere
+      // else, so picking "ChatGPT" in the Room silently meant whichever model the
+      // server defaulted to (his ask, 2026-09-21).
+      var laneModels = e.lane ? laneModelsFor(e.lane.provider, laneCatalog) : [];
+      var needsModel = !!(e.lane && laneModels.length);
       if(needsModel){
-        var models = laneModelsFor(e.lane.provider, laneCatalog);
+        var models = laneModels;
         if(laneModel.getAttribute('data-for') !== e.lane.provider){
           laneModel.innerHTML = models.map(function(m){ return '<option value="' + qEscAttr(m) + '">' + qEsc(m) + '</option>'; }).join('');
           laneModel.setAttribute('data-for', e.lane.provider);
@@ -24034,6 +24078,29 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       } else {
         laneModel.style.display = 'none';
         laneModel.removeAttribute('data-for');
+      }
+      // The thinking dial, for the lanes that have one. Its options depend on the
+      // model, since a smaller Codex model refuses the deepest levels.
+      var laneEffortSel = host.querySelector('.se-laneeffort');
+      if(laneEffortSel){
+        var wantsEffort = !!(e.lane && laneHasEffort(e.lane.provider));
+        if(wantsEffort){
+          var levels = laneEffortLevels(e.lane.provider, e.lane.model);
+          var key = e.lane.provider + '|' + (e.lane.model || '');
+          if(laneEffortSel.getAttribute('data-for') !== key){
+            laneEffortSel.innerHTML = '<option value="">Effort: auto</option>'
+              + levels.map(function(v){
+                  return '<option value="' + qEscAttr(v) + '">' + qEsc(LANE_EFFORT_LABELS[v] || v) + '</option>';
+                }).join('');
+            laneEffortSel.setAttribute('data-for', key);
+          }
+          if(document.activeElement !== laneEffortSel) laneEffortSel.value = e.lane.effort || '';
+          laneEffortSel.style.display = '';
+          laneEffortSel.title = e.lane.effort ? (LANE_EFFORT_LABELS[e.lane.effort] || e.lane.effort) : 'How hard it may think';
+        } else {
+          laneEffortSel.style.display = 'none';
+          laneEffortSel.removeAttribute('data-for');
+        }
       }
       laneClear.style.display = e.lane ? '' : 'none';
     }

@@ -1953,6 +1953,11 @@ export function initFilmEnrichmentSchema(db) {
   // written before 2026-09-13) or 'codex'. The account column still says which
   // Claude subscription; it means nothing on the codex engine.
   try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN engine TEXT NOT NULL DEFAULT 'claude'`); } catch {}
+  // How hard the model may think on this one job — 'low' | 'medium' | 'high' for
+  // Claude, plus the deeper rungs Codex accepts. NULL means "whatever the engine
+  // does by default", which is every job written before the Room's own dial
+  // existed (2026-09-21). The runner turns it into --effort / model_reasoning_effort.
+  try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN effort TEXT`); } catch {}
   // Which Claude subscription answers this job. 'main' is the account the runner
   // itself is logged into (and the one every queue coding task uses); 'side' is the
   // second, smaller subscription, reached only by handing its token to that one

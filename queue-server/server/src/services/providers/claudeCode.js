@@ -122,10 +122,10 @@ export function buildRunCommand({ bin, taskId, promptPath, logPath, codePath, mo
 // which has to be able to check the code before answering instead of guessing.
 // Omit it and the flags stay byte-identical to before — the model-policy judge
 // and summary generation must keep getting no tools at all.
-export function runToolless({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000, cwd, bin = resolveBin(), env, allowedTools = null }) {
+export function runToolless({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000, cwd, bin = resolveBin(), env, allowedTools = null, effort = null }) {
   return new Promise((resolveP) => {
     const toolFlags = allowedTools ? ['--allowedTools', allowedTools] : ['--tools', ''];
-    const proc = spawn(bin, ['-p', '--model', model, ...toolFlags], {
+    const proc = spawn(bin, ['-p', '--model', model, ...toolFlags, ...(effort ? ['--effort', effort] : [])], {
       cwd, env, stdio: 'pipe', detached: true,
     });
     const callId = registerTextCall(proc.pid, { label: 'claude-code' });

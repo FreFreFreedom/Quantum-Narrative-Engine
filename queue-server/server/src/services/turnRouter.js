@@ -197,6 +197,8 @@ export async function resolveTurn({ convoId, text, lastAssistantText, override =
         provider: override.provider,
         model: override.model || null,
         account: override.account || null,
+        // How hard the model may think — only the lanes with a dial read it.
+        effort: override.effort || null,
         tag: override.tag || override.provider,
         forcedQuestion: trimmed,
       },

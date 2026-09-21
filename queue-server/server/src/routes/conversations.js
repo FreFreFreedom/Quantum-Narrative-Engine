@@ -373,7 +373,7 @@ export function conversationsRoutes() {
     if (!convo) return res.status(404).json({ error: 'not_found' });
     const provider = req.body?.provider || null;
     if (provider && !VALID_LANE_PROVIDERS.has(provider)) return res.status(400).json({ error: 'unknown_provider' });
-    const lane = convos.setChatLane(req.params.id, provider ? { provider, model: req.body?.model || null, account: req.body?.account || null } : null);
+    const lane = convos.setChatLane(req.params.id, provider ? { provider, model: req.body?.model || null, account: req.body?.account || null, effort: req.body?.effort || null } : null);
     res.json({ chat_override: lane });
   });
 

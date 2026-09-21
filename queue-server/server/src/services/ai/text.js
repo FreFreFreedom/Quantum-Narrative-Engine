@@ -488,7 +488,7 @@ export async function getFallbackChain(feature, providerId, model, { noOpencodeB
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, account = null, tailReminder = null, onUsage = null, images = null }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, account = null, tailReminder = null, onUsage = null, images = null, effort = null }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -517,7 +517,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
     ? `${prompt}${NO_TOOLS_NOTE}${tailReminder ? `\n\n${tailReminder}` : ''}`
     : prompt;
   if (p === 'claude-code') {
-    return legacyGenerateText({ prompt: toollessPrompt, maxTokens, label, cliModel: m });
+    return legacyGenerateText({ prompt: toollessPrompt, maxTokens, label, cliModel: m, effort });
   }
   // The second subscription. The server cannot call it — the token is on the Mac —
   // so the request is parked for the runner, which spawns the CLI with that token
@@ -535,7 +535,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   if (p === 'codex') {
     const out = await runHelperJob({
       prompt: toollessPrompt, feature, maxTokens, label,
-      model: m || 'gpt-6-astra', waitMs: helperWaitMs, engine: 'codex',
+      model: m || 'gpt-6-astra', waitMs: helperWaitMs, engine: 'codex', effort,
     });
     if (out?.text) return { text: out.text, provider: 'codex', model: m || 'gpt-6-astra' };
     // "no runner" is the honest answer, not a reason to quietly use something else:
@@ -547,7 +547,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   if (p === 'claude-side') {
     const ask = (acct) => runHelperJob({
       prompt: helperTools ? prompt : toollessPrompt, feature, maxTokens, label, model: m,
-      tools: helperTools, waitMs: helperWaitMs, account: acct,
+      tools: helperTools, waitMs: helperWaitMs, account: acct, effort,
     });
     // An explicit account pick (the manual model-picker's "Claude (main)" lane
     // routed through claude-side, or a caller that wants ONLY the main account)
@@ -740,7 +740,7 @@ function benched(providerId, model = '') {
   return !router.mayProbe(providerId, model);
 }
 
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null, images = null, requireVision = false, strictModel = false }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null, images = null, requireVision = false, strictModel = false, effort = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
 
@@ -877,7 +877,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     // next one is tried, and from outside that is indistinguishable from a model
     // thinking hard — so say which one is being asked, and say when one gives up.
     if (onStatus) { try { onStatus(failures.length ? `That lane did not answer — trying ${laneName(p, m)}…` : `Asking ${laneName(p, m)}…`); } catch {} }
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, onUsage, account: p === providerId ? explicitAccount : null, images });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, onUsage, account: p === providerId ? explicitAccount : null, images, effort });
     attempted += 1;
     recordLaneCall(p, m, !!result?.text);
 
@@ -976,7 +976,7 @@ export function claimHelperJob() {
   if (!db) return null;
   const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
   db.prepare(`UPDATE helper_jobs SET status='queued', claimed_at=NULL WHERE status='running' AND claimed_at < ?`).run(staleCutoff);
-  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind, engine, timeout_ms FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
+  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind, engine, timeout_ms, effort FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
   if (!job) return null;
   db.prepare(`UPDATE helper_jobs SET status='running', claimed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(job.id);
   return job;
@@ -1020,7 +1020,7 @@ const MODEL_FREE_KINDS = new Set(['repo_probe', 'witness']);
 
 // Park a request for the local runner and wait for its answer. Returns
 // { text } on success, { error, message } otherwise. Never throws.
-async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null, model = null, account = 'main', kind = 'text', engine = 'claude' }) {
+async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null, model = null, account = 'main', kind = 'text', engine = 'claude', effort = null }) {
   if (!db) return { error: 'no_db' };
   try {
     // Only worth parking if a runner is actually attached — otherwise this is a
@@ -1059,12 +1059,12 @@ async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, w
     const jobTimeoutMs = (Number.isFinite(waitMs) && waitMs > HELPER_WAIT_MS)
       ? Math.max(0, waitMs - HELPER_POLL_MS * 2)
       : null;
-    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account, kind, engine, timeout_ms) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account, kind, engine, timeout_ms, effort) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800, tools || null,
         model || (engine === 'codex' ? 'gpt-6-astra' : 'haiku'),
         account === 'side' ? 'side' : 'main', MODEL_FREE_KINDS.has(kind) ? kind : 'text',
         engine === 'codex' ? 'codex' : 'claude',
-        jobTimeoutMs);
+        jobTimeoutMs, effort || null);
 
     // A caller with a person waiting on the other end (the task-card chat) sets
     // its own, much shorter deadline: 120s is right for rescuing a background
@@ -1135,9 +1135,9 @@ export async function runWitnessProbe({ request, waitMs = 30_000, label = 'witne
 
 // Low-level: call a specific provider/model directly (for the judge/summary which
 // want a specific model regardless of feature defaults)
-export async function generateTextDirect({ prompt, provider, model, maxTokens = 800, label = 'ai-text-direct', timeoutMs = 90_000, allowLongOutput = false, account = null, tailReminder = null, onUsage = null }) {
+export async function generateTextDirect({ prompt, provider, model, maxTokens = 800, label = 'ai-text-direct', timeoutMs = 90_000, allowLongOutput = false, account = null, tailReminder = null, onUsage = null, effort = null }) {
   if (!isKnownProvider(provider)) return { error: 'unknown_provider', message: provider };
-  const result = await runAttempt({ provider, model, prompt, maxTokens, label, timeoutMs, allowLongOutput, account, tailReminder, onUsage });
+  const result = await runAttempt({ provider, model, prompt, maxTokens, label, timeoutMs, allowLongOutput, account, tailReminder, onUsage, effort });
   if (result?.text) {
     recordSideCall(); // one helper call in the daily budget ledger
     return { ...result, provider, model };
@@ -1308,6 +1308,10 @@ export async function generateTextStream({
   claudeLastResort = false, helperWaitMs = null,
   cacheKey = null, tailReminder = null, onStatus = null, images = null, requireVision = false,
   strictModel = false,
+  // How hard the chosen model may think, when the lane HAS a dial (the two Claude
+  // subscriptions and Codex). Null means the engine's own default. Picked per
+  // conversation in the Room beside the model itself (2026-09-21).
+  effort = null,
 }) {
   // A hand-picked paid OpenAI model can see the image too. This has to happen
   // before the general vision fork below: that fork deliberately defaults every
@@ -1328,7 +1332,7 @@ export async function generateTextStream({
     const result = await runAttempt({
       provider: 'openai', model: explicitModel, prompt, maxTokens, label, timeoutMs,
       feature, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap,
-      cacheKey, tailReminder, onUsage, images,
+      cacheKey, tailReminder, onUsage, images, effort,
     });
     if (result?.text) {
       recordSideCall();
@@ -1347,7 +1351,7 @@ export async function generateTextStream({
       prompt, feature, maxTokens, label, model: explicitModel,
       provider: explicitProvider, account: explicitAccount, timeoutMs,
       allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap,
-      cacheKey, tailReminder, onStatus, onUsage, images, requireVision, strictModel,
+      cacheKey, tailReminder, onStatus, onUsage, images, requireVision, strictModel, effort,
     });
     if (r?.text && onToken) onToken(r.text);
     return r;
@@ -1365,7 +1369,7 @@ export async function generateTextStream({
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
   if (!isMeteredProvider(providerId)) {
-    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs, strictModel });
+    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs, strictModel, effort });
     if (r?.text && onToken) onToken(r.text);
     return r;
   }
@@ -1376,7 +1380,7 @@ export async function generateTextStream({
     if (strictModel) return { error: 'selected_model_unavailable', message: notice };
     console.warn(`[${label}] paid lane unavailable — ${notice}`);
     if (onStatus) { try { onStatus('The paid lane is unavailable — answering on the free lane…'); } catch {} }
-    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs });
+    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs, effort });
     if (r?.text && onToken) onToken(r.text);
     return r?.text ? { ...r, notice } : { error: r?.error || 'generation_failed', message: r?.message, notice };
   };

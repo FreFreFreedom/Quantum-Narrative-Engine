@@ -340,17 +340,20 @@ export function getChatLane(convoId) {
   try {
     const parsed = JSON.parse(row.chat_override);
     if (!parsed?.provider) return null;
-    return { provider: parsed.provider, model: parsed.model || null, account: parsed.account || null, tag: OVERRIDE_TAGS[parsed.provider] || parsed.provider };
+    return { provider: parsed.provider, model: parsed.model || null, account: parsed.account || null, effort: parsed.effort || null, tag: OVERRIDE_TAGS[parsed.provider] || parsed.provider };
   } catch { return null; }
 }
 
-// override = { provider, model?, account? }, or null/falsy to clear (back to Auto).
+// override = { provider, model?, account?, effort? }, or null/falsy to clear (back
+// to Auto). `effort` is how hard the model may think, and only the lanes with a
+// dial read it — the two Claude subscriptions and Codex (2026-09-21, his ask:
+// "whatever the model i select, i can choose which submodel i want… and the effort").
 export function setChatLane(convoId, override) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const json = override?.provider
-    ? JSON.stringify({ provider: override.provider, model: override.model || null, account: override.account || null })
+    ? JSON.stringify({ provider: override.provider, model: override.model || null, account: override.account || null, effort: override.effort || null })
     : null;
   db.prepare(`UPDATE convos SET chat_override=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(json, convoId);
   broadcastAll('convos:updated', { convoId });
@@ -1674,7 +1677,7 @@ ${answer}`;
 // calls it an order. Verify the result rather than trusting the estimate. Any
 // continuation is sent directly to the exact provider/model that wrote the first
 // part: no fallback chain, no second model finishing somebody else's answer.
-export async function completeRequestedLength({ text, target, provider, model, account = null, generate = generateTextDirect, onStatus = null, onToken = null, onUsage = null, maxPasses = 3 } = {}) {
+export async function completeRequestedLength({ text, target, provider, model, account = null, effort = null, generate = generateTextDirect, onStatus = null, onToken = null, onUsage = null, maxPasses = 3 } = {}) {
   let whole = String(text || '').trim();
   let count = answerWordCount(whole);
   if (!target || count >= target || !provider || !model) return { text: whole, wordCount: count, completed: count >= (target || 0), passes: 0 };
@@ -1686,7 +1689,7 @@ export async function completeRequestedLength({ text, target, provider, model, a
     const missing = target - count;
     const result = await generate({
       prompt: lengthContinuationPrompt({ answer: whole, target, current: count }),
-      provider, model, account,
+      provider, model, account, effort,
       maxTokens: Math.min(32000, Math.max(1200, Math.round(missing * 2.8) + 1000)),
       label: 'conversations:length-continuation',
       timeoutMs: 150_000, allowLongOutput: true, tailReminder: voiceTailReminder(), onUsage,
@@ -1954,6 +1957,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     model: turn?.lane?.model || null,
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
+    effort: turn?.lane?.effort || null,
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
     // The lookup tools (plan "roaming-conversations-backend" §2). Only the chat
     // turn gets them: it is the one that answers a question, and the one whose
@@ -1991,6 +1995,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     provider: result.provider || turn?.lane?.provider,
     model: result.model || turn?.lane?.model,
     account: turn?.lane?.account || null,
+    effort: turn?.lane?.effort || null,
     onStatus, onToken, onUsage: trackUsage,
   });
   if (signal?.aborted) return { error: 'cancelled' };
@@ -2032,6 +2037,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     model: turn?.lane?.model || null,
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
+    effort: turn?.lane?.effort || null,
     tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
     maxTokens,
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
@@ -2048,6 +2054,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     provider: result.provider || turn?.lane?.provider,
     model: result.model || turn?.lane?.model,
     account: turn?.lane?.account || null,
+    effort: turn?.lane?.effort || null,
   });
   result.text = completed.text;
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
@@ -2107,6 +2114,7 @@ async function runAnswerNowTurn(convoId, { onToken = null, onStatus = null, sign
   const result = await generateTextStream({
     prompt, feature: 'studio',
     model: lane?.model || null, provider: lane?.provider || null, account: lane?.account || null,
+    effort: lane?.effort || null,
     tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
     maxTokens, label: 'conversations:answer-now', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000, onToken, onStatus,

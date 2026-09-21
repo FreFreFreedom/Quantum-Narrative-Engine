@@ -49,11 +49,11 @@ function cliEnv() {
   return env;
 }
 
-function callCli(prompt, cliModel) {
+function callCli(prompt, cliModel, effort = null) {
   return new Promise((resolveP) => {
     let proc;
     try {
-      proc = spawn(CLAUDE_BIN, ['-p', '--model', cliModel, '--allowedTools', ''], {
+      proc = spawn(CLAUDE_BIN, ['-p', '--model', cliModel, '--allowedTools', '', ...(effort ? ['--effort', effort] : [])], {
         cwd: AGENT_CWD, env: cliEnv(), stdio: 'pipe',
       });
     } catch (e) {
@@ -115,13 +115,13 @@ async function callApi(prompt, maxTokens, label) {
  * discipline there comes from the prompt itself (all callers already state explicit
  * word limits, which is why they read the same on either backend).
  */
-export async function generateText({ prompt, maxTokens = 800, label = 'claude', cliModel = 'sonnet' }) {
+export async function generateText({ prompt, maxTokens = 800, label = 'claude', cliModel = 'sonnet', effort = null }) {
   const order = PREFERRED === 'api' ? ['api', 'cli'] : ['cli', 'api'];
   const failures = [];
   for (const backend of order) {
     const out = backend === 'api'
       ? await callApi(prompt, maxTokens, label)
-      : await callCli(prompt, cliModel);
+      : await callCli(prompt, cliModel, effort);
     if (out.text) {
       if (failures.length) console.warn(`[${label}] recovered via ${out.via} after ${failures[0]} failed`);
       return out;
