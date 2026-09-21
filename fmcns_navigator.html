@@ -22267,6 +22267,17 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           // name regardless of what gets said, so this is scoped to 'open' only.
           if(e.type === 'open' && onDone) onDone();
         }
+        // THE STREAM ENDED SAYING NOTHING. Not an error, not an answer — the body
+        // simply closed, which is what a proxy in front of the server does to a
+        // long-lived response. Every branch above missed, so the old code appended
+        // nothing and stopped waiting: the Room showed the question, then silence,
+        // while the Mac was still writing and the answer was saved a minute later
+        // (2026-09-21, the thing he could not get past). Fall back to watching the
+        // conversation itself, exactly as a dropped connection already does.
+        if(!d || (!d.error && !d.text && !d.prompt)){
+          e.stream = '';
+          return awaitTurn(e, sentAt, repaint);
+        }
         // The answer is now a real message, so the in-flight buffer must go or the
         // same text paints twice.
         e.stream = '';
