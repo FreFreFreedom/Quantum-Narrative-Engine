@@ -1435,8 +1435,12 @@ const EFFORT_WAIT_MS = { low: 120_000, medium: 180_000, high: 300_000, xhigh: 42
 const HELPER_WAIT_CEILING_MS = 1_200_000;
 export function helperWaitFor(lane, base = 120_000, askedWords = 0) {
   const dial = EFFORT_WAIT_MS[String(lane?.effort || '').toLowerCase()];
-  // No dial set, but Codex's big models still think for minutes on their own.
-  let wait = dial || (lane?.provider === 'codex' ? 240_000 : base);
+  // The lane's own floor. Codex's big models think for minutes whatever the dial
+  // says, and the dial must only ever ADD time — asking for "low" once made the
+  // wait SHORTER than the lane needs and the turn died at 120s with the model
+  // still writing (2026-09-21).
+  const floor = lane?.provider === 'codex' ? 300_000 : base;
+  let wait = Math.max(floor, dial || 0);
   // Length is the other half of the time. "answer me in about 2000 words" at the
   // deepest setting is minutes of writing AFTER minutes of thinking, and the wait
   // used to be set by the dial alone — so a long answer was cut off at nine
