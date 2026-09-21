@@ -536,8 +536,11 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
     const out = await runHelperJob({
       prompt: toollessPrompt, feature, maxTokens, label,
       model: m || 'gpt-6-astra', waitMs: helperWaitMs, engine: 'codex', effort,
-      // Which ChatGPT login answers: 'second' is the Pro account on the Mac.
-      account: account === 'second' ? 'second' : 'main',
+      // Which ChatGPT login answers. The DEFAULT is the Pro account: the other one
+      // (Plus) is nearly out of allowance, and a caller that does not name an
+      // account should not quietly spend the smaller bank (his call, 2026-09-21).
+      // Only an explicit 'main' goes to Plus.
+      account: account === 'main' ? 'main' : 'second',
     });
     if (out?.text) return { text: out.text, provider: 'codex', model: m || 'gpt-6-astra' };
     // "no runner" is the honest answer, not a reason to quietly use something else:

@@ -21958,7 +21958,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return lane.provider === 'codex' && lane.account === 'second' ? 'codex-pro' : lane.provider;
   }
   function laneFromKey(key){
-    return key === 'codex-pro' ? { provider: 'codex', account: 'second' } : { provider: key, account: null };
+    if(key === 'codex-pro') return { provider: 'codex', account: 'second' };
+    // Naming the Plus account is now deliberate: unnamed ChatGPT work goes to Pro,
+    // since Plus is nearly out of allowance (2026-09-21).
+    if(key === 'codex') return { provider: 'codex', account: 'main' };
+    return { provider: key, account: null };
   }
   function laneBaseProvider(key){ return key === 'codex-pro' ? 'codex' : key; }
   var GOOGLE_LANE_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
@@ -22814,8 +22818,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +         '<option value="claude-side">Claude (2nd)</option>'
         +         '<option value="opencode">OpenCode</option>'
         +         '<option value="google-ai-studio">Google</option>'
-        +         '<option value="codex">ChatGPT — your subscription</option>'
-        +         '<option value="codex-pro">ChatGPT Pro — your other subscription</option>'
+        +         '<option value="codex-pro">ChatGPT — Pro account</option>'
+        +         '<option value="codex">ChatGPT — Plus account (nearly spent)</option>'
         +         '<option value="openai">ChatGPT — billed per use</option>'
         +       '</select>'
         +       '<select class="se-lanemodel" style="display:none"></select>'
