@@ -944,6 +944,12 @@ function plainFailure(text, timeoutMs) {
   if (/PerDay-FreeTier|GenerateContentInputTokensPerModel/.test(out)) {
     return "Google's free daily allowance for this model is used up — it resets tomorrow. Pick one of the Flash models, or Auto, in the meantime.";
   }
+  // The runner-backed lanes (Claude subscriptions, Codex) name the Mac in their own
+  // failure text; without this the Room printed the raw "codex:gpt-6-astra:no runner
+  // attached" as the assistant's reply.
+  if (/no runner attached|not answering right now|runner is not attached/i.test(out)) {
+    return 'The Mac that runs this model is not answering right now. Send it again in a moment, or pick another model in the dropdown.';
+  }
   if (/exceeded your current quota|RESOURCE_EXHAUSTED/i.test(out)) {
     return "That model is rate-limited right now — wait a moment, or pick another one in the model dropdown.";
   }
@@ -1003,6 +1009,11 @@ const HELPER_WAIT_MS = 120_000;
 const HELPER_SIDE_WAIT_MS = 180_000;
 const HELPER_POLL_MS = 1_500;
 
+// How long to wait for the runner's next claim poll before declaring it absent.
+// Covers a container restart (which forgets the last poll) and a brief network
+// blip; the runner polls every 5s, so three of those is proof enough.
+const RUNNER_ATTACH_GRACE_MS = 16_000;
+
 // Helper kinds the Mac answers with local git/grep and no model at all. Anything
 // not in here is a Claude call, which is the default.
 const MODEL_FREE_KINDS = new Set(['repo_probe', 'witness']);
@@ -1014,8 +1025,25 @@ async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, w
   try {
     // Only worth parking if a runner is actually attached — otherwise this is a
     // guaranteed 120s wait for nothing.
+    //
+    // But "attached" is decided by the runner's last claim poll, which lives in
+    // THIS process's memory (taskRunner.js#_lastClaimPollAt) and is therefore
+    // empty for the first seconds after every restart — and every push to develop
+    // restarts the container. A question asked in that window used to come back as
+    // the words "no runner attached" printed where the answer goes, while the Mac
+    // was running the whole time (2026-09-21, a Codex turn in the Room). The runner
+    // polls every 5s, so waiting a few of those costs nothing when it really is
+    // gone and saves the answer when it is not.
     const { runnerStatus } = await import('../taskRunner.js');
-    if (!runnerStatus()?.connected) return { error: 'no_runner', message: 'no runner attached' };
+    if (!runnerStatus()?.connected) {
+      const until = Date.now() + RUNNER_ATTACH_GRACE_MS;
+      while (Date.now() < until && !runnerStatus()?.connected) {
+        await new Promise((r) => setTimeout(r, HELPER_POLL_MS));
+      }
+      if (!runnerStatus()?.connected) {
+        return { error: 'no_runner', message: 'the Mac that runs this model is not answering right now — try again in a moment, or pick another model in the dropdown' };
+      }
+    }
 
     const id = randomUUID();
     // The model goes on the row. It used to be accepted and then dropped, so every
