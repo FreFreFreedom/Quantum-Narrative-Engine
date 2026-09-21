@@ -380,9 +380,16 @@ export function runToolless({
     const timer = setTimeout(() => {
       try { process.kill(-proc.pid, 'SIGKILL'); } catch {}
       try { proc.kill('SIGKILL'); } catch {}
-      // Say WHY — a bare empty string makes a timeout indistinguishable from a
-      // crash, and the stall detector can then never bench the lane.
-      settle({ code: -1, text: `no response after ${Math.round(timeoutMs / 1000)}s` });
+      // Whatever it had already written is worth more than nothing, so a timeout
+      // hands back the transcript so far and says it is unfinished (`partial`).
+      // Only when there is genuinely nothing does it say why it is empty — a bare
+      // empty string makes a timeout indistinguishable from a crash, and the stall
+      // detector could then never bench the lane. (2026-09-21: a long answer was
+      // being thrown away whole because the run ended badly at the very end.)
+      const sofar = (parseTranscript(output).text || '').trim();
+      settle(sofar
+        ? { code: -1, text: sofar, partial: true }
+        : { code: -1, text: `no response after ${Math.round(timeoutMs / 1000)}s` });
     }, timeoutMs);
     proc.stdout.on('data', (c) => { output += c.toString(); });
     proc.stderr.on('data', () => {});

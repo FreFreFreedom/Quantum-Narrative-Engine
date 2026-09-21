@@ -1430,12 +1430,19 @@ NEVER
 // answer to a question asked at the deepest setting (2026-09-21). The deeper the
 // dial, the longer the wait — a person who chose Ultra is expecting to wait.
 const EFFORT_WAIT_MS = { low: 120_000, medium: 180_000, high: 300_000, xhigh: 420_000, max: 540_000, ultra: 600_000 };
-export function helperWaitFor(lane, base = 120_000) {
-  const wait = EFFORT_WAIT_MS[String(lane?.effort || '').toLowerCase()];
-  if (wait) return Math.max(base, wait);
+// Nothing waits longer than this, whatever the sums say — a turn that hangs must
+// still end.
+const HELPER_WAIT_CEILING_MS = 1_200_000;
+export function helperWaitFor(lane, base = 120_000, askedWords = 0) {
+  const dial = EFFORT_WAIT_MS[String(lane?.effort || '').toLowerCase()];
   // No dial set, but Codex's big models still think for minutes on their own.
-  if (lane?.provider === 'codex') return Math.max(base, 240_000);
-  return base;
+  let wait = dial || (lane?.provider === 'codex' ? 240_000 : base);
+  // Length is the other half of the time. "answer me in about 2000 words" at the
+  // deepest setting is minutes of writing AFTER minutes of thinking, and the wait
+  // used to be set by the dial alone — so a long answer was cut off at nine
+  // minutes and the Room showed nothing (2026-09-21). Half a second a word.
+  if (askedWords > 0) wait += Math.min(600_000, askedWords * 500);
+  return Math.min(HELPER_WAIT_CEILING_MS, Math.max(base, wait));
 }
 
 // While the Mac is thinking nothing crosses the wire, and a long silence can be cut
@@ -2011,7 +2018,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     // if every free lane is rate-limited the question goes to Claude on the Mac
     // rather than coming back as an error. Costs nothing when no runner is
     // attached — runHelperJob returns at once in that case.
-    claudeLastResort: !exactPick, helperWaitMs: helperWaitFor(turn?.lane), strictModel: exactPick,
+    claudeLastResort: !exactPick, helperWaitMs: helperWaitFor(turn?.lane, 120_000, lengthRequest(lastUserText(convoId)) || 0), strictModel: exactPick,
     // Stable per conversation, not per turn, so every turn of one thread hits
     // the same OpenAI prompt cache instead of scattering across machines (plan
     // "make-the-caching-actually-work"). Only OpenAI's adapter reads this.
@@ -2080,7 +2087,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId,
-    claudeLastResort: !(turn?.lane?.provider && turn?.lane?.model), helperWaitMs: helperWaitFor(turn?.lane),
+    claudeLastResort: !(turn?.lane?.provider && turn?.lane?.model), helperWaitMs: helperWaitFor(turn?.lane, 120_000, lengthRequest(lastUserText(convoId)) || 0),
     strictModel: !!(turn?.lane?.provider && turn?.lane?.model),
     images, requireVision: !!images?.length,
   });
@@ -2156,7 +2163,7 @@ async function runAnswerNowTurn(convoId, { onToken = null, onStatus = null, sign
     tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
     maxTokens, label: 'conversations:answer-now', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000, onToken, onStatus,
-    cacheKey: convoId, claudeLastResort: true, helperWaitMs: helperWaitFor(lane),
+    cacheKey: convoId, claudeLastResort: true, helperWaitMs: helperWaitFor(lane, 120_000, lengthRequest(lastUserText(convoId)) || 0),
   });
   stopAwake();
   if (signal?.aborted) return { error: 'cancelled' };

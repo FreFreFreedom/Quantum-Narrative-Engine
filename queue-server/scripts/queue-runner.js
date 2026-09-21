@@ -779,13 +779,20 @@ async function runHelperJobs() {
         // The Room's own dial (2026-09-21). Null keeps the CLI's default.
         effort: job.effort || null,
         account: cxAccount,
-        timeoutMs: Number.isFinite(job.timeout_ms) && job.timeout_ms > 0 ? Math.min(job.timeout_ms, 600_000) : 120_000,
+        timeoutMs: Number.isFinite(job.timeout_ms) && job.timeout_ms > 0 ? Math.min(job.timeout_ms, 1_200_000) : 120_000,
         cwd: RUNNER_REPO,
       });
     } catch (e) {
       out = { code: -1, text: '', error: e.message };
     }
-    const cxText = out && out.code === 0 ? (out.text || '').trim() : '';
+    // An answer that arrived counts, even when the run ended badly. Codex exiting
+    // non-zero AFTER writing most of a long answer (a subscription window closing
+    // mid-stream, a killed process) used to throw the whole thing away and report a
+    // failure — the Room then showed nothing at all (2026-09-21). Anything
+    // substantial is delivered; a short tail is still a failure, since that is an
+    // error line rather than an answer.
+    const cxRaw = (out && out.text ? String(out.text) : '').trim();
+    const cxText = (out && (out.code === 0 || out.partial || cxRaw.length >= 200)) ? cxRaw : '';
     try {
       await api(`/worker/helper/${job.id}/result`,
         cxText ? { text: cxText } : { error: out?.text || out?.error || `exit ${out?.code}` });
@@ -841,7 +848,7 @@ async function runHelperJobs() {
   // Capped anyway, because a bad value here would hold the helper lane open.
   const laneDefaultMs = (job.account === 'side' || tools) ? 120_000 : 100_000;
   const timeoutMs = Number.isFinite(job.timeout_ms) && job.timeout_ms > laneDefaultMs
-    ? Math.min(job.timeout_ms, 600_000)
+    ? Math.min(job.timeout_ms, 1_200_000)
     : laneDefaultMs;
   console.log(`  helper ${job.label || job.feature} → claude:${model}${job.effort ? `/${job.effort}` : ''}${side ? ' (second account)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
   let out = null;
@@ -858,7 +865,10 @@ async function runHelperJobs() {
   } catch (e) {
     out = { code: -1, text: '', error: e.message };
   }
-  const text = out && out.code === 0 ? (out.text || '').trim() : '';
+  // Same rule as the Codex lane above: text that arrived is an answer, whatever the
+  // exit code said afterwards.
+  const rawText = (out && out.text ? String(out.text) : '').trim();
+  const text = (out && (out.code === 0 || rawText.length >= 200)) ? rawText : '';
   try {
     await api(`/worker/helper/${job.id}/result`,
       text ? { text } : { error: out?.text || out?.error || `exit ${out?.code}` });

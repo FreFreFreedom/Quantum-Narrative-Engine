@@ -22430,7 +22430,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
 
   function awaitTurn(e, sentAt, repaint){
-    var deadline = Date.now() + 150000;
+    // Twenty minutes, not two and a half. A question asked at the deepest thinking
+    // setting, or one that asks for two thousand words, is still being written long
+    // after the old deadline — and this used to announce "no answer came back"
+    // while the Mac was mid-sentence (2026-09-21).
+    var deadline = Date.now() + 1200000;
+    var waitedSince = Date.now();
     function tick(){
       if(Date.now() > deadline){
         e.msgs.push({ role: 'assistant', kind: 'chat', text: 'No answer came back this time. Send it again — nothing was lost.' });
@@ -22438,7 +22443,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         return Promise.resolve();
       }
       return new Promise(function(r){ setTimeout(r, 5000); })
-        .then(function(){ return api('/api/convos/' + e.convoId); })
+        .then(function(){
+          // Say that it is still working, so a long wait never looks like a dead app.
+          var secs = Math.round((Date.now() - waitedSince) / 1000);
+          if(secs >= 20){ e.phase = 'Still working — ' + secs + 's so far.'; if(repaint) repaint(); }
+          return api('/api/convos/' + e.convoId);
+        })
         .then(function(data){
           var msgs = (data && data.messages) || [];
           var arrived = msgs.filter(function(m){ return m.role === 'assistant'; }).length;
