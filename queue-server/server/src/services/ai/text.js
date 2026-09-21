@@ -975,7 +975,20 @@ const HELPER_CLAIM_STALE_MS = 90_000;
 export function claimHelperJob() {
   if (!db) return null;
   const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
-  db.prepare(`UPDATE helper_jobs SET status='queued', claimed_at=NULL WHERE status='running' AND claimed_at < ?`).run(staleCutoff);
+  // A job carrying its own (longer) deadline is not stale until THAT has passed —
+  // otherwise a question asked at the deepest thinking setting is handed out again
+  // every 90 seconds while the first run is still writing, and the Mac ends up
+  // answering the same question four times over (found 2026-09-21 alongside the
+  // Codex timeout). 30s of slack so the runner's own reply always wins the race.
+  db.prepare(`
+    UPDATE helper_jobs SET status='queued', claimed_at=NULL
+     WHERE status='running'
+       AND claimed_at < CASE
+             WHEN timeout_ms IS NOT NULL AND timeout_ms > ?
+               THEN strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-' || ((timeout_ms + 30000) / 1000.0) || ' seconds')
+             ELSE ?
+           END
+  `).run(HELPER_CLAIM_STALE_MS, staleCutoff);
   const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind, engine, timeout_ms, effort FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
   if (!job) return null;
   db.prepare(`UPDATE helper_jobs SET status='running', claimed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(job.id);

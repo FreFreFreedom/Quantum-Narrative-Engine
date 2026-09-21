@@ -1420,6 +1420,38 @@ NEVER
 // Deliberately a pointer, not a second copy of the voice: duplicating a
 // ~4000-character persona into the same prompt would pay for it twice and invite
 // the two copies to drift.
+// How long to wait for an answer that is being written on the Mac (the two Claude
+// subscriptions and Codex, which both go through the helper lane). 120s was set
+// when every such call was a quick rescue, and it is simply wrong for a model told
+// to think as hard as it can: "codex:gpt-6-astra:no answer in 120s" was the whole
+// answer to a question asked at the deepest setting (2026-09-21). The deeper the
+// dial, the longer the wait — a person who chose Ultra is expecting to wait.
+const EFFORT_WAIT_MS = { low: 120_000, medium: 180_000, high: 300_000, xhigh: 420_000, max: 540_000, ultra: 600_000 };
+export function helperWaitFor(lane, base = 120_000) {
+  const wait = EFFORT_WAIT_MS[String(lane?.effort || '').toLowerCase()];
+  if (wait) return Math.max(base, wait);
+  // No dial set, but Codex's big models still think for minutes on their own.
+  if (lane?.provider === 'codex') return Math.max(base, 240_000);
+  return base;
+}
+
+// While the Mac is thinking nothing crosses the wire, and a long silence can be cut
+// by the proxy between the browser and the server. A short line every 20s keeps the
+// stream alive and tells the person what is happening instead of nothing at all.
+function keepAwake(onStatus, lane) {
+  if (!onStatus) return () => {};
+  const who = lane?.model ? `${lane.model}` : 'the model';
+  let ticks = 0;
+  const timer = setInterval(() => {
+    ticks += 1;
+    // Self-limiting: if the turn throws before its stop() runs, this must not tick
+    // for the life of the process. Well past the longest wait any dial can ask for.
+    if (ticks > 45) { clearInterval(timer); return; }
+    try { onStatus(`Still thinking — ${who} has been working for ${ticks * 20}s.`); } catch {}
+  }, 20_000);
+  return () => clearInterval(timer);
+}
+
 function voiceTailReminder() {
   return studioPersona()
     ? 'Answer in the voice and frame set out under HOW TO THINK above. That is the register for this reply, not a suggestion — it outranks the note directly above about the lookup tools, which is housekeeping only.'
@@ -1948,6 +1980,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     }
   };
   const exactPick = !!(turn?.lane?.provider && turn?.lane?.model);
+  const stopAwake = keepAwake(onStatus, turn?.lane);
   const result = await generateTextStream({
     prompt,
     // The router's lane: a brainstorm/forced turn points at 'studio' (which may be
@@ -1975,7 +2008,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     // if every free lane is rate-limited the question goes to Claude on the Mac
     // rather than coming back as an error. Costs nothing when no runner is
     // attached — runHelperJob returns at once in that case.
-    claudeLastResort: !exactPick, helperWaitMs: 120_000, strictModel: exactPick,
+    claudeLastResort: !exactPick, helperWaitMs: helperWaitFor(turn?.lane), strictModel: exactPick,
     // Stable per conversation, not per turn, so every turn of one thread hits
     // the same OpenAI prompt cache instead of scattering across machines (plan
     // "make-the-caching-actually-work"). Only OpenAI's adapter reads this.
@@ -1983,6 +2016,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     images, requireVision: !!images?.length,
     onUsage: trackUsage,
   });
+  stopAwake();
   // Stopped from the Room while this was being written: save nothing, learn
   // nothing from it. The caller removes the question too.
   // ponytail: the model call itself runs to its end; thread `signal` into the
@@ -2043,7 +2077,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId,
-    claudeLastResort: !(turn?.lane?.provider && turn?.lane?.model), helperWaitMs: 120_000,
+    claudeLastResort: !(turn?.lane?.provider && turn?.lane?.model), helperWaitMs: helperWaitFor(turn?.lane),
     strictModel: !!(turn?.lane?.provider && turn?.lane?.model),
     images, requireVision: !!images?.length,
   });
@@ -2111,6 +2145,7 @@ async function runAnswerNowTurn(convoId, { onToken = null, onStatus = null, sign
     convo, ctx, brevity: false, tools: true, instruction: ANSWER_NOW_INSTRUCTION,
     maxChars: promptCharBudget({ feature: 'studio', provider: lane?.provider || null, maxTokens }),
   });
+  const stopAwake = keepAwake(onStatus, lane);
   const result = await generateTextStream({
     prompt, feature: 'studio',
     model: lane?.model || null, provider: lane?.provider || null, account: lane?.account || null,
@@ -2118,8 +2153,9 @@ async function runAnswerNowTurn(convoId, { onToken = null, onStatus = null, sign
     tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
     maxTokens, label: 'conversations:answer-now', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000, onToken, onStatus,
-    cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
+    cacheKey: convoId, claudeLastResort: true, helperWaitMs: helperWaitFor(lane),
   });
+  stopAwake();
   if (signal?.aborted) return { error: 'cancelled' };
   // Generation failed — leave Interview mode exactly as it was. Nothing here has
   // been lost, so there is nothing to clear.

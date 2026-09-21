@@ -526,7 +526,7 @@ export function conversationsRoutes() {
     const override = bodyOverride === undefined
       ? undefined
       : (bodyOverride?.provider && VALID_LANE_PROVIDERS.has(bodyOverride.provider)
-        ? { provider: bodyOverride.provider, model: bodyOverride.model || null, account: bodyOverride.account || null }
+        ? { provider: bodyOverride.provider, model: bodyOverride.model || null, account: bodyOverride.account || null, effort: bodyOverride.effort || null }
         : null);
 
     if (!wantsStream) {
