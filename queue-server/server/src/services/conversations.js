@@ -1448,6 +1448,13 @@ Let the prose carry some music. An image, a rhythm, one concrete scene will carr
 
 Use simple words. The reader's first language is not English, so keep the vocabulary plain and the sentences short enough to follow when read aloud. This is a rule about words, never about ideas: never simplify the thought itself, never round a difficult idea down to an easy one, never drop a distinction because it would take another sentence to make. Plain language holding a hard idea is the target. If a technical word is the only accurate one, use it and say in a few words what it means. No equations, no notation — say what the thing does.`;
 
+// The one-line restatement of SHAPE_PROSE, placed at the very END of the prompt.
+// The full rule sits inside subjectSystemPrompt, which is near the top of a ~10k
+// token prompt, and a model weights the end most — Gemini (google-ai-studio) read
+// it and answered in five bullets anyway on 2026-09-20. The tail reminder could
+// not save it either: ai/text.js appends that only on the toolless CLI lanes.
+const SHAPE_TAIL = `Write the answer as prose — paragraphs, not a bulleted list. Bullets are allowed only for a true short list of parallel items (three films, four steps), never for the body of the thinking. This overrides your own habit of formatting an answer as points.`;
+
 function subjectSystemPrompt(ctxText, { depth = false, mode = 'single', tools = false } = {}) {
   return `${baseSystem({ mode, tools })}
 
@@ -1793,7 +1800,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
       : `\n=== WHAT TO DO NOW ===\n${brevity
           ? `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`
-          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''} Judge the thing being discussed: is it real, what is it actually, is it worth his attention. Say so.\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
+          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''} Judge the thing being discussed: is it real, what is it actually, is it worth his attention. Say so.\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.\n\n${SHAPE_TAIL}`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
     // DEAD LAST, after the voice and after the task, because the end of a long
     // prompt is weighted most and this has to beat "density, not brevity".
     askedWords
