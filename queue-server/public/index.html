@@ -22044,6 +22044,40 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }, 250);
   }
 
+  // What he has already sent, so the arrow keys can walk back through it — the
+  // shell habit, in the Room. One flat list for every box: typing the same thing
+  // again usually means reaching for it in another conversation, not this one.
+  // Newest first when recalled, this conversation's own messages ahead of the rest,
+  // and anything already in the box acts as a prefix filter (type "why" then ↑ and
+  // only the questions that began with "why" come back).
+  var HIST_KEY = 'fmcns_room_history';
+  var HIST_MAX = 120;
+  function readHistory(){
+    try { var all = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(all) ? all : []; }
+    catch(err){ return []; }
+  }
+  function rememberSent(e, text){
+    var t = String(text || '').trim();
+    if(!t) return;
+    try {
+      var all = readHistory().filter(function(row){ return row && row.text !== t; });
+      all.push({ text: t, key: (e && e.key) || '', at: Date.now() });
+      if(all.length > HIST_MAX) all = all.slice(all.length - HIST_MAX);
+      localStorage.setItem(HIST_KEY, JSON.stringify(all));
+    } catch(err) { /* a full store costs the history, never the message */ }
+  }
+  function historyFor(e, prefix){
+    var all = readHistory(), mine = [], others = [];
+    var p = String(prefix || '').toLowerCase();
+    for(var i = all.length - 1; i >= 0; i--){
+      var row = all[i];
+      if(!row || !row.text) continue;
+      if(p && row.text.slice(0, p.length).toLowerCase() !== p) continue;
+      (row.key && e && row.key === e.key ? mine : others).push(row.text);
+    }
+    return mine.concat(others);
+  }
+
   function entryOf(type, subjectId){
     var key = type + ':' + subjectId;
     if(!cache[key]) cache[key] = {
@@ -22931,6 +22965,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // typed is worse than any error message.
       if(sendTurn(e, withQuote(e, actualText), repaint, opts.onDone, undefined,
                   { body: actualText, quotes: (e.quotes || []).slice(), attachments: pending })){
+        rememberSent(e, actualText);
+        e.histList = null; e.histAt = -1; e.histDraft = '';
         input.value = ''; e.quotes = []; e.pendingAttachments = []; e.draft = '';
         clearFinishedImports(e, repaint);
         saveDraft(e);
@@ -22942,10 +22978,47 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // and in localStorage, so a REFRESH gets it back too.
     loadDraft(e);
     input.value = e.draft || '';
-    input.oninput = function(){ e.draft = input.value; saveDraft(e); grow(input); };
+    // Typing anywhere leaves the history behind and makes this the live draft again.
+    input.oninput = function(){ e.histList = null; e.histAt = -1; e.draft = input.value; saveDraft(e); grow(input); };
+    var putInBox = function(text){
+      input.value = text; e.draft = text; saveDraft(e); grow(input);
+      try { input.setSelectionRange(text.length, text.length); } catch(err) {}
+    };
+    var browsing = function(){ return Array.isArray(e.histList) && e.histAt >= 0; };
+    var leaveHistory = function(){
+      var back = e.histDraft || '';
+      e.histList = null; e.histAt = -1; e.histDraft = '';
+      putInBox(back);
+    };
     input.onkeydown = function(ev){
       if(ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); say(input.value); }
-      if(ev.key === 'Escape' && e.busy){ ev.preventDefault(); stopTurn(e); }
+      if(ev.key === 'Escape'){
+        if(browsing()){ ev.preventDefault(); leaveHistory(); return; }
+        if(e.busy){ ev.preventDefault(); stopTurn(e); }
+      }
+      if(ev.key === 'ArrowUp' && !ev.shiftKey && !ev.metaKey && !ev.altKey){
+        // Only from the very top of the box, so the arrows still move the caret
+        // inside a long draft. Once walking the history, they always walk it.
+        var atStart = input.selectionStart === 0 && input.selectionEnd === 0;
+        var oneLine = input.value.indexOf('\n') === -1;
+        if(!browsing() && !atStart && !oneLine) return;
+        if(!browsing()){
+          e.histDraft = input.value;
+          e.histList = historyFor(e, atStart ? '' : input.value);
+          e.histAt = -1;
+        }
+        if(!e.histList.length){ e.histList = null; return; }
+        ev.preventDefault();
+        e.histAt = Math.min(e.histAt + 1, e.histList.length - 1);
+        putInBox(e.histList[e.histAt]);
+      }
+      if(ev.key === 'ArrowDown' && !ev.shiftKey && !ev.metaKey && !ev.altKey){
+        if(!browsing()) return;
+        ev.preventDefault();
+        if(e.histAt === 0){ leaveHistory(); return; }
+        e.histAt -= 1;
+        putInBox(e.histList[e.histAt]);
+      }
     };
     // One button, two jobs: send while idle, stop while an answer is on its way.
     send.onclick = function(){ if(e.busy) stopTurn(e); else say(input.value); };
