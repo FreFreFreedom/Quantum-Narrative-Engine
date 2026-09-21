@@ -1367,11 +1367,11 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-turnacts { display:flex; justify-content:flex-end; gap:1px; margin-top:3px;
   opacity:.4; transition:opacity var(--t-fast) var(--ease); }
 .se-turn:hover .se-turnacts, .se-turnacts:focus-within { opacity:1; }
-.se-turnfork, .se-turnredo, .se-turnrewind { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
+.se-turnfork, .se-turnredo, .se-turnrewind, .se-turncopy { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
   font-family:var(--font-ui); font-size:var(--fs-sm); line-height:1; width:24px; height:24px;
   display:inline-flex; align-items:center; justify-content:center; border-radius:var(--r-sm);
   transition:color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
-.se-turnfork:hover, .se-turnredo:hover, .se-turnrewind:hover { color:var(--c-ink); background:var(--c-surface-2); }
+.se-turnfork:hover, .se-turnredo:hover, .se-turnrewind:hover, .se-turncopy:hover { color:var(--c-ink); background:var(--c-surface-2); }
 /* Which model should answer it again. Same fixed-position treatment as the quote
    popover, and closed by the same page-level mousedown. */
 /* The lane picker and the ⋯ menu are on the shared .umenu now; these four rules were
@@ -22414,6 +22414,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Poll the conversation for the assistant turn the cut request was producing.
   // Lives on the entry rather than on any one view, so a repaint mid-answer — or
   // the card being rebuilt out from under it — never drops the pending turn.
+  // Last resort when the clipboard API is unavailable or refused.
+  function copyFallback(text){
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch(err){ return false; }
+  }
+
   function awaitTurn(e, sentAt, repaint){
     var deadline = Date.now() + 150000;
     function tick(){
@@ -23873,6 +23888,26 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
       };
     });
+    log.querySelectorAll('[data-se-copy]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        var m = e.msgs[Number(b.getAttribute('data-se-copy'))];
+        var text = m ? String((m.role === 'user' && m.body) ? m.body : (m.text || '')) : '';
+        if(!text) return;
+        var said = function(ok){
+          b.textContent = ok ? '\u2713' : '\u2717';
+          setTimeout(function(){ b.textContent = '\u29c9'; }, 1200);
+        };
+        // The clipboard API needs a secure context, which a file:// copy of this
+        // app does not have — so there is a plain fallback rather than a button
+        // that silently does nothing.
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(text).then(function(){ said(true); }, function(){ said(copyFallback(text)); });
+        } else {
+          said(copyFallback(text));
+        }
+      };
+    });
     log.querySelectorAll('[data-se-rewind]').forEach(function(b){
       b.onclick = function(ev){
         ev.stopPropagation();
@@ -24283,6 +24318,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var actsHtml = '';
       if (m.id || (you && m.text)) {
         actsHtml = '<div class="se-turnacts">'
+                 // Copy the words themselves — his own question or the answer, as
+                 // plain text (2026-09-21). First in the row because it is the one
+                 // action that changes nothing.
+                 + ((m.text || m.body) ? '<button type="button" class="se-turncopy" data-se-copy="' + qEsc(String(idx)) + '" title="Copy the text">\u29c9</button>' : '')
                  + (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
                  + (you && m.id ? '<button type="button" class="se-turnrewind" data-se-rewind="' + qEsc(m.id) + '" title="Rewind to here — this and everything after is removed, and the words come back to the box to change and ask again">↶</button>' : '')
                  + (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
