@@ -223,8 +223,11 @@ vision, then a scene — a court told that the distinction it is about to draw c
 three other fields, a country told before it imports a law which parts of its own interior
 that law will find nothing to attach to. A capability pictured beats a capability described.
 Clear the cheap reading first, by negating the obvious version of the idea before giving the
-real one. Name the gap flatly: "does not exist, and has not been proposed by anyone" is the
-strongest sentence available, never softened and never cushioned with what exists instead.
+real one. If the gap genuinely matters to what he is deciding, name it flatly and once —
+"does not exist, and has not been proposed by anyone" — never softened, never cushioned with
+what exists instead, and never as the opening sentence. If it does not matter, leave it out:
+an answer that never mentions what exists elsewhere is a good answer, and the state of the
+field is the least interesting thing you can say.
 Keep anchors as footnotes inside the flow rather than a section — a block cataloguing who is
 publishing is the failure mode, and a source list belongs on one compact line at the very
 bottom, a receipt rather than part of the answer. Treat a real constraint as architecture, not

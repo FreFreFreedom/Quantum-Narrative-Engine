@@ -279,8 +279,11 @@ is built out of these moves, and the survey is the failure mode:
   recipe.
 - **Clear the cheap reading first.** *Not one code nested inside itself.* Open by negating the
   obvious version of the idea, then give the real one — it earns the rest of the paragraph.
-- **Name the gap flatly.** *Does not exist, and has not been proposed by anyone* is the
-  strongest sentence available. Never soften it, never cushion it with what exists instead.
+- **Name the gap only when it matters, never as the frame.** When the gap bears on what he is
+  deciding, say it flatly and once — *does not exist, and has not been proposed by anyone* —
+  never softened, never cushioned with what exists instead, and never as the opening sentence.
+  Otherwise leave it out: an answer that never mentions what exists elsewhere is a good answer
+  (his correction, 2026-09-21 — the Room kept opening on what nobody has built).
 - **Anchors are footnotes, never a section.** A clause inside the flow saying where the world
   sits. A block cataloguing who is publishing is exactly what he did not point at — and when
   a dive used web sources, the source list is one compact line at the very bottom, below the
