@@ -51,6 +51,13 @@ export function resolveBin() {
   return process.env.CODEX_BIN || 'codex';
 }
 
+// The two ChatGPT subscriptions on this Mac. The CLI keeps one login per CODEX_HOME,
+// so a second account is a second directory and nothing else — no second binary, no
+// token handed around. 'second' is the Pro plan; anything else is the default login.
+export function homeFor(account = null) {
+  return String(account) === 'second' ? join(homedir(), '.codex-second') : join(homedir(), '.codex');
+}
+
 export function spawnEnv(extra = {}) {
   const env = { ...process.env, ERP_AGENT_RUN: '1', ...extra };
   delete env.OPENAI_API_KEY;
@@ -61,9 +68,9 @@ export function spawnEnv(extra = {}) {
 // machine's login is a shared work account, so a lane that does not say whose it
 // is would be actively misleading. Reads only the email/plan claims out of the
 // stored id_token — never the token itself, and never over the wire.
-export function signedInAs() {
+export function signedInAs(account = null) {
   try {
-    const raw = readFileSync(join(homedir(), '.codex', 'auth.json'), 'utf8');
+    const raw = readFileSync(join(homeFor(account), 'auth.json'), 'utf8');
     const auth = JSON.parse(raw);
     const idToken = auth?.tokens?.id_token;
     if (!idToken) return { mode: auth?.auth_mode || null, email: null, plan: null };
@@ -350,6 +357,9 @@ export function buildRunCommand({
 export function runToolless({
   prompt, model = DEFAULT_MODEL, effort = null, timeoutMs = 4 * 60_000,
   cwd = process.env.TMPDIR || '/tmp', bin = resolveBin(), env,
+  // Which of the two ChatGPT logins answers. 'second' is the Pro account, reached
+  // only by pointing CODEX_HOME at its own directory for this one spawn (2026-09-21).
+  account = null,
 }) {
   return new Promise((resolveP) => {
     const args = [
@@ -359,7 +369,7 @@ export function runToolless({
     if (effort) args.push('-c', `model_reasoning_effort=${effort}`);
     args.push('-');
     const proc = spawn(bin, args, {
-      cwd, env: env || spawnEnv(), stdio: 'pipe', detached: true,
+      cwd, env: env || spawnEnv(account ? { CODEX_HOME: homeFor(account) } : {}), stdio: 'pipe', detached: true,
     });
     const callId = registerTextCall(proc.pid, { label: 'codex' });
     proc.stdin.write(prompt);

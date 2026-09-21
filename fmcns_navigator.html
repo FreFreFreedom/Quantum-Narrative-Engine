@@ -21949,7 +21949,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }).catch(function(){ laneCatalog = {}; return laneCatalog; });
     return laneCatalogPromise;
   }
-  var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google', openai: 'ChatGPT (billed)', codex: 'ChatGPT' };
+  var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google', openai: 'ChatGPT (billed)', codex: 'ChatGPT', 'codex-pro': 'ChatGPT Pro' };
+  // The two ChatGPT subscriptions are one lane with two logins, not two lanes: the
+  // picker shows them apart, everything below carries {provider:'codex', account}.
+  // 'codex-pro' exists only in this dropdown (his ask, 2026-09-21).
+  function laneKeyOf(lane){
+    if(!lane) return '';
+    return lane.provider === 'codex' && lane.account === 'second' ? 'codex-pro' : lane.provider;
+  }
+  function laneFromKey(key){
+    return key === 'codex-pro' ? { provider: 'codex', account: 'second' } : { provider: key, account: null };
+  }
+  function laneBaseProvider(key){ return key === 'codex-pro' ? 'codex' : key; }
   var GOOGLE_LANE_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
   // Codex's models, from the CLI's own list (2026-09-13). Same set the queue offers.
   var CODEX_LANE_MODELS = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-reserve'];
@@ -21968,17 +21979,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     'gpt-6-astra': 'ultra', 'gpt-5.6-sol': 'ultra', 'gpt-5.6-terra': 'ultra',
     'gpt-5.6-luna': 'max', 'gpt-5.5': 'xhigh', 'gpt-reserve': 'max'
   };
-  function laneHasEffort(provider){
+  function laneHasEffort(providerKey){
+    var provider = laneBaseProvider(providerKey);
     return provider === 'claude-code' || provider === 'claude-side' || provider === 'codex';
   }
-  function laneEffortLevels(provider, model){
-    if(provider !== 'codex') return ['low', 'medium', 'high'];
+  function laneEffortLevels(providerKey, model){
+    if(laneBaseProvider(providerKey) !== 'codex') return ['low', 'medium', 'high'];
     var top = LANE_EFFORT_LADDER.indexOf(CODEX_EFFORT_CEILING[model || 'gpt-6-astra'] || 'high');
     return LANE_EFFORT_LADDER.slice(0, top + 1);
   }
 
-  function laneTagFor(provider, model){
-    var label = LANE_LABELS[provider] || provider;
+  function laneTagFor(providerKey, model){
+    var label = LANE_LABELS[providerKey] || providerKey;
     return model ? label + ' · ' + model : label;
   }
   // What you had in hand when you walked away: the half-written question, and the
@@ -22196,7 +22208,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
         var lane = laneOverride !== undefined ? laneOverride : e.lane;
         if(laneOverride === undefined && e.lane === undefined) return payload;
-        payload.override = lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null } : null;
+        payload.override = lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null } : null;
         return payload;
       })()),
     })
@@ -22803,6 +22815,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +         '<option value="opencode">OpenCode</option>'
         +         '<option value="google-ai-studio">Google</option>'
         +         '<option value="codex">ChatGPT — your subscription</option>'
+        +         '<option value="codex-pro">ChatGPT Pro — your other subscription</option>'
         +         '<option value="openai">ChatGPT — billed per use</option>'
         +       '</select>'
         +       '<select class="se-lanemodel" style="display:none"></select>'
@@ -23007,7 +23020,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         else {
           var models = laneModelsFor(v, laneCatalog);
           var model = models.length ? models[0] : null;
-          e.lane = { provider: v, model: model, effort: null, tag: laneTagFor(v, model) };
+          var picked = laneFromKey(v);
+          e.lane = { provider: picked.provider, account: picked.account, model: model, effort: null, tag: laneTagFor(v, model) };
         }
         persistLane(e, e.lane);
         fillEmbed(host, e, opts);
@@ -23017,16 +23031,17 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // A Codex model that will not go as deep as the level already chosen keeps
         // the level only if it can honour it — otherwise the dial drops to Auto
         // rather than sending a level the CLI would refuse.
-        var keep = e.lane.effort && laneEffortLevels(e.lane.provider, laneModel.value).indexOf(e.lane.effort) >= 0
+        var key = laneKeyOf(e.lane);
+        var keep = e.lane.effort && laneEffortLevels(key, laneModel.value).indexOf(e.lane.effort) >= 0
           ? e.lane.effort : null;
-        e.lane = { provider: e.lane.provider, model: laneModel.value, effort: keep, tag: laneTagFor(e.lane.provider, laneModel.value) };
+        e.lane = { provider: e.lane.provider, account: e.lane.account || null, model: laneModel.value, effort: keep, tag: laneTagFor(key, laneModel.value) };
         persistLane(e, e.lane);
         fillEmbed(host, e, opts);
       };
       if(laneEffort){
         laneEffort.onchange = function(){
           if(!e.lane) return;
-          e.lane = { provider: e.lane.provider, model: e.lane.model || null, effort: laneEffort.value || null, tag: e.lane.tag };
+          e.lane = { provider: e.lane.provider, account: e.lane.account || null, model: e.lane.model || null, effort: laneEffort.value || null, tag: e.lane.tag };
           persistLane(e, e.lane);
           fillEmbed(host, e, opts);
         };
@@ -23084,7 +23099,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function freeApiLane(provider, catalog){
     return freeApiLanes(catalog).filter(function(p){ return p.id === provider; })[0] || null;
   }
-  function laneModelsFor(provider, catalog){
+  function laneModelsFor(providerKey, catalog){
+    var provider = laneBaseProvider(providerKey);
     if(provider === 'opencode') return ((catalog && catalog.opencode && catalog.opencode.models) || []).map(function(m){ return (m && m.id) || m; });
     if(provider === 'google-ai-studio') {
       var googleModels = ((catalog && catalog.google && catalog.google.models) || []).map(function(m){ return (m && m.id) || m; }).filter(Boolean);
@@ -23103,7 +23119,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return [];
   }
   // Why a lane is unpickable, in Antoine's words rather than a variable name.
-  function laneOffReason(provider){
+  function laneOffReason(providerKey){
+    var provider = laneBaseProvider(providerKey);
     if(provider === 'codex') return 'Codex runs through your Mac. Start the queue runner there and this becomes available.';
     if(provider === 'claude-side') return 'Your second Claude account runs through your Mac. Start the queue runner there and this becomes available.';
     if(provider === 'claude-code') return 'The main Claude account is not reachable from the server right now.';
@@ -23113,7 +23130,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!freeApiLane(provider, laneCatalog)) return 'That lane is not set up on the server (no API key).';
     return '';
   }
-  function laneAvailable(provider, catalog){
+  function laneAvailable(providerKey, catalog){
+    var provider = laneBaseProvider(providerKey);
     if(!catalog) return true; // don't block Auto while the catalog is still loading
     if(provider === 'claude-code') return !!(catalog.claude && catalog.claude.available);
     if(provider === 'claude-side') return !!(catalog.claude && catalog.claude.secondAccountAvailable);
@@ -24049,7 +24067,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(lanePick){
       var laneModel = host.querySelector('.se-lanemodel');
       var laneClear = host.querySelector('.se-lane-clear');
-      var laneVal = e.lane ? e.lane.provider : '';
+      var laneVal = laneKeyOf(e.lane);
       if(document.activeElement !== lanePick) lanePick.value = laneVal;
       lanePick.classList.toggle('is-set', !!e.lane);
       Array.prototype.forEach.call(lanePick.options, function(opt){
@@ -24064,13 +24082,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // tiers and Codex's six were reachable from the queue's panel and nowhere
       // else, so picking "ChatGPT" in the Room silently meant whichever model the
       // server defaulted to (his ask, 2026-09-21).
-      var laneModels = e.lane ? laneModelsFor(e.lane.provider, laneCatalog) : [];
+      var laneKey = laneKeyOf(e.lane);
+      var laneModels = e.lane ? laneModelsFor(laneKey, laneCatalog) : [];
       var needsModel = !!(e.lane && laneModels.length);
       if(needsModel){
         var models = laneModels;
-        if(laneModel.getAttribute('data-for') !== e.lane.provider){
+        if(laneModel.getAttribute('data-for') !== laneKey){
           laneModel.innerHTML = models.map(function(m){ return '<option value="' + qEscAttr(m) + '">' + qEsc(m) + '</option>'; }).join('');
-          laneModel.setAttribute('data-for', e.lane.provider);
+          laneModel.setAttribute('data-for', laneKey);
         }
         if(document.activeElement !== laneModel) laneModel.value = e.lane.model || (models[0] || '');
         laneModel.style.display = '';
@@ -24083,10 +24102,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // model, since a smaller Codex model refuses the deepest levels.
       var laneEffortSel = host.querySelector('.se-laneeffort');
       if(laneEffortSel){
-        var wantsEffort = !!(e.lane && laneHasEffort(e.lane.provider));
+        var wantsEffort = !!(e.lane && laneHasEffort(laneKey));
         if(wantsEffort){
-          var levels = laneEffortLevels(e.lane.provider, e.lane.model);
-          var key = e.lane.provider + '|' + (e.lane.model || '');
+          var levels = laneEffortLevels(laneKey, e.lane.model);
+          var key = laneKey + '|' + (e.lane.model || '');
           if(laneEffortSel.getAttribute('data-for') !== key){
             laneEffortSel.innerHTML = '<option value="">Effort: auto</option>'
               + levels.map(function(v){

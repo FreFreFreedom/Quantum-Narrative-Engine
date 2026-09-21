@@ -766,9 +766,11 @@ async function runHelperJobs() {
   // subscription entirely — and no account to swap; spawnEnv drops OPENAI_API_KEY
   // so it cannot fall through to per-token billing.
   if (job.engine === 'codex') {
-    const who = codexCli.signedInAs();
+    // 'second' is the Pro ChatGPT subscription, which lives in its own CODEX_HOME.
+    const cxAccount = job.account === 'second' ? 'second' : null;
+    const who = codexCli.signedInAs(cxAccount);
     const cxModel = codexCli.resolveModel(job.model);
-    console.log(`  helper ${job.label || job.feature} → codex:${cxModel}${who.email ? dim(` (${who.email})`) : ''}`);
+    console.log(`  helper ${job.label || job.feature} → codex:${cxModel}${cxAccount ? ' (Pro account)' : ''}${who.email ? dim(` (${who.email})`) : ''}`);
     let out = null;
     try {
       out = await codexCli.runToolless({
@@ -776,6 +778,7 @@ async function runHelperJobs() {
         model: cxModel,
         // The Room's own dial (2026-09-21). Null keeps the CLI's default.
         effort: job.effort || null,
+        account: cxAccount,
         timeoutMs: Number.isFinite(job.timeout_ms) && job.timeout_ms > 0 ? Math.min(job.timeout_ms, 600_000) : 120_000,
         cwd: RUNNER_REPO,
       });

@@ -536,6 +536,8 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
     const out = await runHelperJob({
       prompt: toollessPrompt, feature, maxTokens, label,
       model: m || 'gpt-6-astra', waitMs: helperWaitMs, engine: 'codex', effort,
+      // Which ChatGPT login answers: 'second' is the Pro account on the Mac.
+      account: account === 'second' ? 'second' : 'main',
     });
     if (out?.text) return { text: out.text, provider: 'codex', model: m || 'gpt-6-astra' };
     // "no runner" is the honest answer, not a reason to quietly use something else:
@@ -1075,7 +1077,7 @@ async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, w
     db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account, kind, engine, timeout_ms, effort) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800, tools || null,
         model || (engine === 'codex' ? 'gpt-6-astra' : 'haiku'),
-        account === 'side' ? 'side' : 'main', MODEL_FREE_KINDS.has(kind) ? kind : 'text',
+        account === 'side' ? 'side' : (account === 'second' ? 'second' : 'main'), MODEL_FREE_KINDS.has(kind) ? kind : 'text',
         engine === 'codex' ? 'codex' : 'claude',
         jobTimeoutMs, effort || null);
 

@@ -340,7 +340,10 @@ export function getChatLane(convoId) {
   try {
     const parsed = JSON.parse(row.chat_override);
     if (!parsed?.provider) return null;
-    return { provider: parsed.provider, model: parsed.model || null, account: parsed.account || null, effort: parsed.effort || null, tag: OVERRIDE_TAGS[parsed.provider] || parsed.provider };
+    const tag = parsed.provider === 'codex' && parsed.account === 'second'
+      ? 'chatgpt pro'
+      : (OVERRIDE_TAGS[parsed.provider] || parsed.provider);
+    return { provider: parsed.provider, model: parsed.model || null, account: parsed.account || null, effort: parsed.effort || null, tag };
   } catch { return null; }
 }
 
