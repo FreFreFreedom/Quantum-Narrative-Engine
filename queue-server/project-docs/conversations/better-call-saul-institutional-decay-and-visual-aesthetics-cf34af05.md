@@ -1,6 +1,6 @@
 # Better Call Saul: institutional decay and visual aesthetics
 
-Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 58 turns · last said 2026-09-21T06:31:31.128Z
+Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 58 turns · last said 2026-09-21T06:50:45.533Z
 
 ## you
 
@@ -1061,6 +1061,10 @@ Seems to me that the juvenile justice system and the child welfare system are ve
 ## the room
 
 codex:gpt-6-astra:no answer in 120s
+
+## you
+
+Seems to me that the juvenile justice system and the child welfare system are very much on the forefront of, you know, how a crime at one place is a product of, you know, its environment. And I wonder, like, maybe the evolution and where, you know, they are heading, you know, the different justice systems and child welfare systems in the world. Because, you know, seems like it's one of the type of cases that are most, you know, obviously caused by ultimately the environment of the person and, you know, mass incarceration, single mothers, and this whole loop, you know, like absent father, single mother, and a loop of, I don't know, the child doing a crime and mass incarceration and, I don't know, juvenile justice system, the child welfare system. It seems like this is one place where it's more obvious than at other scale maybe. So yeah, how is the justice system evolving in regards to that? I don't know if it's learning to recognize this... answer me in about 2000 words please
 
 ## you
 
