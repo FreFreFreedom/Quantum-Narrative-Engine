@@ -1,6 +1,6 @@
 # Better Call Saul: institutional decay and visual aesthetics
 
-Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 66 turns · last said 2026-09-21T08:52:51.892Z
+Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 66 turns · last said 2026-09-22T05:54:34.299Z
 
 ## you
 
