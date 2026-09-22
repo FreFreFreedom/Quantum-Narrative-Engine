@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
 import * as shelf from '../services/bookShelf.js';
+import * as screen from '../services/screenFacts.js';
 import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
 import { rhymeSoon } from '../services/boardRhyme.js';
@@ -110,6 +111,24 @@ export function conversationsRoutes() {
   router.get('/files', (req, res) => {
     res.json({ files: convos.listFiles() });
   });
+
+  // ─── Films and series: what the Library knows about them ───────────────────
+  // One call for the whole wall (poster, rating, votes, synopsis, whether it came
+  // out of a book), cached per title; the relevance line is its own call because
+  // it costs a model and is written only when he opens the panel.
+  router.get('/screen', asyncHandler(async (req, res) => {
+    const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean).slice(0, 40);
+    res.json({ facts: await screen.screenFactsFor(req.user?.id || 'antoine', convos.mediaItemsByIds(req.user?.id || 'antoine', ids)) });
+  }));
+
+  router.get('/screen/:id/notes', asyncHandler(async (req, res) => {
+    const owner = req.user?.id || 'antoine';
+    const item = convos.mediaItemsByIds(owner, [req.params.id])[0];
+    if (!item) return res.status(404).json({ error: 'not_found' });
+    const facts = await screen.screenFactsFor(owner, [item]);
+    const out = await screen.screenRelevance(owner, item, { refresh: req.query.refresh === '1' });
+    res.json({ ...(facts[item.id] || {}), ...out });
+  }));
 
   // ─── The shelf: whole books, available in every conversation ───────────────
   // Books are not per-conversation attachments (see services/bookShelf.js) — a

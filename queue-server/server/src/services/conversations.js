@@ -40,12 +40,13 @@ import { analogyLook } from './roomAnalogies.js';
 import { bindInterestLibrary, interestContext, INTEREST_TOOLS, interestTool } from './interestLibrary.js';
 import { referenceQuote, REFERENCE_TOOLS, referenceTool } from './referenceLibrary.js';
 import { bindBookShelf, shelfContext, BOOK_TOOLS, bookTool } from './bookShelf.js';
+import { bindScreenFacts } from './screenFacts.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
 
 let db = null;
-export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); }
+export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); }
 
 // Plans live in knowledge_docs under the `Plan: ` prefix (seeded by
 // bootstrapData.js#seedPlans from the project-docs/plans/ mirror). This returns
@@ -147,6 +148,17 @@ export function attachFile(convoId, { filename, mimeType, text, bytes, sha, outl
   broadcastAll('convos:updated', { convoId: convo.id });
 
   return { id, title: id, status: 'UPLOADED' };
+}
+
+// The saved films and series behind a list of ids, for the Library wall's facts
+// call — title, year and kind are all TMDB needs.
+export function mediaItemsByIds(owner, ids = []) {
+  if (!db || !ids.length) return [];
+  const marks = ids.map(() => '?').join(',');
+  try {
+    return db.prepare(`SELECT id, kind, title, creator, year FROM interest_works
+                       WHERE owner=? AND id IN (${marks}) AND kind IN ('film','series')`).all(owner, ...ids);
+  } catch (err) { return []; }
 }
 
 const CONVO_HISTORY_WINDOW = 16;
