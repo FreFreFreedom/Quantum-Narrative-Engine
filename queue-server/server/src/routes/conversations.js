@@ -122,8 +122,8 @@ export function conversationsRoutes() {
   });
 
   router.post('/books', (req, res) => {
-    const { title, author, year, filename, text, pages, sha, fromFile } = req.body || {};
-    const out = shelf.addBook(req.user?.id || 'antoine', { title, author, year, filename, text, pages, sha, fromFile });
+    const { title, author, year, filename, text, pages, sha, fromFile, cover } = req.body || {};
+    const out = shelf.addBook(req.user?.id || 'antoine', { title, author, year, filename, text, pages, sha, fromFile, cover });
     if (out.error) return res.status(out.error === 'no_db' ? 500 : 400).json({ ...out, error: out.message || out.error });
     res.json(out);
   });
@@ -133,6 +133,12 @@ export function conversationsRoutes() {
     res.json(shelf.searchShelf(req.user?.id || 'antoine', {
       query: String(req.query.query || ''), book: String(req.query.book || ''), limit: req.query.limit,
     }));
+  });
+
+  router.patch('/books/:id', (req, res) => {
+    const out = shelf.updateBook(req.user?.id || 'antoine', req.params.id, req.body || {});
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
   });
 
   router.delete('/books/:id', (req, res) => {

@@ -44,6 +44,9 @@ export function bindBookShelf(database) {
   // document instead of storing the text a second time — so taking it off the
   // shelf must not delete a document the conversation still holds.
   try { db.exec('ALTER TABLE shelf_books ADD COLUMN owns_doc INTEGER NOT NULL DEFAULT 1'); } catch (err) { /* already there */ }
+  // The front cover, as a link to a public catalogue's image — never a stored
+  // file, the same rule imageSources.js works under.
+  try { db.exec('ALTER TABLE shelf_books ADD COLUMN cover_url TEXT'); } catch (err) { /* already there */ }
 }
 
 export const BOOK_PREFIX = 'Book: ';
@@ -64,7 +67,7 @@ function terms(text) {
 
 export function listBooks(owner) {
   if (!db || !owner) return [];
-  return db.prepare(`SELECT id, title, author, year, chars, filename, created_at
+  return db.prepare(`SELECT id, title, author, year, chars, filename, cover_url, created_at
                      FROM shelf_books WHERE owner=? ORDER BY title`).all(owner);
 }
 
@@ -110,7 +113,7 @@ function pageAt(row, offset) {
 // already stored its text as a `File: ` document, so the shelf points at that
 // one rather than posting and keeping a second copy of the same million
 // characters.
-export function addBook(owner, { title, author = '', year = '', filename = '', text, pages, sha = '', fromFile = '' } = {}) {
+export function addBook(owner, { title, author = '', year = '', filename = '', text, pages, sha = '', fromFile = '', cover = '' } = {}) {
   if (!db) return { error: 'no_db' };
   const shared = String(fromFile || '').trim();
   let sharedDoc = null;
@@ -139,11 +142,12 @@ export function addBook(owner, { title, author = '', year = '', filename = '', t
   }
 
   const id = randomUUID();
-  db.prepare(`INSERT INTO shelf_books (id, owner, title, author, year, doc_title, filename, chars, pages_json, sha, owns_doc)
-              VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+  db.prepare(`INSERT INTO shelf_books (id, owner, title, author, year, doc_title, filename, chars, pages_json, sha, owns_doc, cover_url)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
     .run(id, owner, name, String(author || '').trim().slice(0, 200), String(year || '').trim().slice(0, 20),
       docTitle, String(filename || '').slice(0, 200), chars,
-      Array.isArray(pages) && pages.length ? JSON.stringify(pages.slice(0, 5000)) : null, String(sha || ''), shared ? 0 : 1);
+      Array.isArray(pages) && pages.length ? JSON.stringify(pages.slice(0, 5000)) : null, String(sha || ''), shared ? 0 : 1,
+      /^https:\/\//.test(String(cover || '')) ? String(cover) : null);
 
   // If he already saved this book as an interest, the shelf copy IS that book —
   // mark it kept so the two never read as separate things.
@@ -152,7 +156,25 @@ export function addBook(owner, { title, author = '', year = '', filename = '', t
     if (key) db.prepare('UPDATE interest_works SET kept=1 WHERE owner=? AND identity=?').run(owner, key);
   } catch (err) { /* the shelf entry stands whether or not an interest matched */ }
 
-  return { id, title: name, author, year, chars };
+  return { id, title: name, author, year, chars, cover_url: /^https:\/\//.test(String(cover || '')) ? String(cover) : null };
+}
+
+// The catalogue's own name for the book, and its cover — filled in after a
+// lookup, so a PDF whose metadata called itself "American Crossroads, Volume 21"
+// ends up on the shelf under the title a person would say out loud.
+export function updateBook(owner, id, { title, author, year, cover } = {}) {
+  if (!db) return { error: 'no_db' };
+  const row = bookRow(owner, id);
+  if (!row) return { error: 'not_found' };
+  const next = {
+    title: String(title ?? row.title).trim().slice(0, 200) || row.title,
+    author: String(author ?? row.author).trim().slice(0, 200),
+    year: String(year ?? row.year).trim().slice(0, 20),
+    cover: /^https:\/\//.test(String(cover ?? row.cover_url ?? '')) ? String(cover ?? row.cover_url) : null,
+  };
+  db.prepare('UPDATE shelf_books SET title=?, author=?, year=?, cover_url=? WHERE id=? AND owner=?')
+    .run(next.title, next.author, next.year, next.cover, id, owner);
+  return { id, title: next.title, author: next.author, year: next.year, cover_url: next.cover };
 }
 
 export function removeBook(owner, id) {

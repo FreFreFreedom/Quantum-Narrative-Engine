@@ -1408,13 +1408,25 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .interest-edit { display:grid; gap:6px; margin:6px 0; }
 .interest-edit input, .interest-edit select, .interest-filter input, .interest-filter select { min-width:0; width:100%; box-sizing:border-box; font:inherit; background:var(--c-surface-2); color:var(--c-ink); border:1px solid var(--c-border-2); border-radius:5px; padding:6px; }
 .room-shelf { margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--c-border-2); }
+.shelf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:12px 10px; }
+.shelf-card { position:relative; min-width:0; }
+.shelf-cover { aspect-ratio:2/3; border-radius:5px; border:1px solid var(--c-border-2); background:var(--c-surface-2) center/cover no-repeat;
+  display:flex; align-items:flex-end; padding:6px; font-size:9px; line-height:1.3; color:var(--c-ink-5); overflow:hidden; }
+.shelf-card b { display:block; margin-top:5px; font-size:11px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
+.shelf-card small { display:block; color:var(--c-ink-4); font-size:10px; }
+.shelf-card [data-drop] { position:absolute; top:4px; right:4px; width:22px; height:22px; min-width:0; padding:0; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; line-height:1; white-space:nowrap; overflow:hidden;
+  opacity:0; transition:opacity .12s; background:rgba(var(--c-surface-rgb),.85); }
+.shelf-card:hover [data-drop], .shelf-card [data-drop]:focus-visible { opacity:1; }
+.shelf-working { display:flex; align-items:center; gap:7px; padding:5px 0; font-size:12px; overflow-wrap:anywhere; }
+.shelf-working span:nth-of-type(2) { flex:1; min-width:0; }
+.shelf-working small { color:var(--c-ink-4); white-space:nowrap; }
+.shelf-spin { width:11px; height:11px; border-radius:50%; border:2px solid var(--c-border-2); border-top-color:var(--c-ink-4);
+  animation:shelfSpin .8s linear infinite; flex:none; }
+@keyframes shelfSpin { to { transform:rotate(360deg); } }
+.shelf-slot:not(:empty) { margin-top:8px; font-size:12px; color:var(--c-ink-4); }
 .shelf-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
 .shelf-head strong { flex:1; }
-.shelf-row { display:flex; align-items:center; gap:8px; padding:3px 0; overflow-wrap:anywhere; }
-.shelf-row span { flex:1; }
-.shelf-row small { color:var(--c-ink-4); }
-.shelf-form { display:flex; flex-direction:column; gap:5px; margin-top:8px; }
-.shelf-form small { color:var(--c-ink-4); }
 .interest-filter { display:flex; gap:6px; margin-bottom:8px; }
 .interest-filter select { width:95px; }
 /* Three dots while a turn is in flight, so a wait reads as a wait and not as a
@@ -11190,9 +11202,22 @@ async function roomFindMediaArt(item) {
         const r = await fetch('https://api.tvmaze.com/singlesearch/shows?q=' + encodeURIComponent(title));
         if (r.ok) { const j = await r.json(); const u = j?.image?.medium || j?.image?.original || ''; roomMediaArtCache.set(key, u); return u; }
       } else if (kind === 'book') {
-        const q = title + (item?.creator ? ' ' + item.creator : '');
-        const r = await fetch('https://openlibrary.org/search.json?title=' + encodeURIComponent(q) + '&limit=1&fields=cover_i');
-        if (r.ok) { const j = await r.json(); const id = j?.docs?.[0]?.cover_i; const u = id ? 'https://covers.openlibrary.org/b/id/' + id + '-M.jpg?default=false' : ''; roomMediaArtCache.set(key, u); return u; }
+        // Open Library's `title=` field wants the title ALONE — a title with the
+        // author appended, or with its own subtitle punctuation, matched nothing
+        // at all, which is why every book here used to draw a grey placeholder.
+        // `q=` takes the lot, and "Bernstein, Nell" has to be said the way a
+        // person says it before it will match.
+        const plain = (v) => String(v || '').replace(/[:–—]/g, ' ').replace(/\s+/g, ' ').trim();
+        const who = plain(item?.creator).includes(',')
+          ? plain(item.creator).split(',').map((p) => p.trim()).reverse().join(' ') : plain(item?.creator);
+        for (const q of [plain(title) + (who ? ' ' + who : ''), plain(title)]) {
+          const r = await fetch('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=1&fields=cover_i');
+          if (!r.ok) continue;
+          const id = (await r.json())?.docs?.[0]?.cover_i;
+          if (!id) continue;
+          const u = 'https://covers.openlibrary.org/b/id/' + id + '-M.jpg';
+          roomMediaArtCache.set(key, u); return u;
+        }
       } else {
         const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title));
         if (r.ok) { const j = await r.json(); const u = j?.thumbnail?.source || j?.originalimage?.source || ''; roomMediaArtCache.set(key, u); return u; }
@@ -12527,13 +12552,15 @@ async function pdfOutlineToCharOffsets(doc, items, pageCharStarts, depth, out) {
   return out;
 }
 
-async function extractPdfText(file) {
+async function extractPdfText(file, onProgress) {
   const pdfjsLib = await loadPdfjs();
   const buf = await file.arrayBuffer();
   const doc = await pdfjsLib.getDocument({ data: buf }).promise;
   const pages = [];
   const pageCharStarts = [0];
   for (let i = 1; i <= doc.numPages; i++) {
+    // Reading a 400-page book takes real seconds; say where it has got to.
+    if (onProgress && (i === 1 || i % 5 === 0 || i === doc.numPages)) onProgress(i, doc.numPages);
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
     const pageText = content.items.map((it) => it.str).join(' ');
@@ -12573,7 +12600,7 @@ function roomDropZoneSay(msg, isNote, holdMs) {
   }, holdMs || 2500);
 }
 
-async function roomUploadFileToConvo(file, convoId) {
+async function roomUploadFileToConvo(file, convoId, onProgress) {
   if (!file || !convoId) throw new Error('No conversation selected');
   const kind = roomFileKind(file);
   if (kind !== 'pdf' && kind !== 'text') throw new Error(`Unsupported file type: ${roomFileExt(file)}`);
@@ -12581,7 +12608,7 @@ async function roomUploadFileToConvo(file, convoId) {
   let outline = [];
   let pages = [];
   let info = {};
-  if (kind === 'pdf') { const out = await extractPdfText(file); text = out.text; outline = out.outline || []; pages = out.pages || []; info = out.info || {}; }
+  if (kind === 'pdf') { const out = await extractPdfText(file, onProgress); text = out.text; outline = out.outline || []; pages = out.pages || []; info = out.info || {}; }
   else text = await file.text();
   if (!text) throw new Error('No readable text found in this file');
   let truncated = false;
@@ -12629,6 +12656,7 @@ function interestEditForm(host, item, save) {
 // the same as a file upload's: text and page offsets are pulled here, in the
 // browser, and only those are posted.
 const SHELF_MAX_CHARS = 6000000;
+
 // Naming a book is the app's job, not his. Three sources, best first: the PDF's
 // own title/author fields, then its opening page, then the filename. Whatever
 // comes out, the book goes on the shelf — an imperfect title beats a form.
@@ -12678,13 +12706,80 @@ function shelfIdentify(info, head, filename) {
     year: fromFile.year || fromHead.year || '',
   };
 }
-async function shelfPut(file, say) {
+
+// What the catalogue says the book is — its real title, its author, its cover.
+// Open Library, free and keyless, the same source the saved-interests artwork
+// already uses. A publisher's front matter calls a book "American Crossroads,
+// Volume 21 : Golden Gulag : Prisons, Surplus…"; a person calls it Golden Gulag,
+// and so should the shelf.
+const SHELF_WORD = (t) => new Set(String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter((w) => w.length > 3));
+function shelfMatches(found, asked) {
+  const a = SHELF_WORD(found), b = SHELF_WORD(asked);
+  if (!a.size || !b.size) return false;
+  let hit = 0; for (const w of a) if (b.has(w)) hit += 1;
+  return hit >= Math.min(2, a.size);   // a one-word title has to match that one word
+}
+async function shelfLookup(title, author) {
+  const clean = String(title || '').replace(/\b(volume|vol\.?)\s*\d+\b/ig, ' ').replace(/\s+/g, ' ').trim();
+  // A PDF's author field says "Gilmore, Ruth Wilson(Author)"; a catalogue wants
+  // "Ruth Wilson Gilmore".
+  let who = String(author || '').replace(/\((author|editor|translator)s?\)/ig, ' ').replace(/\s+/g, ' ').trim();
+  if (who.includes(',')) who = who.split(',').map((p) => p.trim()).filter(Boolean).reverse().join(' ');
+  // Try the whole title first, then each colon-separated part — the real name of
+  // the book is usually one of them, and usually not the first.
+  const parts = clean.split(/\s*[:;]\s*/).map((p) => p.trim()).filter((p) => p.length > 3);
+  const attempts = [clean, ...parts.slice().reverse()].filter((v, i, all) => v && all.indexOf(v) === i).slice(0, 4);
+  for (const attempt of attempts) {
+    try {
+      const q = encodeURIComponent((attempt + ' ' + who).trim());
+      const r = await fetch('https://openlibrary.org/search.json?q=' + q + '&limit=1&fields=title,author_name,first_publish_year,cover_i');
+      if (!r.ok) continue;
+      const d = (await r.json())?.docs?.[0];
+      if (!d?.title || !shelfMatches(d.title, attempt)) continue;
+      return {
+        title: d.title,
+        author: (d.author_name || [])[0] || who || '',
+        year: d.first_publish_year ? String(d.first_publish_year) : '',
+        cover: d.cover_i ? 'https://covers.openlibrary.org/b/id/' + d.cover_i + '-L.jpg' : '',
+      };
+    } catch (e) { /* offline or rate-limited: the book still goes on the shelf */ }
+  }
+  return null;
+}
+
+// What is happening to a book right now, so adding one is never a silence. Every
+// stage is named while it runs, and the row only leaves this list once the book
+// is really on the shelf.
+let shelfPending = [];
+const shelfDressed = new Set();   // books whose cover has already been looked for this session
+function shelfStage(key, name, stage) {
+  const row = shelfPending.find((p) => p.key === key);
+  if (row) { row.stage = stage; row.name = name; } else shelfPending.push({ key, name, stage });
+  shelfRepaint();
+}
+function shelfDone(key) { shelfPending = shelfPending.filter((p) => p.key !== key); shelfRepaint(true); }
+function shelfWorkingMarkup() {
+  return shelfPending.map((p) => '<div class="shelf-working"><span class="shelf-spin"></span>'
+    + '<span>' + qEsc(p.name) + '</span><small>' + qEsc(p.stage) + '…</small></div>').join('');
+}
+// A stage change repaints the working rows alone — a full redraw per page of the
+// PDF would mean one shelf fetch per page.
+function shelfRepaint(full) {
+  const host = document.getElementById('roomShelf');
+  if (!host) return;
+  const rows = host.querySelector('.shelf-working-host');
+  if (rows && !full) { rows.innerHTML = shelfWorkingMarkup(); return; }
+  renderRoomShelf(host);
+}
+
+async function shelfPut(file, key) {
   const kind = roomFileKind(file);
   if (kind !== 'pdf' && kind !== 'text') throw new Error('A book comes in as a PDF or a text file');
-  say('Reading the book…');
   let text = '', pages = [], info = {};
-  if (kind === 'pdf') { const out = await extractPdfText(file); text = out.text; pages = out.pages || []; info = out.info || {}; }
-  else text = await file.text();
+  if (kind === 'pdf') {
+    const out = await extractPdfText(file, (page, total) => shelfStage(key, file.name, 'Reading — page ' + page + ' of ' + total));
+    text = out.text; pages = out.pages || []; info = out.info || {};
+  } else { shelfStage(key, file.name, 'Reading'); text = await file.text(); }
   if (!text) throw new Error('No readable text in this file');
   if (text.length > SHELF_MAX_CHARS) { text = text.slice(0, SHELF_MAX_CHARS); pages = pages.filter((n) => n < SHELF_MAX_CHARS); }
   let sha = '';
@@ -12692,20 +12787,48 @@ async function shelfPut(file, say) {
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
     sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
   } catch (e) {}
-  say('Putting it on the shelf…');
-  return apiWrite('/api/convos/books', 'POST', { ...shelfIdentify(info, text.slice(0, 4000), file.name), filename: file.name, text, pages, sha });
+  const named = shelfIdentify(info, text.slice(0, 4000), file.name);
+  shelfStage(key, named.title, 'Filing it');
+  const book = await apiWrite('/api/convos/books', 'POST', { ...named, filename: file.name, text, pages, sha });
+  shelfStage(key, named.title, 'Finding the cover');
+  await shelfDress(book.id, named);
+  return book;
 }
+
+// The catalogue pass: rename the book to what it is really called and hang its
+// cover on it. Never fatal — a book with no cover is still a book on the shelf.
+async function shelfDress(id, named) {
+  try {
+    const found = await shelfLookup(named.title, named.author);
+    if (!found) return null;
+    return await apiWrite('/api/convos/books/' + encodeURIComponent(id), 'PATCH', {
+      title: found.title || named.title, author: found.author || named.author,
+      year: found.year || named.year, cover: found.cover,
+    });
+  } catch (e) { return null; }
+}
+
+function shelfCard(b) {
+  const cover = /^https:\/\//.test(b.cover_url || '')
+    ? ' style="background-image:url(&quot;' + qEscAttr(b.cover_url) + '&quot;)"' : '';
+  return '<div class="shelf-card" data-book="' + qEscAttr(b.id) + '">'
+    + '<div class="shelf-cover"' + cover + '>' + (cover ? '' : qEsc(b.title.slice(0, 40))) + '</div>'
+    + '<button type="button" data-drop title="Take it off the shelf" aria-label="Take it off the shelf">✕</button>'
+    + '<b>' + qEsc(b.title) + '</b>'
+    + (b.author ? '<small>' + qEsc(b.author) + '</small>' : '')
+    + '</div>';
+}
+
 async function renderRoomShelf(host) {
   if (!host) return;
   let books = [];
   try { books = (await api('/api/convos/books')).books || []; }
-  catch (err) { host.innerHTML = '<div class="shelf-row">' + qEsc(err.message) + '</div>'; return; }
+  catch (err) { host.innerHTML = '<div class="shelf-head"><strong>Books</strong></div><small>' + qEsc(err.message) + '</small>'; return; }
   host.innerHTML = '<div class="shelf-head"><strong>Books</strong>'
     + '<button type="button" data-add>Add a book</button>'
-    + '<input type="file" accept="application/pdf,.pdf,.txt,.md,.epub.txt" hidden></div>'
-    + '<div class="shelf-list">' + books.map((b) => '<div class="shelf-row" data-book="' + qEscAttr(b.id) + '">'
-      + '<span>' + qEsc(b.title) + (b.author ? ' <small>' + qEsc(b.author) + '</small>' : '') + '</span>'
-      + '<button type="button" data-drop title="Take it off the shelf">✕</button></div>').join('') + '</div>'
+    + '<input type="file" accept="application/pdf,.pdf,.txt,.md" hidden></div>'
+    + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
+    + (books.length ? '<div class="shelf-grid">' + books.map(shelfCard).join('') + '</div>' : '')
     + '<div class="shelf-slot"></div>';
   const picker = host.querySelector('input[type=file]');
   const slot = host.querySelector('.shelf-slot');
@@ -12713,16 +12836,24 @@ async function renderRoomShelf(host) {
   picker.onchange = async () => {
     const file = picker.files?.[0]; picker.value = '';
     if (!file) return;
-    const say = (m) => { slot.textContent = m; };
-    try { await shelfPut(file, say); renderRoomShelf(host); }
-    catch (err) { say(err.message); }
+    const key = 'pick-' + Date.now();
+    shelfStage(key, file.name, 'Opening');
+    try { await shelfPut(file, key); shelfDone(key); }
+    catch (err) { shelfDone(key); slot.textContent = err.message; }
   };
-  host.querySelectorAll('[data-book]').forEach((row) => {
-    row.querySelector('[data-drop]').onclick = async () => {
-      try { await apiWrite('/api/convos/books/' + encodeURIComponent(row.dataset.book), 'DELETE', {}); renderRoomShelf(host); }
-      catch (err) { row.querySelector('[data-drop]').textContent = err.message; }
+  host.querySelectorAll('[data-book]').forEach((card) => {
+    card.querySelector('[data-drop]').onclick = async () => {
+      try { await apiWrite('/api/convos/books/' + encodeURIComponent(card.dataset.book), 'DELETE', {}); renderRoomShelf(host); }
+      catch (err) { slot.textContent = err.message; }
     };
   });
+  // Any book that arrived before the catalogue pass existed — or whose lookup
+  // failed that day — gets its cover filled in the next time the shelf is drawn.
+  for (const b of books) {
+    if (b.cover_url || shelfDressed.has(b.id)) continue;
+    shelfDressed.add(b.id);
+    shelfDress(b.id, { title: b.title, author: b.author }).then((out) => { if (out?.cover_url) renderRoomShelf(host); });
+  }
 }
 
 async function renderInterestLibrary() {
@@ -23194,7 +23325,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
               if(imageChars + dataUrl.length > 18000000) throw new Error('Those images are too large to send together');
               e.pendingAttachments.push({ kind: 'image', name: file.name, mimeType: file.type, dataUrl: dataUrl });
             } else {
-              var uploaded = await roomUploadFileToConvo(file, e.convoId);
+              // A PDF is read page by page here in the browser; say so while it
+              // happens, in the composer and on the shelf, so a long book never
+              // looks like nothing happening.
+              var shelfKey = kind === 'pdf' ? 'drop-' + Date.now() : '';
+              if(shelfKey) shelfStage(shelfKey, file.name, 'Opening');
+              var uploaded = await roomUploadFileToConvo(file, e.convoId, function(page, total){
+                e.note = 'Reading “' + file.name + '” — page ' + page + ' of ' + total; repaint();
+                if(shelfKey) shelfStage(shelfKey, file.name, 'Reading — page ' + page + ' of ' + total);
+              });
               if(!e.pendingAttachments) e.pendingAttachments = [];
               e.pendingAttachments.push({ kind: 'document', id: uploaded.id, name: uploaded.title || file.name, mimeType: file.type || '' });
               roomPickFiles = null;
@@ -23207,12 +23346,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
               if(kind === 'pdf'){
                 try {
                   var named = shelfIdentify(uploaded.info, uploaded.head, file.name);
+                  shelfStage(shelfKey, named.title, 'Filing it');
+                  e.note = 'Filing “' + named.title + '”…'; repaint();
                   var shelved = await apiWrite('/api/convos/books', 'POST', {
                     fromFile: uploaded.id, title: named.title, author: named.author, year: named.year, pages: uploaded.pages,
                   });
-                  shelfNote = 'On the shelf: ' + shelved.title;
-                  if(typeof renderRoomShelf === 'function') renderRoomShelf(document.getElementById('roomShelf'));
-                } catch(err){ /* attached to the conversation either way */ }
+                  shelfStage(shelfKey, named.title, 'Finding the cover');
+                  var dressed = await shelfDress(shelved.id, named);
+                  shelfNote = 'On the shelf, ready to quote: ' + ((dressed && dressed.title) || shelved.title);
+                } catch(err){ shelfNote = 'In this conversation. It could not be put on the shelf.'; }
+                shelfDone(shelfKey);
               }
             }
             e.note = shelfNote; repaint();
