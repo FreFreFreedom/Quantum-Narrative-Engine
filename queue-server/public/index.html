@@ -1095,7 +1095,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-convo .se-body, .room-convo .se-recap-body { line-height:1.62; max-width:none; overflow-wrap:anywhere; }
 .room-convo .se-body p { margin:0 0 .75em; }
 .room-convo .se-body p:last-child { margin-bottom:0; }
-.room-convo .se-body { line-height:1.62; }
+.room-convo .se-body { line-height:var(--room-leading,1.62); }
 
 /* ─── A rendered answer ────────────────────────────────────────────────────────
    Only for bodies the parser produced. His own messages keep pre-wrap, because what he
@@ -1187,16 +1187,34 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .umenu-item.has-icon .umenu-label { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .umenu-sep { height:1px; margin:4px 6px; background:var(--c-border); }
 .room-typemenu { position:fixed; z-index:var(--z-popover-top); background:var(--c-bg); border:1px solid var(--c-border); border-radius:var(--r-md);
-  padding:8px; box-shadow:0 4px 14px rgba(0,0,0,.16); display:flex; flex-direction:column; gap:8px; min-width:190px; }
+  padding:8px; box-shadow:0 4px 14px rgba(0,0,0,.16); display:flex; flex-direction:column; gap:0; min-width:238px; max-width:270px; }
+/* Reading settings, built the way Books and Kindle build them: a labelled group
+   per decision, the faces listed in their own face with a tick on the chosen one. */
+.room-typegroup { border-top:1px solid var(--c-border); padding-top:9px; margin-top:9px; }
+.room-typegroup:first-child { border-top:0; padding-top:0; margin-top:0; }
+.room-typegroup h6 { margin:0 0 6px; font-size:var(--fs-2xs); font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--c-ink-5); }
+.room-typefaces { display:flex; flex-direction:column; gap:1px; max-height:230px; overflow-y:auto; }
+.room-typefaces button { display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; padding:6px 9px; border:0; border-radius:var(--r-sm); background:none; color:var(--c-ink-3);
+  font-size:var(--fs-md); text-align:left; cursor:pointer; }
+.room-typefaces button:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.room-typefaces button.active { background:var(--c-surface-2); color:var(--c-ink); }
+.room-typefaces button i { font-style:normal; font-size:var(--fs-sm); color:var(--c-accent); opacity:0; }
+.room-typefaces button.active i { opacity:1; }
 .room-typerow { display:flex; align-items:center; gap:4px; }
 .room-typerow button { flex:1; padding:5px 6px; border:1px solid var(--c-border-2); border-radius:var(--r-sm); background:none;
   color:var(--c-ink-3); font-size:var(--fs-sm); cursor:pointer; }
 .room-typerow button:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .room-typerow button.active { background:var(--c-surface-2); color:var(--c-ink); border-color:var(--c-ink-4); }
-.room-typesize { justify-content:space-between; }
-.room-typesize button { flex:none; width:30px; font-size:var(--fs-base); }
-.room-typesize span { font-family:var(--font-mono); font-size:var(--fs-sm); color:var(--c-ink-4); }
-.room-typewidth { border-top:1px solid var(--c-border); padding-top:8px; display:flex; flex-direction:column; gap:7px; font-size:var(--fs-sm); color:var(--c-ink-3); }
+.room-typesize { gap:9px; }
+.room-typesize input[type=range] { flex:1; min-width:0; accent-color:var(--c-accent); }
+.room-typea { flex:none; width:26px; border:0; color:var(--c-ink-4); line-height:1; }
+.room-typea:hover:not(:disabled) { color:var(--c-ink); background:none; }
+.room-typea.sm { font-size:var(--fs-sm); }
+.room-typea.lg { font-size:var(--fs-lg); }
+.room-typesize span { font-family:var(--font-mono); font-size:var(--fs-sm); color:var(--c-ink-4); min-width:34px; text-align:right; }
+.room-typewidth { display:flex; flex-direction:column; gap:7px; font-size:var(--fs-sm); color:var(--c-ink-3); }
 .room-typewidth label { display:flex; justify-content:space-between; gap:12px; }
 .room-typewidth input { width:100%; accent-color:var(--c-accent); }
 /* The head goes entirely. Everything it held is in the toolbar one line above —
@@ -1401,7 +1419,8 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-who { font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink-4); margin-bottom:4px;
   display:flex; align-items:center; gap:7px; }
 .se-turn.you .se-who { color:var(--c-brand); }
-.se-body { font-family:var(--room-font); font-size:var(--room-size); line-height:1.6; white-space:pre-wrap; word-break:break-word; color:var(--c-ink-2); }
+.se-body { font-family:var(--room-font); font-size:var(--room-size); font-weight:var(--room-weight,400);
+  line-height:var(--room-leading,1.6); text-align:var(--room-align,left); white-space:pre-wrap; word-break:break-word; color:var(--c-ink-2); }
 .se-turn.you .se-body { color:var(--c-ink); }
 /* Antoine's small measure at the end of every finished answer in the Room and
    its Side Talks. Kept outside .se-body so it is never mistaken for part of the
@@ -1835,7 +1854,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-about button { appearance:none; border:0; background:transparent; color:var(--c-ink-4); cursor:pointer;
   font:inherit; line-height:1; padding:2px 3px; border-radius:var(--r-xs); }
 .se-about button:hover { color:var(--c-ink); background:var(--c-hover-wash); }
-.se-input { flex:1; min-width:0; max-height:110px; background:transparent; border:none; border-bottom:1px solid var(--c-border-2); border-radius:0; padding:5px 1px; font-family:var(--room-font); font-size:var(--room-size); line-height:1.5; color:var(--c-ink); resize:none; }
+.se-input { flex:1; min-width:0; max-height:110px; background:transparent; border:none; border-bottom:1px solid var(--c-border-2); border-radius:0; padding:5px 1px; font-family:var(--room-font); font-size:var(--room-size); font-weight:var(--room-weight,400); line-height:1.5; color:var(--c-ink); resize:none; }
 .se-input:focus { outline:none; border-bottom-color:var(--c-ink-4); }
 .se-input::placeholder { color:var(--c-ink-5); }
 .se-send { background:none; border:1px solid var(--c-border-2); border-radius:var(--r-sm); color:var(--c-ink-3); cursor:pointer; font-size:var(--fs-sm); padding:4px 9px; }
@@ -10646,24 +10665,40 @@ function renderRoomHead() {
 // control rather than a reading one. Set at the root so every embed of the
 // one shared conversation component reads the same size, not just the Room.
 const ROOM_TYPE_KEY = 'fmcns_room_type';
+// The shelf of faces Apple Books and Kindle put in front of a reader: their own
+// reading face first, the classic book serifs under it, a plain sans, and
+// OpenDyslexic, which both of them carry. Everything but Literata, Source Sans
+// and OpenDyslexic is already on the machine, so nothing else is downloaded.
 const ROOM_FONTS = [
-  ['dyslexic', 'Dyslexic', "'OpenDyslexic',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"],
+  ['dyslexic', 'OpenDyslexic', "'OpenDyslexic',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"],
+  ['serif', 'Literata', "'Literata',Georgia,'Iowan Old Style','Times New Roman',serif"],
+  ['iowan', 'Iowan Old Style', "'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif"],
+  ['charter', 'Charter', "Charter,'Bitstream Charter','Source Serif 4',Georgia,serif"],
+  ['georgia', 'Georgia', "Georgia,'Times New Roman',serif"],
+  ['palatino', 'Palatino', "Palatino,'Palatino Linotype','Book Antiqua',Georgia,serif"],
   ['system', 'System', '-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif'],
-  ['serif', 'Serif', "'Literata',Georgia,'Iowan Old Style','Times New Roman',serif"],
   ['mono', 'Mono', 'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'],
 ];
+// Kindle's Boldness, and the three line spacings both apps show as icons.
+const ROOM_WEIGHTS = [['Light', 300], ['Regular', 400], ['Bold', 600]];
+const ROOM_LEADINGS = [['Tight', 1.42], ['Normal', 1.62], ['Loose', 1.95]];
+const ROOM_ALIGNS = [['Left', 'left'], ['Justified', 'justify']];
 // A face added after the setting already existed reaches nobody, because every
 // browser has a saved choice. Stamped settings are left alone; an unstamped one
 // is moved to the new face once, keeping his size and width.
 const ROOM_TYPE_V = 2;
 const ROOM_SIZE_MIN = 12;
 const ROOM_SIZE_MAX = 48;
-let roomType = { font: 'dyslexic', size: 14, width: 90, v: ROOM_TYPE_V };
+let roomType = { font: 'dyslexic', size: 14, width: 90, weight: 400, leading: 1.62, align: 'left', v: ROOM_TYPE_V };
 function applyRoomType() {
   const f = ROOM_FONTS.find((x) => x[0] === roomType.font) || ROOM_FONTS[0];
-  document.documentElement.style.setProperty('--room-font', f[2]);
-  document.documentElement.style.setProperty('--room-size', roomType.size + 'px');
-  document.documentElement.style.setProperty('--room-width', roomType.width + '%');
+  const d = document.documentElement.style;
+  d.setProperty('--room-font', f[2]);
+  d.setProperty('--room-size', roomType.size + 'px');
+  d.setProperty('--room-width', roomType.width + '%');
+  d.setProperty('--room-weight', String(roomType.weight));
+  d.setProperty('--room-leading', String(roomType.leading));
+  d.setProperty('--room-align', roomType.align);
 }
 function saveRoomType() {
   try { localStorage.setItem(ROOM_TYPE_KEY, JSON.stringify(roomType)); } catch (e) {}
@@ -10676,6 +10711,9 @@ function saveRoomType() {
         font: Number(saved.v) >= ROOM_TYPE_V ? saved.font : 'dyslexic',
         size: Number(saved.size),
         width: Number.isFinite(saved.width) ? Math.min(100, Math.max(45, saved.width)) : 90,
+        weight: ROOM_WEIGHTS.some((w) => w[1] === Number(saved.weight)) ? Number(saved.weight) : 400,
+        leading: ROOM_LEADINGS.some((l) => l[1] === Number(saved.leading)) ? Number(saved.leading) : 1.62,
+        align: saved.align === 'justify' ? 'justify' : 'left',
         v: ROOM_TYPE_V,
       };
     }
@@ -10699,56 +10737,101 @@ function openRoomTypeMenu(btn, forceOpen, placement) {
   if (roomTypeMenu) { if (forceOpen) return; killRoomTypeMenu(); return; }
   roomTypeMenu = document.createElement('div');
   roomTypeMenu.className = 'room-typemenu';
-  const fonts = document.createElement('div');
-  fonts.className = 'room-typerow';
-  const sizeRow = document.createElement('div');
-  sizeRow.className = 'room-typerow room-typesize';
-  const readout = document.createElement('span');
+
+  // Built the way a reading app builds it: the faces as a list you read in the
+  // face itself, then size, weight, line spacing, width and alignment — one
+  // labelled row each, nothing hidden behind a second panel.
+  const group = (label) => {
+    const g = document.createElement('div');
+    g.className = 'room-typegroup';
+    if (label) { const h = document.createElement('h6'); h.textContent = label; g.appendChild(h); }
+    roomTypeMenu.appendChild(g);
+    return g;
+  };
+  const segmented = (host, options, get, set) => {
+    const row = document.createElement('div');
+    row.className = 'room-typerow';
+    options.forEach(([label, value]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.value = String(value);
+      b.textContent = label;
+      b.onclick = (ev) => { ev.stopPropagation(); set(value); paint(); };
+      row.appendChild(b);
+    });
+    row.dataset.get = '1';
+    host.appendChild(row);
+    return () => row.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.value === String(get())));
+  };
+
+  const painters = [];
   const paint = () => {
-    fonts.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.font === roomType.font));
-    readout.textContent = roomType.size + 'px';
-    smaller.disabled=roomType.size<=ROOM_SIZE_MIN;
-    bigger.disabled=roomType.size>=ROOM_SIZE_MAX;
-    slider.value=String(roomType.size);
-    widthSlider.value=String(roomType.width);
-    widthReadout.textContent=roomType.width+'%';
+    painters.forEach((fn) => fn());
     applyRoomType();
     saveRoomType();
   };
+
+  // ── the faces ──
+  const fonts = document.createElement('div');
+  fonts.className = 'room-typefaces';
   ROOM_FONTS.forEach(([id, label, stack]) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.dataset.font = id;
-    b.textContent = label;
-    b.style.fontFamily = stack; // the button is set in the face it offers
+    b.innerHTML = '<span>' + label + '</span><i>✓</i>';
+    b.style.fontFamily = stack;                 // a face is shown in itself
     b.onclick = (ev) => { ev.stopPropagation(); roomType.font = id; paint(); };
     fonts.appendChild(b);
   });
+  group('Font').appendChild(fonts);
+  painters.push(() => fonts.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.font === roomType.font)));
+
+  // ── size ──
+  const sizeGroup = group('Text size');
+  const sizeRow = document.createElement('div');
+  sizeRow.className = 'room-typerow room-typesize';
+  const readout = document.createElement('span');
   const step = (by) => (ev) => {
     ev.stopPropagation();
     roomType.size = Math.min(ROOM_SIZE_MAX, Math.max(ROOM_SIZE_MIN, roomType.size + by));
     paint();
   };
   const smaller = document.createElement('button');
-  smaller.type = 'button'; smaller.textContent = '−'; smaller.title = 'Smaller'; smaller.onclick = step(-1);
+  smaller.type = 'button'; smaller.textContent = 'A'; smaller.title = 'Smaller'; smaller.className = 'room-typea sm'; smaller.onclick = step(-1);
   const bigger = document.createElement('button');
-  bigger.type = 'button'; bigger.textContent = '+'; bigger.title = 'Bigger'; bigger.onclick = step(1);
-  const slider=document.createElement('input');
-  slider.type='range';slider.min=ROOM_SIZE_MIN;slider.max=ROOM_SIZE_MAX;slider.step=1;
-  slider.setAttribute('aria-label','Conversation text size');slider.style.width='100%';
-  slider.oninput=()=>{roomType.size=Number(slider.value);paint();};
-  sizeRow.append(smaller, readout, bigger);
-  const widthRow=document.createElement('div');
-  widthRow.className='room-typewidth';
-  const widthLabel=document.createElement('label');
-  widthLabel.htmlFor='roomReadingWidth';widthLabel.append('Reading width');
-  const widthReadout=document.createElement('span');
+  bigger.type = 'button'; bigger.textContent = 'A'; bigger.title = 'Bigger'; bigger.className = 'room-typea lg'; bigger.onclick = step(1);
+  const slider = document.createElement('input');
+  slider.type = 'range'; slider.min = ROOM_SIZE_MIN; slider.max = ROOM_SIZE_MAX; slider.step = 1;
+  slider.setAttribute('aria-label', 'Conversation text size');
+  slider.oninput = () => { roomType.size = Number(slider.value); paint(); };
+  sizeRow.append(smaller, slider, bigger, readout);
+  sizeGroup.appendChild(sizeRow);
+  painters.push(() => {
+    readout.textContent = roomType.size + 'px';
+    smaller.disabled = roomType.size <= ROOM_SIZE_MIN;
+    bigger.disabled = roomType.size >= ROOM_SIZE_MAX;
+    slider.value = String(roomType.size);
+  });
+
+  painters.push(segmented(group('Weight'), ROOM_WEIGHTS, () => roomType.weight, (v) => { roomType.weight = v; }));
+  painters.push(segmented(group('Line spacing'), ROOM_LEADINGS, () => roomType.leading, (v) => { roomType.leading = v; }));
+
+  // ── width ──
+  const widthRow = document.createElement('div');
+  widthRow.className = 'room-typewidth';
+  const widthLabel = document.createElement('label');
+  widthLabel.htmlFor = 'roomReadingWidth'; widthLabel.append('Margins');
+  const widthReadout = document.createElement('span');
   widthLabel.append(widthReadout);
-  const widthSlider=document.createElement('input');
-  widthSlider.id='roomReadingWidth';widthSlider.type='range';widthSlider.min=45;widthSlider.max=100;widthSlider.step=1;
-  widthSlider.oninput=()=>{roomType.width=Number(widthSlider.value);paint();};
-  widthRow.append(widthLabel,widthSlider);
-  roomTypeMenu.append(fonts, sizeRow,slider,widthRow);
+  const widthSlider = document.createElement('input');
+  widthSlider.id = 'roomReadingWidth'; widthSlider.type = 'range'; widthSlider.min = 45; widthSlider.max = 100; widthSlider.step = 1;
+  widthSlider.oninput = () => { roomType.width = Number(widthSlider.value); paint(); };
+  widthRow.append(widthLabel, widthSlider);
+  group('').appendChild(widthRow);
+  painters.push(() => { widthSlider.value = String(roomType.width); widthReadout.textContent = roomType.width + '%'; });
+
+  painters.push(segmented(group('Alignment'), ROOM_ALIGNS, () => roomType.align, (v) => { roomType.align = v; }));
+
   paint();
   const r = btn.getBoundingClientRect();
   roomTypeMenu.onmousedown = (ev) => ev.stopPropagation();
