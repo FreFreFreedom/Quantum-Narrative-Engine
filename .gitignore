@@ -3,3 +3,10 @@
 # batch runtime state, not a record
 queue-server/data-seed/interiors/.batch-log.txt
 queue-server/data-seed/interiors/.batch.pid
+
+# throwaway UI mockups, local only
+/sources-looks.html
+/sources-covers.html
+/quotes-looks.html
+/quote-fonts.html
+/item-panel-looks.html
