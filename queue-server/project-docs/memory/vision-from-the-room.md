@@ -11,6 +11,14 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## A policy is the frozen posture an entity takes toward its own vulnerability—the automated refusal of attention substituted for real-time care.
+
+Every entity—from an individual psyche to a nation—maintains its boundary by adopting rules of intake, rejection, and punishment. When an institution cannot look at a human being with the care required to see what is happening, it writes a rule that makes looking unnecessary, trickling down across scales.
+
+## Conflict resolution across scales must treat disputes not as local negotiations, but as circuits spanning from geopolitics to family silence.
+
+Current mediation initiatives—UN diplomacy, street violence interrupters, restorative justice circles—hit a ceiling because they operate on single rungs. A fractal conflict resolution system traces how geopolitical treaties fracture families and how intimate wounds return as populist revolts.
+
 ## The murder board in homicide policing is a self-updating logic puzzle that acts as both mirror and mask for institutional priorities and political closure.
 
 Derived from David Simon's Homicide: A Year on the Killing Streets. The board tracks not only solved cases but which failures are absorbed, which names hang like curses, and the exact mechanics by which detectives slide from idealism to operational numbness under systemic pressure.
@@ -66,10 +74,6 @@ Quotes the owner pulled out and endorsed: 'Does the wound at the family level fe
 ## A civic structure is not an institution but the living act of a people answering 'how do we hold together?' — crystallized norms, rituals, laws and practices of exclusion.
 
 Developed out of Fences (family dinner table as civic space under Jim Crow — a structure forced to be fortress and sanctuary at once, Troy Maxson's fence as the state's borders, private myth vs public cage), When They See Us (system not broken but operating exactly as designed for pre-guilty bodies — the case is the thesis made visible), and the courthouse/prison/voting-booth as stages where a collective's theory of the human performs. Every civic structure carries its own blind spot — the question it was built not to ask — and what it excludes does not disappear but becomes its shadow, which feeds back into the next act of exclusion, the next arrest, the next law.
-
-## A policy is the frozen posture an entity takes toward its own vulnerability — the automated refusal of attention substituted for real-time care.
-
-Develops the earlier idea that policies are universal across scales. When an entity (individual, family, institution, nation) cannot face its own vulnerability with presence, it creates a rule to handle what it cannot look at directly. A father who cannot face grief writes a rule that grief is weakness. A nation that cannot face its complicity writes a law that punishes certain bodies more harshly. The policy is not the problem; it is the scar tissue where attention once was. What trickles down across scales is not the policy's content but its posture — the automated refusal of attention. The child absorbs the father's rule not because it is taught but because the posture is the atmosphere. At national scale, the community absorbs the law's posture not as statute but as ambient threat. The fractal engine traces this frozen shape of avoidance as it cascades from the largest civic body to the most intimate psychic interior.
 
 ## Interior-exterior self-similarity: the internal anatomy of any entity mirrors its external relationships. Relationships inside reflect relationships outside.
 
