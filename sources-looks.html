@@ -1,0 +1,152 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Sources</title>
+<style>
+:root{--bg:#1b2320;--surf:#202926;--surf2:#25302c;--line:#2f3b37;--line2:#3a4844;--ink:#e6ece9;--ink2:#b9c5c0;--ink3:#8b9a94;--ink4:#697772;--gold:#d7a55a;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:40px 28px 90px}
+.wrap{max-width:760px;margin:0 auto}
+.tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);margin:52px 0 14px}
+.tag:first-child{margin-top:0}
+.tail{color:var(--ink2);margin:0 0 4px}
+hr.br{border:0;border-top:1px solid var(--line);margin:22px 0}
+
+/* A — numbered rail */
+.a-list{display:grid;gap:9px;margin-top:4px}
+.a-row{display:grid;grid-template-columns:20px 1fr;gap:12px;align-items:baseline}
+.a-n{font-size:11px;color:var(--ink4);font-variant-numeric:tabular-nums;text-align:right}
+.a-t{font-family:Georgia,serif;font-style:italic;color:var(--ink)}
+.a-a{color:var(--ink3);font-size:13px}
+
+/* B — covers */
+.b-strip{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px}
+.b-one{width:78px}
+.b-cov{width:78px;height:112px;border-radius:3px;background:linear-gradient(150deg,#3a4a44,#263029);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+.b-cov.g1{background:linear-gradient(150deg,#5a4433,#2a211a)}
+.b-cov.g2{background:linear-gradient(150deg,#33475a,#1b242e)}
+.b-cov.g3{background:linear-gradient(150deg,#4a3350,#241a28)}
+.b-cov.g4{background:linear-gradient(150deg,#2f5045,#17261f)}
+.b-nm{font-size:11px;line-height:1.35;color:var(--ink2);margin-top:7px;font-family:Georgia,serif;font-style:italic}
+.b-au{font-size:10px;color:var(--ink4);margin-top:2px}
+
+/* C — pills */
+.c-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.c-p{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line2);background:var(--surf2);border-radius:999px;padding:4px 12px 4px 9px;font-size:12.5px;color:var(--ink2)}
+.c-p i{width:5px;height:5px;border-radius:50%;background:var(--ink4);font-style:normal}
+.c-p i.on{background:var(--gold)}
+.c-p em{font-family:Georgia,serif;color:var(--ink)}
+
+/* D — hairline block */
+.d-box{border-left:2px solid var(--line2);padding:2px 0 2px 16px;margin-top:6px;display:grid;gap:7px}
+.d-r{display:flex;justify-content:space-between;gap:20px;font-size:13.5px}
+.d-r em{font-family:Georgia,serif;color:var(--ink);font-style:italic}
+.d-r span{color:var(--ink4);white-space:nowrap;font-size:12px}
+
+/* E — cards */
+.e-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.e-c{display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:center;border:1px solid var(--line);background:var(--surf);border-radius:7px;padding:9px 12px}
+.e-c:hover{border-color:var(--line2)}
+.e-mini{width:26px;height:36px;border-radius:2px;background:linear-gradient(150deg,#3a4a44,#222a26)}
+.e-t{font-family:Georgia,serif;font-style:italic;font-size:13.5px;line-height:1.3}
+.e-a{font-size:11px;color:var(--ink4);margin-top:2px}
+
+/* F — folded */
+.f-head{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:5px 14px;font-size:12px;color:var(--ink3);cursor:pointer}
+.f-head b{color:var(--ink2);font-weight:500}
+.f-mini{display:flex;gap:3px}
+.f-mini i{width:9px;height:13px;border-radius:1px;background:#3d4c46;display:block}
+.f-open{display:grid;gap:8px;margin-top:12px;padding-left:4px}
+.f-open .a-row{grid-template-columns:8px 1fr}
+.f-dot{width:4px;height:4px;border-radius:50%;background:var(--ink4);margin-top:9px}
+
+/* G — table */
+.g-t{width:100%;border-collapse:collapse;margin-top:6px;font-size:13.5px}
+.g-t td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:baseline}
+.g-t tr:last-child td{border-bottom:0}
+.g-t td.n{width:22px;color:var(--ink4);font-size:11px}
+.g-t td.a{color:var(--ink3);width:38%}
+.g-t td.t{font-family:Georgia,serif;font-style:italic}
+.g-t td.s{width:60px;text-align:right;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+
+.meta{font-size:10.5px;color:var(--ink4);margin-top:16px;letter-spacing:.06em}
+</style></head><body><div class="wrap">
+
+<p class="tail">…and the yard stays quiet until the count clears.</p>
+
+<div class="tag">A · Numbered rail</div>
+<hr class="br">
+<div class="a-list">
+<div class="a-row"><div class="a-n">1</div><div><div class="a-t">Golden Gulag</div><div class="a-a">Ruth Wilson Gilmore</div></div></div>
+<div class="a-row"><div class="a-n">2</div><div><div class="a-t">Halfway Home</div><div class="a-a">Reuben Miller</div></div></div>
+<div class="a-row"><div class="a-n">3</div><div><div class="a-t">Blood in the Water</div><div class="a-a">Heather Ann Thompson</div></div></div>
+<div class="a-row"><div class="a-n">4</div><div><div class="a-t">Assata</div><div class="a-a">Assata Shakur</div></div></div>
+<div class="a-row"><div class="a-n">5</div><div><div class="a-t">The New Jim Crow</div><div class="a-a">Michelle Alexander</div></div></div>
+</div>
+<div class="meta">2084 words</div>
+
+<div class="tag">B · Covers</div>
+<hr class="br">
+<div class="b-strip">
+<div class="b-one"><div class="b-cov g1"></div><div class="b-nm">Golden Gulag</div><div class="b-au">Gilmore</div></div>
+<div class="b-one"><div class="b-cov g2"></div><div class="b-nm">Halfway Home</div><div class="b-au">Miller</div></div>
+<div class="b-one"><div class="b-cov g3"></div><div class="b-nm">Blood in the Water</div><div class="b-au">Thompson</div></div>
+<div class="b-one"><div class="b-cov g4"></div><div class="b-nm">Assata</div><div class="b-au">Shakur</div></div>
+<div class="b-one"><div class="b-cov"></div><div class="b-nm">The New Jim Crow</div><div class="b-au">Alexander</div></div>
+</div>
+<div class="meta">2084 words</div>
+
+<div class="tag">C · Pills · gold dot = on your shelf</div>
+<hr class="br">
+<div class="c-pills">
+<span class="c-p"><i class="on"></i><em>Golden Gulag</em> · Gilmore</span>
+<span class="c-p"><i></i><em>Halfway Home</em> · Miller</span>
+<span class="c-p"><i></i><em>Blood in the Water</em> · Thompson</span>
+<span class="c-p"><i></i><em>Assata</em> · Shakur</span>
+<span class="c-p"><i class="on"></i><em>The New Jim Crow</em> · Alexander</span>
+</div>
+<div class="meta">2084 words</div>
+
+<div class="tag">D · Hairline</div>
+<hr class="br">
+<div class="d-box">
+<div class="d-r"><em>Golden Gulag</em><span>Ruth Wilson Gilmore · 2007</span></div>
+<div class="d-r"><em>Halfway Home</em><span>Reuben Miller · 2021</span></div>
+<div class="d-r"><em>Blood in the Water</em><span>Heather Ann Thompson · 2016</span></div>
+<div class="d-r"><em>Assata</em><span>Assata Shakur · 1987</span></div>
+<div class="d-r"><em>The New Jim Crow</em><span>Michelle Alexander · 2010</span></div>
+</div>
+<div class="meta">2084 words</div>
+
+<div class="tag">E · Cards</div>
+<hr class="br">
+<div class="e-grid">
+<div class="e-c"><div class="e-mini"></div><div><div class="e-t">Golden Gulag</div><div class="e-a">Ruth Wilson Gilmore</div></div></div>
+<div class="e-c"><div class="e-mini"></div><div><div class="e-t">Halfway Home</div><div class="e-a">Reuben Miller</div></div></div>
+<div class="e-c"><div class="e-mini"></div><div><div class="e-t">Blood in the Water</div><div class="e-a">Heather Ann Thompson</div></div></div>
+<div class="e-c"><div class="e-mini"></div><div><div class="e-t">Assata</div><div class="e-a">Assata Shakur</div></div></div>
+<div class="e-c"><div class="e-mini"></div><div><div class="e-t">The New Jim Crow</div><div class="e-a">Michelle Alexander</div></div></div>
+</div>
+<div class="meta">2084 words</div>
+
+<div class="tag">F · Folded, then open</div>
+<hr class="br">
+<div class="f-head"><span class="f-mini"><i></i><i></i><i></i><i></i><i></i></span><b>5 sources</b> ⌄</div>
+<div class="f-open">
+<div class="a-row"><span class="f-dot"></span><div><span class="a-t">Golden Gulag</span> <span class="a-a">— Gilmore</span></div></div>
+<div class="a-row"><span class="f-dot"></span><div><span class="a-t">Halfway Home</span> <span class="a-a">— Miller</span></div></div>
+<div class="a-row"><span class="f-dot"></span><div><span class="a-t">Blood in the Water</span> <span class="a-a">— Thompson</span></div></div>
+<div class="a-row"><span class="f-dot"></span><div><span class="a-t">Assata</span> <span class="a-a">— Shakur</span></div></div>
+<div class="a-row"><span class="f-dot"></span><div><span class="a-t">The New Jim Crow</span> <span class="a-a">— Alexander</span></div></div>
+</div>
+<div class="meta">2084 words</div>
+
+<div class="tag">G · Ruled table</div>
+<hr class="br">
+<table class="g-t">
+<tr><td class="n">1</td><td class="a">Ruth Wilson Gilmore</td><td class="t">Golden Gulag</td><td class="s">shelf</td></tr>
+<tr><td class="n">2</td><td class="a">Reuben Miller</td><td class="t">Halfway Home</td><td class="s"></td></tr>
+<tr><td class="n">3</td><td class="a">Heather Ann Thompson</td><td class="t">Blood in the Water</td><td class="s"></td></tr>
+<tr><td class="n">4</td><td class="a">Assata Shakur</td><td class="t">Assata</td><td class="s"></td></tr>
+<tr><td class="n">5</td><td class="a">Michelle Alexander</td><td class="t">The New Jim Crow</td><td class="s">shelf</td></tr>
+</table>
+<div class="meta">2084 words</div>
+
+</div></body></html>

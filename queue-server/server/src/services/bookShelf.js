@@ -21,6 +21,7 @@
 // something to bet a feature on.
 
 import { randomUUID } from 'node:crypto';
+import { wholeSentences } from './bookFacts.js';
 import { uniqueTitle } from './knowledgeDocs.js';
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
@@ -270,7 +271,7 @@ async function writeRelevance(row, blurb) {
   const out = await generateText({
     prompt, feature: 'studio', label: 'shelf-relevance', maxTokens: 320, timeoutMs: 60_000, maxAttempts: 2,
   });
-  return String(out?.text || '').trim().slice(0, 1200);
+  return wholeSentences(String(out?.text || '').trim().slice(0, 1200));
 }
 
 // Both summaries for one book, written the first time they are asked for and

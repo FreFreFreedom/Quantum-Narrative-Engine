@@ -50,6 +50,18 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
   src:url('/fonts/sourcesans3-normal.woff2') format('woff2'); }
 @font-face { font-family:'Source Sans 3'; font-style:italic; font-weight:400 700; font-display:swap;
   src:url('/fonts/sourcesans3-italic.woff2') format('woff2'); }
+/* OpenDyslexic (SIL OFL 1.1, opendyslexic.org) — the reading face for everything
+   that is his own words or the answer to them: the conversation, and the passages
+   kept out of a book. Four static files rather than one variable one, because the
+   face has no variable cut. Latin subset, from @fontsource/opendyslexic. */
+@font-face { font-family:'OpenDyslexic'; font-style:normal; font-weight:400; font-display:swap;
+  src:url('/fonts/opendyslexic-400-normal.woff2') format('woff2'); }
+@font-face { font-family:'OpenDyslexic'; font-style:italic; font-weight:400; font-display:swap;
+  src:url('/fonts/opendyslexic-400-italic.woff2') format('woff2'); }
+@font-face { font-family:'OpenDyslexic'; font-style:normal; font-weight:700; font-display:swap;
+  src:url('/fonts/opendyslexic-700-normal.woff2') format('woff2'); }
+@font-face { font-family:'OpenDyslexic'; font-style:italic; font-weight:700; font-display:swap;
+  src:url('/fonts/opendyslexic-700-italic.woff2') format('woff2'); }
 /* ─── The look-independent system: type, space, shape, motion ───────────────
    These never change between looks. Only colour does. The type scale is seven stops
    quantised from the thirteen half-pixel sizes the file had grown; every stop is a size
@@ -1473,30 +1485,38 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-based small { display:block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
 .lib-based b { font-size:12px; font-weight:600; }
 .lib-bchip { width:22px; height:32px; border-radius:2px; background:var(--c-surface-3,var(--c-surface-2)); border:1px solid var(--c-border-2); flex:none; }
-.shelf-acts { display:flex; flex-wrap:wrap; gap:8px; margin-top:11px; }
-.shelf-acts button { font-size:11px; padding:4px 11px; border-radius:999px; }
-.shelf-cover.sm { width:54px; flex:none; }
+/* An opened item reads like a page about that book, not like a row that grew:
+   jacket and title together at the top, then two headed passages of prose. The
+   actions are words under a rule, so nothing competes with the reading. */
+.shelf-acts { display:flex; flex-wrap:wrap; gap:18px; margin-top:16px; padding-top:12px; border-top:1px solid var(--c-border); }
+.shelf-acts button { font-family:var(--font-ui); font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5);
+  background:none; border:0; border-radius:0; padding:0; min-width:0; }
+.shelf-acts button:hover { color:var(--c-cast,var(--c-accent)); background:none; border:0; }
+.shelf-cover.sm { width:74px; flex:none; }
 .shelf-card.is-open .shelf-cover { outline:1px solid var(--c-ink-4); outline-offset:2px; }
-.shelf-panel { grid-column:1/-1; background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:10px; padding:12px; margin:2px 0 4px; }
-.shelf-panel-head { display:flex; gap:12px; align-items:flex-start; }
+.shelf-panel { grid-column:1/-1; background:var(--c-surface); border:1px solid var(--c-border-2); border-radius:12px;
+  padding:20px 22px 18px; margin:4px 0 6px; }
+.shelf-panel-head { display:flex; gap:18px; align-items:flex-start; }
 .shelf-panel-head > div { flex:1; min-width:0; }
-.shelf-panel-head b { font-size:13px; line-height:1.3; display:block; }
-.shelf-panel-head small { color:var(--c-ink-4); font-size:11px; }
-.shelf-panel-head [data-close] { width:22px; height:22px; min-width:0; padding:0; border-radius:50%; font-size:11px; line-height:1; flex:none; }
-.shelf-facts { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
-.shelf-facts span { font-size:10px; color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:999px; padding:1px 7px; }
-.shelf-note { margin-top:11px; }
-.shelf-note h6 { display:flex; align-items:center; gap:6px; margin:0 0 4px; font-size:10px; font-weight:600;
-  letter-spacing:.09em; text-transform:uppercase; color:var(--c-ink-5); }
-.shelf-note h6 [data-renote] { width:18px; height:18px; min-width:0; padding:0; border:0; background:none;
+.shelf-panel-head b { font-family:var(--font-read); font-size:var(--fs-xl); font-weight:600; line-height:1.2;
+  display:block; margin-bottom:3px; letter-spacing:-.005em; }
+.shelf-panel-head small { display:block; color:var(--c-ink-4); font-size:var(--fs-md); }
+.shelf-panel-head [data-close] { width:24px; height:24px; min-width:0; padding:0; border-radius:50%; font-size:11px; line-height:1; flex:none; }
+.shelf-facts { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.shelf-facts span { font-size:var(--fs-xs); color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:999px; padding:2px 9px; }
+.shelf-note { margin-top:22px; }
+.shelf-note h6 { display:flex; align-items:center; gap:7px; margin:0 0 8px; font-size:var(--fs-2xs); font-weight:600;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--c-ink-5); }
+.shelf-note h6 [data-renote], .shelf-note h6 [data-rescreen] { width:18px; height:18px; min-width:0; padding:0; border:0; background:none;
   color:var(--c-ink-5); font-size:11px; line-height:1; cursor:pointer; }
-.shelf-note h6 [data-renote]:hover { color:var(--c-ink); }
-.shelf-note p { margin:0; font-size:12.5px; line-height:1.6; color:var(--c-ink-3); }
-.shelf-note.is-ours p { color:var(--c-ink-2); }
-.shelf-note-wait { margin:11px 0 0; font-size:12px; font-style:italic; color:var(--c-ink-5); }
-.shelf-kept { margin-top:10px; display:flex; flex-direction:column; gap:9px; }
-.shelf-kept blockquote { margin:0; border-left:2px solid var(--c-ink-5); padding-left:10px; font:italic 12.5px/1.6 Georgia,serif; color:var(--c-ink-2); }
-.shelf-opening { margin:10px 0 0; font:12.5px/1.6 Georgia,serif; color:var(--c-ink-4); }
+.shelf-note h6 [data-renote]:hover, .shelf-note h6 [data-rescreen]:hover { color:var(--c-ink); }
+.shelf-note p { margin:0; font-family:var(--font-read); font-size:var(--fs-md); line-height:1.66; color:var(--c-ink-2); max-width:70ch; }
+.shelf-note.is-ours p { color:var(--c-ink); border-left:2px solid var(--c-cast,var(--c-accent)); padding-left:14px; }
+.shelf-note-wait { margin:18px 0 0; font-size:var(--fs-sm); font-style:italic; color:var(--c-ink-5); }
+.shelf-kept { margin-top:22px; display:flex; flex-direction:column; gap:10px; }
+.shelf-kept blockquote { margin:0; background:rgba(87,195,180,.07); border-left:3px solid var(--c-cast,var(--c-accent));
+  border-radius:0 8px 8px 0; padding:12px 15px; font-family:var(--room-font); font-size:var(--fs-md); line-height:1.6; color:var(--c-ink-2); }
+.shelf-opening { margin:16px 0 0; font-family:var(--font-read); font-size:var(--fs-md); line-height:1.66; color:var(--c-ink-3); }
 .shelf-card [data-drop] { position:absolute; top:4px; right:4px; width:22px; height:22px; min-width:0; padding:0; border-radius:50%;
   display:flex; align-items:center; justify-content:center; font-size:11px; line-height:1; white-space:nowrap; overflow:hidden;
   opacity:0; transition:opacity .12s; background:rgba(var(--c-surface-rgb),.85); }
@@ -1706,7 +1726,17 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-rec-steering textarea { box-sizing:border-box; margin:6px 0; }
 #roomDropZone { display:none !important; }
 #roomInterests > .room-tabs { display:none; }
-.interest-item--passage .interest-passage { margin:6px 0 10px; color:var(--c-ink); line-height:1.5; }
+/* A kept passage is his own thinking held still, so it reads in the conversation's
+   face and sits in its own tinted block rather than in a list of rows. */
+.interest-item--passage { border-bottom:none; padding:0; margin:0 0 10px; }
+.interest-item--passage > div { background:rgba(87,195,180,.07); border-left:3px solid var(--c-cast);
+  border-radius:0 8px 8px 0; padding:13px 16px 10px; }
+.interest-item--passage .interest-passage { margin:0; color:var(--c-ink-2);
+  font-family:var(--room-font); font-size:var(--room-size); line-height:1.6; }
+.interest-item--passage [data-attach] { margin-top:9px; background:none; border:0; padding:0; min-width:0;
+  font-family:var(--font-ui); font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5); }
+.interest-item--passage [data-attach]:hover { color:var(--c-cast); background:none; border:0; }
+.interest-item--passage .room-rec-menu { margin-left:12px; }
 .interest-item--media { display:grid; grid-template-columns:48px minmax(0,1fr); gap:9px; }
 .interest-item--media .interest-media-info { min-width:0; }
 .interest-art { width:48px; height:68px; border-radius:5px; background:var(--c-surface-2); border:1px solid var(--c-border-2); background-size:cover; background-position:center; }
@@ -10617,13 +10647,18 @@ function renderRoomHead() {
 // one shared conversation component reads the same size, not just the Room.
 const ROOM_TYPE_KEY = 'fmcns_room_type';
 const ROOM_FONTS = [
+  ['dyslexic', 'Dyslexic', "'OpenDyslexic',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"],
   ['system', 'System', '-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif'],
   ['serif', 'Serif', "'Literata',Georgia,'Iowan Old Style','Times New Roman',serif"],
   ['mono', 'Mono', 'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'],
 ];
+// A face added after the setting already existed reaches nobody, because every
+// browser has a saved choice. Stamped settings are left alone; an unstamped one
+// is moved to the new face once, keeping his size and width.
+const ROOM_TYPE_V = 2;
 const ROOM_SIZE_MIN = 12;
 const ROOM_SIZE_MAX = 48;
-let roomType = { font: 'system', size: 14, width: 90 };
+let roomType = { font: 'dyslexic', size: 14, width: 90, v: ROOM_TYPE_V };
 function applyRoomType() {
   const f = ROOM_FONTS.find((x) => x[0] === roomType.font) || ROOM_FONTS[0];
   document.documentElement.style.setProperty('--room-font', f[2]);
@@ -10637,7 +10672,12 @@ function saveRoomType() {
   try {
     const saved = JSON.parse(localStorage.getItem(ROOM_TYPE_KEY) || 'null');
     if (saved && ROOM_FONTS.some((f) => f[0] === saved.font) && saved.size >= ROOM_SIZE_MIN && saved.size <= ROOM_SIZE_MAX) {
-      roomType = { font: saved.font, size: Number(saved.size), width: Number.isFinite(saved.width) ? Math.min(100,Math.max(45,saved.width)) : 90 };
+      roomType = {
+        font: Number(saved.v) >= ROOM_TYPE_V ? saved.font : 'dyslexic',
+        size: Number(saved.size),
+        width: Number.isFinite(saved.width) ? Math.min(100, Math.max(45, saved.width)) : 90,
+        v: ROOM_TYPE_V,
+      };
     }
   } catch (e) {}
 })();
@@ -13063,9 +13103,11 @@ function shelfPanel(b) {
     + '<div class="shelf-facts">' + facts + '</div></div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
     + shelfNotesMarkup(d)
+    // What sat here when nothing was kept was the book's first page — the
+    // publisher's front matter in capitals, which reads as broken text.
     + (d.passages.length
       ? '<div class="shelf-kept">' + d.passages.map((p) => '<blockquote>' + qEsc(String(p.text || '').slice(0, 320)) + '</blockquote>').join('') + '</div>'
-      : '<p class="shelf-opening">' + qEsc(d.opening.slice(0, 320)) + '…</p>')
+      : '')
     + '</div>';
 }
 
@@ -13144,8 +13186,10 @@ function libScreenPanel(w) {
     + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
     + '<div><b>' + (w.url && /^https:\/\//.test(w.url)
       ? '<a href="' + qEscAttr(w.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(w.title) + '</a>' : qEsc(w.title)) + '</b>'
-    + '<small>' + qEsc([f.year || w.year, w.kind || 'film', w.creator].filter(Boolean).join(' · ')) + '</small>'
-    + rating + '</div>'
+    + (w.creator ? '<small>' + qEsc(w.creator) + '</small>' : '')
+    + '<div class="shelf-facts">'
+      + [f.year || w.year, w.kind || 'film'].filter(Boolean).map((t) => '<span>' + qEsc(t) + '</span>').join('')
+    + '</div>' + rating + '</div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
     + book
     + (f.overview ? '<div class="shelf-note"><h6>' + (w.kind === 'book' ? 'What it is' : 'Synopsis')

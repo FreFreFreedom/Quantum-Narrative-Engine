@@ -186,6 +186,16 @@ export async function lookupBook(title, creator) {
   return out;
 }
 
+// A free-lane model sometimes stops mid-sentence, and "…how the state expands its"
+// is worse than one sentence fewer. Cut back to the last sentence that finished.
+export function wholeSentences(text) {
+  const t = String(text || '').replace(/\s+$/, '');
+  if (!t || /[.!?…"'\u201d\u2019)\]]$/.test(t)) return t;
+  const cut = Math.max(t.lastIndexOf('. '), t.lastIndexOf('! '), t.lastIndexOf('? '),
+    t.lastIndexOf('.\n'), t.lastIndexOf('."'), t.lastIndexOf('.\u201d'));
+  return cut > 60 ? t.slice(0, cut + 1) : t;
+}
+
 function rowOf(title, creator) {
   try { return db.prepare('SELECT * FROM book_facts WHERE key=?').get(keyOf(title, creator)) || null; }
   catch (err) { return null; }
@@ -251,7 +261,7 @@ export async function bookRelevance(owner, item, { refresh = false } = {}) {
     'Plain words, no jargon, no preamble, no bullets, never a summary of the plot. If you do not know the book, say what it is likely to carry and mark that as a guess in four words. Prose only.',
   ].filter(Boolean).join('\n\n');
   const out = await generateText({ prompt, feature: 'studio', label: 'library-book-relevance', maxTokens: 300, timeoutMs: 60_000, maxAttempts: 2 });
-  const text = String(out?.text || '').trim().slice(0, 1200);
+  const text = wholeSentences(String(out?.text || '').trim().slice(0, 1200));
   if (text) db.prepare('UPDATE book_facts SET relevance=? WHERE key=?').run(text, keyOf(item.title, item.creator));
   return { relevance: text, overview: row?.blurb || '', poster: row?.cover || '' };
 }
