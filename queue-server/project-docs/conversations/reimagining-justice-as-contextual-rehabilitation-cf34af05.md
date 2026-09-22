@@ -1,4 +1,4 @@
-# *Better Call Saul*: Institutional Law and Visual Tone
+# Reimagining Justice as Contextual Rehabilitation
 
 Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 74 turns · last said 2026-09-22T08:09:00.214Z
 
