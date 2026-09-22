@@ -21,7 +21,7 @@
 // something to bet a feature on.
 
 import { randomUUID } from 'node:crypto';
-import { wholeSentences } from './bookFacts.js';
+import { wholeSentences, looksCut, PROSE_TOKENS } from './bookFacts.js';
 import { uniqueTitle } from './knowledgeDocs.js';
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
@@ -268,10 +268,14 @@ async function writeRelevance(row, blurb) {
     `Write at most ${RELEVANCE_MAX_WORDS} words saying what this book gives HIM — the thinking it feeds, where it bites on what he is working on, and what he would reach into it for.`,
     'Plain words, no jargon, no equations, no hedging, no preamble, no bullet list, and never a summary of the plot. If you do not know the book, say what it is likely to carry and mark that as a guess in four words. Write prose, nothing else.',
   ].filter(Boolean).join('\n\n');
-  const out = await generateText({
-    prompt, feature: 'studio', label: 'shelf-relevance', maxTokens: 320, timeoutMs: 60_000, maxAttempts: 2,
-  });
-  return wholeSentences(String(out?.text || '').trim().slice(0, 1200));
+  let raw = '';
+  for (let tries = 0; tries < 2 && looksCut(raw); tries += 1) {
+    const out = await generateText({
+      prompt, feature: 'studio', label: 'shelf-relevance', maxTokens: PROSE_TOKENS, timeoutMs: 60_000, maxAttempts: 2,
+    });
+    raw = String(out?.text || '').trim();
+  }
+  return wholeSentences(raw.slice(0, 1200));
 }
 
 // Both summaries for one book, written the first time they are asked for and
@@ -287,7 +291,7 @@ export async function bookNotes(owner, id, { refresh = false } = {}) {
     if (blurb) db.prepare('UPDATE shelf_books SET blurb=? WHERE id=?').run(blurb, id);
   }
   let relevance = row.relevance || '';
-  if (!relevance || refresh) {
+  if (!relevance || refresh || looksCut(relevance)) {
     const written = await writeRelevance(row, blurb);
     if (written) { relevance = written; db.prepare('UPDATE shelf_books SET relevance=? WHERE id=?').run(relevance, id); }
   }

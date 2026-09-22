@@ -1499,10 +1499,12 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-kind { position:absolute; bottom:5px; left:6px; font-size:10px; color:#e6eef0; opacity:.85; text-shadow:0 1px 3px #000; }
 .lib-rate { display:flex; align-items:center; gap:6px; margin-top:7px; font-size:11px; color:var(--c-ink-4); }
 .lib-rate em { font-style:normal; font-size:15px; font-weight:600; color:var(--c-ink); }
-.stars { position:relative; display:inline-block; font-size:12px; letter-spacing:1px; line-height:1; }
-.stars i { color:var(--c-ink-5); font-style:normal; }
-.stars b { position:absolute; left:0; top:0; overflow:hidden; white-space:nowrap; font-weight:400;
-  color:var(--c-accent,#c8a56a); letter-spacing:1px; }
+.stars { position:relative; display:inline-block; font-family:var(--font-ui); font-size:12px;
+  letter-spacing:1px; line-height:1; white-space:nowrap; }
+.stars i, .stars b { font:inherit; font-style:normal; font-weight:400; letter-spacing:inherit; margin:0; }
+.stars i { display:block; color:var(--c-ink-5); }
+.stars b { position:absolute; left:0; top:0; display:block; overflow:hidden; white-space:nowrap;
+  color:var(--c-accent,#c8a56a); }
 .lib-based { display:flex; gap:10px; align-items:center; margin:11px 0 0; padding:8px 9px;
   border:1px solid var(--c-border-2); border-radius:10px; }
 .lib-based small { display:block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
@@ -1514,14 +1516,19 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-acts { display:flex; flex-wrap:wrap; gap:18px; margin-top:16px; padding-top:12px; border-top:1px solid var(--c-border); }
 .shelf-acts button { font-family:var(--font-ui); font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5);
   background:none; border:0; border-radius:0; padding:0; min-width:0; }
-.shelf-acts button:hover { color:var(--c-cast,var(--c-accent)); background:none; border:0; }
+.shelf-acts button:hover, .shelf-out:hover { color:var(--c-cast,var(--c-accent)); }
+.shelf-out { font-family:var(--font-ui); font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5);
+  text-decoration:none; margin-right:auto; }
+.shelf-out span { font-size:var(--fs-xs); }
 .shelf-cover.sm { width:74px; flex:none; }
 .shelf-card.is-open .shelf-cover { outline:1px solid var(--c-ink-4); outline-offset:2px; }
 .shelf-panel { position:relative; grid-column:1/-1; background:var(--c-surface); border:1px solid var(--c-border-2);
   border-radius:12px; padding:20px 22px 18px; margin:4px 0 6px; }
 .shelf-panel-head { display:flex; flex-wrap:nowrap; gap:18px; align-items:flex-start; padding-right:30px; }
 .shelf-panel-head > div { flex:1; min-width:0; }
-.shelf-panel-head b { font-family:var(--font-read); font-size:var(--fs-xl); font-weight:600; line-height:1.2;
+/* The title only — not every <b> under the head. Unscoped, this rule caught the
+   lit half of the star row and drew it a third bigger and a line lower. */
+.shelf-panel-head > div > b { font-family:var(--font-read); font-size:var(--fs-xl); font-weight:600; line-height:1.2;
   display:block; margin-bottom:3px; letter-spacing:-.005em; overflow-wrap:anywhere; }
 .shelf-panel-head small { display:block; color:var(--c-ink-4); font-size:var(--fs-md); }
 /* Pinned to the panel, not laid out in the head: a title long enough to wrap
@@ -13283,6 +13290,26 @@ function libShortTitle(t) {
   return cut;
 }
 
+// Out to where the thing itself lives: a book on Amazon, a film or series on
+// IMDb. Deep-linked when we hold the identifier the catalogue gave us (an ISBN,
+// a tconst), a search for it when we do not — never a dead link.
+function libOutLink(w, f) {
+  if (w.kind === 'film' || w.kind === 'series') {
+    const id = (f && f.imdbId) || '';
+    return { label: 'IMDb',
+      url: id ? 'https://www.imdb.com/title/' + encodeURIComponent(id) + '/'
+              : 'https://www.imdb.com/find/?s=tt&q=' + encodeURIComponent(w.title) };
+  }
+  if (w.kind === 'book') {
+    const isbn = (f && f.isbn) || '';
+    const q = [libShortTitle(w.title), w.creator || ''].filter(Boolean).join(' ');
+    return { label: 'Amazon',
+      url: isbn ? 'https://www.amazon.com/dp/' + encodeURIComponent(isbn)
+                : 'https://www.amazon.com/s?i=stripbooks&k=' + encodeURIComponent(q) };
+  }
+  return null;
+}
+
 function libStars(v) {
   const pct = Math.max(0, Math.min(100, (Number(v) || 0) * 10));
   return '<span class="stars"><i>★★★★★</i><b style="width:' + pct.toFixed(1) + '%">★★★★★</b></span>';
@@ -13339,7 +13366,11 @@ function libScreenPanel(w) {
     + (f.relevance
       ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-rescreen title="Write it again">⟳</button></h6><p>' + qEsc(f.relevance) + '</p></div>'
       : (libScreenBusy ? '<p class="shelf-note-wait">Working out what it gives you…</p>' : ''))
-    + '<div class="shelf-acts"><button type="button" data-attach>Attach</button>'
+    + '<div class="shelf-acts">'
+    + (() => { const out = libOutLink(w, f); return out
+        ? '<a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
+          + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>' : ''; })()
+    + '<button type="button" data-attach>Attach</button>'
     + '<button type="button" data-edit>Edit</button><button type="button" data-remove>Remove</button></div></div>';
 }
 

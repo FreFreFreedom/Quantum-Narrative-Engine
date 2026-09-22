@@ -33,6 +33,8 @@ export function bindBookFacts(database) {
   // Rows found by an older, looser matcher are re-asked once, so a wrong jacket
   // corrects itself instead of living in the cache for good.
   try { db.exec('ALTER TABLE book_facts ADD COLUMN found_by INTEGER NOT NULL DEFAULT 0'); } catch (err) { /* already there */ }
+  // Kept so the Amazon link lands on the book rather than on a search for it.
+  try { db.exec("ALTER TABLE book_facts ADD COLUMN isbn TEXT NOT NULL DEFAULT ''"); } catch (err) { /* already there */ }
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
@@ -136,7 +138,7 @@ export async function lookupBook(title, creator) {
   for (const q of queries) {
     if (!q || seen.has(q)) continue;
     seen.add(q);
-    const j = await getJson('https://openlibrary.org/search.json?limit=8&fields=cover_i,key,title,subtitle,author_name,first_publish_year&q=' + encodeURIComponent(q));
+    const j = await getJson('https://openlibrary.org/search.json?limit=8&fields=cover_i,key,title,subtitle,author_name,first_publish_year,isbn&q=' + encodeURIComponent(q));
     for (const doc of j?.docs || []) {
       const full = [doc.title, doc.subtitle].filter(Boolean).join(': ');
       const score = scoreCandidate({ title: full, authors: doc.author_name || [] }, title, who);
@@ -159,11 +161,16 @@ export async function lookupBook(title, creator) {
   }
 
   cands.sort((a, b) => b.score - a.score);
-  const out = { cover: '', blurb: '', year: '' };
+  const out = { cover: '', blurb: '', year: '', isbn: '' };
   for (const c of cands) {
-    if (out.cover && out.blurb) break;
+    if (out.cover && out.blurb && out.isbn) break;
     if (!out.year && c.year) out.year = c.year;
     if (c.src === 'g') {
+      if (!out.isbn) {
+        const ids = c.v.industryIdentifiers || [];
+        const pick = ids.find((x) => x.type === 'ISBN_10') || ids.find((x) => x.type === 'ISBN_13');
+        if (pick && pick.identifier) out.isbn = String(pick.identifier).replace(/[^0-9Xx]/g, '');
+      }
       const img = c.v.imageLinks?.thumbnail || c.v.imageLinks?.smallThumbnail || '';
       if (!out.cover && img && !DUD_COVER.test(img)) {
         out.cover = img.replace(/^http:/, 'https:').replace(/&edge=curl/, '') + '&fife=w400';
@@ -171,6 +178,10 @@ export async function lookupBook(title, creator) {
       const d = String(c.v.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
       if (!out.blurb && d.length > 140) out.blurb = d.slice(0, 2000);
     } else {
+      if (!out.isbn && Array.isArray(c.doc.isbn) && c.doc.isbn.length) {
+        const ten = c.doc.isbn.find((x) => String(x).length === 10);
+        out.isbn = String(ten || c.doc.isbn[0]).replace(/[^0-9Xx]/g, '');
+      }
       if (!out.cover && c.doc.cover_i) {
         const url = `https://covers.openlibrary.org/b/id/${c.doc.cover_i}-L.jpg`;
         if (await coverIsReal(url + '?default=false')) out.cover = url;
@@ -184,6 +195,17 @@ export async function lookupBook(title, creator) {
     }
   }
   return out;
+}
+
+// A short prose answer that stops mid-sentence — "This story gives him a concrete
+// look" — is a model that spent its token budget before it started writing, which
+// is what a small ceiling does to a lane that may reason first. Everything that
+// asks for a paragraph asks with room, and checks what came back.
+export const PROSE_TOKENS = 700;
+export function looksCut(text) {
+  const t = String(text || '').trim();
+  if (t.length < 40) return true;
+  return !/[.!?…"'\u201d\u2019)\]]$/.test(t);
 }
 
 // A free-lane model sometimes stops mid-sentence, and "…how the state expands its"
@@ -201,13 +223,14 @@ function rowOf(title, creator) {
   catch (err) { return null; }
 }
 function save(title, creator, facts) {
-  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by)
-              VALUES (?,?,?,?,?,?,?)
+  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by, isbn)
+              VALUES (?,?,?,?,?,?,?,?)
               ON CONFLICT(key) DO UPDATE SET cover=excluded.cover,
                 blurb=COALESCE(NULLIF(excluded.blurb,''), book_facts.blurb),
                 year=COALESCE(NULLIF(excluded.year,''), book_facts.year),
+                isbn=COALESCE(NULLIF(excluded.isbn,''), book_facts.isbn),
                 found_by=excluded.found_by, fetched_at=CURRENT_TIMESTAMP`)
-    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '', MATCHER);
+    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '', MATCHER, facts.isbn || '');
 }
 
 // The same shape a film's facts come back in, so the wall draws both the same way.
@@ -216,6 +239,7 @@ function shape(row, item) {
     title: item.title, kind: 'book', year: row?.year || item.year || '',
     poster: row?.cover || '', rating: 0, votes: 0,
     overview: row?.blurb || '', fromBook: false, book: null,
+    isbn: row?.isbn || '',
     relevance: row?.relevance || '',
   };
 }
@@ -251,7 +275,7 @@ export async function bookRelevance(owner, item, { refresh = false } = {}) {
     save(item.title, item.creator, facts);
     row = rowOf(item.title, item.creator);
   }
-  if (row?.relevance && !refresh) return { relevance: row.relevance, overview: row.blurb || '', poster: row.cover || '' };
+  if (row?.relevance && !refresh && !looksCut(row.relevance)) return { relevance: row.relevance, overview: row.blurb || '', poster: row.cover || '' };
   const prompt = [
     'A book saved in a research tool its owner uses to think with.',
     `BOOK: "${item.title}"${item.creator ? ` by ${personName(item.creator)}` : ''}${row?.year ? ` (${row.year})` : ''}`,
@@ -260,8 +284,12 @@ export async function bookRelevance(owner, item, { refresh = false } = {}) {
     `Write at most ${RELEVANCE_MAX_WORDS} words saying what this book gives HIM — the thinking it feeds, where it bites on what he is working on, and what he would reach into it for.`,
     'Plain words, no jargon, no preamble, no bullets, never a summary of the plot. If you do not know the book, say what it is likely to carry and mark that as a guess in four words. Prose only.',
   ].filter(Boolean).join('\n\n');
-  const out = await generateText({ prompt, feature: 'studio', label: 'library-book-relevance', maxTokens: 300, timeoutMs: 60_000, maxAttempts: 2 });
-  const text = wholeSentences(String(out?.text || '').trim().slice(0, 1200));
+  let raw = '';
+  for (let tries = 0; tries < 2 && looksCut(raw); tries += 1) {
+    const out = await generateText({ prompt, feature: 'studio', label: 'library-book-relevance', maxTokens: PROSE_TOKENS, timeoutMs: 60_000, maxAttempts: 2 });
+    raw = String(out?.text || '').trim();
+  }
+  const text = wholeSentences(raw.slice(0, 1200));
   if (text) db.prepare('UPDATE book_facts SET relevance=? WHERE key=?').run(text, keyOf(item.title, item.creator));
   return { relevance: text, overview: row?.blurb || '', poster: row?.cover || '' };
 }

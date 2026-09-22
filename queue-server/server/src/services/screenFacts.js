@@ -14,6 +14,7 @@
 // opens the panel and then kept, exactly like a book's.
 
 import { tmdbFetch } from './filmEnrichment.js';
+import { wholeSentences, looksCut, PROSE_TOKENS } from './bookFacts.js';
 import { imdbRatings } from './imdbRatings.js';
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
@@ -108,6 +109,7 @@ function shape(owner, row, asked) {
     poster: row.poster || '', rating: row.rating || 0, votes: row.votes || 0,
     overview: row.overview || '', fromBook: !!row.from_book, book,
     ratingFrom: row.rating_from || 'tmdb',
+    imdbId: row.imdb_id || '',
     relevance: row.relevance || '',
   };
 }
@@ -161,7 +163,9 @@ export async function screenRelevance(owner, item, { refresh = false } = {}) {
   if (!db) return { error: 'no_db' };
   const kind = item.kind === 'series' ? 'series' : 'film';
   const row = rowOf(kind, item.title, item.year);
-  if (row?.relevance && !refresh) return { relevance: row.relevance };
+  // A note already stored but cut off is worth one rewrite, unasked: he should not
+  // have to click ⟳ on every card an earlier ceiling truncated.
+  if (row?.relevance && !refresh && !looksCut(row.relevance)) return { relevance: row.relevance };
   const prompt = [
     `A ${kind} saved in a research tool its owner uses to think with.`,
     `${kind === 'series' ? 'SERIES' : 'FILM'}: "${item.title}"${row?.year ? ` (${row.year})` : ''}`,
@@ -170,8 +174,12 @@ export async function screenRelevance(owner, item, { refresh = false } = {}) {
     `Write at most ${RELEVANCE_MAX_WORDS} words on what this gives HIM — the thinking it feeds, the scene or mechanism it shows that his written sources argue in the abstract.`,
     'Plain words, no jargon, no plot summary, no preamble, no bullets. Prose only. If you do not know it, say what it is likely to carry and mark that as a guess in four words.',
   ].filter(Boolean).join('\n\n');
-  const out = await generateText({ prompt, feature: 'studio', label: 'screen-relevance', maxTokens: 280, timeoutMs: 60_000, maxAttempts: 2 });
-  const text = String(out?.text || '').trim().slice(0, 1000);
+  let raw = '';
+  for (let tries = 0; tries < 2 && looksCut(raw); tries += 1) {
+    const out = await generateText({ prompt, feature: 'studio', label: 'screen-relevance', maxTokens: PROSE_TOKENS, timeoutMs: 60_000, maxAttempts: 2 });
+    raw = String(out?.text || '').trim();
+  }
+  const text = wholeSentences(raw.slice(0, 1000));
   if (text && row) db.prepare('UPDATE screen_facts SET relevance=? WHERE key=?').run(text, keyOf(kind, item.title, item.year));
   return { relevance: text };
 }
