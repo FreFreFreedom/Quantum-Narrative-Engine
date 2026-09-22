@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Better Call Saul: institutional decay and visual aesthetics — conversations/better-call-saul-institutional-decay-and-visual-aesthetics-cf34af05.md
+- *Better Call Saul*: Institutional Law and Visual Tone — conversations/better-call-saul-institutional-law-and-visual-tone-cf34af05.md
 - Fractal reasoning across civic and justice narratives (fork) — conversations/fractal-reasoning-across-civic-and-justice-narratives-fork-400c0cb3.md
 - Kinetic media matching for cardio workouts — conversations/kinetic-media-matching-for-cardio-workouts-a7051bc8.md
 - Fractal reasoning across civic and justice narratives (fork) — conversations/fractal-reasoning-across-civic-and-justice-narratives-fork-05863085.md

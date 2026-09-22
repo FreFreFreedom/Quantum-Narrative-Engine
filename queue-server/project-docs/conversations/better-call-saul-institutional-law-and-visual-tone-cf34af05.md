@@ -1,4 +1,4 @@
-# Better Call Saul: institutional decay and visual aesthetics
+# *Better Call Saul*: Institutional Law and Visual Tone
 
 Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 72 turns · last said 2026-09-22T07:20:21.218Z
 
