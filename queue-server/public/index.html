@@ -1754,7 +1754,17 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-filechip, .se-message-file { display:inline-flex; align-items:center; gap:5px; max-width:17rem; padding:3px 7px;
   border:1px solid var(--c-border-2); background:var(--c-surface-2); color:var(--c-ink-3); border-radius:var(--r-sm); font-size:var(--fs-xs); }
 .se-filechip span, .se-message-file span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.se-filechip img { width:28px; height:28px; border-radius:var(--r-xs); object-fit:cover; }
+.se-filechip img { width:28px; height:28px; border-radius:var(--r-xs); object-fit:cover; cursor:zoom-in; }
+.se-filechip img:hover { outline:1px solid var(--c-ink-4); outline-offset:1px; }
+.img-view { position:fixed; inset:0; z-index:9000; display:flex; align-items:center; justify-content:center;
+  background:rgba(8,10,12,.86); backdrop-filter:blur(3px); cursor:zoom-out; animation:imgViewIn .14s ease-out; }
+@keyframes imgViewIn { from { opacity:0; } to { opacity:1; } }
+.img-view img { max-width:94vw; max-height:88vh; border-radius:var(--r-md); box-shadow:0 24px 70px rgba(0,0,0,.6); display:block; }
+.img-view-name { position:fixed; left:0; right:0; bottom:16px; text-align:center; color:var(--c-ink-4);
+  font-size:var(--fs-xs); pointer-events:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 24px; }
+.img-view-shut { position:fixed; top:14px; right:16px; width:30px; height:30px; border-radius:50%; border:1px solid var(--c-border-2);
+  background:var(--c-surface-2); color:var(--c-ink-3); font:inherit; line-height:1; cursor:pointer; }
+.img-view-shut:hover { color:var(--c-ink); }
 .se-filechip button { border:0; background:transparent; color:var(--c-ink-4); cursor:pointer; padding:0 1px; font:inherit; }
 .se-message-files { display:flex; flex-wrap:wrap; gap:5px; margin:0 0 5px; }
 /* What the last answer cost, on the paid lane only. It sits INSIDE the composer
@@ -11960,6 +11970,28 @@ function renderRoomBoard() {
   host.querySelectorAll('[data-shelf-open]').forEach(b => {
     b.onclick = () => openBoardCard(roomBoardCards[Number(b.getAttribute('data-shelf-open'))]);
   });
+}
+
+// An image big enough to actually read. Click anywhere, hit Escape, or take the
+// ✕: all three shut it, and nothing underneath moves while it is open.
+function openImageView(src, name) {
+  if (!src) return;
+  const old = document.querySelector('.img-view');
+  if (old) old.remove();
+  const box = document.createElement('div');
+  box.className = 'img-view';
+  box.innerHTML = '<img alt="">'
+    + '<button type="button" class="img-view-shut" aria-label="Close">\u2715</button>'
+    + (name ? '<div class="img-view-name"></div>' : '');
+  box.querySelector('img').src = src;
+  if (name) box.querySelector('.img-view-name').textContent = name;
+  const shut = () => { box.remove(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); shut(); } };
+  box.onclick = shut;
+  box.querySelector('img').onclick = (ev) => ev.stopPropagation();
+  box.querySelector('.img-view-shut').onclick = shut;
+  document.addEventListener('keydown', onKey, true);
+  document.body.appendChild(box);
 }
 
 // ── The board, opened full width ────────────────────────────────────────────
@@ -24559,10 +24591,17 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(filebar){
       filebar.innerHTML = (e.pendingAttachments || []).map(function(a, i){
         return '<span class="se-filechip">'
-          + (a.kind === 'image' ? '<img src="' + qEscAttr(a.dataUrl) + '" alt="">' : '')
+          + (a.kind === 'image' ? '<img src="' + qEscAttr(a.dataUrl) + '" alt="" data-se-file-view="' + i + '" title="Open it bigger">' : '')
           + '<span>' + qEsc(a.name || 'file') + '</span>'
           + '<button type="button" data-se-file-remove="' + i + '" aria-label="Remove ' + qEscAttr(a.name || 'file') + '">×</button></span>';
       }).join('');
+      filebar.querySelectorAll('[data-se-file-view]').forEach(function(img){
+        img.onclick = function(ev){
+          ev.stopPropagation();
+          var a = e.pendingAttachments[Number(img.getAttribute('data-se-file-view'))];
+          if(a && a.dataUrl) openImageView(a.dataUrl, a.name || '');
+        };
+      });
       filebar.querySelectorAll('[data-se-file-remove]').forEach(function(b){
         b.onclick = function(){
           var i = Number(b.getAttribute('data-se-file-remove'));
