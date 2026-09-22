@@ -1312,32 +1312,33 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    ideas already get, drawn with the same worldPartsHtml() used everywhere else. */
 /* Passages — kept lines. The line itself is the heading, so it is set in the
    reading face rather than the label face, and the reading under it is quieter. */
-.pass { padding:0 0 12px; }
+.pass-group { margin-bottom:18px; }
+.pass-grouphead { display:flex; align-items:center; gap:11px; margin:0 0 9px; }
+.pass-grouphead b { display:block; font-size:var(--fs-base); font-weight:600; line-height:1.25; }
+.pass-grouphead small { display:block; color:var(--c-ink-5); font-size:var(--fs-xs); }
+.pass { padding:0 0 9px; }
 .pass:last-child { padding-bottom:2px; }
-.pass-card { display:grid; grid-template-columns:38px minmax(0,1fr); gap:12px;
-  background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:12px; padding:13px; }
-.pass-chip { aspect-ratio:2/3; border-radius:3px; background:var(--c-surface-3,var(--c-surface-2)) center/cover no-repeat;
-  border:1px solid var(--c-border-2); display:block; font-size:0; }
-.pass-chip.is-blank { opacity:.5; }
+.pass-card { background:rgba(87,195,180,.07); border-left:3px solid var(--c-cast,var(--c-accent));
+  border-radius:0 8px 8px 0; padding:12px 15px 10px; }
+.pass-chip { width:26px; aspect-ratio:2/3; border-radius:3px; background:var(--c-surface-3,var(--c-surface-2)) center/cover no-repeat;
+  border:1px solid var(--c-border-2); display:block; font-size:0; flex:none; }
+.pass-chip.is-convo, .pass-chip.is-loose, .pass-chip.is-blank { opacity:.55; }
 .pass-main { min-width:0; }
-.pass-main cite { display:block; font-style:normal; margin-top:8px; font-size:10.5px; letter-spacing:.06em;
-  text-transform:uppercase; color:var(--c-ink-5); overflow-wrap:anywhere; }
 .pass-line { display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:0;
-  font-family:Georgia,'Times New Roman',serif; color:var(--c-ink-2); font-size:13.5px; line-height:1.65; }
+  font-family:var(--room-font); color:var(--c-ink-2); font-size:var(--room-size); line-height:1.6; }
 .pass-line:hover { color:var(--c-ink); }
-.pass-quote { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.pass-quote { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .pass.open .pass-quote { -webkit-line-clamp:unset; overflow:visible; color:var(--c-ink); }
-.pass-quote::before { content:'“'; color:var(--c-ink-5); }
-.pass.open .pass-card { border-color:var(--c-ink-5); }
-.pass-quote::after { content:'”'; color:var(--c-ink-5); }
 .pass-body { padding:6px 0 2px; }
 .pass-reading { font-size:var(--fs-sm); line-height:1.55; color:var(--c-ink-4); white-space:pre-wrap; }
 .pass-reading.is-waiting { color:var(--c-ink-5); font-style:italic; }
 .pass-world { margin-top:7px; border-left:2px solid var(--c-border); padding-left:8px; }
 .pass-world-row { font-size:var(--fs-xs); line-height:1.45; color:var(--c-ink-4); margin-bottom:5px; }
 .pass-world-row b { display:block; color:var(--c-ink-3); font-weight:600; }
-.pass-acts { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin-top:8px; }
-.pass-from { font-size:var(--fs-xs); color:var(--c-ink-5); margin-right:auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px; }
+.pass-acts { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-top:10px; }
+.pass-acts button { background:none; border:0; border-radius:0; padding:0; min-width:0;
+  font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5); }
+.pass-acts button:hover { color:var(--c-cast,var(--c-accent)); background:none; border:0; }
 /* Scoped to the Room only — .wl-title elsewhere (suggestion/seed cards) keeps its
    app-wide single-line ellipsis; this column is narrow enough that truncating a
    long idea title there cuts off nearly all of it. */
@@ -10412,6 +10413,18 @@ async function loadRoomPassageWorld() {
   renderRoomPassages();
 }
 
+// Where a kept line came from is the first thing you want when you go looking
+// for it again, so the shelf is grouped by source the way a reading app's
+// notebook is: a jacket and a name, then the lines kept under it. A line taken
+// from a conversation files under that conversation's own title.
+function passSourceOf(p) {
+  const book = String(p.source_title || '').trim();
+  if (book) return { key: 'book:' + book, title: book, kind: 'book' };
+  const t = (roomThreads || []).find((x) => x.id === p.convo_id);
+  if (t && String(t.title || '').trim()) return { key: 'convo:' + p.convo_id, title: t.title.trim(), kind: 'convo' };
+  return { key: 'loose', title: 'Kept on their own', kind: 'loose' };
+}
+
 function renderRoomPassages() {
   const host = document.getElementById('roomPassagesHost');
   if (!host) return;
@@ -10420,7 +10433,17 @@ function renderRoomPassages() {
     host.innerHTML = '<div class="tv-empty">Select a line in an answer and press Keep.</div>';
     return;
   }
-  host.innerHTML = roomPassages.map(p => {
+  // Newest source first, which is the order the list already arrives in.
+  const groups = [];
+  const byKey = new Map();
+  roomPassages.forEach((p) => {
+    const src = passSourceOf(p);
+    let g = byKey.get(src.key);
+    if (!g) { g = { ...src, items: [] }; byKey.set(src.key, g); groups.push(g); }
+    g.items.push(p);
+  });
+
+  const one = (p) => {
     const open = roomPassagesOpen.has(p.id);
     const world = p.world || null;
     const readingHtml = p.reading_busy
@@ -10430,22 +10453,16 @@ function renderRoomPassages() {
     const worldHtml = world && world.running
       ? '<div class="pass-reading is-waiting">Looking at the world — a minute or two.</div>'
       : (world && world.report ? '<div class="pass-world">' + roomPassageWorldHtml(world.report) + '</div>' : '');
-    const from = String(p.source_title || '').trim();
     return '<div class="pass' + (open ? ' open' : '') + '">'
       + '<div class="pass-card">'
-      + (from ? roomMediaArtMarkup({ kind: 'book', title: from, artwork: shelfCoverFor(from) }, 'pass-chip')
-              : '<span class="pass-chip is-blank" aria-hidden="true"></span>')
-      + '<div class="pass-main">'
       + '<button type="button" class="pass-line" data-pass-act="open" data-pass-id="' + qEsc(p.id) + '">'
       +   '<span class="pass-quote">' + qEsc(p.text) + '</span>'
       + '</button>'
-      + (from ? '<cite>' + qEsc(from) + '</cite>' : '')
       + (open
           ? '<div class="pass-body">'
             + readingHtml
             + worldHtml
             + '<div class="pass-acts">'
-            +   (p.source_title ? '<span class="pass-from">from “' + qEsc(p.source_title) + '”</span>' : '')
             +   '<button type="button" class="se-cmd" data-pass-act="read" data-pass-id="' + qEsc(p.id) + '">' + (p.reading ? 'Read it again' : 'Read it') + '</button>'
             +   '<button type="button" class="se-cmd" data-pass-act="world" data-pass-id="' + qEsc(p.id) + '">' + (world && world.report ? 'World ideas' : 'Look at the world') + '</button>'
             +   '<button type="button" class="se-cmd" data-pass-act="attach" data-pass-id="' + qEsc(p.id) + '">Attach</button>'
@@ -10453,11 +10470,25 @@ function renderRoomPassages() {
             + '</div>'
             + '</div>'
           : '')
-      + '</div></div></div>';
+      + '</div></div>';
+  };
+
+  host.innerHTML = groups.map((g) => {
+    const art = g.kind === 'book'
+      ? roomMediaArtMarkup({ kind: 'book', title: g.title, artwork: shelfCoverFor(g.title) }, 'pass-chip')
+      : '<span class="pass-chip is-' + g.kind + '" aria-hidden="true"></span>';
+    const n = g.items.length;
+    return '<div class="pass-group">'
+      + '<div class="pass-grouphead">' + art
+      +   '<div><b>' + qEsc(g.title) + '</b><small>' + n + (n === 1 ? ' line kept' : ' lines kept') + '</small></div>'
+      + '</div>'
+      + g.items.map(one).join('')
+      + '</div>';
   }).join('');
+
   // Covers arrive after the list is drawn — a passage never waits on a catalogue.
-  const withBook = roomPassages.filter((p) => p.source_title)
-    .map((p) => ({ kind: 'book', title: p.source_title, artwork: shelfCoverFor(p.source_title) }));
+  const withBook = groups.filter((g) => g.kind === 'book')
+    .map((g) => ({ kind: 'book', title: g.title, artwork: shelfCoverFor(g.title) }));
   if (withBook.length) roomLoadMediaArt(host, withBook);
 }
 
