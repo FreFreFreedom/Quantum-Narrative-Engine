@@ -250,6 +250,8 @@ const SMART_TITLE_PROMPT = `Name this conversation the way a person would name i
 
 Write three to seven words. Name a concrete subject and, where there is one, its angle — "Suits: recurring relationship dynamics" or "Civic structures as instruments of isolation", never "The mechanics", "The nature", "Fields for", "Discussion", or "Question". Do not give a sentence fragment. Do not end on a joining word such as "for", "of", "with", "and", or "in". Never echo the opening words of the first message, never start with "Conversation about" or "Exploration of", and never use the words "fractal" or "paradigm" unless the conversation is genuinely about those and not merely written in them.
 
+The conversation may have moved. Name where it ARRIVED — the later exchanges weigh more than how it opened.
+
 Reply with the title alone.`;
 
 const SMART_TITLE_REPAIR_PROMPT = `The previous title was too vague or incomplete. Read this conversation again and name its actual subject in three to seven words. Include a concrete topic and its angle. Never answer with a generic phrase such as "The nature", "The mechanics", "Fields for", "Discussion", "Question", or "Analysis". Do not end on "for", "of", "with", "and", or "in". Reply with the title alone.`;
@@ -284,11 +286,21 @@ async function writeSmartTitle(convoId) {
   const convo = getConvo(convoId);
   // Renamed by hand while this was queued: his name wins, always.
   if (!convo || Number(convo.title_auto) !== 1) return null;
-  const msgs = listMessages(convoId).filter((m) => m.kind === 'chat').slice(0, 6);
-  if (!msgs.length) return null;
-  const transcript = msgs
-    .map((m) => `${m.role === 'user' ? 'He asked' : 'The answer'}: ${String(m.text).slice(0, 1200)}`)
-    .join('\n\n');
+  // Where a conversation ENDED is what it turned out to be about, so the last ten
+  // exchanges are the evidence — the opening two are kept only for what it set
+  // out from. Naming a long thread off its first six messages named the question
+  // he happened to start with, not the thing he stayed on (his complaint).
+  const all = listMessages(convoId).filter((m) => m.kind === 'chat');
+  if (!all.length) return null;
+  const cut = Math.max(2, all.length - 10);
+  const head = all.slice(0, Math.min(2, cut));
+  const tail = all.slice(cut);
+  const line = (m) => `${m.role === 'user' ? 'He asked' : 'The answer'}: ${String(m.text).slice(0, 1000)}`;
+  const transcript = [
+    ...head.map(line),
+    ...(cut > head.length ? ['(…earlier exchanges…)'] : []),
+    ...tail.map(line),
+  ].join('\n\n');
   const title = await generateSmartTitle(transcript);
   if (!title) return null;
   // Read again: the whole point of the flag is that a rename during the call wins.
