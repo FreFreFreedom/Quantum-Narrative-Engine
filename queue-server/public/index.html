@@ -1282,14 +1282,23 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    ideas already get, drawn with the same worldPartsHtml() used everywhere else. */
 /* Passages — kept lines. The line itself is the heading, so it is set in the
    reading face rather than the label face, and the reading under it is quieter. */
-.pass { border-bottom:1px solid var(--c-border-2, var(--c-border)); padding:7px 0; }
-.pass:last-child { border-bottom:none; }
+.pass { padding:0 0 12px; }
+.pass:last-child { padding-bottom:2px; }
+.pass-card { display:grid; grid-template-columns:38px minmax(0,1fr); gap:12px;
+  background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:12px; padding:13px; }
+.pass-chip { aspect-ratio:2/3; border-radius:3px; background:var(--c-surface-3,var(--c-surface-2)) center/cover no-repeat;
+  border:1px solid var(--c-border-2); display:block; font-size:0; }
+.pass-chip.is-blank { opacity:.5; }
+.pass-main { min-width:0; }
+.pass-main cite { display:block; font-style:normal; margin-top:8px; font-size:10.5px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--c-ink-5); overflow-wrap:anywhere; }
 .pass-line { display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:0;
-  font-family:inherit; color:var(--c-ink-3); font-size:var(--fs-sm); line-height:1.5; }
+  font-family:Georgia,'Times New Roman',serif; color:var(--c-ink-2); font-size:13.5px; line-height:1.65; }
 .pass-line:hover { color:var(--c-ink); }
 .pass-quote { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .pass.open .pass-quote { -webkit-line-clamp:unset; overflow:visible; color:var(--c-ink); }
 .pass-quote::before { content:'“'; color:var(--c-ink-5); }
+.pass.open .pass-card { border-color:var(--c-ink-5); }
 .pass-quote::after { content:'”'; color:var(--c-ink-5); }
 .pass-body { padding:6px 0 2px; }
 .pass-reading { font-size:var(--fs-sm); line-height:1.55; color:var(--c-ink-4); white-space:pre-wrap; }
@@ -10233,6 +10242,7 @@ async function loadRoom() {
 }
 
 async function loadRoomPassages() {
+  loadShelfCovers();
   try {
     const out = await api('/api/passages');
     roomPassages = out.passages || [];
@@ -10308,10 +10318,16 @@ function renderRoomPassages() {
     const worldHtml = world && world.running
       ? '<div class="pass-reading is-waiting">Looking at the world — a minute or two.</div>'
       : (world && world.report ? '<div class="pass-world">' + roomPassageWorldHtml(world.report) + '</div>' : '');
+    const from = String(p.source_title || '').trim();
     return '<div class="pass' + (open ? ' open' : '') + '">'
+      + '<div class="pass-card">'
+      + (from ? roomMediaArtMarkup({ kind: 'book', title: from, artwork: shelfCoverFor(from) }, 'pass-chip')
+              : '<span class="pass-chip is-blank" aria-hidden="true"></span>')
+      + '<div class="pass-main">'
       + '<button type="button" class="pass-line" data-pass-act="open" data-pass-id="' + qEsc(p.id) + '">'
       +   '<span class="pass-quote">' + qEsc(p.text) + '</span>'
       + '</button>'
+      + (from ? '<cite>' + qEsc(from) + '</cite>' : '')
       + (open
           ? '<div class="pass-body">'
             + readingHtml
@@ -10325,8 +10341,29 @@ function renderRoomPassages() {
             + '</div>'
             + '</div>'
           : '')
-      + '</div>';
+      + '</div></div></div>';
   }).join('');
+  // Covers arrive after the list is drawn — a passage never waits on a catalogue.
+  const withBook = roomPassages.filter((p) => p.source_title)
+    .map((p) => ({ kind: 'book', title: p.source_title, artwork: shelfCoverFor(p.source_title) }));
+  if (withBook.length) roomLoadMediaArt(host, withBook);
+}
+
+// The covers of the books already on the shelf, so a passage kept out of one of
+// them shows that book's own cover rather than asking a catalogue again.
+let shelfCovers = new Map();
+function shelfCoverFor(title) {
+  const t = String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  if (!t) return '';
+  for (const [key, url] of shelfCovers) if (key && (key === t || t.includes(key) || key.includes(t))) return url;
+  return '';
+}
+async function loadShelfCovers() {
+  try {
+    const out = await api('/api/convos/books');
+    shelfCovers = new Map((out.books || []).filter((b) => b.cover_url)
+      .map((b) => [String(b.title).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(), b.cover_url]));
+  } catch (e) { /* no shelf, no covers — the passages still draw */ }
 }
 
 // The bold ideas out of a world-look report, in the compact shape this narrow
