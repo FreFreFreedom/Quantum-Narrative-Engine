@@ -65,6 +65,7 @@ import { passagesRoutes } from './routes/passages.js';
 import { bindPassagesDb } from './services/passages.js';
 import { bindDocExtractionDb } from './services/docExtraction.js';
 import { mindRoutes } from './routes/mind.js';
+import { bindChaptersDb } from './services/chapters.js';
 import { bindMindDb } from './services/mind.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { bindDashboardDb } from './services/dashboard.js';
@@ -137,6 +138,7 @@ try { resumeAllStrayRequests(); } catch (e) { console.error('[room] analogy requ
 bindPassagesDb(db);
 bindDocExtractionDb(db);
 bindMindDb(db);
+bindChaptersDb(db);
 bindDashboardDb(db);
 bindTagCommunitiesDb(db);
 

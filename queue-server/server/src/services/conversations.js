@@ -35,6 +35,7 @@ import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
 import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory } from './mind.js';
+import { chapterize } from './chapters.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
 import { bindInterestLibrary, interestContext, INTEREST_TOOLS, interestTool } from './interestLibrary.js';
@@ -2109,6 +2110,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
+  chapterize(convoId); // and re-read where the subject changed, same discipline
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
@@ -2166,6 +2168,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
+  chapterize(convoId); // and re-read where the subject changed, same discipline
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
@@ -2234,6 +2237,7 @@ async function runAnswerNowTurn(convoId, { onToken = null, onStatus = null, sign
   setClarificationMode(convoId, 'normal');
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  chapterize(convoId);
   recommendationChanged(convoId);
   roomWorldLook(convoId);
   analogyLook(convoId);
@@ -2261,6 +2265,7 @@ async function runCodeReadTurn(convoId, turn) {
   saveAssistantTurn(convoId, result.text, { lane: 'claude', intent: 'code_read' });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  chapterize(convoId);
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
@@ -2340,6 +2345,7 @@ async function runCheckTurn(convoId) {
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: 'check', checked: originalTag });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  chapterize(convoId);
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
@@ -2373,6 +2379,7 @@ async function runSecondTurn(convoId) {
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: 'second', answered: originalTag });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  chapterize(convoId);
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)

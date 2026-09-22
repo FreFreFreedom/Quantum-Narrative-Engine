@@ -1690,6 +1690,31 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-mark b:hover { color:var(--c-danger); }
 mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radius:var(--r-xs); animation:seJumped 2.2s var(--ease) forwards; }
 @keyframes seJumped { 0%, 55% { background:var(--c-amber, #f3c969); } 100% { background:transparent; } }
+/* The chapter rail — the shape of a long conversation, down its right edge.
+   Dashes, one per chapter, the one you are reading lit. It sits over the log's
+   own right gutter rather than taking a column of its own: horizontal bands are
+   the scarcest thing on this screen and a table of contents does not earn one. */
+.se-rail { position:absolute; right:2px; z-index:3; display:flex; flex-direction:column;
+  align-items:flex-end; gap:9px; pointer-events:none; }
+.se-rail[hidden] { display:none; }
+.se-rail-item { pointer-events:auto; background:none; border:none; padding:3px 2px; margin:0; cursor:pointer;
+  display:flex; align-items:center; justify-content:flex-end; gap:8px; font-family:inherit;
+  max-width:16px; overflow:visible; }
+.se-rail-dash { display:block; width:14px; height:2px; border-radius:2px; flex:none;
+  background:var(--c-ink-5); opacity:.5;
+  transition:width var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease); }
+.se-rail-item:hover .se-rail-dash { width:20px; opacity:1; background:var(--c-ink-3); }
+.se-rail-item.is-here .se-rail-dash { width:22px; opacity:1; background:var(--c-ink); }
+/* The name only on hover, and it opens to the LEFT so it never leaves the panel
+   and never sits under the transcript it points into. */
+.se-rail-name { position:absolute; right:26px; white-space:nowrap; opacity:0; transform:translateX(5px);
+  font-size:var(--fs-xs); color:var(--c-ink-2); background:var(--c-bg); border:1px solid var(--c-border);
+  border-radius:var(--r-sm); padding:3px 8px; max-width:260px; overflow:hidden; text-overflow:ellipsis;
+  pointer-events:none; transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); }
+.se-rail-item:hover .se-rail-name, .se-rail-item:focus-visible .se-rail-name { opacity:1; transform:none; }
+.se-rail-item.is-saved .se-rail-dash { background:var(--c-brand); opacity:.75; }
+.se-rail-item.is-saved:hover .se-rail-dash, .se-rail-item.is-saved.is-here .se-rail-dash { background:var(--c-brand); opacity:1; }
+@media (max-width: 720px) { .se-rail { display:none; } }
 /* A passage carried into the composer: shown above the input, dismissable. */
 .se-quoted { display:flex; align-items:flex-start; gap:7px; border-left:2px solid var(--c-brand); padding:4px 0 4px 8px;
   margin-bottom:5px; font-size:var(--fs-sm); color:var(--c-ink-4); line-height:1.45;
@@ -23829,6 +23854,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +     '</span>'
         +   '</div>'
         +   '<div class="se-log"></div>'
+        +   '<div class="se-rail" hidden aria-label="Chapters"></div>'
         +   '<span class="se-cost"></span>'
         +   '<div class="se-draftbox">'
         +   '<div class="se-attachment-summary" hidden><button type="button" class="se-attachment-summary-toggle" aria-expanded="false">0 attached⌄</button><div class="se-attachment-preview"></div></div>'
@@ -24530,6 +24556,83 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     jumpToPassage(log, mark.message_id, mark.snippet);
   }
 
+  // ─── The chapter rail ──────────────────────────────────────────────────────
+  // Asked for 2026-09-22, pointing at Claude Code's own rail: a long thread should
+  // have a shape you can see and click into, without having scrolled it first.
+  //
+  // The list is fetched, never derived here: the server holds both the hand-saved
+  // places and the ones the conversation read out of itself, already in thread
+  // order. Fetched once per message count — a repaint must not cost a request.
+  function loadChapters(e, repaint){
+    if(!e || !e.convoId) return;
+    var n = (e.msgs || []).length;
+    if(e.chaptersFor === n) return;
+    e.chaptersFor = n;
+    api('/api/convos/' + e.convoId + '/chapters')
+      .then(function(d){
+        e.chapters = (d && d.chapters) || [];
+        if(repaint) repaint();
+      })
+      .catch(function(){ /* no rail is the correct failure — never a broken one */ });
+  }
+
+  // Which chapter you are actually reading: the last one whose message has scrolled
+  // past the middle of the log. Read from the DOM on scroll rather than tracked,
+  // because the transcript is rebuilt on every repaint and any remembered position
+  // would be pointing at an element that no longer exists.
+  function railHere(rail, log, chapters){
+    if(!log || !chapters.length) return;
+    var mid = log.scrollTop + (log.clientHeight * 0.35);
+    var at = 0;
+    for(var i = 0; i < chapters.length; i++){
+      var el = log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(chapters[i].messageId) : chapters[i].messageId) + '"]');
+      if(!el) continue;
+      if(el.offsetTop <= mid) at = i;
+    }
+    rail.querySelectorAll('.se-rail-item').forEach(function(b, i){
+      b.classList.toggle('is-here', i === at);
+    });
+  }
+
+  function paintRail(rail, log, e, repaint){
+    loadChapters(e, repaint);
+    var chapters = (e.chapters || []).filter(function(c){
+      return log && log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(c.messageId) : c.messageId) + '"]');
+    });
+    // One dash is not a rail — it says nothing you could not see by looking.
+    if(chapters.length < 2){ rail.hidden = true; rail.innerHTML = ''; log.onscroll = null; return; }
+    rail.hidden = false;
+    rail.innerHTML = chapters.map(function(c){
+      return '<button type="button" class="se-rail-item' + (c.kind === 'saved' ? ' is-saved' : '') + '"'
+        + ' data-chapter="' + qEscAttr(c.messageId) + '" title="' + qEscAttr(c.label || 'Chapter') + '">'
+        + '<span class="se-rail-name">' + qEsc(c.label || 'Chapter') + '</span>'
+        + '<span class="se-rail-dash"></span></button>';
+    }).join('');
+
+    // Sit beside the log, not beside the whole panel: the head and the composer are
+    // not part of what the rail points into.
+    if(log && log.offsetParent){
+      rail.style.top = (log.offsetTop + 8) + 'px';
+      rail.style.maxHeight = Math.max(0, log.clientHeight - 16) + 'px';
+    }
+
+    rail.querySelectorAll('[data-chapter]').forEach(function(b, i){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        var c = chapters[i];
+        if(!c) return;
+        // A hand-saved chapter knows the exact passage; a found one only knows the
+        // message it starts on, and landing on the message is the right answer there.
+        jumpToPassage(log, c.messageId, c.kind === 'saved' ? c.snippet : '');
+      };
+    });
+
+    railHere(rail, log, chapters);
+    // One listener per painted rail, replaced on every repaint — onscroll, not
+    // addEventListener, so a repaint can never stack a second one on the same log.
+    log.onscroll = function(){ railHere(rail, log, chapters); };
+  }
+
   // Go and read a passage where it was said — the one move behind both a chapter
   // chip and a carried quote, so they cannot drift apart.
   function jumpToPassage(log, messageId, snippet){
@@ -25168,6 +25271,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         };
       });
     }
+
+    // The chapter rail — where this conversation changed subject, down its right
+    // edge. Two kinds of chapter in one list: the places he saved by hand (brand
+    // colour, his own name kept) and the ones the conversation found in itself.
+    // Painted here, next to the strip, because they are the same thing seen twice.
+    var rail = host.querySelector('.se-rail');
+    if(rail) paintRail(rail, log, e, repaintHere);
 
     // Lane tag -> re-ask the last question on a different lane. The router's
     // forced path does the rest; this is just the typed /ask, triggered by click.

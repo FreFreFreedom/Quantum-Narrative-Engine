@@ -11,6 +11,7 @@ import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
 import { rhymeSoon } from '../services/boardRhyme.js';
 import { proposeRemember, saveRemembered } from '../services/mind.js';
+import { listChapters, chapterize } from '../services/chapters.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import * as interests from '../services/interestLibrary.js';
@@ -792,6 +793,17 @@ export function conversationsRoutes() {
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
   }));
+
+  // Chapters — both kinds in one list, in the order they occur in the thread: the
+  // places he saved by hand, and the ones the conversation found in itself.
+  router.get('/:id/chapters', (req, res) => {
+    res.json({ chapters: listChapters(req.params.id) });
+  });
+
+  // Read the thread again now, whatever the "has it grown enough?" rule says.
+  router.post('/:id/chapters/rebuild', (req, res) => {
+    res.json(chapterize(req.params.id, { force: true }));
+  });
 
   // Chapters — saved places inside one conversation.
   router.get('/:id/marks', (req, res) => {
