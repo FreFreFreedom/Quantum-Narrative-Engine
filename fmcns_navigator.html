@@ -1735,11 +1735,16 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
   transition:color var(--t-fast) var(--ease); }
 /* Two lines at rest, the whole passage while the pointer is on it — the text is
    all there, so nothing has to be gone looking for. */
-.se-quoted-text { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+/* Two lines at rest, the whole passage once he CLICKS it, and two lines again on
+   the next click. It used to open on hover, which meant the composer grew and
+   shrank under the pointer on the way to somewhere else. */
+.se-quoted-text { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }
+.se-quoted.is-open .se-quoted-text { display:block; -webkit-line-clamp:unset; overflow:auto; max-height:40vh; }
 .se-quoted:hover { color:var(--c-ink-3); }
-.se-quoted:hover .se-quoted-text { -webkit-line-clamp:unset; overflow:auto; max-height:40vh; }
-.se-quoted.can-jump .se-quoted-text { cursor:pointer; }
-.se-quoted.can-jump:hover .se-quoted-text { text-decoration:underline; text-decoration-color:var(--c-border); text-underline-offset:2px; }
+/* Going to read it where it was said is the NUMBER's job now, since the text
+   itself is the open/close switch. */
+.se-quoted.can-jump .se-quoted-n { cursor:pointer; }
+.se-quoted.can-jump .se-quoted-n:hover { background:var(--c-brand); color:var(--c-surface); }
 /* The ✕ was hidden until hover and he could not tell a quote could be taken off
    at all. A control you cannot see is a control you do not have — it is visible
    now, dim until pointed at. */
@@ -25217,22 +25222,37 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(e.quotes && e.quotes.length){
         // Numbered, because the number is what makes two passages referable:
         // "in 1 you said X, but 2 says Y" only works if he can see which is which.
-        // The WHOLE passage is in the chip — clamped to two lines by CSS, opened by
-        // hovering it. Truncating at 240 characters in the markup meant the rest
-        // could not be got at by any means, which is what he ran into.
+        // The WHOLE passage is in the chip — two lines by CSS, opened by CLICKING it
+        // and closed by clicking again. Truncating at 240 characters in the markup
+        // meant the rest could not be got at by any means, which is what he ran into.
+        // No `title`: the browser draws its own tooltip from it, so the whole passage
+        // appeared over the box on hover — exactly the thing he asked to stop.
+        e.quoteOpen = e.quoteOpen || {};
         qbar.innerHTML = e.quotes.map(function(q, i){
           var text = quoteText(q);
           var jumpable = !!quoteMsg(q);
-          return '<div class="se-quoted' + (jumpable ? ' can-jump' : '') + '" title="' + qEsc(text) + '">'
-            + '<span class="se-quoted-n">' + (i + 1) + '</span>'
-            + '<span class="se-quoted-text"' + (jumpable ? ' data-jump="' + i + '"' : '') + '>' + (q.reference?qEsc(q.title||text):'“'+qEsc(text)+'”') + '</span>'
+          return '<div class="se-quoted' + (jumpable ? ' can-jump' : '') + (e.quoteOpen[i] ? ' is-open' : '') + '">'
+            + '<span class="se-quoted-n"' + (jumpable ? ' data-jump="' + i + '" role="button" tabindex="0" aria-label="Go and read this where it was said"' : '') + '>' + (i + 1) + '</span>'
+            + '<span class="se-quoted-text" data-open="' + i + '" aria-label="' + qEscAttr(text) + '">' + (q.reference?qEsc(q.title||text):'“'+qEsc(text)+'”') + '</span>'
             + '<button type="button" data-drop="' + i + '" title="Take this passage off — it will not be sent with your question" aria-label="Remove this passage">✕</button></div>';
         }).join('')
           + (e.quotes.length > 1 ? '<button type="button" class="se-quotes-clear" data-drop-all="1">Clear all ' + e.quotes.length + '</button>' : '');
         var clearAll = qbar.querySelector('[data-drop-all]');
         if(clearAll) clearAll.onclick = function(ev){ ev.stopPropagation(); e.quotes = []; saveDraft(e); repaintHere(); };
-        // Click the passage itself to go and read it where it was said. The ✕ is a
-        // separate target, so removing one never scrolls the transcript away.
+        // Click the passage to open it whole, click again to fold it back. Kept on
+        // the row rather than in e.quotes so it survives a repaint but never rides
+        // along into the saved draft.
+        qbar.querySelectorAll('[data-open]').forEach(function(el){
+          el.onclick = function(ev){
+            ev.stopPropagation();
+            var i = Number(el.getAttribute('data-open'));
+            e.quoteOpen[i] = !e.quoteOpen[i];
+            var row = el.closest('.se-quoted');
+            if(row) row.classList.toggle('is-open', !!e.quoteOpen[i]);
+          };
+        });
+        // The number goes and reads it where it was said. The ✕ is a separate
+        // target again, so removing one never scrolls the transcript away.
         qbar.querySelectorAll('[data-jump]').forEach(function(el){
           el.onclick = function(ev){
             ev.stopPropagation();
