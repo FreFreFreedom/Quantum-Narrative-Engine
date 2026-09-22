@@ -1395,6 +1395,19 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    its Side Talks. Kept outside .se-body so it is never mistaken for part of the
    answer when a passage is selected, carried or saved as a chapter. */
 .se-wordcount { margin-top:7px; font-family:var(--font-ui); font-size:var(--fs-2xs); color:var(--c-ink-5); }
+/* The books and films an answer leaned on, shown as their own covers rather than
+   a long semicolon sentence nobody reads to the end. */
+.src-block { margin:18px 0 2px; padding-top:14px; border-top:1px solid var(--c-border); }
+.src-lab { font-family:var(--font-ui); font-size:var(--fs-2xs); letter-spacing:.14em; text-transform:uppercase; color:var(--c-ink-5); margin-bottom:11px; }
+.src-strip { display:flex; flex-wrap:wrap; gap:18px; }
+.src-one { width:84px; }
+.src-cov { width:84px; height:126px; border-radius:var(--r-xs); border:1px solid var(--c-border-2);
+  background:var(--c-surface-2) center/cover no-repeat; box-shadow:0 8px 20px rgba(0,0,0,.28);
+  display:flex; align-items:center; justify-content:center; font-size:var(--fs-2xs); color:var(--c-ink-5); }
+.src-cov.has-art { color:transparent; }
+.src-nm { font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:11.5px; line-height:1.35;
+  color:var(--c-ink-2); margin-top:8px; }
+.src-au { font-size:10px; color:var(--c-ink-5); margin-top:2px; }
 /* A drafted plan is the moment the conversation becomes something you can build,
    so it is the one turn allowed to break the pattern. Amber is already this app's
    "buildable" colour over in the tech tree, which is exactly what it means here. */
@@ -11969,6 +11982,71 @@ function renderRoomBoard() {
   });
   host.querySelectorAll('[data-shelf-open]').forEach(b => {
     b.onclick = () => openBoardCard(roomBoardCards[Number(b.getAttribute('data-shelf-open'))]);
+  });
+}
+
+// ── The sources line, turned into a row of covers ────────────────────────────
+// A model ends a long answer with "Sources: Ruth Wilson Gilmore, Golden Gulag;
+// …", which is one sentence too long to scan. Same information, as the books
+// themselves. The word count at the end of that sentence goes too — the answer
+// already carries its own.
+function srcEntry(raw) {
+  const plain = (v) => String(v).replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+  const em = raw.match(/<(?:em|i)>([\s\S]*?)<\/(?:em|i)>/i);
+  let all = plain(raw).replace(/\s+/g, ' ').trim();
+  if (!all) return null;
+  let kind = 'book';
+  const k = all.match(/\((film|movie|series|show|tv)[^)]*\)/i);
+  if (k) kind = /series|show|tv/i.test(k[1]) ? 'series' : 'film';
+  all = all.replace(/\((?:film|movie|series|show|tv)[^)]*\)/ig, ' ').replace(/\s+/g, ' ').trim();
+  let title = '', who = '';
+  if (em) {
+    title = plain(em[1]).trim();
+    who = all.replace(title, ' ');
+  } else {
+    const bits = all.split(',').map((b) => b.trim()).filter(Boolean);
+    if (bits.length > 1) { who = bits[0]; title = bits.slice(1).join(', '); } else { title = all; }
+  }
+  const trim = (v) => String(v).replace(/^[\s,;.–—-]+/, '').replace(/[\s,;.–—-]+$/, '').trim();
+  title = trim(title);
+  who = trim(String(who).replace(/\b(1[89]\d\d|20\d\d)\b/g, ' ').replace(/\s+/g, ' '));
+  if (!title) return null;
+  return { title, who, kind };
+}
+function srcStripHtml(html) {
+  const body = String(html || '');
+  const m = body.match(/<p>\s*(?:<strong>\s*)?Sources?\s*:?\s*(?:<\/strong>)?\s*:?\s*([\s\S]*?)<\/p>\s*$/i);
+  if (!m) return body;
+  const list = m[1].replace(/\bWord\s+count\s*:?\s*[\d,\s]+\.?\s*$/i, '');
+  const items = list.split(/;|<br\s*\/?>/).map(srcEntry).filter(Boolean);
+  if (!items.length) return body;
+  const cards = items.map((it) => {
+    const last = it.who ? it.who.split(/\s+/).slice(-1)[0] : '';
+    return '<div class="src-one" title="' + qEscAttr(it.title + (it.who ? ' — ' + it.who : '')) + '">'
+      + '<div class="src-cov" data-src-title="' + qEscAttr(it.title) + '" data-src-who="' + qEscAttr(it.who)
+      + '" data-src-kind="' + qEscAttr(it.kind) + '">' + qEsc(it.kind) + '</div>'
+      + '<div class="src-nm">' + qEsc(it.title) + '</div>'
+      + (last ? '<div class="src-au">' + qEsc(last) + '</div>' : '')
+      + '</div>';
+  }).join('');
+  return body.slice(0, m.index)
+    + '<div class="src-block"><div class="src-lab">Sources</div><div class="src-strip">' + cards + '</div></div>';
+}
+// Each cover found once: the shelf first (it already has the picture), then the
+// same public catalogues the Library uses.
+function srcLoadArt(host) {
+  if (!host) return;
+  host.querySelectorAll('.src-cov[data-src-title]').forEach(async (el) => {
+    if (el.dataset.srcDone) return;
+    el.dataset.srcDone = '1';
+    const title = el.dataset.srcTitle, who = el.dataset.srcWho || '', kind = el.dataset.srcKind || 'book';
+    let url = kind === 'book' ? shelfCoverFor(title) : '';
+    if (!url) url = await roomFindMediaArt({ kind, title, creator: who });
+    if (!url || !el.isConnected) return;
+    el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
+    el.classList.add('has-art');
   });
 }
 
@@ -24586,6 +24664,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         log.innerHTML=nextLog;log.renderedHtml=nextLog;
         log.scrollTop=atBottom?log.scrollHeight:was;
       }
+      srcLoadArt(log);
     }
     var filebar = host.querySelector('.se-filebar');
     if(filebar){
@@ -25109,6 +25188,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       }
       var shown = (you && m.body) ? m.body : m.text;
       var renderedBody = plan ? qEsc(m.text) : fmtBody(shown, !you, m.id || null);
+      if(!you && !plan) renderedBody = srcStripHtml(renderedBody);
       var showWordCount = !you && !plan && (e.type === 'open' || e.type === 'side');
       var wordCountHtml = '';
       if(showWordCount){
