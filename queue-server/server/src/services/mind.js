@@ -23,7 +23,25 @@ import { triggerMentionScan } from './entityMentions.js';
 import { STOPWORDS } from '../lib/stopwords.js';
 
 let db = null;
-export function bindMindDb(database) { db = database; }
+export function bindMindDb(database) {
+  db = database;
+  // Watermarks for the passes that read something other than a conversation. A
+  // conversation carries its own (convos.mind_seen_turns); the library has nowhere
+  // to put one, and a whole table per pass would be four columns of ceremony.
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS mind_marks (key TEXT PRIMARY KEY, value TEXT NOT NULL DEFAULT '')`);
+  } catch (e) { console.error('[mind] marks table:', e?.message || e); }
+}
+
+function markGet(key) {
+  try { return db.prepare(`SELECT value FROM mind_marks WHERE key=?`).get(key)?.value || ''; } catch { return ''; }
+}
+function markSet(key, value) {
+  try {
+    db.prepare(`INSERT INTO mind_marks (key, value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`)
+      .run(key, String(value || ''));
+  } catch (e) { console.error('[mind] mark write:', e?.message || e); }
+}
 
 // Write this memory back out to the repo files every engine can read
 // (mindMirror.js). Fire-and-forget and debounced there — a failed write must
@@ -64,7 +82,10 @@ export const CENTRAL_WEIGHT = 5;
 // (the pass only ever reads the messages since the watermark, on the free
 // `summary` lane) — it just runs more often on smaller batches.
 const HARVEST_AFTER_TURNS = 3;
-const BLOCK_CAP = 4000;
+// Was 4000, raised when the block started carrying the reasoning behind its top
+// facts and not only their headlines. The extra characters buy the argument under a
+// claim, which is the part that was being stored and thrown away.
+const BLOCK_CAP = 6000;
 // Stopwords dropped before normalising a fact for the deterministic dedup check.
 // The list itself lives in lib/stopwords.js — entityMentions.js needs the same one.
 
@@ -205,30 +226,104 @@ export function reviseFact(id, { text, detail, kind } = {}) {
   } catch (e) { return { error: e.message || 'revise_failed' }; }
 }
 
-// The block injected into every conversation turn. Empty string when there are no
-// facts, so an empty memory costs nothing. Selected by weight * recency *
-// (1 + log(hits+1)), hard-capped at BLOCK_CAP chars.
-export function mindBlock() {
+// One fact replaces another. The old row stops being active but keeps a pointer to
+// what replaced it, so the memory has a history instead of a hole — and so a wrong
+// merge can be read back rather than guessed at.
+//
+// Two callers, both from the harvest: a CONTRADICTION (this conversation reversed an
+// older claim, and the old one is now simply wrong) and a MERGE (several facts turn
+// out to be one idea seen from several angles, and they fold into the strongest
+// statement of it). Until this existed the table could only ever grow: a fact that
+// reversed another just sat next to it, both true forever.
+export function supersedeFact(oldId, newId) {
+  if (!oldId || oldId === newId) return { ok: false };
   try {
-    const facts = db.prepare(`SELECT id, kind, text, weight, hits, last_used_at, updated_at, created_at FROM mind_facts WHERE active=1`).all();
-    if (!facts.length) return '';
-    const now = Date.now();
-    const scored = facts.map((f) => {
-      const t = f.last_used_at || f.updated_at || f.created_at;
-      let days = 30;
-      if (t) { const dt = new Date(t).getTime(); if (!Number.isNaN(dt)) days = Math.max(0, (now - dt) / 86400000); }
-      const recency = 1 / (1 + days);
-      const score = (f.weight || 1) * recency * (1 + Math.log((f.hits || 0) + 1));
-      return { f, score };
-    }).sort((a, b) => b.score - a.score);
-    let out = '\n=== WHAT YOU KNOW ABOUT THE OWNER ===\nFollow explicit instructions and preferences here. When an older theme conflicts with a newer direct instruction, the direct instruction wins.\n';
-    for (const { f } of scored) {
-      const line = `- ${String(f.text).slice(0, 240)}`;
-      if (out.length + line.length + 1 > BLOCK_CAP) break;
-      out += line + '\n';
-    }
-    return out;
+    const r = db.prepare(`UPDATE mind_facts SET active=0, superseded_by=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND active=1`)
+      .run(newId, oldId);
+    return { ok: r.changes > 0 };
+  } catch (e) { return { error: e.message || 'supersede_failed' }; }
+}
+
+// Topic words only — short and common words carry no subject. Used by the
+// relevance score below, which is deliberately plain word overlap: no embeddings,
+// no extra table, no model call on the request path.
+function topicWords(s) {
+  return new Set(String(s || '').toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/).filter((w) => w.length > 3 && !STOPWORDS.has(w)));
+}
+
+// How close a fact sits to what he is asking RIGHT NOW. Returns a multiplier rather
+// than a score of its own, so a fact he marked Central never drops out of the block
+// just because this turn happens to be about something else.
+function relevanceTo(fact, contextWords) {
+  if (!contextWords.size) return 0;
+  const own = topicWords(`${fact.text} ${fact.detail || ''}`);
+  if (!own.size) return 0;
+  let hit = 0;
+  for (const w of own) if (contextWords.has(w)) hit += 1;
+  return hit / Math.sqrt(own.size);
+}
+
+const DETAIL_FACTS = 3;     // how many facts arrive with their reasoning attached
+const DETAIL_CHARS = 900;   // per fact
+const RELEVANCE_PULL = 6;   // how hard the current subject outranks plain recency
+
+// The block injected into every conversation turn. Empty string when there are no
+// facts, so an empty memory costs nothing.
+//
+// `context` is what he just said. Two things changed here, and they were the same
+// weakness seen from two sides. The order used to be weight * recency * hits and
+// nothing else, so fifty facts arrived in the same order whatever the subject was.
+// And only `text` was ever sent — the 240-character headline — while `detail`, the
+// mechanism and the example that made the fact land, sat in the table unread. A
+// headline without its argument is close to useless a month later. So the block is
+// now ranked against the subject, and the few facts closest to it bring their
+// reasoning with them.
+export function mindBlock(context = '') {
+  try {
+    const facts = db.prepare(`SELECT id, kind, text, detail, weight, hits, last_used_at, updated_at, created_at FROM mind_facts WHERE active=1`).all();
+    return renderMindBlockFrom(facts, context);
   } catch { return ''; }
+}
+
+// The block itself, from a list of facts — no database, so the self-test can prove
+// the ranking and the detail selection without one. mindBlock() above is this plus
+// one query. Same split as mindMirror.js's renderMindFrom().
+export function renderMindBlockFrom(facts = [], context = '', now = Date.now()) {
+  if (!facts.length) return '';
+  const contextWords = topicWords(String(context || '').slice(0, 4000));
+  const scored = facts.map((f) => {
+    const t = f.last_used_at || f.updated_at || f.created_at;
+    let days = 30;
+    if (t) { const dt = new Date(t).getTime(); if (!Number.isNaN(dt)) days = Math.max(0, (now - dt) / 86400000); }
+    const recency = 1 / (1 + days);
+    const rel = relevanceTo(f, contextWords);
+    const score = (f.weight || 1) * recency * (1 + Math.log((f.hits || 0) + 1)) * (1 + RELEVANCE_PULL * rel);
+    return { f, score, rel };
+  }).sort((a, b) => b.score - a.score);
+
+  // Only a fact that genuinely touches the subject earns its reasoning. Without
+  // this guard the deep section is three arbitrary facts dressed up as the ones
+  // that matter, which is worse than sending headlines alone.
+  const deep = scored.filter((x) => x.rel > 0 && x.f.detail).slice(0, DETAIL_FACTS);
+  const deepIds = new Set(deep.map((x) => x.f.id));
+
+  let out = '\n=== WHAT YOU KNOW ABOUT THE OWNER ===\nFollow explicit instructions and preferences here. When an older theme conflicts with a newer direct instruction, the direct instruction wins.\n';
+  if (deep.length) {
+    out += '\nCLOSEST TO WHAT HE IS ASKING NOW — the claim, and the thinking under it:\n';
+    for (const { f } of deep) {
+      out += `- ${String(f.text).slice(0, 240)}\n  ${String(f.detail).slice(0, DETAIL_CHARS).replace(/\s+/g, ' ')}\n`;
+    }
+    out += '\nEVERYTHING ELSE YOU KNOW:\n';
+  }
+  for (const { f } of scored) {
+    if (deepIds.has(f.id)) continue;
+    const line = `- ${String(f.text).slice(0, 240)}`;
+    if (out.length + line.length + 1 > BLOCK_CAP) break;
+    out += line + '\n';
+  }
+  return out;
 }
 
 // Direct "remember this" instructions and Central style/taste memories get a
@@ -325,7 +420,7 @@ function buildHarvestPrompt(newTurns, factList) {
   return `You maintain the long-term memory of a personal app built for one man. He is its only user. Two things go in that memory: standing facts about HIM, and the PARADIGM the platform is built on — the ideas he and this app are working out together.
 
 Return ONLY a JSON array (no prose, no markdown fence) of objects:
-  {"kind": "about"|"taste"|"decision"|"project"|"person"|"style"|"vision", "text": "<the claim itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the example that made it land — as long as it needs to be>", "replaces"?: "<an existing fact id from the list below, if this corrects or sharpens it>"}
+  {"kind": "about"|"taste"|"decision"|"project"|"person"|"style"|"vision", "text": "<the claim itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the example that made it land — as long as it needs to be>", "replaces"?: "<an existing fact id, if this corrects or sharpens it>", "contradicts"?: "<an existing fact id this REVERSES>", "merges"?: ["<existing fact ids that are all one idea>"]}
 
 USE "vision" for the paradigm: what the platform IS, the mechanisms it runs on, what counts as an entity or a scale or a pattern, how analogy is supposed to work, what a part of the system is FOR. This is the material the whole project is built to accumulate — err toward keeping it.
 
@@ -336,6 +431,10 @@ ALWAYS fill "detail" when there is reasoning behind a fact. "text" alone is a he
 Keep only what would still be worth knowing next month. Do NOT save the shape of the conversation itself ("he asked about X", "the answer explored Y"), pleasantries, or anything already in the list below — if a turn merely repeats a known fact, omit it. But an idea that DEVELOPS a fact already in the list is not a repeat: return it with "replaces" set to that fact's id.
 
 Use "replaces" to REPAIR the list too, when this conversation gives you what it takes: a fact filed under the wrong kind (the paradigm sitting under "project", say), or one whose "detail" is empty although the reasoning is right here in front of you. Return it with its id in "replaces", the kind it should have had, and the detail filled in. Repairing a fact is as valuable as finding a new one.
+
+USE "contradicts" WHEN HE CHANGED HIS MIND. If this conversation REVERSES something in the list — he dropped an approach he had decided on, rejected a preference he used to hold, or corrected a claim about the paradigm — return the new, true claim with the old fact's id in "contradicts". The old one is then retired. This is different from "replaces", which sharpens a fact that is still true. A memory that can only ever add will end up holding both halves of every reversal and believing both.
+
+USE "merges" WHEN SEVERAL FACTS ARE ONE IDEA. Look at the list as a whole, not only at this conversation. When three or four entries are the same idea seen from different angles, return ONE strong statement of it — the claim in "text", the combined reasoning in "detail" — with every id it absorbs in "merges". Memory should get denser as it grows, not longer. Folding four weak facts into one that carries all four is worth more than a new one.
 
 WHAT YOU ALREADY KNOW:
 ${facts}
@@ -357,6 +456,64 @@ function parseHarvest(text) {
     const arr = JSON.parse(s.slice(open, close + 1));
     return Array.isArray(arr) ? arr : null;
   } catch { return null; }
+}
+
+// A merge rearranges the list the other moves point into, so merges are applied
+// first. Its own function so the self-test can prove the order without a database.
+export function orderHarvestItems(items = []) {
+  const isMerge = (it) => Array.isArray(it?.merges) && it.merges.length > 0;
+  return [...items.filter(isMerge), ...items.filter((it) => !isMerge(it))];
+}
+
+// What the harvest returns, written into the table. Shared by the conversation pass
+// and the library pass so both get the same four moves — add, sharpen, retire a
+// reversed claim, fold several into one — and neither can quietly grow its own.
+//
+// Order matters: a merge rearranges the list the other two are pointing into, so it
+// goes first, and an id already absorbed by a merge is not touched again.
+function applyHarvestItems(items, { sourceConvoId = null, sourceNote = null } = {}) {
+  let wrote = 0;
+  const gone = new Set();
+  const ordered = orderHarvestItems(items);
+  for (const it of ordered) {
+    if (!it || !it.kind || !it.text || !KINDS.includes(it.kind)) continue;
+    const payload = { kind: it.kind, text: it.text, detail: it.detail || null, sourceConvoId, sourceNote };
+
+    if (Array.isArray(it.merges) && it.merges.length) {
+      const absorb = it.merges.filter((id) => id && !gone.has(id) && getFact(id));
+      if (absorb.length < 2) {
+        // One id is not a merge — treat it as the sharpening it actually is.
+        if (absorb.length === 1) { reviseFact(absorb[0], { text: it.text, detail: it.detail || null, kind: it.kind }); wrote += 1; continue; }
+      } else {
+        // The survivor is the first absorbed row, rewritten — rather than a new row
+        // the others point at. It keeps the oldest id, so anything already linked to
+        // this idea (a core publication, an entity mention) still resolves.
+        const survivor = absorb[0];
+        reviseFact(survivor, { text: it.text, detail: it.detail || null, kind: it.kind });
+        for (const id of absorb.slice(1)) { supersedeFact(id, survivor); gone.add(id); }
+        wrote += 1;
+        continue;
+      }
+    }
+
+    if (it.contradicts && !gone.has(it.contradicts) && getFact(it.contradicts)) {
+      const saved = saveFact(payload);
+      const survivor = saved?.error === 'duplicate' ? saved.id : (saved?.id || null);
+      if (survivor) { supersedeFact(it.contradicts, survivor); gone.add(it.contradicts); wrote += 1; }
+      continue;
+    }
+
+    if (it.replaces && !gone.has(it.replaces) && getFact(it.replaces)) {
+      reviseFact(it.replaces, { text: it.text, detail: it.detail || null, kind: it.kind });
+      wrote += 1;
+      continue;
+    }
+
+    const saved = saveFact(payload);
+    if (saved && !saved.error) wrote += 1;
+  }
+  enforceCap();
+  return wrote;
 }
 
 // The extraction job. Never called on the request path — fire-and-forget after an
@@ -386,21 +543,187 @@ async function runHarvest(convoId, force) {
   // next harvest pass retries these same turns rather than silently losing them.
   if (!items) { console.error('[mind] harvest: unparseable model reply, watermark not advanced'); return; }
 
-  let wrote = 0;
-  for (const it of items) {
-    if (!it || !it.kind || !it.text || !KINDS.includes(it.kind)) continue;
-    if (it.replaces) {
-      const existing = getFact(it.replaces);
-      if (existing) { reviseFact(it.replaces, { text: it.text, detail: it.detail || null, kind: it.kind }); wrote++; continue; }
-    }
-    const saved = saveFact({ kind: it.kind, text: it.text, detail: it.detail || null, sourceConvoId: convoId });
-    if (saved && !saved.error) wrote++;
-  }
-  enforceCap();
+  const wrote = applyHarvestItems(items, { sourceConvoId: convoId });
   // Advance the watermark to the full count of chat turns seen.
   db.prepare(`UPDATE convos SET mind_seen_turns=? WHERE id=?`).run(userCount, convoId);
   if (wrote > 0) broadcastAll('mind:updated', {});
   mirrorOut();
+}
+
+// ---------------------------------------------------------------------------
+// The library pass — what he keeps, not only what he says.
+//
+// Until this existed the memory only ever listened to the Room. But keeping a line
+// is the loudest signal he gives: out of a long answer he chose that sentence, and
+// out of every book he put THAT one on the shelf. None of it reached memory.
+//
+// Two watermarks, not one, and the reason is dull but load-bearing: saved_passages
+// stamps its rows in ISO ('2026-09-22T14:03:11.000Z') while shelf_books uses
+// SQLite's CURRENT_TIMESTAMP ('2026-09-22 14:03:11'). A space sorts before a 'T',
+// so one shared watermark compared as text would make every book look older than
+// every passage and the shelf would never be read at all. Each mark is only ever
+// compared against stamps from its own table, and is set from the rows actually
+// read rather than from the clock.
+const MARK_PASSAGES = 'passages_seen_at';
+const MARK_BOOKS = 'books_seen_at';
+// Enough kept things to be worth a model call. One kept line on its own is usually
+// a quote he liked; three or four start to describe what he is circling.
+const LIBRARY_MIN_ITEMS = 3;
+const LIBRARY_PASSAGES = 30;
+const LIBRARY_BOOKS = 15;
+
+function buildLibraryPrompt(passages, books, factList) {
+  const facts = factList.length
+    ? factList.map((f) => `- [${f.id}] (${f.kind}) ${f.text}`).join('\n')
+    : '(none yet)';
+  const kept = passages.map((row) => {
+    const from = row.source_title ? ` (out of: ${row.source_title})` : '';
+    const read = row.reading ? `\n  it was read here as: ${String(row.reading).slice(0, 500)}` : '';
+    return `KEPT LINE${from}:\n  "${String(row.text).slice(0, 900)}"${read}`;
+  });
+  const shelf = books.map((row) => {
+    const who = row.author ? ` — ${row.author}` : '';
+    const why = row.relevance
+      ? `\n  why it is here: ${String(row.relevance).slice(0, 600)}`
+      : (row.blurb ? `\n  ${String(row.blurb).slice(0, 400)}` : '');
+    return `PUT ON THE SHELF: ${row.title}${who}${why}`;
+  });
+
+  return `You maintain the long-term memory of a personal app built for one man. He is its only user. This time you are not reading a conversation — you are reading what he chose to KEEP.
+
+That choice is the signal. Out of a long answer he lifted one sentence and saved it. Out of everything he could read he put this book on his shelf. Nobody asked him to; there is no reward for it. So treat every item below as him pointing at something and saying "this".
+
+Do NOT save the line itself. A quote is not a memory. Name what it is an instance OF — the standing fact about him, or the paradigm concept it is pointing at — and save THAT. If several kept things point at the same thing, that is one strong memory, not four weak ones.
+
+Two things go in this memory: standing facts about HIM (what he is drawn to, how he wants to be worked with, what he has decided) and the PARADIGM the platform is built on — what it IS, its mechanisms, what counts as an entity or a scale, how analogy is supposed to work.
+
+Return ONLY a JSON array (no prose, no markdown fence) of objects:
+  {"kind": "about"|"taste"|"decision"|"project"|"person"|"style"|"vision", "text": "<the claim itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the kept line that made it land — as long as it needs to be>", "replaces"?: "<an existing fact id, if this sharpens it>", "contradicts"?: "<an existing fact id this REVERSES>", "merges"?: ["<existing fact ids that are all one idea>"]}
+
+ALWAYS fill "detail", and quote the kept line inside it when the line is what makes the fact real.
+
+Return an empty array rather than padding. Most batches of kept lines yield one or two real memories, and several yield none at all — they were simply good sentences. Nothing here is worth saving twice: if the list below already holds it, leave it out, unless this deepens it (then use "replaces") or reverses it (then use "contradicts").
+
+WHAT YOU ALREADY KNOW:
+${facts}
+
+WHAT HE HAS KEPT SINCE YOU LAST LOOKED:
+${[...kept, ...shelf].join('\n\n')}`;
+}
+
+async function runLibraryHarvest(force) {
+  const sincePassages = markGet(MARK_PASSAGES);
+  const sinceBooks = markGet(MARK_BOOKS);
+  let passages = [];
+  let books = [];
+  try {
+    passages = db.prepare(
+      `SELECT text, source_title, reading, created_at FROM saved_passages
+       WHERE deleted_at IS NULL AND created_at > ? ORDER BY created_at LIMIT ?`,
+    ).all(sincePassages || '', LIBRARY_PASSAGES);
+  } catch (e) { console.error('[mind] library: passages read failed:', e?.message || e); }
+  try {
+    books = db.prepare(
+      `SELECT title, author, blurb, relevance, created_at FROM shelf_books
+       WHERE created_at > ? ORDER BY created_at LIMIT ?`,
+    ).all(sinceBooks || '', LIBRARY_BOOKS);
+  } catch (e) { /* the shelf may not exist yet on a fresh database */ }
+
+  const count = passages.length + books.length;
+  if (!count) return;
+  if (!force && count < LIBRARY_MIN_ITEMS) return;
+
+  const factList = listFacts({ activeOnly: true }).map((f) => ({ id: f.id, text: f.text, kind: f.kind }));
+  const result = await generateText({
+    feature: 'summary', maxTokens: 1500, label: 'mind:library',
+    prompt: buildLibraryPrompt(passages, books, factList),
+  });
+  if (result.error) { console.error('[mind] library model error:', result.error); return; }
+  const items = parseHarvest(result.text);
+  // Same rule as the conversation pass: an unreadable reply must not advance the
+  // watermark, or the kept lines it was about are lost for good.
+  if (!items) { console.error('[mind] library: unparseable model reply, watermarks not advanced'); return; }
+
+  const wrote = applyHarvestItems(items, { sourceNote: 'library' });
+  // Set from the rows actually read, never from the clock — anything saved while
+  // this pass was running is then still unseen and gets read next time.
+  if (passages.length) markSet(MARK_PASSAGES, passages[passages.length - 1].created_at);
+  if (books.length) markSet(MARK_BOOKS, books[books.length - 1].created_at);
+  if (wrote > 0) { broadcastAll('mind:updated', {}); mirrorOut(); }
+}
+
+// ---------------------------------------------------------------------------
+// The thickening pass — memory that gets denser instead of longer.
+//
+// The harvest can fold facts together as it goes, but it only ever looks at the
+// conversation in front of it. Nothing ever stood back and read the whole list, so
+// eight entries could be one idea seen from eight angles and stay eight rows.
+//
+// Runs on the most crowded kind only, at most once a day, and only once the table
+// is big enough for crowding to be real. It is the one pass that reads `detail` for
+// every fact it considers — merging on headlines alone would fuse two ideas that
+// happen to share their vocabulary.
+const MARK_THICKENED = 'thickened_at';
+const THICKEN_AT = 45;             // active facts before it is worth looking
+const THICKEN_EVERY_MS = 86_400_000;
+const THICKEN_DETAIL = 400;
+
+function buildThickenPrompt(kind, rows) {
+  const list = rows.map((f) => `- [${f.id}] ${f.text}${f.detail ? `\n    ${String(f.detail).slice(0, THICKEN_DETAIL).replace(/\s+/g, ' ')}` : ''}`).join('\n');
+  return `You maintain the long-term memory of a personal app built for one man. Below is everything it currently believes under one heading: "${kind}".
+
+A memory that only ever adds gets longer. A good one gets DENSER. Your job here is only that: find where several entries are one idea seen from different angles, and fold each such group into a single statement that carries all of them.
+
+Return ONLY a JSON array (no prose, no markdown fence) of objects, one per group you are folding:
+  {"kind": "${kind}", "text": "<the single strongest statement of the idea, plain English, <= 240 chars>", "detail": "<the combined reasoning: every mechanism, example and distinction worth keeping from the entries you are folding>", "merges": ["<every id in the group>"]}
+
+Rules, and they matter more than finding something:
+- A group is TWO OR MORE ids. Never return a group of one.
+- Merge only what is genuinely ONE idea. Two ideas that share vocabulary, or that are about the same subject from different angles, are NOT one idea — a fact about how policy travels downward and a fact about how it loops back are two facts, and fusing them destroys both.
+- Lose nothing. Every specific mechanism, named work, or distinction in the entries you fold must survive in "detail". If you cannot carry it all, do not merge.
+- An empty array is the correct answer most of the time. Return [] rather than forcing a merge.
+
+THE ENTRIES:
+${list}`;
+}
+
+async function runThicken(force) {
+  const last = Number(markGet(MARK_THICKENED) || 0);
+  if (!force && last && Date.now() - last < THICKEN_EVERY_MS) return;
+  const all = listFacts({ activeOnly: true });
+  if (!force && all.length < THICKEN_AT) return;
+
+  const byKind = new Map();
+  for (const f of all) byKind.set(f.kind, [...(byKind.get(f.kind) || []), f]);
+  let kind = null;
+  let rows = [];
+  for (const [k, list] of byKind) if (list.length > rows.length) { kind = k; rows = list; }
+  if (!kind || rows.length < 4) return;
+
+  // Written before the call, not after: a pass that dies mid-way must not retry on
+  // every harvest for the rest of the day.
+  markSet(MARK_THICKENED, String(Date.now()));
+
+  const result = await generateText({
+    feature: 'summary', maxTokens: 2000, label: 'mind:thicken',
+    prompt: buildThickenPrompt(kind, rows),
+  });
+  if (result.error) { console.error('[mind] thicken model error:', result.error); return; }
+  const items = parseHarvest(result.text);
+  if (!items || !items.length) return;
+
+  // Only merges are honoured here. This pass reads no conversation, so it has no
+  // standing to add a new claim or retire one — the temptation for a model handed a
+  // list of ideas is to write a better one, and that would be invention, not memory.
+  const merges = items.filter((it) => Array.isArray(it?.merges) && it.merges.length >= 2)
+    .map((it) => ({ ...it, kind, contradicts: null, replaces: null }));
+  if (!merges.length) return;
+  const wrote = applyHarvestItems(merges, { sourceNote: 'thicken' });
+  if (wrote > 0) {
+    console.log(`[mind] thickened ${kind}: ${wrote} group(s) folded`);
+    broadcastAll('mind:updated', {});
+    mirrorOut();
+  }
 }
 
 // Rewind the watermark so the next harvest reads a thread from the beginning.
@@ -562,6 +885,30 @@ export function corePublicationStatus(id) {
 }
 
 const _harvestInFlight = new Set();
+let _libraryInFlight = false;
+let _thickenInFlight = false;
+
+// The two passes that read something other than the conversation ride the same
+// trigger as the conversation harvest — an assistant turn just finished, nothing is
+// waiting on us, and the process is awake. Each decides for itself whether there is
+// anything to do: the library needs a few newly kept things, the thickening needs a
+// crowded table and a day since the last one. Both are fire-and-forget and both
+// swallow their own failures, because neither may ever turn into a failed turn.
+async function runSidePasses(force) {
+  if (!_libraryInFlight) {
+    _libraryInFlight = true;
+    try { await runLibraryHarvest(force); }
+    catch (e) { console.error('[mind] library harvest failed:', e?.message || e); }
+    finally { _libraryInFlight = false; }
+  }
+  if (!_thickenInFlight) {
+    _thickenInFlight = true;
+    try { await runThicken(false); }
+    catch (e) { console.error('[mind] thicken failed:', e?.message || e); }
+    finally { _thickenInFlight = false; }
+  }
+}
+
 export function harvest(convoId, { force = false } = {}) {
   if (!convoId || _harvestInFlight.has(convoId)) return;
   _harvestInFlight.add(convoId);
@@ -569,5 +916,30 @@ export function harvest(convoId, { force = false } = {}) {
     try { await runHarvest(convoId, force); }
     catch (e) { console.error('[mind] harvest failed:', e?.message || e); }
     finally { _harvestInFlight.delete(convoId); }
+    await runSidePasses(false);
   });
+}
+
+// Manual entrances, for the Mind pane. Same passes, told to run even when their own
+// thresholds say there is not enough yet.
+export function harvestLibrary({ force = true } = {}) {
+  if (_libraryInFlight) return { ok: false, busy: true };
+  _libraryInFlight = true;
+  setImmediate(async () => {
+    try { await runLibraryHarvest(force); }
+    catch (e) { console.error('[mind] library harvest failed:', e?.message || e); }
+    finally { _libraryInFlight = false; }
+  });
+  return { ok: true };
+}
+
+export function thickenMemory({ force = true } = {}) {
+  if (_thickenInFlight) return { ok: false, busy: true };
+  _thickenInFlight = true;
+  setImmediate(async () => {
+    try { await runThicken(force); }
+    catch (e) { console.error('[mind] thicken failed:', e?.message || e); }
+    finally { _thickenInFlight = false; }
+  });
+  return { ok: true };
 }

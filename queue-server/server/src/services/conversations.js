@@ -1869,7 +1869,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // subjectSystemPrompt). Memory ahead of the project map would break the cache
     // prefix and roughly quadruple the token cost of every turn. See
     // plans/room-shared-memory.md §3 and conversation-voice-and-project-map.md.
-    mindBlock(),
+    mindBlock(lastUserText(convo.id)),
     interestContext(convo.created_by, lastUserText(convo.id)),
     // The shelf rides in the same cache-safe region, and for the same reason as
     // the saved interests above it: short, variable per turn, and useless unless

@@ -264,7 +264,7 @@ async function writeRelevance(row, blurb) {
     'A book has been put on the shelf of a research tool its owner uses to think with.',
     `BOOK: "${row.title}"${row.author ? ` by ${row.author}` : ''}${row.year ? ` (${row.year})` : ''}`,
     blurb ? `WHAT ITS PUBLISHER SAYS:\n${blurb.slice(0, 1200)}` : '',
-    mindBlock(),
+    mindBlock(`${row.title} ${row.author || ''} ${String(blurb || '').slice(0, 600)}`),
     `Write at most ${RELEVANCE_MAX_WORDS} words saying what this book gives HIM — the thinking it feeds, where it bites on what he is working on, and what he would reach into it for.`,
     'Plain words, no jargon, no equations, no hedging, no preamble, no bullet list, and never a summary of the plot. If you do not know the book, say what it is likely to carry and mark that as a guess in four words. Write prose, nothing else.',
   ].filter(Boolean).join('\n\n');

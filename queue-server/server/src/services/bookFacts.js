@@ -280,7 +280,9 @@ export async function bookRelevance(owner, item, { refresh = false } = {}) {
     'A book saved in a research tool its owner uses to think with.',
     `BOOK: "${item.title}"${item.creator ? ` by ${personName(item.creator)}` : ''}${row?.year ? ` (${row.year})` : ''}`,
     row?.blurb ? `WHAT ITS PUBLISHER SAYS:\n${String(row.blurb).slice(0, 1200)}` : '',
-    mindBlock(),
+    // The book itself is the context: memory now ranks itself against what is being
+    // asked about, so the facts that reach this prompt are the ones this book touches.
+    mindBlock(`${item.title} ${item.creator || ''} ${String(row?.blurb || '').slice(0, 600)}`),
     `Write at most ${RELEVANCE_MAX_WORDS} words saying what this book gives HIM — the thinking it feeds, where it bites on what he is working on, and what he would reach into it for.`,
     'Plain words, no jargon, no preamble, no bullets, never a summary of the plot. If you do not know the book, say what it is likely to carry and mark that as a guess in four words. Prose only.',
   ].filter(Boolean).join('\n\n');

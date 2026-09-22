@@ -106,5 +106,18 @@ export function mindRoutes() {
     res.json({ ok: true });
   }));
 
+  // The library pass — read what he has KEPT (passages, shelf) rather than what he
+  // said. Runs on its own after any conversation harvest; this is the "look now"
+  // entrance, which also ignores the "enough new things yet?" threshold.
+  router.post('/harvest-library', (req, res) => {
+    res.json(mind.harvestLibrary({ force: true }));
+  });
+
+  // Fold entries that are one idea into one. Automatic once a day on the most
+  // crowded kind; this asks for it now.
+  router.post('/thicken', (req, res) => {
+    res.json(mind.thickenMemory({ force: true }));
+  });
+
   return router;
 }

@@ -13,7 +13,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { unseenTurns, buildProposePrompt, buildCoreAddition, CENTRAL_WEIGHT, explicitMemoryText, renderDirectInstructions } from '../server/src/services/mind.js';
+import { unseenTurns, buildProposePrompt, buildCoreAddition, CENTRAL_WEIGHT, explicitMemoryText, renderDirectInstructions, renderMindBlockFrom, orderHarvestItems } from '../server/src/services/mind.js';
 import { renderMindFrom, renderVisionFrom, mindFiles, MEMORY_REPO_PATH } from '../server/src/services/mindMirror.js';
 
 let passed = 0;
@@ -185,5 +185,81 @@ const harvestBody = mindSrc.slice(mindSrc.indexOf('async function runHarvest'), 
 assert.ok(!harvestBody.includes('core_publications'), 'automatic harvest must never touch core_publications');
 assert.ok(!harvestBody.includes('saveRemembered'), 'automatic harvest must never call the explicit-Save path');
 ok('automatic harvest has no path to a core-publication row');
+
+// ─── the memory block: ranked against the subject, reasoning attached ─────────
+//
+// Two weaknesses fixed together and proven together: the block used to arrive in
+// the same order whatever the question was, and it only ever carried the
+// 240-character headline while the reasoning sat unread in `detail`.
+const NOW = Date.parse('2026-09-22T12:00:00Z');
+const day = (n) => new Date(NOW - n * 86400000).toISOString();
+const factRows = [
+  { id: 'f_new', kind: 'taste', text: 'He likes interactive graph visualisation', detail: 'Clickable, navigable, structure at a glance.', weight: 1, hits: 0, updated_at: day(0) },
+  { id: 'f_old', kind: 'vision', text: 'A policy is the frozen posture an entity takes toward its own vulnerability', detail: 'A rule written exactly where presence failed: the father who cannot face grief writes a rule that grief is weakness.', weight: 1, hits: 0, updated_at: day(200) },
+  { id: 'f_bare', kind: 'project', text: 'Fractal politics is where political analysis is going', detail: null, weight: 1, hits: 0, updated_at: day(150) },
+];
+
+// No context: recency wins, exactly as before, and nothing carries its detail.
+const plain = renderMindBlockFrom(factRows, '', NOW);
+assert.ok(plain.indexOf('interactive graph') < plain.indexOf('frozen posture'), 'without a subject the recent fact still leads');
+assert.ok(!plain.includes('CLOSEST TO WHAT HE IS ASKING NOW'));
+assert.ok(!plain.includes('cannot face grief'), 'no subject means no reasoning is spent');
+ok('with nothing to rank against, the block is the old block');
+
+// Asked about policy: a fact 200 days old outranks one from today, and brings the
+// mechanism with it.
+const ranked = renderMindBlockFrom(factRows, 'how does a policy actually reach a family, and what posture is it', NOW);
+assert.ok(ranked.includes('CLOSEST TO WHAT HE IS ASKING NOW'));
+assert.ok(ranked.indexOf('frozen posture') < ranked.indexOf('interactive graph'), 'the relevant fact leads however old it is');
+assert.ok(ranked.includes('cannot face grief'), 'the reasoning under the relevant fact is sent, not just the headline');
+ok('the subject outranks recency, and the closest fact brings its thinking');
+
+// A fact with no detail can never enter the deep section — there is nothing to add.
+assert.ok(!renderMindBlockFrom(factRows, 'fractal politics analysis', NOW).includes('CLOSEST TO WHAT HE IS ASKING NOW')
+  || !renderMindBlockFrom(factRows, 'fractal politics analysis', NOW).match(/CLOSEST[\s\S]*?f_bare/));
+ok('a fact with no reasoning stays a headline');
+
+// Every fact still reaches the model — ranking reorders, it never drops.
+for (const f of factRows) assert.ok(ranked.includes(f.text), `${f.id} must still be in the block`);
+ok('ranking reorders the memory, it never hides any of it');
+
+// ─── the harvest's four moves ────────────────────────────────────────────────
+//
+// A merge rearranges the list that a contradiction or a sharpening points into, so
+// merges must be applied first or they land on ids that no longer mean what the
+// model meant.
+const moves = [
+  { text: 'a', contradicts: 'x1' },
+  { text: 'b', replaces: 'x2' },
+  { text: 'c', merges: ['x3', 'x4'] },
+  { text: 'd' },
+];
+assert.deepEqual(orderHarvestItems(moves).map((m) => m.text), ['c', 'a', 'b', 'd']);
+ok('merges are applied before anything that points into the list');
+
+assert.deepEqual(orderHarvestItems([]), []);
+assert.deepEqual(orderHarvestItems([{ text: 'a', merges: [] }]).map((m) => m.text), ['a'], 'an empty merges array is not a merge');
+ok('an empty merge list is not a merge');
+
+// ─── the two prompts must actually ask for the new moves ─────────────────────
+const mindText = readFileSync(fileURLToPath(new URL('../server/src/services/mind.js', import.meta.url)), 'utf8');
+for (const needle of ['"contradicts"', '"merges"', 'WHEN HE CHANGED HIS MIND', 'WHEN SEVERAL FACTS ARE ONE IDEA']) {
+  assert.ok(mindText.includes(needle), `the harvest prompt must ask for ${needle}`);
+}
+ok('the harvest is told how to retire a reversed claim and how to fold four into one');
+
+// The library pass reads two tables whose timestamp formats differ (ISO vs
+// SQLite's CURRENT_TIMESTAMP). One shared watermark compared as text would make
+// every book look older than every passage, and the shelf would never be read.
+assert.ok(mindText.includes("MARK_PASSAGES = 'passages_seen_at'") && mindText.includes("MARK_BOOKS = 'books_seen_at'"),
+  'the library pass needs one watermark per table');
+ok('the library keeps a watermark per table, so the shelf is not hidden by a format');
+
+// The thickening pass reads no conversation, so it has no standing to invent a
+// claim or retire one — only to fold what is already there.
+const thickenBody = mindText.slice(mindText.indexOf('async function runThicken'), mindText.indexOf('const _harvestInFlight'));
+assert.ok(thickenBody.includes('it.merges.length >= 2'), 'thickening must honour merges only');
+assert.ok(thickenBody.includes('contradicts: null') && thickenBody.includes('replaces: null'));
+ok('the thickening pass can only fold, never add or retire');
 
 console.log(`\n${passed} checks passed — the Room's memory reaches the repo intact.`);

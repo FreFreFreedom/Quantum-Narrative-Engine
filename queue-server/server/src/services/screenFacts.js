@@ -170,7 +170,7 @@ export async function screenRelevance(owner, item, { refresh = false } = {}) {
     `A ${kind} saved in a research tool its owner uses to think with.`,
     `${kind === 'series' ? 'SERIES' : 'FILM'}: "${item.title}"${row?.year ? ` (${row.year})` : ''}`,
     row?.overview ? `WHAT IT IS ABOUT:\n${row.overview.slice(0, 900)}` : '',
-    mindBlock(),
+    mindBlock(`${item.title} ${String(row?.overview || '').slice(0, 600)}`),
     `Write at most ${RELEVANCE_MAX_WORDS} words on what this gives HIM — the thinking it feeds, the scene or mechanism it shows that his written sources argue in the abstract.`,
     'Plain words, no jargon, no plot summary, no preamble, no bullets. Prose only. If you do not know it, say what it is likely to carry and mark that as a guess in four words.',
   ].filter(Boolean).join('\n\n');
