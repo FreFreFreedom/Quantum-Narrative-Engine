@@ -41,12 +41,13 @@ import { bindInterestLibrary, interestContext, INTEREST_TOOLS, interestTool } fr
 import { referenceQuote, REFERENCE_TOOLS, referenceTool } from './referenceLibrary.js';
 import { bindBookShelf, shelfContext, BOOK_TOOLS, bookTool } from './bookShelf.js';
 import { bindScreenFacts } from './screenFacts.js';
+import { bindBookFacts } from './bookFacts.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
 
 let db = null;
-export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); }
+export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); bindBookFacts(database); }
 
 // Plans live in knowledge_docs under the `Plan: ` prefix (seeded by
 // bootstrapData.js#seedPlans from the project-docs/plans/ mirror). This returns
@@ -157,7 +158,7 @@ export function mediaItemsByIds(owner, ids = []) {
   const marks = ids.map(() => '?').join(',');
   try {
     return db.prepare(`SELECT id, kind, title, creator, year FROM interest_works
-                       WHERE owner=? AND id IN (${marks}) AND kind IN ('film','series')`).all(owner, ...ids);
+                       WHERE owner=? AND id IN (${marks}) AND kind IN ('film','series','book')`).all(owner, ...ids);
   } catch (err) { return []; }
 }
 

@@ -1464,8 +1464,10 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-kind { position:absolute; bottom:5px; left:6px; font-size:10px; color:#e6eef0; opacity:.85; text-shadow:0 1px 3px #000; }
 .lib-rate { display:flex; align-items:center; gap:6px; margin-top:7px; font-size:11px; color:var(--c-ink-4); }
 .lib-rate em { font-style:normal; font-size:15px; font-weight:600; color:var(--c-ink); }
-.stars { color:var(--c-accent,#c8a56a); letter-spacing:1px; font-size:12px; }
+.stars { position:relative; display:inline-block; font-size:12px; letter-spacing:1px; line-height:1; }
 .stars i { color:var(--c-ink-5); font-style:normal; }
+.stars b { position:absolute; left:0; top:0; overflow:hidden; white-space:nowrap; font-weight:400;
+  color:var(--c-accent,#c8a56a); letter-spacing:1px; }
 .lib-based { display:flex; gap:10px; align-items:center; margin:11px 0 0; padding:8px 9px;
   border:1px solid var(--c-border-2); border-radius:10px; }
 .lib-based small { display:block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
@@ -13077,16 +13079,30 @@ async function renderRoomShelf() { return renderInterestLibrary(); }
 // place, under the row it sits on.
 let libOpen = null;          // { type:'shelf'|'media', id }
 let libMedia = null;         // the saved item whose panel is open
-let libScreen = {};          // what TMDB knows about the saved films and series, by item id
+let libScreen = {};          // what the catalogues know about each saved work, by item id
+// The last answer the Library got. Opening a card, closing it, or writing a note
+// repaints the wall — that must not mean asking the server again and flashing
+// "Loading…" over a pane he is reading.
+let libData = null;
+function libKey() { return interestLibraryQuery + '|' + interestLibraryKind + '|' + interestLibraryOffset; }
+// The pane scrolls, not the window: hold its position across a repaint.
+function libScroller(el) {
+  for (let n = el; n && n !== document.body; n = n.parentElement) {
+    const o = getComputedStyle(n).overflowY;
+    if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight + 4) return n;
+  }
+  return null;
+}
 let libScreenBusy = false;   // true while a relevance line is being written
 
 function libNorm(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
 function libIsScreen(w) { return w && (w.kind === 'film' || w.kind === 'series'); }
-// Five stars out of ten, which is how a rating is read at a glance.
+// Five stars out of ten, which is how a rating is read at a glance. Two rows of
+// the same five stars, the lit one clipped to the exact share — no half-star
+// character, which not every font carries and which drew an empty box here.
 function libStars(v) {
-  const full = Math.floor(v / 2), half = v - full * 2 >= 1 ? 1 : 0;
-  return '<span class="stars">' + '★'.repeat(full) + (half ? '⯨' : '')
-    + '<i>' + '★'.repeat(Math.max(0, 5 - full - half)) + '</i></span>';
+  const pct = Math.max(0, Math.min(100, (Number(v) || 0) * 10));
+  return '<span class="stars"><i>★★★★★</i><b style="width:' + pct.toFixed(1) + '%">★★★★★</b></span>';
 }
 function libVotes(n) { return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : String(n || 0); }
 
@@ -13110,15 +13126,16 @@ function libCard(it) {
     + '</div>';
 }
 
-// A film or a series: poster, what people made of it, what it is about, whether
-// it came out of a book, and what it is doing here.
+// A film, a series or a book saved without its text: the cover, what people made
+// of it, what it is about, whether it came out of a book, and what it is doing
+// here. The rating is IMDb's own, with IMDb's vote count.
 function libScreenPanel(w) {
   const f = libScreen[w.id] || {};
   const src = f.poster || w.artwork || '';
   const cover = /^https:\/\//.test(src) ? ' style="background-image:url(&quot;' + qEscAttr(src) + '&quot;)"' : '';
   const rating = f.rating
     ? '<div class="lib-rate">' + libStars(f.rating) + '<em>' + f.rating.toFixed(1) + '</em>'
-      + '<span>/10 · ' + libVotes(f.votes) + ' votes</span></div>' : '';
+      + '<span>/10 · ' + libVotes(f.votes) + (f.ratingFrom === 'imdb' ? ' votes on IMDb' : ' votes') + '</span></div>' : '';
   const book = f.fromBook
     ? '<div class="lib-based"><span class="lib-bchip"></span><div><small>From a book</small><b>'
       + qEsc(f.book ? f.book.title + (f.book.where === 'shelf' ? ' — on your shelf' : ' — in your library') : 'not in your library yet')
@@ -13127,11 +13144,12 @@ function libScreenPanel(w) {
     + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
     + '<div><b>' + (w.url && /^https:\/\//.test(w.url)
       ? '<a href="' + qEscAttr(w.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(w.title) + '</a>' : qEsc(w.title)) + '</b>'
-    + '<small>' + qEsc([f.year || w.year, w.kind === 'series' ? 'series' : 'film', w.creator].filter(Boolean).join(' · ')) + '</small>'
+    + '<small>' + qEsc([f.year || w.year, w.kind || 'film', w.creator].filter(Boolean).join(' · ')) + '</small>'
     + rating + '</div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
     + book
-    + (f.overview ? '<div class="shelf-note"><h6>Synopsis</h6><p>' + qEsc(f.overview) + '</p></div>' : '')
+    + (f.overview ? '<div class="shelf-note"><h6>' + (w.kind === 'book' ? 'What it is' : 'Synopsis')
+        + '</h6><p>' + qEsc(f.overview.slice(0, 900)) + (f.overview.length > 900 ? '…' : '') + '</p></div>' : '')
     + (f.relevance
       ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-rescreen title="Write it again">⟳</button></h6><p>' + qEsc(f.relevance) + '</p></div>'
       : (libScreenBusy ? '<p class="shelf-note-wait">Working out what it gives you…</p>' : ''))
@@ -13140,17 +13158,17 @@ function libScreenPanel(w) {
 }
 
 async function libLoadScreenNotes(id, refresh) {
-  libScreenBusy = true; renderInterestLibrary();
+  libScreenBusy = true; renderInterestLibrary({ quiet: true });
   try {
     const out = await api('/api/convos/screen/' + encodeURIComponent(id) + '/notes' + (refresh ? '?refresh=1' : ''));
     libScreen[id] = { ...(libScreen[id] || {}), ...out };
   } catch (err) { /* the panel stands without it */ }
   libScreenBusy = false;
-  renderInterestLibrary();
+  renderInterestLibrary({ quiet: true });
 }
 
 function libMediaPanel(w) {
-  if (libIsScreen(w)) return libScreenPanel(w);
+  if (libIsScreen(w) || w.kind === 'book') return libScreenPanel(w);
   const meta = [w.kind, w.creator, w.year, w.state, w.origin].filter(Boolean).join(' · ');
   return '<div class="shelf-panel">'
     + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + (/^https:\/\//.test(w.artwork || '')
@@ -13172,9 +13190,15 @@ function libWall(items, cols) {
     + (i === after ? (items[at].type === 'shelf' ? shelfPanel(items[at].raw) : libMediaPanel(items[at].raw)) : '')).join('');
 }
 
-async function renderInterestLibrary() {
+async function renderInterestLibrary(opts) {
   const host = document.getElementById('roomInterests'); if (!host) return;
   const request = ++interestLibraryRequest;
+  // A repaint that changes only which card is open reuses what was already
+  // fetched and puts the scroll back where it was.
+  const quiet = !!(opts && opts.quiet) && libData && libData.key === libKey();
+  const scroller = libScroller(host);
+  const wasAt = scroller ? scroller.scrollTop : 0;
+  const putBack = () => { if (scroller && quiet) scroller.scrollTop = wasAt; };
   const discover = recRead('library.mode', 'saved') === 'discover';
   if (discover) { host.innerHTML = '<div class="room-rec-host" id="roomMediaHost"></div>'; openRoomRecommendations('media'); return; }
 
@@ -13188,7 +13212,8 @@ async function renderInterestLibrary() {
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
     + '<div class="shelf-grid" style="--shelf-cols:' + cols + '"></div><div class="shelf-slot"></div></div>'
-    + '<div class="interest-results">Loading…</div>';
+    + '<div class="interest-results">' + (quiet ? '' : 'Loading…') + '</div>';
+  putBack();
 
   const search = host.querySelector('.lib-search'), filter = host.querySelector('.lib-kind');
   search.value = interestLibraryQuery; filter.value = interestLibraryKind;
@@ -13205,11 +13230,16 @@ async function renderInterestLibrary() {
   libWireSizer(shelfHost);
 
   try {
-    const [out, review, shelf] = await Promise.all([
-      api('/api/recommendations/library?limit=40&offset=' + interestLibraryOffset + '&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)),
-      api('/api/convos/interest-review'),
-      api('/api/convos/books').catch(() => ({ books: [] })),
-    ]);
+    let out, review, shelf;
+    if (quiet) { ({ out, review, shelf } = libData); }
+    else {
+      [out, review, shelf] = await Promise.all([
+        api('/api/recommendations/library?limit=40&offset=' + interestLibraryOffset + '&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)),
+        api('/api/convos/interest-review'),
+        api('/api/convos/books').catch(() => ({ books: [] })),
+      ]);
+      libData = { key: libKey(), out, review, shelf };
+    }
     if (request !== interestLibraryRequest) return;
 
     // One wall. A saved interest that is also a book on the shelf appears once,
@@ -13244,28 +13274,28 @@ async function renderInterestLibrary() {
       const [type, id] = card.dataset.lib.split(/:(.+)/);
       const it = wall.find((x) => x.type === type && x.id === id);
       card.querySelector('[data-open]').onclick = async () => {
-        if (libOpen && libOpen.type === type && libOpen.id === id) { libOpen = null; shelfOpen = ''; shelfDetail = null; shelfNotes = null; renderInterestLibrary(); return; }
+        if (libOpen && libOpen.type === type && libOpen.id === id) { libOpen = null; shelfOpen = ''; shelfDetail = null; shelfNotes = null; renderInterestLibrary({ quiet: true }); return; }
         libOpen = { type, id }; libMedia = it.raw;
         if (type === 'shelf') {
           shelfOpen = id; shelfDetail = null; shelfNotes = null;
-          renderInterestLibrary();
+          renderInterestLibrary({ quiet: true });
           try {
             const d = await api('/api/convos/books/' + encodeURIComponent(id));
             if (shelfOpen !== id) return;
-            shelfDetail = d; renderInterestLibrary();
+            shelfDetail = d; renderInterestLibrary({ quiet: true });
             if (!d.blurb || !d.relevance) shelfLoadNotes(id, host, false);
           } catch (err) { slot.textContent = err.message; }
         } else {
           shelfOpen = '';
-          renderInterestLibrary();
-          if (libIsScreen(it.raw) && !(libScreen[id] || {}).relevance) libLoadScreenNotes(id, false);
+          renderInterestLibrary({ quiet: true });
+          if (!(libScreen[id] || {}).relevance) libLoadScreenNotes(id, false);
         }
       };
     });
     const panel = host.querySelector('.shelf-panel');
     if (panel) {
       const close = panel.querySelector('[data-close]');
-      if (close) close.onclick = () => { libOpen = null; shelfOpen = ''; shelfDetail = null; shelfNotes = null; renderInterestLibrary(); };
+      if (close) close.onclick = () => { libOpen = null; shelfOpen = ''; shelfDetail = null; shelfNotes = null; renderInterestLibrary({ quiet: true }); };
       const rescreen = panel.querySelector('[data-rescreen]');
       if (rescreen) rescreen.onclick = () => { if (!libScreenBusy && libOpen) { libScreen[libOpen.id] = { ...(libScreen[libOpen.id] || {}), relevance: '' }; libLoadScreenNotes(libOpen.id, true); } };
       const renote = panel.querySelector('[data-renote]');
@@ -13312,9 +13342,11 @@ async function renderInterestLibrary() {
     if (prev) prev.onclick = () => { interestLibraryOffset = Math.max(0, interestLibraryOffset - 40); renderInterestLibrary(); };
     if (next) next.onclick = () => { interestLibraryOffset += 40; renderInterestLibrary(); };
 
-    // What the wall knows about the films and series on it — one call, cached on
-    // the server, so a repaint costs nothing.
-    const screens = media.filter(libIsScreen).filter((w) => !libScreen[w.id]);
+    putBack();
+
+    // What the wall knows about everything on it — posters, covers, ratings,
+    // publisher blurbs — in one call, cached on the server, so a repaint is free.
+    const screens = media.filter((w) => !libScreen[w.id]);
     if (screens.length) {
       api('/api/convos/screen?ids=' + screens.map((w) => encodeURIComponent(w.id)).join(',')).then((r) => {
         if (!r || !r.facts || request !== interestLibraryRequest) return;

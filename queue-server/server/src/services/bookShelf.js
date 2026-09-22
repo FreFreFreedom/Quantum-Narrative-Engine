@@ -231,6 +231,13 @@ export function bookDetail(owner, id) {
 // The publisher's own description, from Google Books. Free, keyless, no model
 // call — the same rule imageSources.js works under.
 async function fetchBlurb(title, author) {
+  // Open Library first, then Google Books — the same ladder the Library's own
+  // books climb (bookFacts.js), because Google's keyless quota runs out daily.
+  try {
+    const { lookupBook } = await import('./bookFacts.js');
+    const found = await lookupBook(title, author);
+    if (found?.blurb) return found.blurb;
+  } catch (err) { /* fall through to the direct ask below */ }
   const q = ['intitle:' + JSON.stringify(String(title || '').slice(0, 120)), author ? 'inauthor:' + JSON.stringify(String(author).slice(0, 80)) : '']
     .filter(Boolean).join('+');
   try {

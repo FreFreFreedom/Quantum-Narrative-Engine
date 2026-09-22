@@ -3,10 +3,10 @@
 // one line about what it is doing on HIS shelf.
 //
 // Everything factual comes from TMDB, through the one client this repo has
-// (filmEnrichment.js#tmdbFetch — "do not write a second TMDB client"). TMDB's
-// rating is not IMDb's; it is the same shape (out of ten, with a vote count) and
-// needs no extra account. Swapping in IMDb's own number later is one fetch in
-// fetchFacts(), nothing else.
+// (filmEnrichment.js#tmdbFetch — "do not write a second TMDB client"). The rating
+// is IMDb's own, taken from IMDb's published daily dataset (imdbRatings.js) by way
+// of the tconst TMDB hands over; TMDB's number is kept only as the fallback for a
+// title IMDb has not rated.
 //
 // Facts are cached per title forever-ish: a film's synopsis does not change, and
 // a rating moving by a tenth is not worth a request on every repaint. The one
@@ -14,6 +14,7 @@
 // opens the panel and then kept, exactly like a book's.
 
 import { tmdbFetch } from './filmEnrichment.js';
+import { imdbRatings } from './imdbRatings.js';
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
 
@@ -26,6 +27,7 @@ export function bindScreenFacts(database) {
     title TEXT NOT NULL,
     year TEXT NOT NULL DEFAULT '',
     tmdb_id INTEGER,
+    imdb_id TEXT,
     poster TEXT,
     rating REAL,
     votes INTEGER,
@@ -35,6 +37,9 @@ export function bindScreenFacts(database) {
     relevance TEXT,
     fetched_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
+  // Older rows predate the IMDb lookup.
+  try { db.exec('ALTER TABLE screen_facts ADD COLUMN imdb_id TEXT'); } catch (err) { /* already there */ }
+  try { db.exec("ALTER TABLE screen_facts ADD COLUMN rating_from TEXT NOT NULL DEFAULT 'tmdb'"); } catch (err) { /* already there */ }
 }
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -70,13 +75,21 @@ async function fetchFacts(kind, title, year) {
   let hit = (found?.results || [])[0];
   if (!hit && year) hit = ((await tmdbFetch(path, { query: title }))?.results || [])[0];
   if (!hit) return null;
-  const detail = await tmdbFetch(`${kind === 'series' ? '/tv' : '/movie'}/${hit.id}`, { append_to_response: 'keywords' });
+  const detail = await tmdbFetch(`${kind === 'series' ? '/tv' : '/movie'}/${hit.id}`, { append_to_response: 'keywords,external_ids' });
   const words = [...(detail?.keywords?.keywords || []), ...(detail?.keywords?.results || [])].map((k) => k.name || '').join(', ');
+  const imdbId = String(detail?.imdb_id || detail?.external_ids?.imdb_id || '');
+  let rating = Number(hit.vote_average || 0), votes = Number(hit.vote_count || 0), from = 'tmdb';
+  if (imdbId) {
+    const real = (await imdbRatings([imdbId]))[imdbId];
+    if (real?.rating) { rating = real.rating; votes = real.votes; from = 'imdb'; }
+  }
   return {
     tmdb_id: hit.id,
+    imdb_id: imdbId,
+    rating_from: from,
     poster: hit.poster_path ? `https://image.tmdb.org/t/p/w342${hit.poster_path}` : '',
-    rating: Number(hit.vote_average || 0),
-    votes: Number(hit.vote_count || 0),
+    rating,
+    votes,
     year: String(hit.release_date || hit.first_air_date || '').slice(0, 4),
     overview: String(hit.overview || detail?.overview || '').slice(0, 2000),
     from_book: BOOK_KEYWORDS.test(words) ? 1 : 0,
@@ -94,6 +107,7 @@ function shape(owner, row, asked) {
     title: asked.title, kind: asked.kind, year: row.year || asked.year || '',
     poster: row.poster || '', rating: row.rating || 0, votes: row.votes || 0,
     overview: row.overview || '', fromBook: !!row.from_book, book,
+    ratingFrom: row.rating_from || 'tmdb',
     relevance: row.relevance || '',
   };
 }
@@ -110,16 +124,27 @@ export async function screenFactsFor(owner, items = []) {
     if (!it || !it.title) continue;
     const kind = it.kind === 'series' ? 'series' : 'film';
     let row = rowOf(kind, it.title, it.year);
-    if (!row && fetched < FETCH_CAP) {
+    // A row cached before IMDb was wired in has no tconst: fetch it once more so
+    // the number becomes the real one.
+    if ((!row || (!row.imdb_id && row.rating_from !== 'imdb')) && fetched < FETCH_CAP) {
       fetched += 1;
       const facts = await fetchFacts(kind, it.title, it.year);
       if (facts) {
-        db.prepare(`INSERT INTO screen_facts (key, kind, title, year, tmdb_id, poster, rating, votes, overview, from_book)
-                    VALUES (?,?,?,?,?,?,?,?,?,?)
+        db.prepare(`INSERT INTO screen_facts (key, kind, title, year, tmdb_id, imdb_id, rating_from, poster, rating, votes, overview, from_book)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
                     ON CONFLICT(key) DO UPDATE SET poster=excluded.poster, rating=excluded.rating, votes=excluded.votes,
+                      imdb_id=excluded.imdb_id, rating_from=excluded.rating_from,
                       overview=excluded.overview, from_book=excluded.from_book, fetched_at=CURRENT_TIMESTAMP`)
-          .run(keyOf(kind, it.title, it.year), kind, it.title, String(it.year || ''), facts.tmdb_id, facts.poster,
-            facts.rating, facts.votes, facts.overview, facts.from_book);
+          .run(keyOf(kind, it.title, it.year), kind, it.title, String(it.year || ''), facts.tmdb_id, facts.imdb_id,
+            facts.rating_from, facts.poster, facts.rating, facts.votes, facts.overview, facts.from_book);
+        row = rowOf(kind, it.title, it.year);
+      }
+    }
+    if (row && row.rating_from !== 'imdb' && row.imdb_id) {
+      const real = (await imdbRatings([row.imdb_id]))[row.imdb_id];
+      if (real?.rating) {
+        db.prepare("UPDATE screen_facts SET rating=?, votes=?, rating_from='imdb' WHERE key=?")
+          .run(real.rating, real.votes, keyOf(kind, it.title, it.year));
         row = rowOf(kind, it.title, it.year);
       }
     }
