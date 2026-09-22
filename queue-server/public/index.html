@@ -1407,6 +1407,14 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .interest-item small { display:block; color:var(--c-ink-4); margin:4px 0; }
 .interest-edit { display:grid; gap:6px; margin:6px 0; }
 .interest-edit input, .interest-edit select, .interest-filter input, .interest-filter select { min-width:0; width:100%; box-sizing:border-box; font:inherit; background:var(--c-surface-2); color:var(--c-ink); border:1px solid var(--c-border-2); border-radius:5px; padding:6px; }
+.room-shelf { margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--c-border-2); }
+.shelf-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.shelf-head strong { flex:1; }
+.shelf-row { display:flex; align-items:center; gap:8px; padding:3px 0; overflow-wrap:anywhere; }
+.shelf-row span { flex:1; }
+.shelf-row small { color:var(--c-ink-4); }
+.shelf-form { display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.shelf-form small { color:var(--c-ink-4); }
 .interest-filter { display:flex; gap:6px; margin-bottom:8px; }
 .interest-filter select { width:95px; }
 /* Three dots while a turn is in flight, so a wait reads as a wait and not as a
@@ -12532,13 +12540,18 @@ async function extractPdfText(file) {
     pages.push(pageText);
     pageCharStarts.push(pageCharStarts[pageCharStarts.length - 1] + pageText.length + 2); // +2 for the '\n\n' join below
   }
-  const text = pages.join('\n\n').trim();
+  const raw = pages.join('\n\n');
+  const lead = raw.length - raw.trimStart().length; // .trim() below shifts every offset by this much
+  const text = raw.trim();
+  const starts = pageCharStarts.slice(0, doc.numPages).map((n) => Math.max(0, n - lead));
   let outline = [];
   try {
     const rawOutline = await doc.getOutline();
-    if (rawOutline?.length) outline = await pdfOutlineToCharOffsets(doc, rawOutline, pageCharStarts, 0, []);
+    if (rawOutline?.length) outline = await pdfOutlineToCharOffsets(doc, rawOutline, starts, 0, []);
   } catch (e) { /* no outline in this PDF — the backend's heuristic picks up the slack */ }
-  return { text, outline };
+  // `pages` is what services/bookShelf.js turns a character offset back into a
+  // page number with, so a book on the shelf is quoted with a page, not an offset.
+  return { text, outline, pages: starts };
 }
 
 // The dropzone collapsed from a two-line text block to a single icon (plan
@@ -12604,13 +12617,87 @@ function interestEditForm(host, item, save) {
   };
   form.elements.title.focus();
 }
+// ─── The shelf ───────────────────────────────────────────────────────────────
+// Whole books, put in the Room once and quotable from every conversation, not
+// just the thread they were uploaded in (services/bookShelf.js). Extraction is
+// the same as a file upload's: text and page offsets are pulled here, in the
+// browser, and only those are posted.
+const SHELF_MAX_CHARS = 6000000;
+function shelfGuess(name) {
+  const base = String(name || '').replace(/\.[^/.]+$/, '').replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const parts = base.split(/\s+-\s+/);
+  const year = (base.match(/\b(1[5-9]\d\d|20\d\d)\b/) || [])[1] || '';
+  if (parts.length > 1) return { author: parts[0].trim(), title: parts.slice(1).join(' - ').replace(/\s*\(?\b(1[5-9]\d\d|20\d\d)\b\)?/, '').trim(), year };
+  return { author: '', title: base.replace(/\s*\(?\b(1[5-9]\d\d|20\d\d)\b\)?/, '').trim(), year };
+}
+async function shelfPut(file, values, say) {
+  const kind = roomFileKind(file);
+  if (kind !== 'pdf' && kind !== 'text') throw new Error('A book comes in as a PDF or a text file');
+  say('Reading the book…');
+  let text = '', pages = [];
+  if (kind === 'pdf') { const out = await extractPdfText(file); text = out.text; pages = out.pages || []; }
+  else text = await file.text();
+  if (!text) throw new Error('No readable text in this file');
+  if (text.length > SHELF_MAX_CHARS) { text = text.slice(0, SHELF_MAX_CHARS); pages = pages.filter((n) => n < SHELF_MAX_CHARS); }
+  let sha = '';
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) {}
+  say('Putting it on the shelf…');
+  return apiWrite('/api/convos/books', 'POST', { ...values, filename: file.name, text, pages, sha });
+}
+function shelfForm(host, file, done) {
+  const guess = shelfGuess(file.name);
+  host.innerHTML = '<form class="shelf-form">'
+    + '<input name="title" aria-label="Title" placeholder="Title" required maxlength="200">'
+    + '<input name="author" aria-label="Author" placeholder="Author" maxlength="200">'
+    + '<input name="year" aria-label="Year" placeholder="Year" maxlength="20">'
+    + '<div><button type="submit">Put it on the shelf</button> <button type="button" data-cancel>Cancel</button></div>'
+    + '<small role="status"></small></form>';
+  const form = host.querySelector('form');
+  form.elements.title.value = guess.title; form.elements.author.value = guess.author; form.elements.year.value = guess.year;
+  const say = (m) => { form.querySelector('small').textContent = m; };
+  form.querySelector('[data-cancel]').onclick = done;
+  form.onsubmit = async (ev) => {
+    ev.preventDefault();
+    form.querySelector('button[type=submit]').disabled = true;
+    try { await shelfPut(file, Object.fromEntries(new FormData(form)), say); done(); }
+    catch (err) { say(err.message); form.querySelector('button[type=submit]').disabled = false; }
+  };
+}
+async function renderRoomShelf(host) {
+  if (!host) return;
+  let books = [];
+  try { books = (await api('/api/convos/books')).books || []; }
+  catch (err) { host.innerHTML = '<div class="shelf-row">' + qEsc(err.message) + '</div>'; return; }
+  host.innerHTML = '<div class="shelf-head"><strong>Books</strong>'
+    + '<button type="button" data-add>Add a book</button>'
+    + '<input type="file" accept="application/pdf,.pdf,.txt,.md,.epub.txt" hidden></div>'
+    + '<div class="shelf-list">' + books.map((b) => '<div class="shelf-row" data-book="' + qEscAttr(b.id) + '">'
+      + '<span>' + qEsc(b.title) + (b.author ? ' <small>' + qEsc(b.author) + '</small>' : '') + '</span>'
+      + '<button type="button" data-drop title="Take it off the shelf">✕</button></div>').join('') + '</div>'
+    + '<div class="shelf-slot"></div>';
+  const picker = host.querySelector('input[type=file]');
+  const slot = host.querySelector('.shelf-slot');
+  host.querySelector('[data-add]').onclick = () => picker.click();
+  picker.onchange = () => { if (picker.files?.[0]) shelfForm(slot, picker.files[0], () => renderRoomShelf(host)); picker.value = ''; };
+  host.querySelectorAll('[data-book]').forEach((row) => {
+    row.querySelector('[data-drop]').onclick = async () => {
+      try { await apiWrite('/api/convos/books/' + encodeURIComponent(row.dataset.book), 'DELETE', {}); renderRoomShelf(host); }
+      catch (err) { row.querySelector('[data-drop]').textContent = err.message; }
+    };
+  });
+}
+
 async function renderInterestLibrary() {
   const host = document.getElementById('roomInterests'); if (!host) return;
   const request = ++interestLibraryRequest;
   const discover=recRead('library.mode','saved')==='discover';
-  host.innerHTML = discover?'<div class="room-rec-host" id="roomMediaHost"></div>':'<div class="interest-filter"><input aria-label="Search library" placeholder="Search library"><select aria-label="Reference kind"><option value="">All</option><option value="book">Books</option><option value="film">Films</option><option value="series">Series</option><option value="paper">Papers</option><option value="project">Projects</option><option value="passage">Passages</option></select></div><div class="interest-results">Loading…</div>';
+  host.innerHTML = discover?'<div class="room-rec-host" id="roomMediaHost"></div>':'<div class="room-shelf" id="roomShelf"></div><div class="interest-filter"><input aria-label="Search library" placeholder="Search library"><select aria-label="Reference kind"><option value="">All</option><option value="book">Books</option><option value="film">Films</option><option value="series">Series</option><option value="paper">Papers</option><option value="project">Projects</option><option value="passage">Passages</option></select></div><div class="interest-results">Loading…</div>';
   if(discover){openRoomRecommendations('media');return;}
-  const search = host.querySelector('input'), filter = host.querySelector('select');
+  renderRoomShelf(host.querySelector('#roomShelf'));
+  const search = host.querySelector('.interest-filter input'), filter = host.querySelector('select');
   search.value = interestLibraryQuery; filter.value = interestLibraryKind;
   const refresh = () => {
     interestLibraryQuery = search.value; interestLibraryKind = filter.value; interestLibraryOffset = 0;

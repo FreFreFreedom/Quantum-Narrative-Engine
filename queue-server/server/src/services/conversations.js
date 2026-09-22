@@ -39,12 +39,13 @@ import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
 import { bindInterestLibrary, interestContext, INTEREST_TOOLS, interestTool } from './interestLibrary.js';
 import { referenceQuote, REFERENCE_TOOLS, referenceTool } from './referenceLibrary.js';
+import { bindBookShelf, shelfContext, BOOK_TOOLS, bookTool } from './bookShelf.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
 
 let db = null;
-export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); }
+export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); }
 
 // Plans live in knowledge_docs under the `Plan: ` prefix (seeded by
 // bootstrapData.js#seedPlans from the project-docs/plans/ mirror). This returns
@@ -1845,6 +1846,10 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // plans/room-shared-memory.md §3 and conversation-voice-and-project-map.md.
     mindBlock(),
     interestContext(convo.created_by, lastUserText(convo.id)),
+    // The shelf rides in the same cache-safe region, and for the same reason as
+    // the saved interests above it: short, variable per turn, and useless unless
+    // the model sees it before it starts answering out of its own memory of a book.
+    shelfContext(convo.created_by, lastUserText(convo.id)),
     // Repo facts (the Room's turn router) ride in the SAME cache-safe region as
     // memory — right after mindBlock(), before the transcript and voice. They are
     // free (gathered by git, not a model) and variable per turn, but variable
@@ -1913,7 +1918,7 @@ async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens,
 // the structured turns (/plan, /fold, /reframe, /more) ask for one JSON object
 // back, and a tool round mid-way through that is a round that returns prose
 // instead of the object the caller then has to parse.
-const studioTools = (convoId) => [...STUDIO_TOOLS, ...INTEREST_TOOLS, ...REFERENCE_TOOLS,
+const studioTools = (convoId) => [...STUDIO_TOOLS, ...INTEREST_TOOLS, ...REFERENCE_TOOLS, ...BOOK_TOOLS,
   ...(listConvoLinks(convoId).length ? [LINKED_CONVERSATION_TOOL] : [])];
 const studioDispatch = (convoId) => (name, input) => name === LINKED_CONVERSATION_TOOL.name
   ? readLinkedConversation(convoId, input)
@@ -1921,6 +1926,8 @@ const studioDispatch = (convoId) => (name, input) => name === LINKED_CONVERSATIO
   ? interestTool(db.prepare('SELECT created_by FROM convos WHERE id=?').get(convoId)?.created_by, name, input)
   : REFERENCE_TOOLS.some(t => t.name === name)
   ? referenceTool(db.prepare('SELECT created_by FROM convos WHERE id=?').get(convoId)?.created_by,name,input)
+  : BOOK_TOOLS.some(t => t.name === name)
+  ? bookTool(db.prepare('SELECT created_by FROM convos WHERE id=?').get(convoId)?.created_by,name,input)
   : dispatchStudioTool(db, name, input);
 
 function saveAssistantTurn(convoId, text, meta = null) {

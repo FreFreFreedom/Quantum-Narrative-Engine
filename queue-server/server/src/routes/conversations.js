@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
+import * as shelf from '../services/bookShelf.js';
 import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
 import { rhymeSoon } from '../services/boardRhyme.js';
@@ -108,6 +109,36 @@ export function conversationsRoutes() {
   // and statuses only; the picker must not download the full document to draw a list.
   router.get('/files', (req, res) => {
     res.json({ files: convos.listFiles() });
+  });
+
+  // ─── The shelf: whole books, available in every conversation ───────────────
+  // Books are not per-conversation attachments (see services/bookShelf.js) — a
+  // book put here is quotable from any thread, so these routes hang off the
+  // owner, not off a convo id. The browser extracts the PDF's text and page
+  // offsets before posting, exactly as it does for a file: no raw bytes ever
+  // reach the server or the prompt.
+  router.get('/books', (req, res) => {
+    res.json({ books: shelf.listBooks(req.user?.id || 'antoine') });
+  });
+
+  router.post('/books', (req, res) => {
+    const { title, author, year, filename, text, pages, sha } = req.body || {};
+    const out = shelf.addBook(req.user?.id || 'antoine', { title, author, year, filename, text, pages, sha });
+    if (out.error) return res.status(out.error === 'no_db' ? 500 : 400).json({ ...out, error: out.message || out.error });
+    res.json(out);
+  });
+
+  // A passage lookup he can run himself, the same one the model's search_book uses.
+  router.get('/books/search', (req, res) => {
+    res.json(shelf.searchShelf(req.user?.id || 'antoine', {
+      query: String(req.query.query || ''), book: String(req.query.book || ''), limit: req.query.limit,
+    }));
+  });
+
+  router.delete('/books/:id', (req, res) => {
+    const out = shelf.removeBook(req.user?.id || 'antoine', req.params.id);
+    if (out.error) return res.status(statusFor(out.error)).json({ ...out, error: 'That book is not on the shelf.' });
+    res.json(out);
   });
 
   // GET /api/convos/notes — the notes saved with /note, mirrored into the
