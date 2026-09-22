@@ -186,6 +186,37 @@ export function removeBook(owner, id) {
   return { removed: row.title };
 }
 
+// What the shelf knows about one book, for the panel that opens under it: how
+// long it is, when it arrived, the passages he has kept out of it, and how many
+// conversations have named it. All of it counted from what is already stored —
+// no model call, nothing generated.
+export function bookDetail(owner, id) {
+  if (!db || !owner) return { error: 'no_db' };
+  const row = bookRow(owner, id);
+  if (!row) return { error: 'not_found' };
+  const pages = parse(row.pages_json);
+  const like = `%${row.title}%`;
+  let passages = [], talks = 0, mentions = 0;
+  try {
+    passages = db.prepare(`SELECT id, text, source_title, created_at FROM saved_passages
+      WHERE created_by=? AND deleted_at IS NULL AND (source_title LIKE ? OR text LIKE ?)
+      ORDER BY created_at DESC LIMIT 4`).all(owner, like, like);
+  } catch (err) { /* a detail panel never fails over a count */ }
+  try {
+    const row2 = db.prepare(`SELECT COUNT(DISTINCT m.convo_id) AS n, COUNT(*) AS t FROM convo_messages m
+      JOIN convos c ON c.id=m.convo_id
+      WHERE c.created_by=? AND c.deleted_at IS NULL AND m.text LIKE ?`).get(owner, like);
+    talks = row2?.n || 0; mentions = row2?.t || 0;
+  } catch (err) { /* same */ }
+  return {
+    id: row.id, title: row.title, author: row.author, year: row.year, cover_url: row.cover_url,
+    chars: row.chars, pages: Array.isArray(pages) ? pages.length : 0,
+    added: row.created_at, filename: row.filename,
+    passages, talks, mentions,
+    opening: (contentOf(row) || '').slice(0, 900).replace(/\s+/g, ' ').trim(),
+  };
+}
+
 // ─── Finding the passage ─────────────────────────────────────────────────────
 
 const WINDOW = 1400;        // characters returned around a hit — a real paragraph, not a fragment

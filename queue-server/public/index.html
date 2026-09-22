@@ -1427,6 +1427,20 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   display:flex; align-items:flex-end; padding:6px; font-size:9px; line-height:1.3; color:var(--c-ink-5); overflow:hidden; }
 .shelf-card b { display:block; margin-top:5px; font-size:11px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
 .shelf-card small { display:block; color:var(--c-ink-4); font-size:10px; }
+.shelf-open { display:block; width:100%; padding:0; border:0; background:none; cursor:pointer; }
+.shelf-cover.sm { width:54px; flex:none; }
+.shelf-card.is-open .shelf-cover { outline:1px solid var(--c-ink-4); outline-offset:2px; }
+.shelf-panel { grid-column:1/-1; background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:10px; padding:12px; margin:2px 0 4px; }
+.shelf-panel-head { display:flex; gap:12px; align-items:flex-start; }
+.shelf-panel-head > div { flex:1; min-width:0; }
+.shelf-panel-head b { font-size:13px; line-height:1.3; display:block; }
+.shelf-panel-head small { color:var(--c-ink-4); font-size:11px; }
+.shelf-panel-head [data-close] { width:22px; height:22px; min-width:0; padding:0; border-radius:50%; font-size:11px; line-height:1; flex:none; }
+.shelf-facts { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+.shelf-facts span { font-size:10px; color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:999px; padding:1px 7px; }
+.shelf-kept { margin-top:10px; display:flex; flex-direction:column; gap:9px; }
+.shelf-kept blockquote { margin:0; border-left:2px solid var(--c-ink-5); padding-left:10px; font:italic 12.5px/1.6 Georgia,serif; color:var(--c-ink-2); }
+.shelf-opening { margin:10px 0 0; font:12.5px/1.6 Georgia,serif; color:var(--c-ink-4); }
 .shelf-card [data-drop] { position:absolute; top:4px; right:4px; width:22px; height:22px; min-width:0; padding:0; border-radius:50%;
   display:flex; align-items:center; justify-content:center; font-size:11px; line-height:1; white-space:nowrap; overflow:hidden;
   opacity:0; transition:opacity .12s; background:rgba(var(--c-surface-rgb),.85); }
@@ -12769,6 +12783,8 @@ function shelfSize() {
   try { return Math.min(4, Math.max(1, Number(localStorage.getItem('qne-shelf-size')) || 3)); } catch (e) { return 3; }
 }
 let shelfPending = [];
+let shelfOpen = '';            // the book whose panel is unfolded, if any
+let shelfDetail = null;        // that book's panel data, once it has arrived
 const shelfDressed = new Set();   // books whose cover has already been looked for this session
 function shelfStage(key, name, stage) {
   const row = shelfPending.find((p) => p.key === key);
@@ -12829,12 +12845,44 @@ async function shelfDress(id, named) {
 function shelfCard(b) {
   const cover = /^https:\/\//.test(b.cover_url || '')
     ? ' style="background-image:url(&quot;' + qEscAttr(b.cover_url) + '&quot;)"' : '';
-  return '<div class="shelf-card" data-book="' + qEscAttr(b.id) + '">'
-    + '<div class="shelf-cover"' + cover + '>' + (cover ? '' : qEsc(b.title.slice(0, 40))) + '</div>'
+  return '<div class="shelf-card' + (shelfOpen === b.id ? ' is-open' : '') + '" data-book="' + qEscAttr(b.id) + '">'
+    + '<button type="button" class="shelf-open" data-open aria-label="' + qEscAttr(b.title) + '">'
+    + '<span class="shelf-cover"' + cover + '>' + (cover ? '' : qEsc(b.title.slice(0, 40))) + '</span></button>'
     + '<button type="button" data-drop title="Take it off the shelf" aria-label="Take it off the shelf">✕</button>'
     + '<b>' + qEsc(b.title) + '</b>'
     + (b.author ? '<small>' + qEsc(b.author) + '</small>' : '')
     + '</div>';
+}
+
+// The panel that unfolds under the row the book sits in — what the shelf knows
+// about it, and the passages already kept out of it.
+function shelfPanel(b) {
+  const d = shelfDetail && shelfDetail.id === b.id ? shelfDetail : null;
+  const cover = /^https:\/\//.test(b.cover_url || '')
+    ? ' style="background-image:url(&quot;' + qEscAttr(b.cover_url) + '&quot;)"' : '';
+  if (!d) return '<div class="shelf-panel"><div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
+    + '<div><b>' + qEsc(b.title) + '</b><small>Opening…</small></div></div></div>';
+  const facts = [d.pages ? d.pages + ' pages' : '', d.year || '', d.talks ? 'named in ' + d.talks + (d.talks === 1 ? ' talk' : ' talks') : '',
+    d.passages.length ? d.passages.length + (d.passages.length === 1 ? ' passage kept' : ' passages kept') : '']
+    .filter(Boolean).map((f) => '<span>' + qEsc(f) + '</span>').join('');
+  return '<div class="shelf-panel">'
+    + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
+    + '<div><b>' + qEsc(d.title) + '</b>' + (d.author ? '<small>' + qEsc(d.author) + '</small>' : '')
+    + '<div class="shelf-facts">' + facts + '</div></div>'
+    + '<button type="button" data-close aria-label="Close">✕</button></div>'
+    + (d.passages.length
+      ? '<div class="shelf-kept">' + d.passages.map((p) => '<blockquote>' + qEsc(String(p.text || '').slice(0, 320)) + '</blockquote>').join('') + '</div>'
+      : '<p class="shelf-opening">' + qEsc(d.opening.slice(0, 320)) + '…</p>')
+    + '</div>';
+}
+
+function shelfGridMarkup(books) {
+  const cols = 5 - shelfSize();
+  const at = books.findIndex((b) => b.id === shelfOpen);
+  // The panel belongs at the END of the row its book is on, so the row stays
+  // whole and the fold opens directly under it.
+  const after = at < 0 ? -1 : Math.min(books.length - 1, Math.floor(at / cols) * cols + cols - 1);
+  return books.map((b, i) => shelfCard(b) + (i === after ? shelfPanel(books[at]) : '')).join('');
 }
 
 async function renderRoomShelf(host) {
@@ -12850,7 +12898,7 @@ async function renderRoomShelf(host) {
       + '<i class="shelf-fill"></i><input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span>' : '')
     + '<input type="file" accept="application/pdf,.pdf,.txt,.md" hidden></div>'
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
-    + (books.length ? '<div class="shelf-grid" style="--shelf-cols:' + (5 - shelfSize()) + '">' + books.map(shelfCard).join('') + '</div>' : '')
+    + (books.length ? '<div class="shelf-grid" style="--shelf-cols:' + (5 - shelfSize()) + '">' + shelfGridMarkup(books) + '</div>' : '')
     + '<div class="shelf-slot"></div>';
   const picker = host.querySelector('input[type=file]');
   const slot = host.querySelector('.shelf-slot');
@@ -12877,10 +12925,23 @@ async function renderRoomShelf(host) {
   host.ondrop = (ev) => { ev.preventDefault(); host.classList.remove('is-dropping'); take(ev.dataTransfer?.files?.[0]); };
   host.querySelectorAll('[data-book]').forEach((card) => {
     card.querySelector('[data-drop]').onclick = async () => {
-      try { await apiWrite('/api/convos/books/' + encodeURIComponent(card.dataset.book), 'DELETE', {}); renderRoomShelf(host); }
+      try {
+        await apiWrite('/api/convos/books/' + encodeURIComponent(card.dataset.book), 'DELETE', {});
+        if (shelfOpen === card.dataset.book) { shelfOpen = ''; shelfDetail = null; }
+        renderRoomShelf(host);
+      } catch (err) { slot.textContent = err.message; }
+    };
+    card.querySelector('[data-open]').onclick = async () => {
+      const id = card.dataset.book;
+      if (shelfOpen === id) { shelfOpen = ''; shelfDetail = null; renderRoomShelf(host); return; }
+      shelfOpen = id; shelfDetail = null;
+      renderRoomShelf(host);
+      try { const d = await api('/api/convos/books/' + encodeURIComponent(id)); if (shelfOpen === id) { shelfDetail = d; renderRoomShelf(host); } }
       catch (err) { slot.textContent = err.message; }
     };
   });
+  const close = host.querySelector('[data-close]');
+  if (close) close.onclick = () => { shelfOpen = ''; shelfDetail = null; renderRoomShelf(host); };
   // Any book that arrived before the catalogue pass existed — or whose lookup
   // failed that day — gets its cover filled in the next time the shelf is drawn.
   for (const b of books) {

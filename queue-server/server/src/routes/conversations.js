@@ -135,6 +135,14 @@ export function conversationsRoutes() {
     }));
   });
 
+  // One book's own panel: length, when it arrived, the passages kept from it,
+  // how many conversations have named it.
+  router.get('/books/:id', (req, res) => {
+    const out = shelf.bookDetail(req.user?.id || 'antoine', req.params.id);
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
   router.patch('/books/:id', (req, res) => {
     const out = shelf.updateBook(req.user?.id || 'antoine', req.params.id, req.body || {});
     if (out.error) return res.status(statusFor(out.error)).json(out);
