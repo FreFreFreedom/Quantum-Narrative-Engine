@@ -1564,6 +1564,8 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-phase { font-size:var(--fs-sm); color:var(--c-ink-5); margin-top:3px; font-style:italic; }
 /* Quote a passage into the next question. Sits on the selection, follows it, and
    is removed the moment the selection is dropped. */
+.se-kept { background:linear-gradient(transparent 56%, rgba(87,195,180,.28) 56%); color:inherit;
+  border-radius:1px; cursor:default; }
 .se-quote-pop { position:fixed; z-index:var(--z-popover); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
   border-radius:var(--r-md); padding:3px; display:flex; gap:2px; box-shadow:0 6px 18px rgba(0,0,0,.22);
   animation:sePopIn .12s var(--ease); }
@@ -10354,8 +10356,12 @@ async function loadRoomPassages() {
     roomPassages = out.passages || [];
   } catch (e) { roomPassages = []; }
   renderRoomPassages();
+  window.dispatchEvent(new CustomEvent('passages:changed'));
 }
 window.loadRoomPassages = loadRoomPassages;
+// The conversation pane draws a mark over every line already kept, so it needs to
+// see the same list the Passages shelf reads.
+window.roomPassagesList = function () { return roomPassages || []; };
 
 async function roomDropPassage(id) {
   if (!roomPassages.some(x => x.id === id)) return;
@@ -23779,6 +23785,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         + '</div>';
       wireEmbed(host, e, opts, repaint);
     }
+    // Held on the host so anything outside this closure — a line kept from the
+    // Passages shelf, say — can ask this box to draw itself again.
+    host.__seRepaint = repaint;
     fillEmbed(host, e, opts);
     // An open box always has its conversation, however it came to be open. The
     // e.err guard is load-bearing: without it a conversation that genuinely fails
@@ -24473,7 +24482,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // the full length of the passage in <mark>s, one per text node it crosses, so a
   // multi-paragraph/bullet selection gets highlighted end to end rather than just
   // its opening words.
-  function highlightIn(root, needle){
+  function highlightIn(root, needle, cls){
     var want = String(needle || '').replace(/\s+/g, ' ').trim();
     if(!want) return null;
     root.normalize();
@@ -24505,7 +24514,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           range.setStart(cur, offset);
           range.setEnd(cur, offset + take);
           var el = document.createElement('mark');
-          el.className = 'se-jumped';
+          el.className = cls || 'se-jumped';
           try { range.surroundContents(el); marks.push(el); } catch(err) { /* skip this node, keep going */ }
           remaining -= take;
           offset = 0;
@@ -24532,6 +24541,32 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       })
       .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); });
   }
+
+  // A kept line stays visible in the answer it came out of, the way a highlight
+  // stays in a book. Re-drawn after every repaint, because the log is rewritten
+  // wholesale and a <mark> in the old HTML does not survive that.
+  function markKeptIn(log, convoId){
+    if(!log || !convoId || !window.roomPassagesList) return;
+    var kept = window.roomPassagesList().filter(function(p){ return p.convo_id === convoId; });
+    if(!kept.length) return;
+    kept.forEach(function(p){
+      var text = String(p.text || '').trim();
+      if(text.length < 3) return;
+      var turn = p.message_id ? log.querySelector('.se-turn[data-msg-id="' + p.message_id.replace(/"/g, '\\"') + '"]') : null;
+      var body = (turn || log).querySelector ? (turn || log) : null;
+      if(!body) return;
+      var el = highlightIn(body, text, 'se-kept');
+      if(el) el.title = 'Kept — it is in Passages';
+    });
+  }
+  // A line kept from another pane has to show up here too, without a reload.
+  window.addEventListener('passages:changed', function(){
+    document.querySelectorAll('.se-log').forEach(function(log){
+      var host = log.closest('[data-se]');
+      log.renderedHtml = null;           // force the next paint to redraw the marks
+      if(host && host.__seRepaint) host.__seRepaint();
+    });
+  });
 
   // "Remember this" (plan "owner emphasis when the Room remembers or changes the
   // core"): one small capture card, open BEFORE any model call, for both
@@ -24824,6 +24859,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         log.scrollTop=atBottom?log.scrollHeight:was;
       }
       srcLoadArt(log);
+      markKeptIn(log, e.convoId);
     }
     var filebar = host.querySelector('.se-filebar');
     if(filebar){
