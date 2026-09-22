@@ -1408,7 +1408,20 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .interest-edit { display:grid; gap:6px; margin:6px 0; }
 .interest-edit input, .interest-edit select, .interest-filter input, .interest-filter select { min-width:0; width:100%; box-sizing:border-box; font:inherit; background:var(--c-surface-2); color:var(--c-ink); border:1px solid var(--c-border-2); border-radius:5px; padding:6px; }
 .room-shelf { margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--c-border-2); }
-.shelf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:12px 10px; }
+.shelf-grid { display:grid; grid-template-columns:repeat(var(--shelf-cols,3),minmax(0,1fr)); gap:14px 12px; }
+.shelf-size { position:relative; display:inline-flex; align-items:center; width:74px; height:16px; }
+.shelf-ticks { position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between; transition:opacity .15s; }
+.shelf-ticks b { width:2px; height:2px; border-radius:50%; background:var(--c-ink-5); }
+.shelf-fill { position:absolute; left:0; height:1px; background:var(--c-ink-4); opacity:0; transition:opacity .15s; }
+.shelf-size:hover .shelf-ticks, .shelf-size:focus-within .shelf-ticks { opacity:0; }
+.shelf-size:hover .shelf-fill, .shelf-size:focus-within .shelf-fill { opacity:.75; }
+.shelf-size input { -webkit-appearance:none; appearance:none; width:100%; height:16px; margin:0; background:transparent; cursor:ew-resize; }
+.shelf-size input::-webkit-slider-runnable-track { height:1px; background:transparent; transition:background .15s; }
+.shelf-size:hover input::-webkit-slider-runnable-track, .shelf-size:focus-within input::-webkit-slider-runnable-track { background:var(--c-border-2); }
+.shelf-size input::-webkit-slider-thumb { -webkit-appearance:none; width:6px; height:6px; border-radius:50%; background:var(--c-ink-5); margin-top:-3px; transition:.15s; }
+.shelf-size:hover input::-webkit-slider-thumb { width:8px; height:8px; margin-top:-4px; background:var(--c-ink); }
+.shelf-size input::-moz-range-track { height:1px; background:transparent; }
+.shelf-size input::-moz-range-thumb { width:6px; height:6px; border:0; border-radius:50%; background:var(--c-ink-5); }
 .shelf-card { position:relative; min-width:0; }
 .shelf-cover { aspect-ratio:2/3; border-radius:5px; border:1px solid var(--c-border-2); background:var(--c-surface-2) center/cover no-repeat;
   display:flex; align-items:flex-end; padding:6px; font-size:9px; line-height:1.3; color:var(--c-ink-5); overflow:hidden; }
@@ -12751,6 +12764,10 @@ async function shelfLookup(title, author) {
 // What is happening to a book right now, so adding one is never a silence. Every
 // stage is named while it runs, and the row only leaves this list once the book
 // is really on the shelf.
+// How big he keeps the covers, remembered like every other panel state.
+function shelfSize() {
+  try { return Math.min(4, Math.max(1, Number(localStorage.getItem('qne-shelf-size')) || 3)); } catch (e) { return 3; }
+}
 let shelfPending = [];
 const shelfDressed = new Set();   // books whose cover has already been looked for this session
 function shelfStage(key, name, stage) {
@@ -12826,10 +12843,14 @@ async function renderRoomShelf(host) {
   try { books = (await api('/api/convos/books')).books || []; }
   catch (err) { host.innerHTML = '<div class="shelf-head"><strong>Books</strong></div><small>' + qEsc(err.message) + '</small>'; return; }
   // No Add button: a book arrives by being dropped — on the chat box, or here.
+  // The only control is how big the covers are, and it keeps to itself: four
+  // dots until the mouse is on it.
   host.innerHTML = '<div class="shelf-head"><strong>Books</strong>'
+    + (books.length ? '<span class="shelf-size" title="Cover size"><i class="shelf-ticks"><b></b><b></b><b></b><b></b></i>'
+      + '<i class="shelf-fill"></i><input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span>' : '')
     + '<input type="file" accept="application/pdf,.pdf,.txt,.md" hidden></div>'
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
-    + (books.length ? '<div class="shelf-grid">' + books.map(shelfCard).join('') + '</div>' : '')
+    + (books.length ? '<div class="shelf-grid" style="--shelf-cols:' + (5 - shelfSize()) + '">' + books.map(shelfCard).join('') + '</div>' : '')
     + '<div class="shelf-slot"></div>';
   const picker = host.querySelector('input[type=file]');
   const slot = host.querySelector('.shelf-slot');
@@ -12841,6 +12862,15 @@ async function renderRoomShelf(host) {
     catch (err) { shelfDone(key); slot.textContent = err.message; }
   };
   host.querySelector('.shelf-head strong').ondblclick = () => picker.click();
+  const sizer = host.querySelector('.shelf-size input');
+  if (sizer) {
+    const paint = () => {
+      host.querySelector('.shelf-fill').style.width = ((sizer.value - 1) / 3 * 100) + '%';
+      host.querySelector('.shelf-grid').style.setProperty('--shelf-cols', String(5 - Number(sizer.value)));
+    };
+    paint();
+    sizer.oninput = () => { paint(); try { localStorage.setItem('qne-shelf-size', sizer.value); } catch (e) {} };
+  }
   picker.onchange = () => { const f = picker.files?.[0]; picker.value = ''; take(f); };
   host.ondragover = (ev) => { ev.preventDefault(); host.classList.add('is-dropping'); };
   host.ondragleave = () => host.classList.remove('is-dropping');
