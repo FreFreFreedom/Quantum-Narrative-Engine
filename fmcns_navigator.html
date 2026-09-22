@@ -1425,6 +1425,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   animation:shelfSpin .8s linear infinite; flex:none; }
 @keyframes shelfSpin { to { transform:rotate(360deg); } }
 .shelf-slot:not(:empty) { margin-top:8px; font-size:12px; color:var(--c-ink-4); }
+.room-shelf.is-dropping { outline:1px dashed var(--c-ink-4); outline-offset:4px; border-radius:6px; }
 .shelf-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
 .shelf-head strong { flex:1; }
 .interest-filter { display:flex; gap:6px; margin-bottom:8px; }
@@ -12824,23 +12825,26 @@ async function renderRoomShelf(host) {
   let books = [];
   try { books = (await api('/api/convos/books')).books || []; }
   catch (err) { host.innerHTML = '<div class="shelf-head"><strong>Books</strong></div><small>' + qEsc(err.message) + '</small>'; return; }
+  // No Add button: a book arrives by being dropped — on the chat box, or here.
   host.innerHTML = '<div class="shelf-head"><strong>Books</strong>'
-    + '<button type="button" data-add>Add a book</button>'
     + '<input type="file" accept="application/pdf,.pdf,.txt,.md" hidden></div>'
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
     + (books.length ? '<div class="shelf-grid">' + books.map(shelfCard).join('') + '</div>' : '')
     + '<div class="shelf-slot"></div>';
   const picker = host.querySelector('input[type=file]');
   const slot = host.querySelector('.shelf-slot');
-  host.querySelector('[data-add]').onclick = () => picker.click();
-  picker.onchange = async () => {
-    const file = picker.files?.[0]; picker.value = '';
+  const take = async (file) => {
     if (!file) return;
     const key = 'pick-' + Date.now();
     shelfStage(key, file.name, 'Opening');
     try { await shelfPut(file, key); shelfDone(key); }
     catch (err) { shelfDone(key); slot.textContent = err.message; }
   };
+  host.querySelector('.shelf-head strong').ondblclick = () => picker.click();
+  picker.onchange = () => { const f = picker.files?.[0]; picker.value = ''; take(f); };
+  host.ondragover = (ev) => { ev.preventDefault(); host.classList.add('is-dropping'); };
+  host.ondragleave = () => host.classList.remove('is-dropping');
+  host.ondrop = (ev) => { ev.preventDefault(); host.classList.remove('is-dropping'); take(ev.dataTransfer?.files?.[0]); };
   host.querySelectorAll('[data-book]').forEach((card) => {
     card.querySelector('[data-drop]').onclick = async () => {
       try { await apiWrite('/api/convos/books/' + encodeURIComponent(card.dataset.book), 'DELETE', {}); renderRoomShelf(host); }
