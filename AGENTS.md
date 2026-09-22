@@ -54,6 +54,16 @@ Unbuilt* (next section) still carries the paradigm-specific specifics — the en
 phase, the reach past what exists, the beats per instrument. Where the two meet, this
 profile sets the manner and QNE 3.0 sets the altitude.
 
+**The app's own prompt no longer reproduces the block below verbatim (2026-09-22.)** It was
+being sent to the Room's models ahead of the QNE 3.0 rules, and the two halves gave opposite
+orders: this profile asks for warmth, open questions, no firm conclusions and "engagement",
+while the rules under it ban exactly those and name "engagement" as a word never to use. Each
+model was picking one half. `queue-server/data-seed/voices/qne-3-0.md` is now a single voice
+that keeps what this profile is actually for — depth over summary, metaphor and
+interdisciplinary reach, the conversation as shared exploration — without the sentences that
+fight the rules. This block stays here as the record of the ethos in his own words, and
+still governs the manner for coding agents; it is no longer the literal text the app sends.
+
 > **AI Communication Style: Expanded Profile**
 >
 > **Foundational Ethos:**
