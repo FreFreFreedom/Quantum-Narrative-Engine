@@ -1447,6 +1447,15 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-panel-head [data-close] { width:22px; height:22px; min-width:0; padding:0; border-radius:50%; font-size:11px; line-height:1; flex:none; }
 .shelf-facts { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
 .shelf-facts span { font-size:10px; color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:999px; padding:1px 7px; }
+.shelf-note { margin-top:11px; }
+.shelf-note h6 { display:flex; align-items:center; gap:6px; margin:0 0 4px; font-size:10px; font-weight:600;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--c-ink-5); }
+.shelf-note h6 [data-renote] { width:18px; height:18px; min-width:0; padding:0; border:0; background:none;
+  color:var(--c-ink-5); font-size:11px; line-height:1; cursor:pointer; }
+.shelf-note h6 [data-renote]:hover { color:var(--c-ink); }
+.shelf-note p { margin:0; font-size:12.5px; line-height:1.6; color:var(--c-ink-3); }
+.shelf-note.is-ours p { color:var(--c-ink-2); }
+.shelf-note-wait { margin:11px 0 0; font-size:12px; font-style:italic; color:var(--c-ink-5); }
 .shelf-kept { margin-top:10px; display:flex; flex-direction:column; gap:9px; }
 .shelf-kept blockquote { margin:0; border-left:2px solid var(--c-ink-5); padding-left:10px; font:italic 12.5px/1.6 Georgia,serif; color:var(--c-ink-2); }
 .shelf-opening { margin:10px 0 0; font:12.5px/1.6 Georgia,serif; color:var(--c-ink-4); }
@@ -12891,6 +12900,29 @@ function shelfCard(b) {
     + '</div>';
 }
 
+// Two summaries, side by side in the panel: what the book is, and what it is
+// doing here. The second is written once by the app and then kept; ⟳ rewrites it.
+let shelfNotes = null;      // { id, blurb, relevance } for the open book
+let shelfNotesBusy = false;
+function shelfNotesMarkup(d) {
+  const n = shelfNotes && shelfNotes.id === d.id ? shelfNotes : { blurb: d.blurb, relevance: d.relevance };
+  const waiting = shelfNotesBusy && !(n.blurb || n.relevance);
+  if (waiting) return '<p class="shelf-note-wait">Reading up on it…</p>';
+  return (n.blurb ? '<div class="shelf-note"><h6>What it is</h6><p>' + qEsc(n.blurb.slice(0, 700)) + (n.blurb.length > 700 ? '…' : '') + '</p></div>' : '')
+    + (n.relevance
+      ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-renote title="Write it again">⟳</button></h6><p>' + qEsc(n.relevance) + '</p></div>'
+      : (shelfNotesBusy ? '<p class="shelf-note-wait">Working out what it gives you…</p>' : ''));
+}
+async function shelfLoadNotes(id, host, refresh) {
+  shelfNotesBusy = true; renderRoomShelf(host);
+  try {
+    const n = await api('/api/convos/books/' + encodeURIComponent(id) + '/notes' + (refresh ? '?refresh=1' : ''));
+    if (shelfOpen === id) shelfNotes = n;
+  } catch (err) { /* the panel stands without them */ }
+  shelfNotesBusy = false;
+  if (shelfOpen === id) renderRoomShelf(host);
+}
+
 // The panel that unfolds under the row the book sits in — what the shelf knows
 // about it, and the passages already kept out of it.
 function shelfPanel(b) {
@@ -12907,6 +12939,7 @@ function shelfPanel(b) {
     + '<div><b>' + qEsc(d.title) + '</b>' + (d.author ? '<small>' + qEsc(d.author) + '</small>' : '')
     + '<div class="shelf-facts">' + facts + '</div></div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
+    + shelfNotesMarkup(d)
     + (d.passages.length
       ? '<div class="shelf-kept">' + d.passages.map((p) => '<blockquote>' + qEsc(String(p.text || '').slice(0, 320)) + '</blockquote>').join('') + '</div>'
       : '<p class="shelf-opening">' + qEsc(d.opening.slice(0, 320)) + '…</p>')
@@ -12971,14 +13004,20 @@ async function renderRoomShelf(host) {
     card.querySelector('[data-open]').onclick = async () => {
       const id = card.dataset.book;
       if (shelfOpen === id) { shelfOpen = ''; shelfDetail = null; renderRoomShelf(host); return; }
-      shelfOpen = id; shelfDetail = null;
+      shelfOpen = id; shelfDetail = null; shelfNotes = null;
       renderRoomShelf(host);
-      try { const d = await api('/api/convos/books/' + encodeURIComponent(id)); if (shelfOpen === id) { shelfDetail = d; renderRoomShelf(host); } }
-      catch (err) { slot.textContent = err.message; }
+      try {
+        const d = await api('/api/convos/books/' + encodeURIComponent(id));
+        if (shelfOpen !== id) return;
+        shelfDetail = d; renderRoomShelf(host);
+        if (!d.blurb || !d.relevance) shelfLoadNotes(id, host, false);
+      } catch (err) { slot.textContent = err.message; }
     };
   });
   const close = host.querySelector('[data-close]');
-  if (close) close.onclick = () => { shelfOpen = ''; shelfDetail = null; renderRoomShelf(host); };
+  if (close) close.onclick = () => { shelfOpen = ''; shelfDetail = null; shelfNotes = null; renderRoomShelf(host); };
+  const renote = host.querySelector('[data-renote]');
+  if (renote) renote.onclick = () => { if (shelfOpen && !shelfNotesBusy) { shelfNotes = null; shelfLoadNotes(shelfOpen, host, true); } };
   // Any book that arrived before the catalogue pass existed — or whose lookup
   // failed that day — gets its cover filled in the next time the shelf is drawn.
   for (const b of books) {

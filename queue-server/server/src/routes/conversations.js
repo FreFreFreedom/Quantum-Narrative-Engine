@@ -143,6 +143,15 @@ export function conversationsRoutes() {
     res.json(out);
   });
 
+  // The two summaries — the publisher's, and what the book is doing here. The
+  // second is one cheap model call, written once and then stored; ?refresh=1
+  // rewrites it, which is his call and never automatic.
+  router.get('/books/:id/notes', asyncHandler(async (req, res) => {
+    const out = await shelf.bookNotes(req.user?.id || 'antoine', req.params.id, { refresh: req.query.refresh === '1' });
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
+
   router.patch('/books/:id', (req, res) => {
     const out = shelf.updateBook(req.user?.id || 'antoine', req.params.id, req.body || {});
     if (out.error) return res.status(statusFor(out.error)).json(out);

@@ -22,6 +22,8 @@
 
 import { randomUUID } from 'node:crypto';
 import { uniqueTitle } from './knowledgeDocs.js';
+import { generateText } from './ai/text.js';
+import { mindBlock } from './mind.js';
 
 let db = null;
 export function bindBookShelf(database) {
@@ -47,6 +49,12 @@ export function bindBookShelf(database) {
   // The front cover, as a link to a public catalogue's image — never a stored
   // file, the same rule imageSources.js works under.
   try { db.exec('ALTER TABLE shelf_books ADD COLUMN cover_url TEXT'); } catch (err) { /* already there */ }
+  // Two summaries, written once and kept: what the book is according to its
+  // publisher, and what it is doing HERE. The second costs a model call, so it
+  // is written on the first time the panel is opened and never again unless he
+  // asks for it again — the same rule the book/tag-lens caches follow.
+  try { db.exec('ALTER TABLE shelf_books ADD COLUMN blurb TEXT'); } catch (err) { /* already there */ }
+  try { db.exec('ALTER TABLE shelf_books ADD COLUMN relevance TEXT'); } catch (err) { /* already there */ }
 }
 
 export const BOOK_PREFIX = 'Book: ';
@@ -213,8 +221,69 @@ export function bookDetail(owner, id) {
     chars: row.chars, pages: Array.isArray(pages) ? pages.length : 0,
     added: row.created_at, filename: row.filename,
     passages, talks, mentions,
+    blurb: row.blurb || '', relevance: row.relevance || '',
     opening: (contentOf(row) || '').slice(0, 900).replace(/\s+/g, ' ').trim(),
   };
+}
+
+// ─── The two summaries ───────────────────────────────────────────────────────
+
+// The publisher's own description, from Google Books. Free, keyless, no model
+// call — the same rule imageSources.js works under.
+async function fetchBlurb(title, author) {
+  const q = ['intitle:' + JSON.stringify(String(title || '').slice(0, 120)), author ? 'inauthor:' + JSON.stringify(String(author).slice(0, 80)) : '']
+    .filter(Boolean).join('+');
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch('https://www.googleapis.com/books/v1/volumes?maxResults=3&q=' + encodeURIComponent(q), { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) return '';
+    const items = (await r.json())?.items || [];
+    const best = items.map((i) => i.volumeInfo || {}).find((v) => String(v.description || '').length > 120);
+    return String(best?.description || '')
+      .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 2000);
+  } catch (err) { return ''; }
+}
+
+const RELEVANCE_MAX_WORDS = 110;
+
+// What this book is doing on THIS shelf: the second summary, written against
+// what the app already knows he is working on rather than against the book in
+// general. One cheap call, then it is stored.
+async function writeRelevance(row, blurb) {
+  const prompt = [
+    'A book has been put on the shelf of a research tool its owner uses to think with.',
+    `BOOK: "${row.title}"${row.author ? ` by ${row.author}` : ''}${row.year ? ` (${row.year})` : ''}`,
+    blurb ? `WHAT ITS PUBLISHER SAYS:\n${blurb.slice(0, 1200)}` : '',
+    mindBlock(),
+    `Write at most ${RELEVANCE_MAX_WORDS} words saying what this book gives HIM — the thinking it feeds, where it bites on what he is working on, and what he would reach into it for.`,
+    'Plain words, no jargon, no equations, no hedging, no preamble, no bullet list, and never a summary of the plot. If you do not know the book, say what it is likely to carry and mark that as a guess in four words. Write prose, nothing else.',
+  ].filter(Boolean).join('\n\n');
+  const out = await generateText({
+    prompt, feature: 'studio', label: 'shelf-relevance', maxTokens: 320, timeoutMs: 60_000, maxAttempts: 2,
+  });
+  return String(out?.text || '').trim().slice(0, 1200);
+}
+
+// Both summaries for one book, written the first time they are asked for and
+// kept afterwards. `refresh` rewrites the relevance note — his call, never
+// automatic.
+export async function bookNotes(owner, id, { refresh = false } = {}) {
+  if (!db) return { error: 'no_db' };
+  const row = bookRow(owner, id);
+  if (!row) return { error: 'not_found' };
+  let blurb = row.blurb || '';
+  if (!blurb) {
+    blurb = await fetchBlurb(row.title, row.author);
+    if (blurb) db.prepare('UPDATE shelf_books SET blurb=? WHERE id=?').run(blurb, id);
+  }
+  let relevance = row.relevance || '';
+  if (!relevance || refresh) {
+    const written = await writeRelevance(row, blurb);
+    if (written) { relevance = written; db.prepare('UPDATE shelf_books SET relevance=? WHERE id=?').run(relevance, id); }
+  }
+  return { id, blurb, relevance };
 }
 
 // ─── Finding the passage ─────────────────────────────────────────────────────
