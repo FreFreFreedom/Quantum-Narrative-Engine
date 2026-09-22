@@ -30,9 +30,15 @@ export function bindBookFacts(database) {
     relevance TEXT,
     fetched_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
+  // Rows found by an older, looser matcher are re-asked once, so a wrong jacket
+  // corrects itself instead of living in the cache for good.
+  try { db.exec('ALTER TABLE book_facts ADD COLUMN found_by INTEGER NOT NULL DEFAULT 0'); } catch (err) { /* already there */ }
 }
 
-const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+// Bump this whenever the matching changes and old answers should be re-asked.
+const MATCHER = 2;
+
+const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
 const keyOf = (title, creator) => `${norm(title)}|${norm(creator)}`;
 
@@ -49,6 +55,46 @@ function personName(a) {
   if (s.includes(',')) s = s.split(',').map((p) => p.trim()).filter(Boolean).reverse().join(' ');
   return s.slice(0, 80);
 }
+
+// Is this candidate the book we asked for, or merely a book with some of the same
+// words? "Broken: Transforming Child Protective Services" shortens to "Broken",
+// which every catalogue answers with a romance novel — so a short main title is
+// never allowed to stand on its own, and a named author must actually appear.
+const STOP = new Set(['the', 'a', 'an', 'of', 'and', 'or', 'in', 'on', 'to', 'for', 'from',
+  'how', 'why', 'what', 'who', 'its', 'it', 'is', 'are', 'was', 'with', 'at', 'by', 'as',
+  'notes', 'new', 'edition', 'vol', 'volume', 'book', 'story', 'stories', 'america', 'american']);
+const words = (s) => norm(s).split(' ').filter((w) => w.length > 2 && !STOP.has(w));
+function surname(who) {
+  const parts = norm(who).split(' ').filter((p) => p.length > 1);
+  return parts.length ? parts[parts.length - 1] : '';
+}
+
+// > 0 means "this is the book". The number itself only orders the candidates.
+function scoreCandidate(cand, fullTitle, who) {
+  const head = words(mainTitle(fullTitle));
+  const tail = words(fullTitle).filter((w) => !head.includes(w));
+  const got = new Set(words(cand.title));
+  if (!head.length || !got.size) return 0;
+
+  const headHit = head.filter((w) => got.has(w)).length;
+  if (headHit < head.length) return 0;            // the main title must be there whole
+  const tailHit = tail.filter((w) => got.has(w)).length;
+  // A one-word main title ("Broken") proves nothing by itself — the subtitle has
+  // to agree too, when we have one.
+  if (head.length < 2 && tail.length && !tailHit) return 0;
+
+  const sn = surname(who);
+  const authors = norm((cand.authors || []).join(' '));
+  if (sn) {
+    if (!authors) return 0;                        // an author we can't check is not a match
+    if (!authors.split(' ').includes(sn)) return 0;
+  }
+  return 4 + tailHit + (sn ? 4 : 0) + (norm(cand.title) === norm(fullTitle) ? 3 : 0);
+}
+
+// Google's "no cover" art and the generic library-binding scans are real images of
+// the right size, so only their own URLs give them away.
+const DUD_COVER = /(no[-_]?cover|nocover|image[-_]?not[-_]?available|unjacketed)/i;
 
 async function getJson(url, ms = 8000) {
   try {
@@ -71,57 +117,70 @@ async function coverIsReal(url) {
   } catch (err) { return false; }
 }
 
-const GOOGLE = 'https://www.googleapis.com/books/v1/volumes?maxResults=5&q=';
+const GOOGLE = 'https://www.googleapis.com/books/v1/volumes?maxResults=8&q=';
 function googleUrl(q) {
   const key = process.env.BOOKS_API_KEY || process.env.GOOGLE_BOOKS_API_KEY || '';
   return GOOGLE + encodeURIComponent(q) + (key ? '&key=' + encodeURIComponent(key) : '');
 }
 
-// Everything one lookup can find at once: cover, blurb, year. Asked in the order
-// most likely to answer, and stopped as soon as both are in hand.
+// Everything one lookup can find at once: cover, blurb, year. Every candidate from
+// both catalogues is scored against the title and author we actually hold, and the
+// best one answers — asking three ways and taking whatever came back first is what
+// put a Mills & Boon jacket on a book about child protective services.
 export async function lookupBook(title, creator) {
   const main = mainTitle(title), who = personName(creator);
-  const out = { cover: '', blurb: '', year: '' };
+  const cands = [];
 
-  const queries = [main + (who ? ' ' + who : ''), main, String(title).slice(0, 140)];
+  const queries = [main + (who ? ' ' + who : ''), String(title).slice(0, 140), main];
   const seen = new Set();
   for (const q of queries) {
-    if (out.cover && out.blurb) break;
     if (!q || seen.has(q)) continue;
     seen.add(q);
-    const j = await getJson('https://openlibrary.org/search.json?limit=5&fields=cover_i,isbn,key,title,first_publish_year&q=' + encodeURIComponent(q));
+    const j = await getJson('https://openlibrary.org/search.json?limit=8&fields=cover_i,key,title,subtitle,author_name,first_publish_year&q=' + encodeURIComponent(q));
     for (const doc of j?.docs || []) {
-      if (!out.year && doc.first_publish_year) out.year = String(doc.first_publish_year);
-      if (!out.cover && doc.cover_i) {
-        const url = `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`;
+      const full = [doc.title, doc.subtitle].filter(Boolean).join(': ');
+      const score = scoreCandidate({ title: full, authors: doc.author_name || [] }, title, who);
+      if (score > 0) cands.push({ score, src: 'ol', doc, year: doc.first_publish_year ? String(doc.first_publish_year) : '' });
+    }
+    if (cands.length >= 3) break;
+  }
+
+  const gq = ['intitle:' + JSON.stringify(main), who ? 'inauthor:' + JSON.stringify(who) : ''].filter(Boolean).join('+');
+  for (const url of [googleUrl(gq), googleUrl(String(title).slice(0, 140) + (who ? ' ' + who : ''))]) {
+    const g = await getJson(url);
+    for (const item of g?.items || []) {
+      const v = item.volumeInfo || {};
+      const full = [v.title, v.subtitle].filter(Boolean).join(': ');
+      const score = scoreCandidate({ title: full, authors: v.authors || [] }, title, who);
+      // Google's jacket art is the better one, so a tie goes to it.
+      if (score > 0) cands.push({ score: score + 0.5, src: 'g', v, year: String(v.publishedDate || '').slice(0, 4) });
+    }
+    if (cands.some((c) => c.src === 'g')) break;
+  }
+
+  cands.sort((a, b) => b.score - a.score);
+  const out = { cover: '', blurb: '', year: '' };
+  for (const c of cands) {
+    if (out.cover && out.blurb) break;
+    if (!out.year && c.year) out.year = c.year;
+    if (c.src === 'g') {
+      const img = c.v.imageLinks?.thumbnail || c.v.imageLinks?.smallThumbnail || '';
+      if (!out.cover && img && !DUD_COVER.test(img)) {
+        out.cover = img.replace(/^http:/, 'https:').replace(/&edge=curl/, '') + '&fife=w400';
+      }
+      const d = String(c.v.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!out.blurb && d.length > 140) out.blurb = d.slice(0, 2000);
+    } else {
+      if (!out.cover && c.doc.cover_i) {
+        const url = `https://covers.openlibrary.org/b/id/${c.doc.cover_i}-L.jpg`;
         if (await coverIsReal(url + '?default=false')) out.cover = url;
       }
-      if (!out.blurb && doc.key) {
-        const work = await getJson('https://openlibrary.org' + doc.key + '.json');
+      if (!out.blurb && c.doc.key) {
+        const work = await getJson('https://openlibrary.org' + c.doc.key + '.json');
         const d = typeof work?.description === 'string' ? work.description : work?.description?.value || '';
         const text = String(d).replace(/\s*\(\[source\][^)]*\)/ig, ' ').replace(/\s+/g, ' ').trim();
         if (text.length > 140) out.blurb = text.slice(0, 2000);
       }
-      if (out.cover && out.blurb) break;
-    }
-  }
-
-  if (!out.cover || !out.blurb) {
-    const q = ['intitle:' + JSON.stringify(main), who ? 'inauthor:' + JSON.stringify(who) : ''].filter(Boolean).join('+');
-    for (const url of [googleUrl(q), googleUrl(main + (who ? ' ' + who : ''))]) {
-      const g = await getJson(url);
-      for (const item of g?.items || []) {
-        const v = item.volumeInfo || {};
-        if (!out.cover) {
-          const img = v.imageLinks?.thumbnail || v.imageLinks?.smallThumbnail || '';
-          if (img) out.cover = img.replace(/^http:/, 'https:').replace(/&edge=curl/, '') + '&fife=w400';
-        }
-        if (!out.blurb && String(v.description || '').length > 140) {
-          out.blurb = String(v.description).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 2000);
-        }
-        if (!out.year && v.publishedDate) out.year = String(v.publishedDate).slice(0, 4);
-      }
-      if (out.cover && out.blurb) break;
     }
   }
   return out;
@@ -132,12 +191,13 @@ function rowOf(title, creator) {
   catch (err) { return null; }
 }
 function save(title, creator, facts) {
-  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb)
-              VALUES (?,?,?,?,?,?)
-              ON CONFLICT(key) DO UPDATE SET cover=COALESCE(NULLIF(excluded.cover,''), book_facts.cover),
+  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by)
+              VALUES (?,?,?,?,?,?,?)
+              ON CONFLICT(key) DO UPDATE SET cover=excluded.cover,
                 blurb=COALESCE(NULLIF(excluded.blurb,''), book_facts.blurb),
-                year=COALESCE(NULLIF(excluded.year,''), book_facts.year), fetched_at=CURRENT_TIMESTAMP`)
-    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '');
+                year=COALESCE(NULLIF(excluded.year,''), book_facts.year),
+                found_by=excluded.found_by, fetched_at=CURRENT_TIMESTAMP`)
+    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '', MATCHER);
 }
 
 // The same shape a film's facts come back in, so the wall draws both the same way.
@@ -158,8 +218,10 @@ export async function bookFactsFor(owner, items = []) {
   for (const it of items) {
     if (!it || !it.title) continue;
     let row = rowOf(it.title, it.creator);
-    // A row with neither cover nor blurb is worth one more try later, not on every call.
-    if ((!row || (!row.cover && !row.blurb)) && fetched < FETCH_CAP) {
+    // A row with neither cover nor blurb — or one an older matcher answered — is
+    // worth one more try later, not on every call.
+    const stale = !row || (!row.cover && !row.blurb) || Number(row.found_by || 0) < MATCHER;
+    if (stale && fetched < FETCH_CAP) {
       fetched += 1;
       const facts = await lookupBook(it.title, it.creator);
       if (facts.cover || facts.blurb || facts.year) { save(it.title, it.creator, facts); row = rowOf(it.title, it.creator); }
