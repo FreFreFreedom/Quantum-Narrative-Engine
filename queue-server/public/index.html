@@ -12549,9 +12549,13 @@ async function extractPdfText(file) {
     const rawOutline = await doc.getOutline();
     if (rawOutline?.length) outline = await pdfOutlineToCharOffsets(doc, rawOutline, starts, 0, []);
   } catch (e) { /* no outline in this PDF — the backend's heuristic picks up the slack */ }
+  // The PDF's own title/author fields when it has them — the first and best
+  // source for naming a book nobody should have to type in by hand.
+  let info = {};
+  try { info = (await doc.getMetadata())?.info || {}; } catch (e) {}
   // `pages` is what services/bookShelf.js turns a character offset back into a
   // page number with, so a book on the shelf is quoted with a page, not an offset.
-  return { text, outline, pages: starts };
+  return { text, outline, pages: starts, info: { title: String(info.Title || '').trim(), author: String(info.Author || '').trim() } };
 }
 
 // The dropzone collapsed from a two-line text block to a single icon (plan
@@ -12575,7 +12579,9 @@ async function roomUploadFileToConvo(file, convoId) {
   if (kind !== 'pdf' && kind !== 'text') throw new Error(`Unsupported file type: ${roomFileExt(file)}`);
   let text = '';
   let outline = [];
-  if (kind === 'pdf') { const out = await extractPdfText(file); text = out.text; outline = out.outline || []; }
+  let pages = [];
+  let info = {};
+  if (kind === 'pdf') { const out = await extractPdfText(file); text = out.text; outline = out.outline || []; pages = out.pages || []; info = out.info || {}; }
   else text = await file.text();
   if (!text) throw new Error('No readable text found in this file');
   let truncated = false;
@@ -12591,7 +12597,7 @@ async function roomUploadFileToConvo(file, convoId) {
   const out = await apiWrite(`/api/convos/${encodeURIComponent(convoId)}/files`, 'POST', {
     filename: file.name, mimeType: file.type || '', text, bytes: file.size, sha, outline,
   });
-  return { ...out, truncated };
+  return { ...out, truncated, pages: pages.filter((n) => n < text.length), info, head: text.slice(0, 4000) };
 }
 
 let interestLibraryRequest = 0;
@@ -12623,19 +12629,61 @@ function interestEditForm(host, item, save) {
 // the same as a file upload's: text and page offsets are pulled here, in the
 // browser, and only those are posted.
 const SHELF_MAX_CHARS = 6000000;
-function shelfGuess(name) {
-  const base = String(name || '').replace(/\.[^/.]+$/, '').replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
-  const parts = base.split(/\s+-\s+/);
-  const year = (base.match(/\b(1[5-9]\d\d|20\d\d)\b/) || [])[1] || '';
-  if (parts.length > 1) return { author: parts[0].trim(), title: parts.slice(1).join(' - ').replace(/\s*\(?\b(1[5-9]\d\d|20\d\d)\b\)?/, '').trim(), year };
-  return { author: '', title: base.replace(/\s*\(?\b(1[5-9]\d\d|20\d\d)\b\)?/, '').trim(), year };
+// Naming a book is the app's job, not his. Three sources, best first: the PDF's
+// own title/author fields, then its opening page, then the filename. Whatever
+// comes out, the book goes on the shelf — an imperfect title beats a form.
+function shelfClean(v) {
+  const t = String(v || '').replace(/^Microsoft Word\s*-\s*/i, '').replace(/\.(pdf|docx?|epub|txt)$/i, '')
+    .replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!t || t.length < 2 || t.length > 200) return '';
+  if (/^(untitled|document\d*|book\d*|pdf|scan\d*|new document)$/i.test(t)) return '';
+  if (/^[0-9a-f-]{16,}$/i.test(t)) return '';           // a hash for a name is no name
+  return t;
 }
-async function shelfPut(file, values, say) {
+function shelfFromFilename(name) {
+  const base = shelfClean(String(name || '').replace(/\.[^/.]+$/, ''));
+  const year = (base.match(/\b(1[5-9]\d\d|20\d\d)\b/) || [])[1] || '';
+  const bare = base.replace(/\s*[([]?\b(1[5-9]\d\d|20\d\d)\b[)\]]?/, '').trim();
+  const parts = bare.split(/\s+-\s+/);
+  // "Author - Title" only when the left side reads like a name: a couple of
+  // capitalised words. Otherwise the dash belongs to the title itself.
+  if (parts.length > 1 && /^[A-Z][\w'’.-]*(\s+[A-Z][\w'’.-]*){0,3}$/.test(parts[0].trim()) && parts[0].trim().split(/\s+/).length <= 4) {
+    return { title: parts.slice(1).join(' - ').trim(), author: parts[0].trim(), year };
+  }
+  return { title: bare, author: '', year };
+}
+// The first page of a book says the title, then the author, in that order. This
+// reads the few opening lines the same way a person would.
+function shelfFromHead(head) {
+  const lines = String(head || '').slice(0, 2500).split(/\n|(?<=[.!?])\s{2,}/)
+    .map((l) => l.replace(/\s+/g, ' ').trim()).filter((l) => l.length > 2 && l.length < 120).slice(0, 25);
+  let title = '', author = '';
+  for (const line of lines) {
+    const by = line.match(/^(?:by|par)\s+([A-Z][\w'’.-]*(?:\s+[A-Z][\w'’.-]*){0,3})$/i);
+    if (by && !author) { author = by[1]; continue; }
+    if (!title && /[A-Za-z]/.test(line) && !/^(copyright|©|isbn|contents|table of contents|first published|chapter)\b/i.test(line)) title = line;
+    else if (title && !author && /^[A-Z][\w'’.-]*(\s+[A-Z][\w'’.-]*){1,3}$/.test(line)) author = line;
+  }
+  const year = (String(head || '').match(/(?:copyright|©|first published)[^\n]{0,40}?\b(1[5-9]\d\d|20\d\d)\b/i) || [])[1] || '';
+  return { title: shelfClean(title), author, year };
+}
+function shelfIdentify(info, head, filename) {
+  const fromFile = shelfFromFilename(filename);
+  const fromHead = shelfFromHead(head);
+  const metaTitle = shelfClean(info?.title);
+  const metaAuthor = shelfClean(info?.author);
+  return {
+    title: metaTitle || fromFile.title || fromHead.title || String(filename || 'Untitled book'),
+    author: metaAuthor || fromFile.author || fromHead.author || '',
+    year: fromFile.year || fromHead.year || '',
+  };
+}
+async function shelfPut(file, say) {
   const kind = roomFileKind(file);
   if (kind !== 'pdf' && kind !== 'text') throw new Error('A book comes in as a PDF or a text file');
   say('Reading the book…');
-  let text = '', pages = [];
-  if (kind === 'pdf') { const out = await extractPdfText(file); text = out.text; pages = out.pages || []; }
+  let text = '', pages = [], info = {};
+  if (kind === 'pdf') { const out = await extractPdfText(file); text = out.text; pages = out.pages || []; info = out.info || {}; }
   else text = await file.text();
   if (!text) throw new Error('No readable text in this file');
   if (text.length > SHELF_MAX_CHARS) { text = text.slice(0, SHELF_MAX_CHARS); pages = pages.filter((n) => n < SHELF_MAX_CHARS); }
@@ -12645,26 +12693,7 @@ async function shelfPut(file, values, say) {
     sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
   } catch (e) {}
   say('Putting it on the shelf…');
-  return apiWrite('/api/convos/books', 'POST', { ...values, filename: file.name, text, pages, sha });
-}
-function shelfForm(host, file, done) {
-  const guess = shelfGuess(file.name);
-  host.innerHTML = '<form class="shelf-form">'
-    + '<input name="title" aria-label="Title" placeholder="Title" required maxlength="200">'
-    + '<input name="author" aria-label="Author" placeholder="Author" maxlength="200">'
-    + '<input name="year" aria-label="Year" placeholder="Year" maxlength="20">'
-    + '<div><button type="submit">Put it on the shelf</button> <button type="button" data-cancel>Cancel</button></div>'
-    + '<small role="status"></small></form>';
-  const form = host.querySelector('form');
-  form.elements.title.value = guess.title; form.elements.author.value = guess.author; form.elements.year.value = guess.year;
-  const say = (m) => { form.querySelector('small').textContent = m; };
-  form.querySelector('[data-cancel]').onclick = done;
-  form.onsubmit = async (ev) => {
-    ev.preventDefault();
-    form.querySelector('button[type=submit]').disabled = true;
-    try { await shelfPut(file, Object.fromEntries(new FormData(form)), say); done(); }
-    catch (err) { say(err.message); form.querySelector('button[type=submit]').disabled = false; }
-  };
+  return apiWrite('/api/convos/books', 'POST', { ...shelfIdentify(info, text.slice(0, 4000), file.name), filename: file.name, text, pages, sha });
 }
 async function renderRoomShelf(host) {
   if (!host) return;
@@ -12681,7 +12710,13 @@ async function renderRoomShelf(host) {
   const picker = host.querySelector('input[type=file]');
   const slot = host.querySelector('.shelf-slot');
   host.querySelector('[data-add]').onclick = () => picker.click();
-  picker.onchange = () => { if (picker.files?.[0]) shelfForm(slot, picker.files[0], () => renderRoomShelf(host)); picker.value = ''; };
+  picker.onchange = async () => {
+    const file = picker.files?.[0]; picker.value = '';
+    if (!file) return;
+    const say = (m) => { slot.textContent = m; };
+    try { await shelfPut(file, say); renderRoomShelf(host); }
+    catch (err) { say(err.message); }
+  };
   host.querySelectorAll('[data-book]').forEach((row) => {
     row.querySelector('[data-drop]').onclick = async () => {
       try { await apiWrite('/api/convos/books/' + encodeURIComponent(row.dataset.book), 'DELETE', {}); renderRoomShelf(host); }
@@ -23124,6 +23159,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var kind = roomFileKind(file);
           if(!kind){ e.note = 'That file type is not supported.'; repaint(); return; }
           e.note = 'Reading “' + file.name + '”…'; repaint();
+          var shelfNote = '';
           try {
             if(kind === 'image'){
               var dataUrl = await roomImageDataUrl(file);
@@ -23165,8 +23201,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
               if(typeof roomSel !== 'undefined' && e.convoId === roomSel){
                 await loadRoomSubjects(); await roomLoadPickSources(); renderRoomPick();
               }
+              // A dropped PDF is a whole document — it goes on the shelf too, so
+              // every other conversation can quote it by name. Same text, not a
+              // second copy: the shelf points at the file this just stored.
+              if(kind === 'pdf'){
+                try {
+                  var named = shelfIdentify(uploaded.info, uploaded.head, file.name);
+                  var shelved = await apiWrite('/api/convos/books', 'POST', {
+                    fromFile: uploaded.id, title: named.title, author: named.author, year: named.year, pages: uploaded.pages,
+                  });
+                  shelfNote = 'On the shelf: ' + shelved.title;
+                  if(typeof renderRoomShelf === 'function') renderRoomShelf(document.getElementById('roomShelf'));
+                } catch(err){ /* attached to the conversation either way */ }
+              }
             }
-            e.note = ''; repaint();
+            e.note = shelfNote; repaint();
           } catch(err){ e.note = err && err.message ? err.message : 'Could not attach that file.'; repaint(); }
         });
       }, Promise.resolve());

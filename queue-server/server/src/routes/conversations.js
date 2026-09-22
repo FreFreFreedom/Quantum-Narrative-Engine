@@ -122,8 +122,8 @@ export function conversationsRoutes() {
   });
 
   router.post('/books', (req, res) => {
-    const { title, author, year, filename, text, pages, sha } = req.body || {};
-    const out = shelf.addBook(req.user?.id || 'antoine', { title, author, year, filename, text, pages, sha });
+    const { title, author, year, filename, text, pages, sha, fromFile } = req.body || {};
+    const out = shelf.addBook(req.user?.id || 'antoine', { title, author, year, filename, text, pages, sha, fromFile });
     if (out.error) return res.status(out.error === 'no_db' ? 500 : 400).json({ ...out, error: out.message || out.error });
     res.json(out);
   });

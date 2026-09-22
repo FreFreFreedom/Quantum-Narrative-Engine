@@ -40,6 +40,10 @@ export function bindBookShelf(database) {
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(owner, doc_title)
   )`);
+  // A book dropped straight into the chat shares the conversation file's own
+  // document instead of storing the text a second time — so taking it off the
+  // shelf must not delete a document the conversation still holds.
+  try { db.exec('ALTER TABLE shelf_books ADD COLUMN owns_doc INTEGER NOT NULL DEFAULT 1'); } catch (err) { /* already there */ }
 }
 
 export const BOOK_PREFIX = 'Book: ';
@@ -102,28 +106,44 @@ function pageAt(row, offset) {
   return found + 1;
 }
 
-export function addBook(owner, { title, author = '', year = '', filename = '', text, pages, sha = '' } = {}) {
+// `fromFile` is a PDF dropped straight into the chat: the conversation has
+// already stored its text as a `File: ` document, so the shelf points at that
+// one rather than posting and keeping a second copy of the same million
+// characters.
+export function addBook(owner, { title, author = '', year = '', filename = '', text, pages, sha = '', fromFile = '' } = {}) {
   if (!db) return { error: 'no_db' };
-  const body = String(text || '').trim();
-  if (!body) return { error: 'text_required', message: 'A book needs its extracted text.' };
-  const name = String(title || filename.replace(/\.[^/.]+$/, '') || '').trim().replace(/\s+/g, ' ').slice(0, 200);
+  const shared = String(fromFile || '').trim();
+  let sharedDoc = null;
+  if (shared) {
+    sharedDoc = db.prepare('SELECT title, length(content) AS chars FROM knowledge_docs WHERE title=?').get(`File: ${shared}`);
+    if (!sharedDoc) return { error: 'not_found', message: 'That file is no longer here.' };
+    if (db.prepare('SELECT 1 FROM shelf_books WHERE owner=? AND doc_title=?').get(owner, sharedDoc.title)) {
+      return { error: 'already_here', message: 'That book is already on the shelf.' };
+    }
+  }
+  const body = shared ? '' : String(text || '').trim();
+  if (!shared && !body) return { error: 'text_required', message: 'A book needs its extracted text.' };
+  const name = String(title || filename.replace(/\.[^/.]+$/, '') || shared || '').trim().replace(/\s+/g, ' ').slice(0, 200);
   if (!name) return { error: 'title_required', message: 'A book needs a title.' };
-  if (db.prepare(`SELECT 1 FROM shelf_books WHERE owner=? AND sha=? AND sha<>''`).get(owner, String(sha || ''))) {
+  if (!shared && db.prepare(`SELECT 1 FROM shelf_books WHERE owner=? AND sha=? AND sha<>''`).get(owner, String(sha || ''))) {
     return { error: 'already_here', message: 'That book is already on the shelf.' };
   }
 
-  const docTitle = uniqueTitle(db, `${BOOK_PREFIX}${name}`.slice(0, 160));
-  const description = `BOOK — ${name}${author ? ` by ${author}` : ''}${year ? ` (${year})` : ''}, ${body.length} characters. Full text on the Room's shelf.`;
-  db.prepare(`INSERT INTO knowledge_docs (id, title, description, content, updated_at)
-              VALUES (?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`)
-    .run(randomUUID(), docTitle, description, body);
+  const chars = shared ? sharedDoc.chars : body.length;
+  let docTitle = shared ? sharedDoc.title : uniqueTitle(db, `${BOOK_PREFIX}${name}`.slice(0, 160));
+  if (!shared) {
+    const description = `BOOK — ${name}${author ? ` by ${author}` : ''}${year ? ` (${year})` : ''}, ${chars} characters. Full text on the Room's shelf.`;
+    db.prepare(`INSERT INTO knowledge_docs (id, title, description, content, updated_at)
+                VALUES (?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`)
+      .run(randomUUID(), docTitle, description, body);
+  }
 
   const id = randomUUID();
-  db.prepare(`INSERT INTO shelf_books (id, owner, title, author, year, doc_title, filename, chars, pages_json, sha)
-              VALUES (?,?,?,?,?,?,?,?,?,?)`)
+  db.prepare(`INSERT INTO shelf_books (id, owner, title, author, year, doc_title, filename, chars, pages_json, sha, owns_doc)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
     .run(id, owner, name, String(author || '').trim().slice(0, 200), String(year || '').trim().slice(0, 20),
-      docTitle, String(filename || '').slice(0, 200), body.length,
-      Array.isArray(pages) && pages.length ? JSON.stringify(pages.slice(0, 5000)) : null, String(sha || ''));
+      docTitle, String(filename || '').slice(0, 200), chars,
+      Array.isArray(pages) && pages.length ? JSON.stringify(pages.slice(0, 5000)) : null, String(sha || ''), shared ? 0 : 1);
 
   // If he already saved this book as an interest, the shelf copy IS that book —
   // mark it kept so the two never read as separate things.
@@ -132,14 +152,14 @@ export function addBook(owner, { title, author = '', year = '', filename = '', t
     if (key) db.prepare('UPDATE interest_works SET kept=1 WHERE owner=? AND identity=?').run(owner, key);
   } catch (err) { /* the shelf entry stands whether or not an interest matched */ }
 
-  return { id, title: name, author, year, chars: body.length };
+  return { id, title: name, author, year, chars };
 }
 
 export function removeBook(owner, id) {
   if (!db) return { error: 'no_db' };
   const row = bookRow(owner, id);
   if (!row) return { error: 'not_found' };
-  db.prepare('DELETE FROM knowledge_docs WHERE title=?').run(row.doc_title);
+  if (row.owns_doc !== 0) db.prepare('DELETE FROM knowledge_docs WHERE title=?').run(row.doc_title);
   db.prepare('DELETE FROM shelf_books WHERE id=? AND owner=?').run(id, owner);
   return { removed: row.title };
 }
