@@ -1690,31 +1690,45 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-mark b:hover { color:var(--c-danger); }
 mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radius:var(--r-xs); animation:seJumped 2.2s var(--ease) forwards; }
 @keyframes seJumped { 0%, 55% { background:var(--c-amber, #f3c969); } 100% { background:transparent; } }
-/* The chapter rail — the shape of a long conversation, down its right edge.
-   Dashes, one per chapter, the one you are reading lit. It sits over the log's
-   own right gutter rather than taking a column of its own: horizontal bands are
-   the scarcest thing on this screen and a table of contents does not earn one. */
-.se-rail { position:absolute; right:2px; z-index:3; display:flex; flex-direction:column;
-  align-items:flex-end; gap:9px; pointer-events:none; }
+/* The chapter rail — the shape of a long conversation, down its LEFT edge.
+   Collapsed it is a column of dashes, the one you are reading lit. Touch it
+   anywhere and the whole rail opens into the list of names: one gesture to get
+   there, then rows wide and tall enough to hit without aiming. Dashes alone made
+   every chapter a 14x2 pixel target, which is not a target. */
+.se-rail { position:absolute; left:0; z-index:6; display:flex; flex-direction:column;
+  align-items:stretch; gap:1px; padding:5px 0; margin:0;
+  width:34px; overflow:hidden; pointer-events:none;
+  border:1px solid transparent; border-radius:var(--r-md); background:transparent;
+  transition:width var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease),
+             border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
 .se-rail[hidden] { display:none; }
-.se-rail-item { pointer-events:auto; background:none; border:none; padding:3px 2px; margin:0; cursor:pointer;
-  display:flex; align-items:center; justify-content:flex-end; gap:8px; font-family:inherit;
-  max-width:16px; overflow:visible; }
+.se-rail:hover, .se-rail:focus-within {
+  width:296px; overflow-y:auto; overflow-x:hidden; pointer-events:auto;
+  background:var(--c-surface); border-color:var(--c-border); box-shadow:0 10px 30px rgba(0,0,0,.28); }
+/* A whole row is the target, not the dash inside it: 30px tall and the full width
+   of the rail, so reaching a chapter never asks for a steady hand. */
+.se-rail-item { pointer-events:auto; display:flex; align-items:center; gap:11px;
+  background:none; border:none; margin:0; padding:7px 12px 7px 9px; cursor:pointer;
+  font-family:inherit; width:100%; min-height:30px; text-align:left; border-radius:var(--r-sm);
+  transition:background-color var(--t-fast) var(--ease); }
+.se-rail-item:hover, .se-rail-item:focus-visible { background:var(--c-hover-wash); outline:none; }
 .se-rail-dash { display:block; width:14px; height:2px; border-radius:2px; flex:none;
-  background:var(--c-ink-5); opacity:.5;
-  transition:width var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease); }
-.se-rail-item:hover .se-rail-dash { width:20px; opacity:1; background:var(--c-ink-3); }
-.se-rail-item.is-here .se-rail-dash { width:22px; opacity:1; background:var(--c-ink); }
-/* The name only on hover, and it opens to the LEFT so it never leaves the panel
-   and never sits under the transcript it points into. */
-.se-rail-name { position:absolute; right:26px; white-space:nowrap; opacity:0; transform:translateX(5px);
-  font-size:var(--fs-xs); color:var(--c-ink-2); background:var(--c-bg); border:1px solid var(--c-border);
-  border-radius:var(--r-sm); padding:3px 8px; max-width:260px; overflow:hidden; text-overflow:ellipsis;
-  pointer-events:none; transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); }
-.se-rail-item:hover .se-rail-name, .se-rail-item:focus-visible .se-rail-name { opacity:1; transform:none; }
-.se-rail-item.is-saved .se-rail-dash { background:var(--c-brand); opacity:.75; }
+  background:var(--c-ink-5); opacity:.55;
+  transition:background-color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease); }
+.se-rail-item:hover .se-rail-dash { opacity:1; background:var(--c-ink-3); }
+.se-rail-item.is-here .se-rail-dash { opacity:1; background:var(--c-ink); }
+.se-rail-item.is-saved .se-rail-dash { background:var(--c-brand); opacity:.8; }
 .se-rail-item.is-saved:hover .se-rail-dash, .se-rail-item.is-saved.is-here .se-rail-dash { background:var(--c-brand); opacity:1; }
-@media (max-width: 720px) { .se-rail { display:none; } }
+/* The names ride along inside the row and open to the RIGHT, into the panel — never
+   back over the transcript. Clipped by the rail's own width while it is closed. */
+.se-rail-name { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  font-size:var(--fs-xs); line-height:1.3; color:var(--c-ink-3); opacity:0;
+  transition:opacity var(--t-fast) var(--ease); }
+.se-rail:hover .se-rail-name, .se-rail:focus-within .se-rail-name { opacity:1; }
+.se-rail-item.is-here .se-rail-name { color:var(--c-ink); }
+/* A gutter for the dashes, so a closed rail never sits on top of the words. */
+.se-wrap.has-rail .se-log { padding-left:30px; }
+@media (max-width: 720px) { .se-rail { display:none; } .se-wrap.has-rail .se-log { padding-left:0; } }
 /* A passage carried into the composer: shown above the input, dismissable. */
 .se-quoted { display:flex; align-items:flex-start; gap:7px; border-left:2px solid var(--c-brand); padding:4px 0 4px 8px;
   margin-bottom:5px; font-size:var(--fs-sm); color:var(--c-ink-4); line-height:1.45;
@@ -24600,21 +24614,31 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       return log && log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(c.messageId) : c.messageId) + '"]');
     });
     // One dash is not a rail — it says nothing you could not see by looking.
-    if(chapters.length < 2){ rail.hidden = true; rail.innerHTML = ''; log.onscroll = null; return; }
+    if(chapters.length < 2){
+      rail.hidden = true; rail.innerHTML = ''; log.onscroll = null;
+      var w0 = rail.closest('.se-wrap'); if(w0) w0.classList.remove('has-rail');
+      return;
+    }
     rail.hidden = false;
     rail.innerHTML = chapters.map(function(c){
       return '<button type="button" class="se-rail-item' + (c.kind === 'saved' ? ' is-saved' : '') + '"'
-        + ' data-chapter="' + qEscAttr(c.messageId) + '" title="' + qEscAttr(c.label || 'Chapter') + '">'
-        + '<span class="se-rail-name">' + qEsc(c.label || 'Chapter') + '</span>'
-        + '<span class="se-rail-dash"></span></button>';
+        // aria-label, never title: the browser draws its own tooltip from title, and
+        // that arrived on top of the rail's own name — two copies of the same words,
+        // in two different boxes, at two different offsets.
+        + ' data-chapter="' + qEscAttr(c.messageId) + '" aria-label="' + qEscAttr(c.label || 'Chapter') + '">'
+        + '<span class="se-rail-dash"></span>'
+        + '<span class="se-rail-name">' + qEsc(c.label || 'Chapter') + '</span></button>';
     }).join('');
 
     // Sit beside the log, not beside the whole panel: the head and the composer are
-    // not part of what the rail points into.
+    // not part of what the rail points into. The gutter class goes on the wrap so
+    // the transcript makes room for the closed rail instead of sitting under it.
     if(log && log.offsetParent){
-      rail.style.top = (log.offsetTop + 8) + 'px';
-      rail.style.maxHeight = Math.max(0, log.clientHeight - 16) + 'px';
+      rail.style.top = (log.offsetTop + 4) + 'px';
+      rail.style.maxHeight = Math.max(0, log.clientHeight - 8) + 'px';
     }
+    var wrap = rail.closest('.se-wrap');
+    if(wrap) wrap.classList.add('has-rail');
 
     rail.querySelectorAll('[data-chapter]').forEach(function(b, i){
       b.onclick = function(ev){
