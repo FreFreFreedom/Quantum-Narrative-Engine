@@ -874,25 +874,19 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    unconditionally because that breakpoint positions the panels against it. */
 .ws-room { flex:1; min-width:0; min-height:0; display:none; position:relative; }
 .ws-room.open { display:flex; }
-/* Entering the Room: a dark doorway with a breathing point of light, the thread's
-   name settling in Cinzel, then an iris opening from that point onto the
-   Room itself. Antoine picked it (#8, "Entering, not loading") from the 2026-09-23
-   mockups. Plays only on arriving — not on a thread switch — and a click skips it.
-   The hole is a mask on the veil, so what shows through is the live Room, not a copy. */
-@property --door-r { syntax:'<percentage>'; inherits:false; initial-value:0%; }
-.room-door { position:absolute; inset:0; z-index:var(--z-sheet); background:var(--c-stage); cursor:pointer;
-  -webkit-mask:radial-gradient(circle at 50% 52%, transparent var(--door-r), #000 calc(var(--door-r) + 1.5%));
-  mask:radial-gradient(circle at 50% 52%, transparent var(--door-r), #000 calc(var(--door-r) + 1.5%));
-  transition:--door-r 1.5s cubic-bezier(.7,0,.2,1); }
-.room-door.open { --door-r:130%; pointer-events:none; }
-.room-door-eye { position:absolute; left:50%; top:52%; width:10px; height:10px; margin:-5px; border-radius:50%;
-  background:var(--c-accent); box-shadow:0 0 30px var(--c-accent); animation:roomDoorBreathe 1.2s ease-in-out infinite; }
-@keyframes roomDoorBreathe { 50% { transform:scale(1.8); opacity:.6; } }
-.room-door-title { position:absolute; left:8%; right:8%; top:40%; text-align:center; font-family:'Cinzel', var(--font-read); font-weight:500;
-  font-size:clamp(20px, 3vw, 34px); color:var(--c-ink); letter-spacing:.3em; opacity:0;
-  transition:opacity .9s ease, letter-spacing 1.6s ease; }
-.room-door.lit .room-door-title { opacity:1; letter-spacing:.06em; }
-.room-door.open .room-door-title { opacity:0; transition:opacity .5s ease; }
+/* Entering the Room: the thread's name held in Cinzel long enough to read, then
+   eight blinds lifting top to bottom onto the live Room. Antoine picked it (#7,
+   "Blinds", 2026-09-23) over the earlier iris, whose name left before it could be
+   read. Plays only on arriving — not on a thread switch — and a click skips it. */
+.room-door { position:absolute; inset:0; z-index:var(--z-sheet); cursor:pointer; display:flex; flex-direction:column; }
+.room-door-slat { flex:1; background:var(--c-stage); transform-origin:top; margin-bottom:-1px;
+  transition:transform .9s cubic-bezier(.7,0,.2,1); }
+.room-door.open { pointer-events:none; }
+.room-door.open .room-door-slat { transform:scaleY(0); }
+.room-door-title { position:absolute; left:8%; right:8%; top:44%; text-align:center; font-family:'Cinzel', var(--font-read); font-weight:500;
+  font-size:clamp(20px, 3vw, 34px); color:var(--c-ink); letter-spacing:.06em; opacity:0; transition:opacity .7s ease; }
+.room-door.lit .room-door-title { opacity:1; }
+.room-door.open .room-door-title { opacity:0; transition:opacity .35s ease; }
 .room-threads { position:relative; width:var(--threads-w, 250px); min-width:0; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 .room-cards { position:relative; width:var(--cards-w, 290px); min-width:0; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 /* ── Every sidebar is draggable, and remembers its width ──────────────────────
@@ -1127,15 +1121,15 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    browser's defaults — an h1 inside a conversation is a section, not a title page. */
 .se-body.md { white-space:normal; }
 .se-covered::after { content:''; display:block; clear:both; }
-.se-cover { width:120px; padding:0; border:0; background:none; cursor:pointer; margin:6px 0 12px; }
+.se-cover { width:240px; padding:0; border:0; background:none; cursor:pointer; margin:6px 0 12px; }
 .se-cover.is-right { float:right; clear:right; margin-left:24px; }
 .se-cover.is-left { float:left; clear:left; margin-right:24px; }
-.se-cover > span { display:flex; align-items:center; justify-content:center; width:120px; height:180px; border-radius:3px;
+.se-cover > span { display:flex; align-items:center; justify-content:center; width:240px; height:360px; border-radius:4px;
   background:var(--c-hover-wash) center/cover no-repeat; box-shadow:0 8px 20px rgba(0,0,0,.28);
   font:var(--fs-xs)/1.25 var(--font-ui); color:var(--c-ink-5); text-align:center; padding:8px; overflow:hidden;
   transition:transform .25s ease, box-shadow .25s ease; }
 .se-cover:hover > span, .se-cover:focus-visible > span { transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.34); }
-@media (max-width:520px) { .se-cover { width:84px; } .se-cover > span { width:84px; height:126px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } }
+@media (max-width:520px) { .se-cover { width:130px; } .se-cover > span { width:130px; height:195px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } }
 .se-card { position:fixed; z-index:var(--z-popover); width:min(320px, calc(100vw - 16px)); max-height:min(520px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
   padding:16px 18px 16px; font-family:var(--font-ui); color:var(--c-ink); }
@@ -1158,6 +1152,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-card-src { display:block; margin-top:6px; font-size:var(--fs-2xs); color:var(--c-ink-5); }
 .se-card-out { display:inline-flex; align-items:center; gap:5px; margin-top:14px; padding:6px 12px; border:1px solid var(--c-border-2); border-radius:999px;
   font-size:var(--fs-xs); letter-spacing:.04em; color:var(--c-ink); text-decoration:none; }
+.se-card-outs { display:flex; flex-wrap:wrap; gap:8px; }
 .se-card-out:hover { background:var(--c-hover-wash); }
 .se-body.md > :first-child { margin-top:0; }
 .se-body.md > :last-child { margin-bottom:0; }
@@ -9879,7 +9874,9 @@ function playRoomDoor() {
   const d = document.createElement('div');
   d.className = 'room-door';
   d.setAttribute('aria-hidden', 'true');
-  d.innerHTML = '<div class="room-door-eye"></div><div class="room-door-title"></div>';
+  d.innerHTML = Array.from({ length: 8 }, (_, i) =>
+    '<div class="room-door-slat" style="transition-delay:' + (i * 0.08) + 's"></div>').join('') +
+    '<div class="room-door-title"></div>';
   room.appendChild(d);
   fillRoomDoorTitle();
   // A forced layout, not requestAnimationFrame: a tab that is not frontmost gets no
@@ -9891,9 +9888,9 @@ function playRoomDoor() {
     if (opened) return;
     opened = true;
     d.classList.add('open');
-    setTimeout(() => d.remove(), 1600);
+    setTimeout(() => d.remove(), 1700);
   };
-  const timer = setTimeout(open, 1100);
+  const timer = setTimeout(open, 2600); // long enough to read the name
   d.addEventListener('click', () => { clearTimeout(timer); open(); });
 }
 // The threads usually arrive after the doorway has started, so renderRoomHead()
@@ -13410,9 +13407,10 @@ function shelfPanel(b) {
     + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
     + '<div><b>' + qEsc(d.title) + '</b>' + (d.author ? '<small>' + qEsc(d.author) + '</small>' : '')
     + '<div class="shelf-facts">' + facts + '</div>'
-    + (() => { const out = libOutLink({ kind: 'book', title: d.title, creator: d.author || '' }, null);
-        return '<div class="shelf-acts"><a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
-          + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a></div>'; })()
+    + (() => { const bw = { kind: 'book', title: d.title, creator: d.author || '' };
+        return '<div class="shelf-acts">' + [libOutLink(bw, null), libGoogleLink(bw, null)].map(out =>
+          '<a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
+          + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>').join('') + '</div>'; })()
     + '</div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
     + libContentsMarkup(libShortTitle(d.title), d.author || '', '')
@@ -13500,6 +13498,17 @@ function libOutLink(w, f) {
                 : 'https://www.amazon.com/s?i=stripbooks&k=' + encodeURIComponent(q) };
   }
   return null;
+}
+
+// A book's own Google Books page sits beside Amazon: its ISBN opens the book
+// itself, and without one a Google Books search for it.
+function libGoogleLink(w, f) {
+  if (!w || w.kind !== 'book') return null;
+  const isbn = String((f && f.isbn) || '').replace(/[^0-9Xx]/g, '');
+  const q = [libShortTitle(w.title), w.creator || ''].filter(Boolean).join(' ');
+  return { label: 'Google Books',
+    url: isbn ? 'https://books.google.com/books?vid=ISBN' + encodeURIComponent(isbn)
+              : 'https://www.google.com/search?tbm=bks&q=' + encodeURIComponent(q) };
 }
 
 // A book's table of contents, from real catalogues only (Library of Congress,
@@ -13604,9 +13613,9 @@ function libScreenPanel(w) {
       ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-rescreen title="Write it again">⟳</button></h6><p>' + qEsc(libForty(f.relevance)) + '</p></div>'
       : (libScreenBusy ? '<p class="shelf-note-wait">Working out what it gives you…</p>' : ''))
     + '<div class="shelf-acts">'
-    + (() => { const out = libOutLink(w, f); return out
-        ? '<a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
-          + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>' : ''; })()
+    + [libOutLink(w, f), libGoogleLink(w, f)].filter(Boolean).map(out =>
+        '<a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
+          + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>').join('')
     + '<button type="button" data-attach>Attach</button>'
     + '<button type="button" data-edit>Edit</button><button type="button" data-remove>Remove</button></div></div>';
 }
@@ -25846,7 +25855,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }).join('') + '</ol><small class="se-card-src">' + qEsc(c.source) + '</small>';
       else html += '<p class="se-card-wait">No catalogue lists its contents.</p>';
     }
-    html += '<a class="se-card-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>';
+    var gb = libGoogleLink({ kind: kind, title: d.coverTitle, creator: d.coverCreator }, f.isbn ? f : (seOutFacts[d.coverArt] || null));
+    html += '<div class="se-card-outs">' + [out, gb].filter(Boolean).map(function(o){
+      return '<a class="se-card-out" href="' + qEscAttr(o.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(o.label) + ' <span aria-hidden="true">↗</span></a>';
+    }).join('') + '</div>';
     return html;
   }
   function seCardOpen(btn){
