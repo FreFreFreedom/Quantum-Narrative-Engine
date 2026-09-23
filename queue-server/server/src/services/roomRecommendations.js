@@ -49,13 +49,15 @@ export function bindRecommendations(database, { start = true, generateForTest = 
     db.prepare("UPDATE recommendation_collections SET fingerprint='',due_at=0 WHERE kind='media'").run();
   }
   db.prepare("UPDATE recommendation_requests SET status='queued' WHERE status='running'").run();
-  // Wake shelves that were paused or waiting under an older recommendation path.
-  // The catalogues now verify identity and premise; the helper ranks the verified
-  // works and writes their thread-specific connection.
-  db.prepare(`UPDATE recommendation_requests
-    SET status='queued', attempts=0, retry_at=0, note=''
-    WHERE collection_id IN (SELECT id FROM recommendation_collections WHERE kind='media')
-      AND status IN ('waiting','paused')`).run();
+  // This used to wake every waiting or paused media request on every boot — a
+  // one-time migration left running. Production boots on every develop push
+  // (the notes mirror pushes every few minutes), so each boot revived the whole
+  // history of failed requests with fresh attempts, and the helper never rested.
+  // Now a boot only collapses automatic duplicates: one live request per shelf.
+  db.prepare(`UPDATE recommendation_requests SET status='cancelled', note=''
+    WHERE manual=0 AND status IN ('queued','waiting') AND id NOT IN (
+      SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY collection_id ORDER BY created_at DESC, rowid DESC) n
+        FROM recommendation_requests WHERE manual=0 AND status IN ('queued','waiting')) WHERE n=1)`).run();
   clearInterval(timer);
   if (!start) return;
   timer = setInterval(() => tick().catch(e => console.error('[recommendations]', e.message)), 5000);
