@@ -59,7 +59,7 @@ const decode = (s) => String(s || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<
 const clean = (s) => decode(String(s || '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
 // One chapter: its title, a page number when the source gives one, and a depth
 // (0 = part or chapter, 1 = something inside it).
-const entry = (t, p = '', l = 0) => ({ t: String(t).slice(0, 200), ...(p ? { p: String(p).slice(0, 12) } : {}), ...(l ? { l } : {}) });
+const entry = (t, p = '', l = 0) => ({ t: String(t).slice(0, 2000), ...(p ? { p: String(p).slice(0, 12) } : {}), ...(l ? { l } : {}) });
 const enough = (list) => Array.isArray(list) && list.length >= 3;
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128 Safari/537.36';
@@ -151,6 +151,23 @@ async function fromGoogleBooks(work, isbn) {
   return null;
 }
 
+// Catalogues often squeeze a whole part into one line: "Teenage wasteland.
+// Inside juvenile prison ; Birth of an abomination ; Other people's children".
+// That is a part name and its chapters — laid out as such, at read time too, so
+// rows cached before this existed come out right without asking again.
+function unfold(entries) {
+  const out = [];
+  for (const e of entries || []) {
+    if (e.l || !/\s;\s/.test(e.t)) { out.push(e); continue; }
+    const pieces = e.t.split(/\s+;\s+/).map((x) => x.trim()).filter(Boolean);
+    const head = pieces[0].match(/^(.{2,80}?)\.\s+(.+)$/);
+    if (head) { out.push(entry(head[1], e.p || '')); out.push(entry(head[2], '', 1)); }
+    else out.push(entry(pieces[0], e.p || '', 1));
+    pieces.slice(1).forEach((x) => out.push(entry(x.replace(/\s*\.\s*$/, ''), '', 1)));
+  }
+  return out;
+}
+
 // ── The cascade ─────────────────────────────────────────────────────────────
 const RETRY_MISS_DAYS = 30;
 const pending = new Map();
@@ -160,7 +177,7 @@ export async function bookContents(title, creator = '', { isbn = '', refresh = f
   const key = keyOf(title, creator);
   const row = db.prepare(`SELECT entries, source, julianday('now') - julianday(fetched_at) AS age FROM book_contents WHERE key=?`).get(key);
   if (row && !refresh && (row.source || row.age < RETRY_MISS_DAYS)) {
-    return { entries: JSON.parse(row.entries || '[]'), source: row.source };
+    return { entries: unfold(JSON.parse(row.entries || '[]')), source: row.source };
   }
   if (pending.has(key)) return pending.get(key);
   const job = (async () => {
@@ -170,7 +187,7 @@ export async function bookContents(title, creator = '', { isbn = '', refresh = f
     const work = entries ? null : await findWork(title, creator);
     if (!entries && (entries = await fromOpenLibrary(work))) source = 'Open Library';
     if (!entries && (entries = await fromGoogleBooks(work || { title }, String(isbn || '').replace(/[^0-9Xx]/g, '')))) source = 'Google Books';
-    entries = (entries || []).slice(0, 120);
+    entries = unfold(entries || []).map((e) => ({ ...e, t: e.t.slice(0, 200) })).slice(0, 160);
     db.prepare(`INSERT INTO book_contents (key, title, creator, entries, source, fetched_at) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP)
       ON CONFLICT(key) DO UPDATE SET entries=excluded.entries, source=excluded.source, fetched_at=CURRENT_TIMESTAMP`)
       .run(key, String(title).slice(0, 300), String(creator || '').slice(0, 200), JSON.stringify(entries), source);
