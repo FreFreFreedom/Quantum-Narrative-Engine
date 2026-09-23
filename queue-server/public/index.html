@@ -1126,6 +1126,15 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    Headings take the reading face at the sizes the answer's own hierarchy needs, not the
    browser's defaults — an h1 inside a conversation is a section, not a title page. */
 .se-body.md { white-space:normal; }
+.se-covered { padding-right:84px; }
+.se-covered .se-cover { float:right; clear:right; margin:4px -84px 10px 0; width:66px; }
+.se-cover > span { display:flex; align-items:center; justify-content:center; width:66px; height:98px; border-radius:3px;
+  background:var(--c-hover-wash) center/cover no-repeat; box-shadow:0 5px 14px rgba(0,0,0,.35);
+  font:var(--fs-2xs)/1.2 var(--font-ui); color:var(--c-ink-5); text-align:center; padding:4px; overflow:hidden;
+  transition:transform .25s ease; }
+.se-cover:hover > span { transform:translateY(-3px); }
+.se-covered::after { content:''; display:block; clear:both; }
+@media (max-width:520px) { .se-covered { padding-right:62px; } .se-covered .se-cover { margin-right:-62px; width:50px; } .se-cover > span { width:50px; height:74px; } }
 .se-body.md > :first-child { margin-top:0; }
 .se-body.md > :last-child { margin-bottom:0; }
 .se-body.md h1, .se-body.md h2, .se-body.md h3, .se-body.md h4 {
@@ -25147,6 +25156,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       }else{
         clearTimeout(log.selectionPaintTimer);
         log.innerHTML=nextLog;log.renderedHtml=nextLog;
+        seLoadCovers(log);
         log.scrollTop=atBottom?log.scrollHeight:was;
       }
       srcLoadArt(log);
@@ -25629,6 +25639,38 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return words ? words.length : 0;
   }
 
+  // The books, films and series an answer suggested hang in the right margin,
+  // each beside the paragraph that talks about it (Antoine's pick, 2026-09-23).
+  // A work the text never names by title waits beside the last paragraph.
+  // Clicking a cover goes out to Amazon or IMDb.
+  function seCoverNorm(t){ return String(t || '').toLowerCase().replace(/[\u2018\u2019']/g, "'").replace(/\s+/g, ' ').trim(); }
+  function seHangCovers(html, works){
+    var box = document.createElement('div'); box.innerHTML = html;
+    var blocks = Array.prototype.slice.call(box.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'))
+      .filter(function(b){ return !b.parentElement.closest('li, blockquote'); });
+    if(!blocks.length) return html;
+    works.forEach(function(w){
+      var name = seCoverNorm(libShortTitle(w.title).replace(/…$/, ''));
+      var at = blocks.find(function(b){ return name && seCoverNorm(b.textContent).indexOf(name) >= 0; }) || blocks[blocks.length - 1];
+      var out = libOutLink({ kind: w.kind, title: w.title, creator: w.creator || '' }, null);
+      var key = roomMediaArtKey(w), art = roomMediaArtCache.get(key) || '';
+      var a = document.createElement('a');
+      a.className = 'se-cover'; a.href = out.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.title = w.title + (w.creator ? ' — ' + w.creator : '') + ' · ' + out.label;
+      a.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '"'
+        + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"' : '') + '>' + (art ? '' : qEsc(libShortTitle(w.title))) + '</span>';
+      at.insertBefore(a, at.firstChild);
+    });
+    return '<div class="se-covered">' + box.innerHTML + '</div>';
+  }
+  function seLoadCovers(root){
+    root.querySelectorAll('[data-cover-art]:not([style])').forEach(function(el){
+      roomFindMediaArt({ kind: el.dataset.coverKind, title: el.dataset.coverTitle, creator: el.dataset.coverCreator }).then(function(u){
+        if(u && el.isConnected){ el.style.backgroundImage = 'url("' + u.replace(/"/g, '%22') + '")'; el.textContent = ''; }
+      });
+    });
+  }
+
   function logHtml(e){
     var html = '';
     if(e.err) return '<div class="se-note err">' + qEsc(e.err)
@@ -25697,6 +25739,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var shown = (you && m.body) ? m.body : m.text;
       var renderedBody = plan ? qEsc(m.text) : fmtBody(shown, !you, m.id || null);
       if(!you && !plan) renderedBody = srcStripHtml(renderedBody);
+      if(!you && !plan && m.works && m.works.length) renderedBody = seHangCovers(renderedBody, m.works);
       var showWordCount = !you && !plan && (e.type === 'open' || e.type === 'side');
       var wordCountHtml = '';
       if(showWordCount){
