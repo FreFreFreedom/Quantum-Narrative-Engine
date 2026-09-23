@@ -16,7 +16,31 @@ import { capStateSync, recordSpend } from '../openaiSpend.js';
 import { randomUUID } from 'node:crypto';
 
 let db = null;
-export function bindAiTextDb(database) { db = database; }
+export function bindAiTextDb(database) { db = database; pruneHelperJobs(); }
+
+// Finished helper jobs are never read again, but each one keeps its whole prompt
+// and answer. Left alone they grew to 270MB of a 500MB volume and the database
+// stopped accepting writes ("database or disk is full", 2026-09-23). Deleted in
+// small batches with a checkpoint between, so the cleanup itself fits in the
+// little room a full disk leaves. Runs at boot and at most every 10 minutes.
+const HELPER_KEEP_MS = 24 * 3600_000;
+let _lastHelperPrune = 0;
+export function pruneHelperJobs() {
+  if (!db) return;
+  _lastHelperPrune = Date.now();
+  const cutoff = new Date(Date.now() - HELPER_KEEP_MS).toISOString();
+  try {
+    const del = db.prepare(`DELETE FROM helper_jobs WHERE id IN (SELECT id FROM helper_jobs WHERE status IN ('done','failed') AND created_at < ? LIMIT 100)`);
+    let removed = 0;
+    for (;;) {
+      const n = Number(del.run(cutoff).changes || 0);
+      removed += n;
+      try { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); } catch {}
+      if (n < 100) break;
+    }
+    if (removed) console.log(`[helper] pruned ${removed} finished helper jobs`);
+  } catch (e) { console.error('[helper] prune failed:', e.message); }
+}
 
 // Tool-loop ceilings, matching the ones services/chat.js has run on since day one
 // (maxRounds 6, toolResultCap 8000). They are cost controls first: each round is a
@@ -979,6 +1003,7 @@ const HELPER_CLAIM_STALE_MS = 90_000;
 
 export function claimHelperJob() {
   if (!db) return null;
+  if (Date.now() - _lastHelperPrune > 10 * 60_000) pruneHelperJobs();
   const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
   // A job carrying its own (longer) deadline is not stale until THAT has passed —
   // otherwise a question asked at the deepest thinking setting is handed out again
