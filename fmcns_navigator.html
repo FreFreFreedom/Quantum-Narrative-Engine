@@ -1120,8 +1120,8 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-body.md { white-space:normal; }
 .se-covered::after { content:''; display:block; clear:both; }
 .se-cover { width:min(240px, 42%); padding:0; border:0; background:none; cursor:pointer; margin:6px 0 12px; }
-.se-cover.is-right { float:right; clear:right; margin-left:24px; }
-.se-cover.is-left { float:left; clear:left; margin-right:24px; }
+.se-cover.is-right { float:right; clear:both; margin-left:24px; }
+.se-cover.is-left { float:left; clear:both; margin-right:24px; }
 .se-cover > span { display:flex; align-items:center; justify-content:center; width:100%; height:auto; aspect-ratio:2/3; border-radius:4px;
   background:var(--c-hover-wash) center/cover no-repeat; box-shadow:0 8px 20px rgba(0,0,0,.28);
   font:var(--fs-xs)/1.25 var(--font-ui); color:var(--c-ink-5); text-align:center; padding:8px; overflow:hidden;
@@ -25810,31 +25810,82 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
 
   // The books, films and series an answer suggested sit inside the text, each
-  // beside the paragraph that talks about it, alternating right and left with the
-  // words wrapping round them (Antoine's pick "C", 2026-09-23). A work the text
-  // never names by title waits beside the last paragraph.
+  // at the sentence that first names it — not at the top of its paragraph, where
+  // three films named in one paragraph used to pile up, in reverse order, far from
+  // where each is talked about. Sides alternate in reading order (Antoine's pick
+  // "C", 2026-09-23), with the words wrapping round them. A work the text never
+  // names by title waits at the end.
   // Clicking a cover opens its card, not a website: a book's contents, a film's
   // rating and a line written for this conversation, and a small button out to
   // Amazon or IMDb.
-  function seCoverNorm(t){ return String(t || '').toLowerCase().replace(/[‘’']/g, "'").replace(/\s+/g, ' ').trim(); }
+  function seCoverNorm(t){ return String(t || '').toLowerCase().replace(/[‘’']/g, "'").replace(/\s+/g, ' '); }
   function seHangCovers(html, works, convoId){
     var box = document.createElement('div'); box.innerHTML = html;
     var blocks = Array.prototype.slice.call(box.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'))
       .filter(function(b){ return !b.parentElement.closest('li, blockquote'); });
     if(!blocks.length) return html;
-    works.forEach(function(w, i){
-      var name = seCoverNorm(libShortTitle(w.title).replace(/…$/, ''));
-      var at = blocks.find(function(b){ return name && seCoverNorm(b.textContent).indexOf(name) >= 0; }) || blocks[blocks.length - 1];
-      var key = roomMediaArtKey(w), art = roomMediaArtCache.get(key) || '';
+    var texts = blocks.map(function(b){ return seCoverNorm(b.textContent); });
+    // Where each work is first named: which block, and how far into it.
+    var placed = works.map(function(w, i){
+      var name = seCoverNorm(libShortTitle(w.title).replace(/…$/, '')).trim();
+      for(var bi = 0; name && bi < blocks.length; bi++){
+        var at = texts[bi].indexOf(name);
+        if(at >= 0) return { w: w, i: i, bi: bi, at: at };
+      }
+      return { w: w, i: i, bi: blocks.length, at: 0 };
+    }).sort(function(x, y){ return x.bi - y.bi || x.at - y.at || x.i - y.i; });
+    // Two works named in the same sentence share its start; the later one steps to
+    // the next sentence so they do not open on the same line.
+    var lastAt = {};
+    placed.forEach(function(pl, k){
+      var w = pl.w, key = roomMediaArtKey(w), art = roomMediaArtCache.get(key) || '';
       var btn = document.createElement('button');
-      btn.type = 'button'; btn.className = 'se-cover ' + (i % 2 ? 'is-left' : 'is-right');
+      btn.type = 'button'; btn.className = 'se-cover ' + (k % 2 ? 'is-left' : 'is-right');
       btn.title = w.title + (w.creator ? ' — ' + w.creator : '');
       btn.dataset.convo = convoId || '';
       btn.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '"'
         + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"' : '') + '>' + (art ? '' : qEsc(libShortTitle(w.title))) + '</span>';
-      at.insertBefore(btn, at.firstChild);
+      if(pl.bi >= blocks.length){ var last = blocks[blocks.length - 1]; last.parentNode.insertBefore(btn, last.nextSibling); return; }
+      var block = blocks[pl.bi], text = texts[pl.bi];
+      // Back to the start of the sentence that names it.
+      var start = 0, re = /[.!?…]["”’)]*\s+/g, m;
+      while((m = re.exec(text)) && m.index + m[0].length <= pl.at) start = m.index + m[0].length;
+      if(lastAt[pl.bi] != null && start <= lastAt[pl.bi]){
+        re.lastIndex = pl.at; m = re.exec(text);
+        start = m ? m.index + m[0].length : lastAt[pl.bi];
+      }
+      lastAt[pl.bi] = start;
+      seInsertAt(block, start, btn);
     });
     return '<div class="se-covered">' + box.innerHTML + '</div>';
+  }
+  // Put `el` at character `pos` of block's text (whitespace folded as in
+  // seCoverNorm), splitting the text node there. Covers already placed are skipped
+  // when counting, since their text is not part of the answer.
+  function seInsertAt(block, pos, el){
+    if(pos <= 0){ block.insertBefore(el, block.firstChild); return; }
+    var walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(n){ return n.parentElement.closest('.se-cover') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+    });
+    var seen = 0, node, prevSpace = false;
+    while((node = walker.nextNode())){
+      var v = node.nodeValue;
+      for(var i = 0; i < v.length; i++){
+        var sp = /\s/.test(v[i]);
+        if(sp && prevSpace) continue;
+        prevSpace = sp;
+        if(seen === pos){
+          var rest = node.splitText(i);
+          // A float inside an inline (an <em>, a link) is lifted out to the block.
+          var host = rest.parentNode, before = rest;
+          while(host !== block && host.parentNode){ if(before === host.firstChild){ before = host; host = host.parentNode; } else break; }
+          host.insertBefore(el, before);
+          return;
+        }
+        seen++;
+      }
+    }
+    block.appendChild(el);
   }
   // The server's catalogue facts first (scored matches, and an ISBN fallback that
   // still works when Open Library is down), the browser's own lookup second.
