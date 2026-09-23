@@ -125,7 +125,11 @@ export function buildRunCommand({ bin, taskId, promptPath, logPath, codePath, mo
 export function runToolless({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000, cwd, bin = resolveBin(), env, allowedTools = null, effort = null }) {
   return new Promise((resolveP) => {
     const toolFlags = allowedTools ? ['--allowedTools', allowedTools] : ['--tools', ''];
-    const proc = spawn(bin, ['-p', '--model', model, ...toolFlags, ...(effort ? ['--effort', effort] : [])], {
+    // --tools '' does not reach MCP servers: the user-wide Playwright server kept
+    // loading into these background calls, and a model now and then used it —
+    // a real Edge window flashing open on the Mac with nobody at the keyboard.
+    // --strict-mcp-config with no --mcp-config loads no MCP server at all.
+    const proc = spawn(bin, ['-p', '--model', model, '--strict-mcp-config', ...toolFlags, ...(effort ? ['--effort', effort] : [])], {
       cwd, env, stdio: 'pipe', detached: true,
     });
     const callId = registerTextCall(proc.pid, { label: 'claude-code' });

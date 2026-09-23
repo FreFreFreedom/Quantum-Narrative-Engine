@@ -91,6 +91,20 @@ function prepareCollections() {
   for(const root of roots)for(const kind of ['papers','apps','media'])insert.run(kind+':'+root.id,kind,root.id,now);
   if(roots.length)for(const kind of ['papers','apps'])insert.run(kind+':all',kind,'all',now);
 }
+// Automatic refresh follows the conversations he is actually in. Every harvest
+// changes mindRevision, which changed the fingerprint of every shelf of every
+// thread ever started, so the Room re-ran recommendations for all of them around
+// the clock — a helper call every ten seconds on the second account. A quiet
+// thread refreshes again once he opens it or writes in it; asking by hand is
+// never gated.
+const RECENT_MS = 3 * 24 * 3600 * 1000;
+function recentlyActive(rootId) {
+  if (rootId === activeMediaScope) return true;
+  const since = new Date(Date.now() - RECENT_MS).toISOString();
+  return !!db.prepare(`SELECT 1 FROM convo_messages m JOIN convos s ON s.id=m.convo_id
+    WHERE s.deleted_at IS NULL AND (s.id=? OR (s.subject_type='side' AND s.parent_convo_id=?))
+    AND m.kind='chat' AND m.role='user' AND m.created_at>=? LIMIT 1`).get(rootId, rootId, since);
+}
 function sourceThreads(scope) {
   return db.prepare(`SELECT id,title FROM convos WHERE subject_type='open' AND deleted_at IS NULL ${scope === 'all' ? '' : 'AND id=?'} ORDER BY id`).all(...(scope === 'all' ? [] : [scope]));
 }
@@ -359,6 +373,7 @@ export async function tick() {
     prepareCollections();
     for (const c of db.prepare('SELECT * FROM recommendation_collections WHERE automatic=1 AND due_at<=? AND last_auto<=?').all(now, now - 600000)) {
       if (c.scope !== 'all' && !sourceThreads(c.scope).length) continue;
+      if (c.scope === 'all' ? !sourceThreads('all').some(t => recentlyActive(t.id)) : !recentlyActive(c.scope)) continue;
       const fingerprint = signature(c.scope);
       if (fingerprint === c.fingerprint) {
         db.prepare('UPDATE recommendation_collections SET due_at=? WHERE id=?').run(now + 600000, c.id);
@@ -366,6 +381,13 @@ export async function tick() {
       }
       enqueue(c, c.kind === 'papers' ? 'Recommend what could advance these conversations.' : 'Recommend relevant works or projects based on the conversation and interests. No forced challenge or novelty.', false, c.kind === 'apps' ? 2 : 3);
       db.prepare('UPDATE recommendation_collections SET last_auto=? WHERE id=?').run(now, c.id);
+    }
+    // Automatic work already queued for a thread that has gone quiet is dropped
+    // too, or the backlog built under the old rule would keep the helper busy.
+    for (const r of db.prepare(`SELECT r.id,c.scope FROM recommendation_requests r JOIN recommendation_collections c ON c.id=r.collection_id
+      WHERE r.manual=0 AND r.status IN ('queued','waiting')`).all()) {
+      const live = r.scope === 'all' ? sourceThreads('all').some(t => recentlyActive(t.id)) : recentlyActive(r.scope);
+      if (!live) db.prepare("UPDATE recommendation_requests SET status='cancelled',note='' WHERE id=?").run(r.id);
     }
     const request = db.prepare(`SELECT r.* FROM recommendation_requests r
       JOIN recommendation_collections c ON c.id=r.collection_id
