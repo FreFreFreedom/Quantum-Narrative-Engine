@@ -871,6 +871,25 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    unconditionally because that breakpoint positions the panels against it. */
 .ws-room { flex:1; min-width:0; min-height:0; display:none; position:relative; }
 .ws-room.open { display:flex; }
+/* Entering the Room: a dark doorway with a breathing point of light, the thread's
+   name settling in the reading font, then an iris opening from that point onto the
+   Room itself. Antoine picked it (#8, "Entering, not loading") from the 2026-09-23
+   mockups. Plays only on arriving — not on a thread switch — and a click skips it.
+   The hole is a mask on the veil, so what shows through is the live Room, not a copy. */
+@property --door-r { syntax:'<percentage>'; inherits:false; initial-value:0%; }
+.room-door { position:absolute; inset:0; z-index:var(--z-sheet); background:var(--c-stage); cursor:pointer;
+  -webkit-mask:radial-gradient(circle at 50% 52%, transparent var(--door-r), #000 calc(var(--door-r) + 1.5%));
+  mask:radial-gradient(circle at 50% 52%, transparent var(--door-r), #000 calc(var(--door-r) + 1.5%));
+  transition:--door-r 1.5s cubic-bezier(.7,0,.2,1); }
+.room-door.open { --door-r:130%; pointer-events:none; }
+.room-door-eye { position:absolute; left:50%; top:52%; width:10px; height:10px; margin:-5px; border-radius:50%;
+  background:var(--c-accent); box-shadow:0 0 30px var(--c-accent); animation:roomDoorBreathe 1.2s ease-in-out infinite; }
+@keyframes roomDoorBreathe { 50% { transform:scale(1.8); opacity:.6; } }
+.room-door-title { position:absolute; left:8%; right:8%; top:40%; text-align:center; font-family:var(--room-font, var(--font-read));
+  font-size:clamp(20px, 3vw, 34px); color:var(--c-ink); letter-spacing:.3em; opacity:0;
+  transition:opacity .9s ease, letter-spacing 1.6s ease; }
+.room-door.lit .room-door-title { opacity:1; letter-spacing:.06em; }
+.room-door.open .room-door-title { opacity:0; transition:opacity .5s ease; }
 .room-threads { position:relative; width:var(--threads-w, 250px); min-width:0; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 .room-cards { position:relative; width:var(--cards-w, 290px); min-width:0; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 /* ── Every sidebar is draggable, and remembers its width ──────────────────────
@@ -9524,6 +9543,7 @@ function setMode(m) {
   // reads: the five Core destinations are rail items of their own now, so
   // leaving Core has to put them all out — nothing else marks them.
   syncRailSub();
+  syncRoomDoor();
 }
 
 // ---------- CORE ARCHITECTURE shell ----------
@@ -9782,6 +9802,49 @@ function switchCoreView(v) {
   if (v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); loadNextUp(); }
   if (v === 'room') { initRoom(); loadRoom(); }
   if (coreInited) startQueuePolling(); // rate depends on which view is now active
+  syncRoomDoor();
+}
+
+// The doorway plays on the edge from "Room not on screen" to "Room on screen",
+// whichever path got there — the rail, the mode switch, or a refresh that lands
+// back in the Room. Both setMode() and switchCoreView() report here, so reaching
+// the Room through both in one click still plays it once.
+var roomDoorWasShown = false; // var: setMode() can run before this line does
+function syncRoomDoor() {
+  const shown = document.getElementById('coreApp').classList.contains('open') && coreView === 'room';
+  if (shown && !roomDoorWasShown) playRoomDoor();
+  roomDoorWasShown = shown;
+}
+function playRoomDoor() {
+  const room = document.getElementById('wsRoom');
+  const old = room.querySelector('.room-door');
+  if (old) old.remove();
+  if (prefersReducedMotion()) return;
+  const d = document.createElement('div');
+  d.className = 'room-door';
+  d.setAttribute('aria-hidden', 'true');
+  d.innerHTML = '<div class="room-door-eye"></div><div class="room-door-title"></div>';
+  room.appendChild(d);
+  fillRoomDoorTitle();
+  requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add('lit')));
+  let opened = false;
+  const open = () => {
+    if (opened) return;
+    opened = true;
+    d.classList.add('open');
+    setTimeout(() => d.remove(), 1600);
+  };
+  const timer = setTimeout(open, 1100);
+  d.addEventListener('click', () => { clearTimeout(timer); open(); });
+}
+// The threads usually arrive after the doorway has started, so renderRoomHead()
+// calls this too; it writes the name once and never changes it mid-animation.
+function fillRoomDoorTitle() {
+  const el = document.querySelector('#wsRoom .room-door-title');
+  if (!el || el.textContent) return;
+  let t = null;
+  try { t = roomThreads.find(x => x.id === roomSel); } catch (e) {} // not declared yet on a very early call
+  if (t && t.title) el.textContent = t.title;
 }
 
 // ---------- The room to think in (Core → Room) ----------
@@ -10740,6 +10803,7 @@ function renderRoomHead() {
   const t = roomThreads.find(x => x.id === roomSel) || null;
   const title = document.getElementById('roomTitle');
   if (title) title.textContent = t ? (t.title || 'Open conversation') : 'Room';
+  fillRoomDoorTitle();
   const cardsBtn = document.getElementById('roomCardsBtn');
   if (cardsBtn) cardsBtn.disabled = !t;
   // A disabled button never gets the mouseleave that would end a peek, so losing
