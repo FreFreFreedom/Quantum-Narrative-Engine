@@ -1548,6 +1548,17 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-acts button { font-family:var(--font-ui); font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5);
   background:none; border:0; border-radius:0; padding:0; min-width:0; }
 .shelf-acts button:hover, .shelf-out:hover { color:var(--c-cast,var(--c-accent)); }
+.lib-toc summary { list-style:none; cursor:pointer; }
+.lib-toc summary::-webkit-details-marker { display:none; }
+.lib-toc summary h6::after { content:' ⌄'; color:var(--c-ink-5); }
+.lib-toc:not([open]) summary h6::after { content:' ›'; }
+.lib-toc ol { list-style:none; margin:6px 0 0; padding:0; counter-reset:toc; }
+.lib-toc li { display:flex; gap:12px; align-items:baseline; padding:3px 0; border-bottom:1px dotted var(--c-border); font-size:var(--fs-sm); }
+.lib-toc li span { flex:1; min-width:0; }
+.lib-toc li em { font-style:normal; font-family:var(--font-ui); font-size:var(--fs-2xs); color:var(--c-ink-5); }
+.lib-toc li.part { font-weight:600; padding-top:8px; }
+.lib-toc li.sub { padding-left:16px; color:var(--c-ink-2); }
+.lib-toc small { display:block; margin-top:6px; font-family:var(--font-ui); font-size:var(--fs-2xs); color:var(--c-ink-5); }
 .shelf-out { font-family:var(--font-ui); font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5);
   text-decoration:none; margin-right:auto; }
 .shelf-out span { font-size:var(--fs-xs); }
@@ -13372,6 +13383,7 @@ function shelfPanel(b) {
     + '</div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
     + shelfNotesMarkup(d)
+    + libContentsMarkup(libShortTitle(d.title), d.author || '', '')
     // What sat here when nothing was kept was the book's first page — the
     // publisher's front matter in capitals, which reads as broken text.
     + (d.passages.length
@@ -13446,6 +13458,37 @@ function libOutLink(w, f) {
   return null;
 }
 
+// A book's table of contents, from real catalogues only (Library of Congress,
+// then Open Library, then Google Books — the server tries them in turn and keeps
+// the answer). Asked for when a book's panel opens; a book no catalogue lists
+// simply shows no contents, never an invented one. Folded or open as he left it.
+const libContents = {};
+let libTocOpen = true;
+try { libTocOpen = localStorage.getItem('qne-lib-toc') !== '0'; } catch (_) {}
+document.addEventListener('toggle', (ev) => {
+  if (!ev.target.matches || !ev.target.matches('details.lib-toc')) return;
+  libTocOpen = ev.target.open;
+  try { localStorage.setItem('qne-lib-toc', libTocOpen ? '1' : '0'); } catch (_) {}
+}, true);
+function libContentsMarkup(title, author, isbn) {
+  const key = libNorm(title) + '|' + libNorm(author);
+  const c = libContents[key];
+  if (!c) {
+    libContents[key] = { busy: true };
+    api('/api/convos/contents?title=' + encodeURIComponent(title) + '&author=' + encodeURIComponent(author || '') + '&isbn=' + encodeURIComponent(isbn || ''))
+      .then((out) => { libContents[key] = { entries: out.entries || [], source: out.source || '' }; })
+      .catch(() => { libContents[key] = { entries: [], source: '' }; })
+      .finally(() => renderInterestLibrary({ quiet: true }));
+    return '<p class="shelf-note-wait">Looking for the contents…</p>';
+  }
+  if (c.busy) return '<p class="shelf-note-wait">Looking for the contents…</p>';
+  if (!c.entries.length) return '';
+  return '<details class="shelf-note lib-toc"' + (libTocOpen ? ' open' : '') + '><summary><h6>Contents</h6></summary><ol>'
+    + c.entries.map((e) => '<li class="' + (e.l ? 'sub' : (/^(part|pt\.|book|section|volume)\b/i.test(e.t) ? 'part' : '')) + '">'
+      + '<span>' + qEsc(e.t) + '</span>' + (e.p ? '<em>' + qEsc(e.p) + '</em>' : '') + '</li>').join('')
+    + '</ol><small>' + qEsc(c.source) + '</small></details>';
+}
+
 function libStars(v) {
   const pct = Math.max(0, Math.min(100, (Number(v) || 0) * 10));
   return '<span class="stars"><i>★★★★★</i><b style="width:' + pct.toFixed(1) + '%">★★★★★</b></span>';
@@ -13499,6 +13542,7 @@ function libScreenPanel(w) {
     + book
     + (f.overview ? '<div class="shelf-note"><h6>' + (w.kind === 'book' ? 'What it is' : 'Synopsis')
         + '</h6><p>' + qEsc(f.overview.slice(0, 900)) + (f.overview.length > 900 ? '…' : '') + '</p></div>' : '')
+    + (w.kind === 'book' ? libContentsMarkup(libShortTitle(w.title), w.creator || '', f.isbn || '') : '')
     + (f.relevance
       ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-rescreen title="Write it again">⟳</button></h6><p>' + qEsc(f.relevance) + '</p></div>'
       : (libScreenBusy ? '<p class="shelf-note-wait">Working out what it gives you…</p>' : ''))

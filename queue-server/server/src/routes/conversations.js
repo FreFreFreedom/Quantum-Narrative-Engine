@@ -6,6 +6,7 @@ import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
 import * as shelf from '../services/bookShelf.js';
 import * as screen from '../services/screenFacts.js';
+import { bookContents } from '../services/bookContents.js';
 import * as bookFacts from '../services/bookFacts.js';
 import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
@@ -127,6 +128,14 @@ export function conversationsRoutes() {
       bookFacts.bookFactsFor(owner, items.filter((i) => i.kind === 'book')),
     ]);
     res.json({ facts: { ...onScreen, ...inPrint } });
+  }));
+
+  // A book's table of contents, from the catalogues in turn (services/bookContents.js).
+  router.get('/contents', asyncHandler(async (req, res) => {
+    const title = String(req.query.title || '').slice(0, 300);
+    if (!title.trim()) return res.status(400).json({ error: 'title required' });
+    res.json(await bookContents(title, String(req.query.author || '').slice(0, 200),
+      { isbn: String(req.query.isbn || '').slice(0, 20), refresh: req.query.refresh === '1' }));
   }));
 
   router.get('/screen/:id/notes', asyncHandler(async (req, res) => {

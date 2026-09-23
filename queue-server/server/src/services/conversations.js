@@ -43,12 +43,13 @@ import { referenceQuote, REFERENCE_TOOLS, referenceTool } from './referenceLibra
 import { bindBookShelf, shelfContext, BOOK_TOOLS, bookTool } from './bookShelf.js';
 import { bindScreenFacts } from './screenFacts.js';
 import { bindBookFacts } from './bookFacts.js';
+import { bindBookContents } from './bookContents.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
 
 let db = null;
-export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); bindBookFacts(database); }
+export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); bindBookFacts(database); bindBookContents(database); }
 
 // Plans live in knowledge_docs under the `Plan: ` prefix (seeded by
 // bootstrapData.js#seedPlans from the project-docs/plans/ mirror). This returns
