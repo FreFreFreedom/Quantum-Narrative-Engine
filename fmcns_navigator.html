@@ -11637,8 +11637,17 @@ async function roomFindMediaArt(item) {
           roomMediaArtCache.set(key, u); return u;
         }
       } else {
-        const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title));
-        if (r.ok) { const j = await r.json(); const u = j?.thumbnail?.source || j?.originalimage?.source || ''; roomMediaArtCache.set(key, u); return u; }
+        // A bare title is often a song or a novel on Wikipedia ("The House I Live
+        // In"); the film's own page is named "(2012 film)" or "(film)". Try those first.
+        const year = String(item?.year || '').match(/\d{4}/)?.[0] || '';
+        for (const t of [year ? title + ' (' + year + ' film)' : '', title + ' (film)', title].filter(Boolean)) {
+          const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(t.replace(/ /g, '_')));
+          if (!r.ok) continue;
+          const j = await r.json();
+          if (j?.type === 'disambiguation') continue;
+          const u = j?.thumbnail?.source || j?.originalimage?.source || '';
+          if (u) { roomMediaArtCache.set(key, u); return u; }
+        }
       }
     } catch (_) {}
     roomMediaArtCache.set(key, ''); return '';
