@@ -12,6 +12,8 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## About Antoine
 
+- Systematic stripping of judicial discretion refers to laws that remove a judge’s ability to tailor sentences to individual circumstances. — Through mandatory minimums, three‑strikes laws, and rigid sentencing guidelines, legislatures shift sentencing power from the bench to prosecutors, converting courts into automated processing plants where statutes dictate outcomes before full facts are heard.
+- Sentencing enhancements are legislative multipliers that add mandatory extra prison time for certain aggravating factors. — They attach heavier penalties automatically when conditions like use of a firearm, proximity to a school, or prior convictions are present, removing judge discretion and turning sentencing into a fixed arithmetic formula.
 - High rent is experienced personally as a symbol of grief and a structural blockade to life goals like having children and owning a home. — The extraction of high rent is not viewed merely as a market inefficiency or financial burden, but as a visceral siphon draining the exact capital required for foundational life milestones, functioning as an engine of personal grief and thwarted potential.
 - Analogy is a morphogenetic operator—the generative mechanism by which archetypal patterns create and propagate across scales in the ontology
 
