@@ -44,6 +44,8 @@ export function bindScreenFacts(database) {
   // Runtime, genres, who made it, where from — the scannable line under the
   // title in the Room's film card. Rows from before it are fetched once more.
   try { db.exec('ALTER TABLE screen_facts ADD COLUMN extra TEXT'); } catch (err) { /* already there */ }
+  // Rows matched before candidates were scored may be the wrong film; asked again once.
+  try { db.exec('ALTER TABLE screen_facts ADD COLUMN matcher INTEGER NOT NULL DEFAULT 0'); } catch (err) { /* already there */ }
 }
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -75,9 +77,22 @@ function bookHere(owner, title) {
 
 async function fetchFacts(kind, title, year) {
   const path = kind === 'series' ? '/search/tv' : '/search/movie';
-  const found = await tmdbFetch(path, { query: title, ...(year ? (kind === 'series' ? { first_air_date_year: year } : { year }) : {}) });
-  let hit = (found?.results || [])[0];
-  if (!hit && year) hit = ((await tmdbFetch(path, { query: title }))?.results || [])[0];
+  // The first search result is not the film: "13th" (2016) came back as
+  // "Friday the 13th" (1980). Every candidate from both searches is scored — the
+  // same title, the same year — and a short title must match exactly.
+  const want = norm(title), y = Number(String(year || '').slice(0, 4)) || 0;
+  const withYear = y ? ((await tmdbFetch(path, { query: title, ...(kind === 'series' ? { first_air_date_year: y } : { primary_release_year: y }) }))?.results || []) : [];
+  const plain = (await tmdbFetch(path, { query: title }))?.results || [];
+  const score = (r) => {
+    const t = norm(r.title || r.name || ''), o = norm(r.original_title || r.original_name || '');
+    const ry = Number(String(r.release_date || r.first_air_date || '').slice(0, 4)) || 0;
+    let v = (t === want || o === want) ? 6 : (t.includes(want) && want.split(' ').length > 1 ? 2 : 0);
+    if (y && ry) v += ry === y ? 4 : Math.abs(ry - y) === 1 ? 2 : -3;
+    return v + Math.min(1, Number(r.popularity || 0) / 100);
+  };
+  const cands = [...withYear, ...plain].filter((r, i, a) => a.findIndex((x) => x.id === r.id) === i)
+    .map((r) => ({ r, v: score(r) })).filter((c) => c.v >= 5).sort((a, b) => b.v - a.v);
+  const hit = cands[0]?.r;
   if (!hit) return null;
   const detail = await tmdbFetch(`${kind === 'series' ? '/tv' : '/movie'}/${hit.id}`, { append_to_response: 'keywords,external_ids,credits' });
   const words = [...(detail?.keywords?.keywords || []), ...(detail?.keywords?.results || [])].map((k) => k.name || '').join(', ');
@@ -131,6 +146,7 @@ function shape(owner, row, asked) {
 // already known. Capped per call so opening the Library never turns into thirty
 // outbound requests at once.
 const FETCH_CAP = 10;
+const SCREEN_MATCHER = 2;
 export async function screenFactsFor(owner, items = []) {
   if (!db) return {};
   const out = {};
@@ -141,17 +157,17 @@ export async function screenFactsFor(owner, items = []) {
     let row = rowOf(kind, it.title, it.year);
     // A row cached before IMDb was wired in has no tconst: fetch it once more so
     // the number becomes the real one.
-    if ((!row || (!row.imdb_id && row.rating_from !== 'imdb') || row.extra == null) && fetched < FETCH_CAP) {
+    if ((!row || (!row.imdb_id && row.rating_from !== 'imdb') || row.extra == null || Number(row.matcher || 0) < SCREEN_MATCHER) && fetched < FETCH_CAP) {
       fetched += 1;
       const facts = await fetchFacts(kind, it.title, it.year);
       if (facts) {
-        db.prepare(`INSERT INTO screen_facts (key, kind, title, year, tmdb_id, imdb_id, rating_from, poster, rating, votes, overview, from_book, extra)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        db.prepare(`INSERT INTO screen_facts (key, kind, title, year, tmdb_id, imdb_id, rating_from, poster, rating, votes, overview, from_book, extra, matcher)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     ON CONFLICT(key) DO UPDATE SET poster=excluded.poster, rating=excluded.rating, votes=excluded.votes,
                       imdb_id=excluded.imdb_id, rating_from=excluded.rating_from,
-                      overview=excluded.overview, from_book=excluded.from_book, extra=excluded.extra, fetched_at=CURRENT_TIMESTAMP`)
-          .run(keyOf(kind, it.title, it.year), kind, it.title, String(it.year || ''), facts.tmdb_id, facts.imdb_id,
-            facts.rating_from, facts.poster, facts.rating, facts.votes, facts.overview, facts.from_book, facts.extra);
+                      overview=excluded.overview, from_book=excluded.from_book, extra=excluded.extra, matcher=excluded.matcher, tmdb_id=excluded.tmdb_id, year=excluded.year, fetched_at=CURRENT_TIMESTAMP`)
+          .run(keyOf(kind, it.title, it.year), kind, it.title, String(facts.year || it.year || ''), facts.tmdb_id, facts.imdb_id,
+            facts.rating_from, facts.poster, facts.rating, facts.votes, facts.overview, facts.from_book, facts.extra, SCREEN_MATCHER);
         row = rowOf(kind, it.title, it.year);
       }
     }

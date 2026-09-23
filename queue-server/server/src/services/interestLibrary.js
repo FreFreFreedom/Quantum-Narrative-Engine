@@ -174,6 +174,9 @@ function saveWork(owner, c, explicit = false) {
   const identity = [c.kind, titleKey, norm(c.kind === 'book' ? c.creator : c.year)].join('|');
   const exact = same.find(w => w.identity === identity);
   if (exact) return { id: exact.id, added: false };
+  // The same book with or without its subtitle is one book, not two.
+  const alike = db.prepare('SELECT id,title FROM interest_works WHERE owner=? AND kind=?').all(owner, c.kind).find(w => sameWork(w.title, c.title));
+  if (alike) return { id: alike.id, added: false };
   // Missing disambiguators must not silently merge two possible works.
   if (same.length && !explicit && same.some(w => c.kind === 'book' ? !c.creator || !w.creator : !c.year || !w.year)) return null;
   const id = randomUUID();
