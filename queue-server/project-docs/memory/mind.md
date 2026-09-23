@@ -12,6 +12,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## About Antoine
 
+- High rent is experienced personally as a symbol of grief and a structural blockade to life goals like having children and owning a home. — The extraction of high rent is not viewed merely as a market inefficiency or financial burden, but as a visceral siphon draining the exact capital required for foundational life milestones, functioning as an engine of personal grief and thwarted potential.
 - Analogy is a morphogenetic operator—the generative mechanism by which archetypal patterns create and propagate across scales in the ontology
 
 ## What he likes and dislikes
