@@ -25806,8 +25806,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
 
   // ---------- The card a cover opens ----------
-  var seCard = null, seCardFor = null;
-  function seCardClose(){ if (seCard) { seCard.remove(); seCard = null; seCardFor = null; } }
+  var seCard = null, seCardFor = null, seCardAnchor = null;
+  function seCardClose(){ if (seCard) { seCard.remove(); seCard = null; seCardFor = null; seCardAnchor = null; } }
   function seCardPlace(anchor){
     if (!seCard || !anchor.isConnected) return;
     var r = anchor.getBoundingClientRect(), w = seCard.offsetWidth, h = seCard.offsetHeight;
@@ -25855,7 +25855,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (seCardFor === d.coverArt) { seCardClose(); return; }
     seCardClose();
     seCard = document.createElement('div'); seCard.className = 'se-card'; seCard.setAttribute('role', 'dialog');
-    seCardFor = d.coverArt;
+    seCardFor = d.coverArt; seCardAnchor = btn;
     document.body.appendChild(seCard);
     var paint = function(card){ if (!seCard || seCardFor !== d.coverArt) return; seCard.innerHTML = seCardHtml(d, card); seCardPlace(btn); };
     paint(null);
@@ -25881,7 +25881,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   });
   document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') seCardClose(); });
   window.addEventListener('resize', seCardClose);
-  document.addEventListener('scroll', function(ev){ if (seCard && seCard.contains(ev.target)) return; seCardClose(); }, true);
+  // Clicking a cover can scroll the pane a little (the button takes focus), so a
+  // scroll moves the card with its cover and only closes it once the cover has
+  // left the screen.
+  document.addEventListener('scroll', function(ev){
+    if (!seCard || seCard.contains(ev.target)) return;
+    if (!seCardAnchor || !seCardAnchor.isConnected) { seCardClose(); return; }
+    var r = seCardAnchor.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > window.innerHeight) seCardClose(); else seCardPlace(seCardAnchor);
+  }, true);
 
   function logHtml(e){
     var html = '';

@@ -59,7 +59,7 @@ const decode = (s) => String(s || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<
 const clean = (s) => decode(String(s || '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
 // One chapter: its title, a page number when the source gives one, and a depth
 // (0 = part or chapter, 1 = something inside it).
-const entry = (t, p = '', l = 0) => ({ t: String(t).slice(0, 2000), ...(p ? { p: String(p).slice(0, 12) } : {}), ...(l ? { l } : {}) });
+const entry = (t, p = '', l = 0) => ({ t: String(t).replace(/\s+:\s+/g, ': ').slice(0, 2000), ...(p ? { p: String(p).slice(0, 12) } : {}), ...(l ? { l } : {}) });
 const enough = (list) => Array.isArray(list) && list.length >= 3;
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128 Safari/537.36';
@@ -195,7 +195,7 @@ export async function bookContents(title, creator = '', { isbn = '', refresh = f
   const key = keyOf(title, creator);
   const row = db.prepare(`SELECT entries, source, julianday('now') - julianday(fetched_at) AS age FROM book_contents WHERE key=?`).get(key);
   if (row && !refresh && (row.source || row.age < RETRY_MISS_DAYS)) {
-    return { entries: unfold(JSON.parse(row.entries || '[]')), source: row.source };
+    return { entries: unfold(JSON.parse(row.entries || '[]')).map((e) => ({ ...e, t: e.t.replace(/\s+:\s+/g, ': ') })), source: row.source };
   }
   if (pending.has(key)) return pending.get(key);
   const job = (async () => {
