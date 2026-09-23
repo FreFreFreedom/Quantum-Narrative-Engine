@@ -9829,7 +9829,10 @@ function playRoomDoor() {
   d.innerHTML = '<div class="room-door-eye"></div><div class="room-door-title"></div>';
   room.appendChild(d);
   fillRoomDoorTitle();
-  requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add('lit')));
+  // A forced layout, not requestAnimationFrame: a tab that is not frontmost gets no
+  // frames, and the name would stay invisible behind a door that opens anyway.
+  void d.offsetWidth;
+  d.classList.add('lit');
   let opened = false;
   const open = () => {
     if (opened) return;
