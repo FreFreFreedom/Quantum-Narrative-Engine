@@ -98,7 +98,7 @@ Where a chapter starts: where the SUBJECT changes. Not every question — a foll
 
 The first entry is always the very first message.
 
-The label names the thing itself, in the conversation's own words. "Fractal justice across scales", "Page breaks and layout", "Which books carry the pattern". NEVER a label about the conversation rather than the subject: no "Introduction", no "Opening question", no "Further discussion", no "Clarification", no "Conclusion". Never number them. Lowercase after the first word.
+The label names the thing itself, in the conversation's own words. "Fractal justice across scales", "Page breaks and layout", "Which books carry the pattern". NEVER a label about the conversation rather than the subject: no "Introduction", no "Opening question", no "Further discussion", no "Clarification", no "Conclusion". Never number them. Sentence case: capital first letter, lowercase after it, but names of people, places, books, films and shows keep their capitals ("Better Call Saul prequel", "The Wire's structure").
 
 Between 2 and ${MAX_CHAPTERS} chapters. A short conversation that never left its subject is ONE chapter, and that is a correct answer — do not invent turns it did not take.
 

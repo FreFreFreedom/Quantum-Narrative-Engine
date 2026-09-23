@@ -28,6 +28,9 @@ export function bindBookContents(database) {
     source TEXT NOT NULL DEFAULT '',
     fetched_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
+  // Set once Google Books has been asked for a page-numbered contents. Rows written
+  // before page numbers were wanted (2026-09-23) are asked again exactly once.
+  try { db.exec(`ALTER TABLE book_contents ADD COLUMN pages_tried INTEGER NOT NULL DEFAULT 0`); } catch {}
 }
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -88,37 +91,33 @@ function parse505(field) {
   const text = subs.filter(([c]) => c === 'a').map(([, t]) => t).join(' -- ');
   return text.split(/\s+--\s+/).map((t) => t.replace(/\s*\.\s*$/, '').trim()).filter(Boolean).map((t) => entry(t));
 }
-async function fromLibraryOfCongress(title, creator) {
+// One search, both answers: the contents note (505) and the ISBNs (020) of the
+// records whose title is this book.
+async function locRecords(title, creator) {
   const who = surname(creator);
   const q = `dc.title="${mainTitle(title).replace(/"/g, '')}"` + (who ? ` and dc.creator="${who}"` : '');
   const xml = await getText('http://lx2.loc.gov:210/lcdb?version=1.1&operation=searchRetrieve&maximumRecords=10&recordSchema=marcxml&query=' + encodeURIComponent(q), 20000);
-  if (!xml) return null;
-  for (const rec of xml.split(/<record[\s>]/).slice(1)) {
+  let contents = null;
+  const isbns = [];
+  for (const rec of (xml || '').split(/<record[\s>]/).slice(1)) {
     const t245 = rec.match(/tag="245"[\s\S]*?<\/datafield>/)?.[0] || '';
     if (!sameTitle(clean(t245.replace(/<subfield code="c">[\s\S]*?<\/subfield>/, '')), title)) continue;
-    const fields = rec.match(/tag="505"[\s\S]*?<\/datafield>/g) || [];
-    const list = fields.flatMap(parse505);
-    if (enough(list)) return list;
+    if (!contents) {
+      const list = (rec.match(/tag="505"[\s\S]*?<\/datafield>/g) || []).flatMap(parse505);
+      if (enough(list)) contents = list;
+    }
+    for (const m of rec.matchAll(/tag="020"[\s\S]*?<subfield code="a">([^<]+)</g)) {
+      const d = m[1].replace(/[^0-9Xx]/g, '').toUpperCase();
+      if ((d.length === 10 || d.length === 13) && !isbns.includes(d)) isbns.push(d);
+    }
   }
-  return null;
+  return { contents, isbns };
 }
 
 // The ISBNs the Library of Congress holds for this book — the cover lookup's
 // fallback when Open Library and Google Books are down or out of quota.
 export async function catalogueIsbns(title, creator) {
-  const who = surname(creator);
-  const q = `dc.title="${mainTitle(title).replace(/"/g, '')}"` + (who ? ` and dc.creator="${who}"` : '');
-  const xml = await getText('http://lx2.loc.gov:210/lcdb?version=1.1&operation=searchRetrieve&maximumRecords=6&recordSchema=marcxml&query=' + encodeURIComponent(q), 15000);
-  const out = [];
-  for (const rec of (xml || '').split(/<record[\s>]/).slice(1)) {
-    const t245 = rec.match(/tag="245"[\s\S]*?<\/datafield>/)?.[0] || '';
-    if (!sameTitle(clean(t245.replace(/<subfield code="c">[\s\S]*?<\/subfield>/, '')), title)) continue;
-    for (const m of rec.matchAll(/tag="020"[\s\S]*?<subfield code="a">([^<]+)</g)) {
-      const d = m[1].replace(/[^0-9Xx]/g, '').toUpperCase();
-      if ((d.length === 10 || d.length === 13) && !out.includes(d)) out.push(d);
-    }
-  }
-  return out;
+  return (await locRecords(title, creator)).isbns;
 }
 
 // ── 2. Open Library ─────────────────────────────────────────────────────────
@@ -158,15 +157,15 @@ function parseGoogleContents(html, title) {
     .filter((x) => x.t && !/^(index|references|bibliography|notes|copyright|contents)$/i.test(x.t));
   return enough(list) ? list : null;
 }
-async function fromGoogleBooks(work, isbn) {
-  const isbns = [...new Set([isbn, ...((work?.isbn || []).filter((i) => /^97[89]\d{10}$/.test(i)))].filter(Boolean))].slice(0, 6);
+async function fromGoogleBooks(work, isbnList) {
+  const isbns = [...new Set([...(isbnList || []), ...((work?.isbn || []).filter((i) => /^97[89]\d{10}$/.test(i)))].filter(Boolean))].slice(0, 6);
   for (const i of isbns) {
     const html = await getText('https://books.google.com/books?vid=ISBN' + encodeURIComponent(i));
-    if (/unusual traffic|sorry\/index/i.test(html)) return null;   // blocked for now: stop asking
+    if (/unusual traffic|sorry\/index/i.test(html)) return { blocked: true };   // blocked for now: stop asking
     const list = html ? parseGoogleContents(html, work?.title || '') : null;
-    if (list) return list;
+    if (list) return { list };
   }
-  return null;
+  return {};
 }
 
 // Catalogues often squeeze a whole part into one line: "Teenage wasteland.
@@ -190,25 +189,51 @@ function unfold(entries) {
 const RETRY_MISS_DAYS = 30;
 const pending = new Map();
 
+// Google Books first when it gives page numbers — he asked for them — and the
+// catalogues after it, which are more complete but never carry pages. A Google
+// list without pages is kept only as the last resort.
+// A bare numeral ("I", "III", "12") is a page's running head, not a chapter
+// title, and a list made of them is worse than a catalogue's names without pages.
+const bare = (t) => !/[a-z]{3}/i.test(String(t).replace(/^(part|chapter|section|book)\b/i, ''));
+const withPages = (list) => enough(list) && list.filter((e) => e.p).length >= list.length / 2
+  && list.filter((e) => bare(e.t)).length <= list.length * 0.2;
+// Google prints some chapter numbers into the title and not others ("2 Crime as a
+// Child's Destiny" under "The Arc of…"): dropped, since the list is numbered by order.
+const tidyGoogle = (list) => (list || []).map((e) => ({ ...e, t: e.t.replace(/^\d{1,2}\s+(?=[A-Z])/, '') }));
 export async function bookContents(title, creator = '', { isbn = '', refresh = false } = {}) {
   if (!db || !norm(title)) return { entries: [], source: '' };
   const key = keyOf(title, creator);
-  const row = db.prepare(`SELECT entries, source, julianday('now') - julianday(fetched_at) AS age FROM book_contents WHERE key=?`).get(key);
-  if (row && !refresh && (row.source || row.age < RETRY_MISS_DAYS)) {
+  const row = db.prepare(`SELECT entries, source, pages_tried, julianday('now') - julianday(fetched_at) AS age FROM book_contents WHERE key=?`).get(key);
+  const stale = row && row.source && row.source !== 'Google Books' && !row.pages_tried;
+  if (row && !refresh && !stale && (row.source || row.age < RETRY_MISS_DAYS)) {
     return { entries: unfold(JSON.parse(row.entries || '[]')).map((e) => ({ ...e, t: e.t.replace(/\s+:\s+/g, ': ') })), source: row.source };
   }
   if (pending.has(key)) return pending.get(key);
   const job = (async () => {
+    const loc = await locRecords(title, creator);
+    const given = String(isbn || '').replace(/[^0-9Xx]/g, '');
+    let g = await fromGoogleBooks({ title }, [given, ...loc.isbns]);
+    let work = null;
+    if (!g.blocked && !g.list && !loc.contents) {
+      work = await findWork(title, creator);
+      if (work?.isbn?.length) g = await fromGoogleBooks(work, []);
+    }
     let entries = null, source = '';
-    entries = await fromLibraryOfCongress(title, creator);
-    if (entries) source = 'Library of Congress';
-    const work = entries ? null : await findWork(title, creator);
-    if (!entries && (entries = await fromOpenLibrary(work))) source = 'Open Library';
-    if (!entries && (entries = await fromGoogleBooks(work || { title }, String(isbn || '').replace(/[^0-9Xx]/g, '')))) source = 'Google Books';
+    if (g.list) g.list = tidyGoogle(g.list);
+    if (withPages(g.list)) { entries = g.list; source = 'Google Books'; }
+    else if (loc.contents) { entries = loc.contents; source = 'Library of Congress'; }
+    else {
+      work = work || await findWork(title, creator);
+      if ((entries = await fromOpenLibrary(work))) source = 'Open Library';
+      else if (g.list) { entries = g.list; source = 'Google Books'; }
+    }
     entries = unfold(entries || []).map((e) => ({ ...e, t: e.t.slice(0, 200) })).slice(0, 160);
-    db.prepare(`INSERT INTO book_contents (key, title, creator, entries, source, fetched_at) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP)
-      ON CONFLICT(key) DO UPDATE SET entries=excluded.entries, source=excluded.source, fetched_at=CURRENT_TIMESTAMP`)
-      .run(key, String(title).slice(0, 300), String(creator || '').slice(0, 200), JSON.stringify(entries), source);
+    // A catalogue answer that replaces nothing better is worth keeping, but when
+    // Google refused this time the old row is left alone to be tried again later.
+    if (g.blocked && row && row.source && !entries.length) return { entries: unfold(JSON.parse(row.entries || '[]')), source: row.source };
+    db.prepare(`INSERT INTO book_contents (key, title, creator, entries, source, pages_tried, fetched_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)
+      ON CONFLICT(key) DO UPDATE SET entries=excluded.entries, source=excluded.source, pages_tried=excluded.pages_tried, fetched_at=CURRENT_TIMESTAMP`)
+      .run(key, String(title).slice(0, 300), String(creator || '').slice(0, 200), JSON.stringify(entries), source, g.blocked ? 0 : 1);
     return { entries, source };
   })();
   pending.set(key, job);

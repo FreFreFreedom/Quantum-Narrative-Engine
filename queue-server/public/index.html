@@ -874,19 +874,17 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    unconditionally because that breakpoint positions the panels against it. */
 .ws-room { flex:1; min-width:0; min-height:0; display:none; position:relative; }
 .ws-room.open { display:flex; }
-/* Entering the Room: the thread's name held in Cinzel long enough to read, then
-   eight blinds lifting top to bottom onto the live Room. Antoine picked it (#7,
-   "Blinds", 2026-09-23) over the earlier iris, whose name left before it could be
-   read. Plays only on arriving — not on a thread switch — and a click skips it. */
-.room-door { position:absolute; inset:0; z-index:var(--z-sheet); cursor:pointer; display:flex; flex-direction:column; }
-.room-door-slat { flex:1; background:var(--c-stage); transform-origin:top; margin-bottom:-1px;
-  transition:transform .9s cubic-bezier(.7,0,.2,1); }
-.room-door.open { pointer-events:none; }
-.room-door.open .room-door-slat { transform:scaleY(0); }
+/* Entering the Room: the thread's name held in Cinzel on a dark veil long enough
+   to read, then the veil fades onto the live Room. Antoine picked it (#1, "Held
+   name, slow fade", 2026-09-23) over the iris and the blinds. Plays only on
+   arriving — not on a thread switch — and a click skips it. */
+.room-door { position:absolute; inset:0; z-index:var(--z-sheet); cursor:pointer; background:var(--c-stage);
+  transition:opacity 1.2s ease; }
+.room-door.open { opacity:0; pointer-events:none; }
 .room-door-title { position:absolute; left:8%; right:8%; top:44%; text-align:center; font-family:'Cinzel', var(--font-read); font-weight:500;
-  font-size:clamp(20px, 3vw, 34px); color:var(--c-ink); letter-spacing:.06em; opacity:0; transition:opacity .7s ease; }
+  font-size:clamp(20px, 3vw, 34px); color:var(--c-ink); letter-spacing:.06em; opacity:0; transition:opacity .8s ease; }
 .room-door.lit .room-door-title { opacity:1; }
-.room-door.open .room-door-title { opacity:0; transition:opacity .35s ease; }
+.room-door.open .room-door-title { opacity:0; transition:opacity .9s ease; }
 .room-threads { position:relative; width:var(--threads-w, 250px); min-width:0; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 .room-cards { position:relative; width:var(--cards-w, 290px); min-width:0; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 /* ── Every sidebar is draggable, and remembers its width ──────────────────────
@@ -1121,10 +1119,10 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    browser's defaults — an h1 inside a conversation is a section, not a title page. */
 .se-body.md { white-space:normal; }
 .se-covered::after { content:''; display:block; clear:both; }
-.se-cover { width:240px; padding:0; border:0; background:none; cursor:pointer; margin:6px 0 12px; }
+.se-cover { width:min(240px, 42%); padding:0; border:0; background:none; cursor:pointer; margin:6px 0 12px; }
 .se-cover.is-right { float:right; clear:right; margin-left:24px; }
 .se-cover.is-left { float:left; clear:left; margin-right:24px; }
-.se-cover > span { display:flex; align-items:center; justify-content:center; width:240px; height:360px; border-radius:4px;
+.se-cover > span { display:flex; align-items:center; justify-content:center; width:100%; height:auto; aspect-ratio:2/3; border-radius:4px;
   background:var(--c-hover-wash) center/cover no-repeat; box-shadow:0 8px 20px rgba(0,0,0,.28);
   font:var(--fs-xs)/1.25 var(--font-ui); color:var(--c-ink-5); text-align:center; padding:8px; overflow:hidden;
   transition:transform .25s ease, box-shadow .25s ease; }
@@ -1761,41 +1759,58 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radius:var(--r-xs); animation:seJumped 2.2s var(--ease) forwards; }
 @keyframes seJumped { 0%, 55% { background:var(--c-amber, #f3c969); } 100% { background:transparent; } }
 /* The chapter rail — the shape of a long conversation, down its LEFT edge.
-   Collapsed it is a column of dashes, the one you are reading lit. Touch it
-   anywhere and the whole rail opens into the list of names: one gesture to get
-   there, then rows wide and tall enough to hit without aiming. Dashes alone made
-   every chapter a 14x2 pixel target, which is not a target. */
+   Closed: a column of fine ticks, the one you are reading longer and inked, the
+   ones you saved by hand in green. Touch it and it opens into a numbered contents
+   page — numeral, name, a bookmark on the saved ones — with rows tall enough to
+   hit without aiming. */
 .se-rail { position:absolute; left:0; z-index:6; display:flex; flex-direction:column;
-  align-items:stretch; gap:1px; padding:5px 0; margin:0;
+  align-items:stretch; gap:0; padding:8px 0; margin:0;
   width:34px; overflow:hidden; pointer-events:none;
-  border:1px solid transparent; border-radius:var(--r-md); background:transparent;
-  transition:width var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease),
-             border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
+  border:1px solid transparent; border-radius:14px; background:transparent;
+  transition:width .22s var(--ease), background-color .22s var(--ease),
+             border-color .22s var(--ease), box-shadow .22s var(--ease); }
 .se-rail[hidden] { display:none; }
 .se-rail:hover, .se-rail:focus-within {
-  width:296px; overflow-y:auto; overflow-x:hidden; pointer-events:auto;
-  background:var(--c-surface); border-color:var(--c-border); box-shadow:0 10px 30px rgba(0,0,0,.28); }
-/* A whole row is the target, not the dash inside it: 30px tall and the full width
-   of the rail, so reaching a chapter never asks for a steady hand. */
-.se-rail-item { pointer-events:auto; display:flex; align-items:center; gap:11px;
+  width:340px; overflow-y:auto; overflow-x:hidden; pointer-events:auto; padding:8px 6px;
+  background:color-mix(in srgb, var(--c-surface) 94%, transparent);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  border-color:var(--c-border); box-shadow:0 18px 48px rgba(0,0,0,.22), 0 2px 6px rgba(0,0,0,.08); }
+.se-rail-head { display:flex; align-items:baseline; justify-content:space-between; gap:8px;
+  padding:6px 12px 10px 14px; margin:0 0 4px; border-bottom:1px solid var(--c-border);
+  font:500 10px/1 var(--font-ui); letter-spacing:.2em; text-transform:uppercase; color:var(--c-ink-5);
+  white-space:nowrap; opacity:0; height:0; padding-top:0; padding-bottom:0; border-bottom-color:transparent; overflow:hidden;
+  transition:opacity .2s var(--ease); }
+.se-rail:hover .se-rail-head, .se-rail:focus-within .se-rail-head { opacity:1; height:auto; padding-top:6px; padding-bottom:10px; border-bottom-color:var(--c-border); }
+.se-rail-head b { font-weight:400; letter-spacing:.04em; }
+.se-rail-item { pointer-events:auto; position:relative; display:flex; align-items:center; gap:12px;
   background:none; border:none; margin:0; padding:7px 12px 7px 9px; cursor:pointer;
-  font-family:inherit; width:100%; min-height:30px; text-align:left; border-radius:var(--r-sm);
+  font-family:inherit; width:100%; min-height:30px; text-align:left; border-radius:9px;
   transition:background-color var(--t-fast) var(--ease); }
 .se-rail-item:hover, .se-rail-item:focus-visible { background:var(--c-hover-wash); outline:none; }
-.se-rail-dash { display:block; width:14px; height:2px; border-radius:2px; flex:none;
-  background:var(--c-ink-5); opacity:.55;
-  transition:background-color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease); }
-.se-rail-item:hover .se-rail-dash { opacity:1; background:var(--c-ink-3); }
-.se-rail-item.is-here .se-rail-dash { opacity:1; background:var(--c-ink); }
-.se-rail-item.is-saved .se-rail-dash { background:var(--c-brand); opacity:.8; }
-.se-rail-item.is-saved:hover .se-rail-dash, .se-rail-item.is-saved.is-here .se-rail-dash { background:var(--c-brand); opacity:1; }
-/* The names ride along inside the row and open to the RIGHT, into the panel — never
-   back over the transcript. Clipped by the rail's own width while it is closed. */
-.se-rail-name { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  font-size:var(--fs-xs); line-height:1.3; color:var(--c-ink-3); opacity:0;
-  transition:opacity var(--t-fast) var(--ease); }
+.se-rail-dash { display:block; width:10px; height:1.5px; border-radius:2px; flex:none;
+  background:var(--c-ink-5); opacity:.45;
+  transition:width .2s var(--ease), background-color .2s var(--ease), opacity .2s var(--ease); }
+.se-rail-item:hover .se-rail-dash { opacity:.9; width:14px; }
+.se-rail-item.is-here .se-rail-dash { opacity:1; width:16px; height:2px; background:var(--c-ink); }
+.se-rail-item.is-saved .se-rail-dash { background:var(--c-brand); opacity:.85; }
+.se-rail-item.is-saved.is-here .se-rail-dash { background:var(--c-brand); opacity:1; }
+/* Open: the tick gives way to the chapter's numeral. */
+.se-rail-num { display:none; flex:none; width:20px; font:11px/1 var(--font-mono); color:var(--c-ink-5);
+  font-variant-numeric:tabular-nums; text-align:right; }
+.se-rail:hover .se-rail-dash, .se-rail:focus-within .se-rail-dash { display:none; }
+.se-rail:hover .se-rail-num, .se-rail:focus-within .se-rail-num { display:block; }
+.se-rail-item.is-here .se-rail-num { color:var(--c-ink); }
+.se-rail-item.is-here::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:2px; border-radius:2px; background:var(--c-accent); }
+.se-rail-name { flex:1; min-width:0; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  font-family:var(--font-read); font-size:13.5px; line-height:1.35; color:var(--c-ink-3); opacity:0;
+  transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.se-rail:not(:hover):not(:focus-within) .se-rail-name { max-height:1.35em; }
 .se-rail:hover .se-rail-name, .se-rail:focus-within .se-rail-name { opacity:1; }
-.se-rail-item.is-here .se-rail-name { color:var(--c-ink); }
+.se-rail-item:hover .se-rail-name { color:var(--c-ink); }
+.se-rail-item.is-here .se-rail-name { color:var(--c-ink); font-weight:500; }
+.se-rail-item.is-saved .se-rail-name { font-style:italic; }
+.se-rail-mark { display:none; flex:none; width:10px; height:12px; color:var(--c-brand); }
+.se-rail:hover .se-rail-item.is-saved .se-rail-mark, .se-rail:focus-within .se-rail-item.is-saved .se-rail-mark { display:block; }
 /* A gutter for the dashes, so a closed rail never sits on top of the words. */
 .se-wrap.has-rail .se-log { padding-left:30px; }
 @media (max-width: 720px) { .se-rail { display:none; } .se-wrap.has-rail .se-log { padding-left:0; } }
@@ -9874,9 +9889,7 @@ function playRoomDoor() {
   const d = document.createElement('div');
   d.className = 'room-door';
   d.setAttribute('aria-hidden', 'true');
-  d.innerHTML = Array.from({ length: 8 }, (_, i) =>
-    '<div class="room-door-slat" style="transition-delay:' + (i * 0.08) + 's"></div>').join('') +
-    '<div class="room-door-title"></div>';
+  d.innerHTML = '<div class="room-door-title"></div>';
   room.appendChild(d);
   fillRoomDoorTitle();
   // A forced layout, not requestAnimationFrame: a tab that is not frontmost gets no
@@ -9888,9 +9901,9 @@ function playRoomDoor() {
     if (opened) return;
     opened = true;
     d.classList.add('open');
-    setTimeout(() => d.remove(), 1700);
+    setTimeout(() => d.remove(), 1300);
   };
-  const timer = setTimeout(open, 2600); // long enough to read the name
+  const timer = setTimeout(open, 2800); // long enough to read the name
   d.addEventListener('click', () => { clearTimeout(timer); open(); });
 }
 // The threads usually arrive after the doorway has started, so renderRoomHead()
@@ -24817,6 +24830,30 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     });
   }
 
+  // A chapter's name as it should read in the list. A found one arrives in lower
+  // case and only needs its first letter raised. A saved one is whatever was
+  // selected, often cut mid-word at either end ("enning's The Rage of Innocence: H"),
+  // so it is widened to whole words from the answer itself, and shortened at a word.
+  function railName(c, log){
+    var t = String(c.label || '').replace(/\s+/g, ' ').trim();
+    if(c.kind === 'saved' && log){
+      var turn = log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(c.messageId) : c.messageId) + '"]');
+      var body = turn && (turn.querySelector('.se-body') || turn);
+      var text = body ? body.textContent.replace(/\s+/g, ' ') : '';
+      var snip = String(c.snippet || c.label || '').replace(/\s+/g, ' ').trim();
+      var at = snip ? text.indexOf(snip) : -1;
+      if(at !== -1 && t === snip){
+        var from = at; while(from > 0 && /[\w\u2019'\u00C0-\u024F-]/.test(text[from - 1])) from--;
+        var to = at + snip.length; while(to < text.length && /[\w\u2019'\u00C0-\u024F-]/.test(text[to])) to++;
+        t = text.slice(from, to).trim();
+      }
+      var words = t.split(' ');
+      if(words.length > 9) t = words.slice(0, 9).join(' ') + '\u2026';
+    }
+    t = t.replace(/[\s,;:\u2014-]+$/, '');
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Chapter';
+  }
+
   function paintRail(rail, log, e, repaint){
     loadChapters(e, repaint);
     var chapters = (e.chapters || []).filter(function(c){
@@ -24829,14 +24866,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       return;
     }
     rail.hidden = false;
-    rail.innerHTML = chapters.map(function(c){
+    rail.innerHTML = '<div class="se-rail-head">Chapters<b>' + chapters.length + '</b></div>' + chapters.map(function(c, ci){
+      var name = railName(c, log);
       return '<button type="button" class="se-rail-item' + (c.kind === 'saved' ? ' is-saved' : '') + '"'
         // aria-label, never title: the browser draws its own tooltip from title, and
         // that arrived on top of the rail's own name — two copies of the same words,
         // in two different boxes, at two different offsets.
-        + ' data-chapter="' + qEscAttr(c.messageId) + '" aria-label="' + qEscAttr(c.label || 'Chapter') + '">'
+        + ' data-chapter="' + qEscAttr(c.messageId) + '" aria-label="' + qEscAttr(name) + '">'
         + '<span class="se-rail-dash"></span>'
-        + '<span class="se-rail-name">' + qEsc(c.label || 'Chapter') + '</span></button>';
+        + '<span class="se-rail-num">' + (ci + 1 < 10 ? '0' : '') + (ci + 1) + '</span>'
+        + '<span class="se-rail-name">' + qEsc(name) + '</span>'
+        + (c.kind === 'saved' ? '<svg class="se-rail-mark" viewBox="0 0 10 12" aria-hidden="true"><path d="M1 1h8v10L5 8 1 11z" fill="currentColor"/></svg>' : '')
+        + '</button>';
     }).join('');
 
     // Sit beside the log, not beside the whole panel: the head and the composer are
@@ -24903,46 +24944,55 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // multi-paragraph/bullet selection gets highlighted end to end rather than just
   // its opening words.
   function highlightIn(root, needle, cls){
-    var want = String(needle || '').replace(/\s+/g, ' ').trim();
+    // Searched across the whole answer's text as ONE string, not node by node: a
+    // passage that runs through an italic title ("John Pfaff's <i>Locked In</i>
+    // re-examines…") spans three text nodes, and a node-by-node search never found
+    // it — the jump then landed on the top of a very long answer. Text inside a
+    // cover is skipped, since it is not part of what was said.
+    var want = String(needle || '').replace(/\s+/g, ' ').trim().toLowerCase();
     if(!want) return null;
     root.normalize();
-    var tries = [80, 40, 20].filter(function(n, i){ return i === 0 || n < want.length + 10; });
-    for(var k = 0; k < tries.length; k++){
-      var probe = want.slice(0, tries[k]);
-      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
-      var node;
-      while((node = walker.nextNode())){
-        var i = node.nodeValue.indexOf(probe);
-        if(i === -1) continue;
-        // Collect every text node from here to the end of the passage BEFORE
-        // touching the DOM. Wrapping a node mid-walk reinserts it as a fresh
-        // sibling, and asking the same walker for "next" afterward hands back
-        // the piece just wrapped — double-counting it and cutting the
-        // highlight short after only a node or two.
-        var nodes = [node];
-        var n2;
-        while((n2 = walker.nextNode())) nodes.push(n2);
-        var marks = [];
-        var remaining = want.length;
-        var offset = i;
-        for(var ni = 0; ni < nodes.length && remaining > 0; ni++){
-          var cur = nodes[ni];
-          var avail = cur.nodeValue.length - offset;
-          if(avail <= 0){ offset = 0; continue; }
-          var take = Math.min(avail, remaining);
-          var range = document.createRange();
-          range.setStart(cur, offset);
-          range.setEnd(cur, offset + take);
-          var el = document.createElement('mark');
-          el.className = cls || 'se-jumped';
-          try { range.surroundContents(el); marks.push(el); } catch(err) { /* skip this node, keep going */ }
-          remaining -= take;
-          offset = 0;
-        }
-        return marks[0] || null;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(n){ return n.parentElement && n.parentElement.closest('.se-cover, .se-card') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+    });
+    // flat: the answer's text with runs of whitespace folded to one space;
+    // map[i]: the text node and offset that flat[i] came from.
+    var flat = '', map = [], node, lastSpace = true;
+    while((node = walker.nextNode())){
+      var v = node.nodeValue;
+      for(var i = 0; i < v.length; i++){
+        var ch = v[i];
+        if(/\s/.test(ch)){ if(lastSpace) continue; ch = ' '; lastSpace = true; }
+        else lastSpace = false;
+        flat += ch.toLowerCase(); map.push([node, i]);
       }
     }
-    return null;
+    var at = flat.indexOf(want);
+    if(at === -1){
+      var tries = [80, 40, 20].filter(function(n){ return n < want.length; });
+      for(var k = 0; k < tries.length && at === -1; k++) at = flat.indexOf(want.slice(0, tries[k]));
+    }
+    if(at === -1) return null;
+    var end = Math.min(flat.length, at + want.length) - 1;
+    // One <mark> per text node the passage crosses, wrapped last node first so an
+    // earlier wrap never moves the offsets of a later one.
+    var spans = [];
+    for(var j = at; j <= end; j++){
+      var m = map[j], last = spans[spans.length - 1];
+      if(last && last.node === m[0]) last.to = m[1] + 1;
+      else spans.push({ node: m[0], from: m[1], to: m[1] + 1 });
+    }
+    var first = null;
+    for(var x = spans.length - 1; x >= 0; x--){
+      var sp = spans[x];
+      var range = document.createRange();
+      range.setStart(sp.node, sp.from);
+      range.setEnd(sp.node, sp.to);
+      var el = document.createElement('mark');
+      el.className = cls || 'se-jumped';
+      try { range.surroundContents(el); first = el; } catch(err) { /* skip this piece, keep going */ }
+    }
+    return first;
   }
 
   // Keep a line. The reading of it is written server-side straight after, so this
