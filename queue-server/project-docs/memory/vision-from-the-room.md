@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Zero-tolerance school discipline as a precursor to the carceral state
+
+Zero-tolerance policies replace human educational judgment with rigid, predetermined punishments, acting as an administrative conveyor belt that pushes children out of classrooms and directly into the juvenile justice system.
+
 ## A policy is the frozen posture an entity takes toward its own vulnerability—the automated refusal of attention substituted for real-time care.
 
 Every entity—from an individual psyche to a nation—maintains its boundary by adopting rules of intake, rejection, and punishment. When an institution cannot look at a human being with the care required to see what is happening, it writes a rule that makes looking unnecessary, trickling down across scales.
