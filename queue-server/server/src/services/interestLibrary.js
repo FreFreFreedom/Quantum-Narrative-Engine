@@ -263,15 +263,32 @@ export function resolveInterestEntry(owner, id, input) {
 // Antoine's rule (2026-09-23): what the model recommended should not have to be
 // saved by hand. A title already saved under the same kind is reused as it is,
 // never duplicated because this time the answer also named the author.
+// The same work under two spellings: "The New Jim Crow: Mass Incarceration in
+// the Age of Colorblindness" and "New Jim Crow" are one book.
+function workKey(t) {
+  const raw = String(t || '').replace(/\s+/g, ' ').trim();
+  const main = raw.split(/\s*[:—–]\s*|\s+-\s+/)[0] || raw;
+  return norm(main.length >= 3 ? main : raw).replace(/^(the|a|an|le|la|les|l) /, '');
+}
+function sameWork(a, b) { const x = workKey(a); return !!x && x === workKey(b); }
 export function saveSuggestedWorks(owner, works = []) {
   if (!db || !owner) return [];
   const out = [];
   for (const raw of (Array.isArray(works) ? works : []).slice(0, 12)) {
     const c = candidate(raw);
     if (!c.title || !c.kind) continue;
-    const have = db.prepare('SELECT id,title,creator,year FROM interest_works WHERE owner=? AND kind=?').all(owner, c.kind)
-      .find(w => norm(w.title) === norm(c.title));
-    if (have) { out.push({ ...c, creator: have.creator || c.creator, year: have.year || c.year, id: have.id, added: false }); continue; }
+    // Already in the Library under any spelling — with or without its subtitle,
+    // "The" or not, saved as a film when it is a series — or already on the shelf
+    // as a whole book: reuse it, never add a second copy (his rule, 2026-09-23).
+    const screen = c.kind === 'film' || c.kind === 'series';
+    const have = db.prepare('SELECT id,kind,title,creator,year FROM interest_works WHERE owner=?').all(owner)
+      .find(w => (w.kind === c.kind || (screen && (w.kind === 'film' || w.kind === 'series'))) && sameWork(w.title, c.title));
+    if (have) { out.push({ ...c, kind: have.kind, creator: have.creator || c.creator, year: have.year || c.year, id: have.id, added: false }); continue; }
+    if (c.kind === 'book') {
+      let shelf = null;
+      try { shelf = db.prepare('SELECT id,title,author FROM shelf_books WHERE owner=?').all(owner).find(b => sameWork(b.title, c.title)); } catch (_) {}
+      if (shelf) { out.push({ ...c, creator: shelf.author || c.creator, id: shelf.id, added: false }); continue; }
+    }
     const saved = saveWork(owner, c, true);
     if (!saved) continue;
     // kept=1 so undoing a screenshot import never sweeps these away with it.

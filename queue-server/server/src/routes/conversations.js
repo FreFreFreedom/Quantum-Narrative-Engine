@@ -7,6 +7,7 @@ import * as convos from '../services/conversations.js';
 import * as shelf from '../services/bookShelf.js';
 import * as screen from '../services/screenFacts.js';
 import { bookContents } from '../services/bookContents.js';
+import { workNote } from '../services/workNotes.js';
 import * as bookFacts from '../services/bookFacts.js';
 import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
@@ -137,8 +138,23 @@ export function conversationsRoutes() {
     const it = { id: 'x', kind: String(req.query.kind || 'book'), title: String(req.query.title || '').slice(0, 300),
       creator: String(req.query.creator || '').slice(0, 200), year: String(req.query.year || '').slice(0, 8) };
     if (!it.title.trim()) return res.status(400).json({ error: 'title required' });
-    if (it.kind === 'book') return res.json({ isbn: (await bookFacts.bookFactsFor(owner, [it])).x?.isbn || '' });
-    res.json({ imdbId: (await screen.screenFactsFor(owner, [it])).x?.imdbId || '' });
+    if (it.kind === 'book') { const f = (await bookFacts.bookFactsFor(owner, [it])).x || {}; return res.json({ isbn: f.isbn || '', cover: f.poster || '' }); }
+    const f = (await screen.screenFactsFor(owner, [it])).x || {};
+    res.json({ imdbId: f.imdbId || '', cover: f.poster || '' });
+  }));
+
+  // The film/book card in a Room answer: the catalogue facts plus a 40-word line
+  // on the work written for this conversation (services/workNotes.js).
+  router.get('/:id/work-card', asyncHandler(async (req, res) => {
+    const owner = req.user?.id || 'antoine';
+    const it = { id: 'x', kind: String(req.query.kind || 'film'), title: String(req.query.title || '').slice(0, 300),
+      creator: String(req.query.creator || '').slice(0, 200), year: String(req.query.year || '').slice(0, 8) };
+    if (!it.title.trim()) return res.status(400).json({ error: 'title required' });
+    const facts = it.kind === 'book'
+      ? (await bookFacts.bookFactsFor(owner, [it])).x || {}
+      : (await screen.screenFactsFor(owner, [it])).x || {};
+    const note = await workNote(req.params.id, { ...it, year: facts.year || it.year, overview: facts.overview || '' }, { refresh: req.query.refresh === '1' });
+    res.json({ ...facts, note: note.text });
   }));
 
   // A book's table of contents, from the catalogues in turn (services/bookContents.js).

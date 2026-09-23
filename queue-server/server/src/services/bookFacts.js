@@ -16,6 +16,7 @@
 
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
+import { catalogueIsbns } from './bookContents.js';
 
 let db = null;
 export function bindBookFacts(database) {
@@ -194,7 +195,53 @@ export async function lookupBook(title, creator) {
       }
     }
   }
+  // Neither catalogue answered — Open Library down, Google's anonymous quota
+  // spent, which is exactly when a margin cover used to come up blank. The
+  // Library of Congress still knows the ISBN, and a cover can be had from that.
+  if (!out.cover || !out.isbn) {
+    const isbns = [out.isbn, ...(await catalogueIsbns(title, creator).catch(() => []))].filter(Boolean);
+    if (!out.isbn && isbns.length) out.isbn = isbns.find((i) => i.length === 10) || isbns[0];
+    for (const i of out.cover ? [] : isbns.slice(0, 5)) {
+      const u = await coverFromIsbn(i);
+      if (u) { out.cover = u; break; }
+    }
+  }
   return out;
+}
+
+function isbn10(isbn) {
+  const d = String(isbn || '').replace(/[^0-9Xx]/g, '');
+  if (d.length === 10) return d.toUpperCase();
+  if (d.length !== 13 || !d.startsWith('978')) return '';
+  const core = d.slice(3, 12);
+  let sum = 0; for (let i = 0; i < 9; i++) sum += (10 - i) * Number(core[i]);
+  const c = (11 - sum % 11) % 11;
+  return core + (c === 10 ? 'X' : String(c));
+}
+async function imageSize(url) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch(url, { signal: ctrl.signal, redirect: 'follow' });
+    clearTimeout(timer);
+    if (!r.ok || !/^image\//.test(r.headers.get('content-type') || '')) return 0;
+    return (await r.arrayBuffer()).byteLength;
+  } catch (err) { return 0; }
+}
+// Three places serve a cover from an ISBN alone. Amazon answers a missing one with
+// a 43-byte blank, Google with its own 10,047-byte "no image" card — both refused.
+async function coverFromIsbn(isbn) {
+  const ten = isbn10(isbn);
+  if (ten) {
+    const u = `https://images-na.ssl-images-amazon.com/images/P/${ten}.01.L.jpg`;
+    if (await imageSize(u) > 1000) return u;
+  }
+  const ol = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+  if (await imageSize(ol + '?default=false') > 1500) return ol;
+  const g = `https://books.google.com/books/content?vid=ISBN${isbn}&printsec=frontcover&img=1&zoom=1`;
+  const n = await imageSize(g);
+  if (n > 3000 && n !== 10047) return g;
+  return '';
 }
 
 // A short prose answer that stops mid-sentence — "This story gives him a concrete
@@ -265,7 +312,7 @@ export async function bookFactsFor(owner, items = []) {
   return out;
 }
 
-const RELEVANCE_MAX_WORDS = 100;
+const RELEVANCE_MAX_WORDS = 40;
 
 export async function bookRelevance(owner, item, { refresh = false } = {}) {
   if (!db) return { error: 'no_db' };

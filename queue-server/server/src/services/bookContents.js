@@ -103,6 +103,24 @@ async function fromLibraryOfCongress(title, creator) {
   return null;
 }
 
+// The ISBNs the Library of Congress holds for this book — the cover lookup's
+// fallback when Open Library and Google Books are down or out of quota.
+export async function catalogueIsbns(title, creator) {
+  const who = surname(creator);
+  const q = `dc.title="${mainTitle(title).replace(/"/g, '')}"` + (who ? ` and dc.creator="${who}"` : '');
+  const xml = await getText('http://lx2.loc.gov:210/lcdb?version=1.1&operation=searchRetrieve&maximumRecords=6&recordSchema=marcxml&query=' + encodeURIComponent(q), 15000);
+  const out = [];
+  for (const rec of (xml || '').split(/<record[\s>]/).slice(1)) {
+    const t245 = rec.match(/tag="245"[\s\S]*?<\/datafield>/)?.[0] || '';
+    if (!sameTitle(clean(t245.replace(/<subfield code="c">[\s\S]*?<\/subfield>/, '')), title)) continue;
+    for (const m of rec.matchAll(/tag="020"[\s\S]*?<subfield code="a">([^<]+)</g)) {
+      const d = m[1].replace(/[^0-9Xx]/g, '').toUpperCase();
+      if ((d.length === 10 || d.length === 13) && !out.includes(d)) out.push(d);
+    }
+  }
+  return out;
+}
+
 // ── 2. Open Library ─────────────────────────────────────────────────────────
 async function findWork(title, creator) {
   const who = personName(creator);

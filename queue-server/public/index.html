@@ -1126,15 +1126,39 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    Headings take the reading face at the sizes the answer's own hierarchy needs, not the
    browser's defaults — an h1 inside a conversation is a section, not a title page. */
 .se-body.md { white-space:normal; }
-.se-covered { padding-right:84px; }
-.se-covered .se-cover { float:right; clear:right; margin:4px -84px 10px 0; width:66px; }
-.se-cover > span { display:flex; align-items:center; justify-content:center; width:66px; height:98px; border-radius:3px;
-  background:var(--c-hover-wash) center/cover no-repeat; box-shadow:0 5px 14px rgba(0,0,0,.35);
-  font:var(--fs-2xs)/1.2 var(--font-ui); color:var(--c-ink-5); text-align:center; padding:4px; overflow:hidden;
-  transition:transform .25s ease; }
-.se-cover:hover > span { transform:translateY(-3px); }
 .se-covered::after { content:''; display:block; clear:both; }
-@media (max-width:520px) { .se-covered { padding-right:62px; } .se-covered .se-cover { margin-right:-62px; width:50px; } .se-cover > span { width:50px; height:74px; } }
+.se-cover { width:120px; padding:0; border:0; background:none; cursor:pointer; margin:6px 0 12px; }
+.se-cover.is-right { float:right; clear:right; margin-left:24px; }
+.se-cover.is-left { float:left; clear:left; margin-right:24px; }
+.se-cover > span { display:flex; align-items:center; justify-content:center; width:120px; height:180px; border-radius:3px;
+  background:var(--c-hover-wash) center/cover no-repeat; box-shadow:0 8px 20px rgba(0,0,0,.28);
+  font:var(--fs-xs)/1.25 var(--font-ui); color:var(--c-ink-5); text-align:center; padding:8px; overflow:hidden;
+  transition:transform .25s ease, box-shadow .25s ease; }
+.se-cover:hover > span, .se-cover:focus-visible > span { transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.34); }
+@media (max-width:520px) { .se-cover { width:84px; } .se-cover > span { width:84px; height:126px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } }
+.se-card { position:fixed; z-index:var(--z-popover); width:min(320px, calc(100vw - 16px)); max-height:min(520px, calc(100vh - 16px)); overflow:auto;
+  background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
+  padding:16px 18px 16px; font-family:var(--font-ui); color:var(--c-ink); }
+.se-card-x { position:absolute; top:8px; right:8px; width:24px; height:24px; border:0; background:none; color:var(--c-ink-5); cursor:pointer; border-radius:6px; }
+.se-card-x:hover { background:var(--c-hover-wash); color:var(--c-ink); }
+.se-card-title { display:block; padding-right:22px; font-family:var(--font-read); font-style:italic; font-weight:500; font-size:17px; line-height:1.25; }
+.se-card-meta { margin-top:4px; font-size:var(--fs-xs); color:var(--c-ink-5); letter-spacing:.02em; }
+.se-card-by { margin-top:6px; font-size:var(--fs-sm); color:var(--c-ink-3); }
+.se-card-rate { display:flex; align-items:baseline; gap:6px; margin-top:10px; font-size:var(--fs-sm); color:var(--c-ink-5); }
+.se-card-rate em { font-style:normal; font-weight:600; color:var(--c-ink); font-size:var(--fs-base); }
+.se-card-note { margin:12px 0 0; font-family:var(--font-read); font-size:14px; line-height:1.5; color:var(--c-ink-2); }
+.se-card-wait { margin:12px 0 0; font-size:var(--fs-sm); color:var(--c-ink-5); }
+.se-card h6 { margin:14px 0 6px; font-size:var(--fs-2xs); font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); }
+.se-card-toc { list-style:none; margin:0; padding:0; }
+.se-card-toc li { display:flex; gap:10px; align-items:baseline; padding:4px 0; border-bottom:1px dotted var(--c-border); font-size:var(--fs-sm); }
+.se-card-toc li span { flex:1; min-width:0; }
+.se-card-toc li em { font-style:normal; font-size:var(--fs-2xs); color:var(--c-ink-5); }
+.se-card-toc li.part { font-weight:600; padding-top:8px; }
+.se-card-toc li.sub { padding-left:14px; color:var(--c-ink-3); }
+.se-card-src { display:block; margin-top:6px; font-size:var(--fs-2xs); color:var(--c-ink-5); }
+.se-card-out { display:inline-flex; align-items:center; gap:5px; margin-top:14px; padding:6px 12px; border:1px solid var(--c-border-2); border-radius:999px;
+  font-size:var(--fs-xs); letter-spacing:.04em; color:var(--c-ink); text-decoration:none; }
+.se-card-out:hover { background:var(--c-hover-wash); }
 .se-body.md > :first-child { margin-top:0; }
 .se-body.md > :last-child { margin-bottom:0; }
 .se-body.md h1, .se-body.md h2, .se-body.md h3, .se-body.md h4 {
@@ -1515,10 +1539,19 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-open { display:block; position:relative; width:100%; padding:0; border:0; background:none; cursor:pointer; }
 /* Held at the top of the pane: scrolled loose, its open menu lands in the middle
    of the wall over whatever card is there. */
-.lib-top { position:sticky; top:0; z-index:4; display:flex; gap:8px; padding-bottom:10px; margin-bottom:0;
-  background:var(--c-bg); }
-.lib-top .lib-search { flex:1; min-width:0; border-radius:999px; padding:7px 14px; }
-.lib-top .lib-kind { width:86px; flex:none; border-radius:999px; }
+.lib-top { position:sticky; top:0; z-index:4; padding:12px 0 14px; margin:0; background:var(--c-bg); }
+.lib-find { display:flex; align-items:center; height:38px; border:1px solid var(--c-border); border-radius:999px;
+  background:var(--c-surface); padding:0 4px 0 14px; transition:border-color .2s ease, box-shadow .2s ease; }
+.lib-find:focus-within { border-color:var(--c-border-2); box-shadow:0 0 0 3px var(--c-hover-wash); }
+.lib-find svg { flex:none; width:15px; height:15px; fill:none; stroke:var(--c-ink-5); stroke-width:1.8; stroke-linecap:round; }
+.lib-top .lib-search { flex:1; min-width:0; height:100%; border:0; background:transparent; padding:0 10px; outline:none; box-shadow:none;
+  font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink); }
+.lib-top .lib-search::placeholder { color:var(--c-ink-5); }
+.lib-top .lib-kind { flex:none; width:auto; height:28px; margin:0; border:0; border-left:1px solid var(--c-border); border-radius:0 999px 999px 0;
+  background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  -webkit-appearance:none; appearance:none; padding:0 30px 0 14px; cursor:pointer; box-shadow:none;
+  font-family:var(--font-ui); font-size:var(--fs-xs); letter-spacing:.04em; color:var(--c-ink-3); }
+.lib-top .lib-kind:focus { outline:none; color:var(--c-ink); }
 .lib-bar { display:flex; justify-content:flex-end; margin:0 0 8px; }
 .shelf-name { position:absolute; inset:auto 0 0; padding:18px 7px 7px; font-size:10px; line-height:1.3; text-align:left;
   color:var(--c-ink); background:linear-gradient(transparent,rgba(0,0,0,.86)); border-radius:0 0 6px 6px;
@@ -13347,9 +13380,9 @@ function shelfNotesMarkup(d) {
   const n = shelfNotes && shelfNotes.id === d.id ? shelfNotes : { blurb: d.blurb, relevance: d.relevance };
   const waiting = shelfNotesBusy && !(n.blurb || n.relevance);
   if (waiting) return '<p class="shelf-note-wait">Reading up on it…</p>';
-  return (n.blurb ? '<div class="shelf-note"><h6>What it is</h6><p>' + qEsc(n.blurb.slice(0, 700)) + (n.blurb.length > 700 ? '…' : '') + '</p></div>' : '')
+  return (n.blurb ? '<div class="shelf-note"><h6>What it is</h6><p>' + qEsc(libForty(n.blurb)) + '</p></div>' : '')
     + (n.relevance
-      ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-renote title="Write it again">⟳</button></h6><p>' + qEsc(n.relevance) + '</p></div>'
+      ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-renote title="Write it again">⟳</button></h6><p>' + qEsc(libForty(n.relevance)) + '</p></div>'
       : (shelfNotesBusy ? '<p class="shelf-note-wait">Working out what it gives you…</p>' : ''));
 }
 async function shelfLoadNotes(id, host, refresh) {
@@ -13382,8 +13415,8 @@ function shelfPanel(b) {
           + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a></div>'; })()
     + '</div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
-    + shelfNotesMarkup(d)
     + libContentsMarkup(libShortTitle(d.title), d.author || '', '')
+    + shelfNotesMarkup(d)
     // What sat here when nothing was kept was the book's first page — the
     // publisher's front matter in capitals, which reads as broken text.
     + (d.passages.length
@@ -13500,6 +13533,19 @@ function libContentsMarkup(title, author, isbn) {
     + '</ol><small>' + qEsc(c.source) + '</small></details>';
 }
 
+// "What it is" and "Why it is here" are read at a glance: 40 words at most (his
+// rule, 2026-09-23). Whole sentences while they fit; a first sentence longer than
+// that is cut at the 40th word.
+function libForty(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  const count = (x) => x.split(' ').filter(Boolean).length;
+  if (count(t) <= 40) return t;
+  const sentences = t.match(/[^.!?…]+[.!?…]+["'\u201d\u2019)]*\s*/g) || [];
+  let out = '';
+  for (const x of sentences) { if (count(out + x) > 40) break; out += x; }
+  return out.trim() || t.split(' ').slice(0, 40).join(' ').replace(/[,;:]$/, '') + '…';
+}
 function libStars(v) {
   const pct = Math.max(0, Math.min(100, (Number(v) || 0) * 10));
   return '<span class="stars"><i>★★★★★</i><b style="width:' + pct.toFixed(1) + '%">★★★★★</b></span>';
@@ -13551,11 +13597,11 @@ function libScreenPanel(w) {
     + '</div>' + rating + '</div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
     + book
-    + (f.overview ? '<div class="shelf-note"><h6>' + (w.kind === 'book' ? 'What it is' : 'Synopsis')
-        + '</h6><p>' + qEsc(f.overview.slice(0, 900)) + (f.overview.length > 900 ? '…' : '') + '</p></div>' : '')
     + (w.kind === 'book' ? libContentsMarkup(libShortTitle(w.title), w.creator || '', f.isbn || '') : '')
+    + (f.overview ? '<div class="shelf-note"><h6>' + (w.kind === 'book' ? 'What it is' : 'Synopsis')
+        + '</h6><p>' + qEsc(libForty(f.overview)) + '</p></div>' : '')
     + (f.relevance
-      ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-rescreen title="Write it again">⟳</button></h6><p>' + qEsc(f.relevance) + '</p></div>'
+      ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-rescreen title="Write it again">⟳</button></h6><p>' + qEsc(libForty(f.relevance)) + '</p></div>'
       : (libScreenBusy ? '<p class="shelf-note-wait">Working out what it gives you…</p>' : ''))
     + '<div class="shelf-acts">'
     + (() => { const out = libOutLink(w, f); return out
@@ -13611,10 +13657,11 @@ async function renderInterestLibrary(opts) {
   if (discover) { host.innerHTML = '<div class="room-rec-host" id="roomMediaHost"></div>'; openRoomRecommendations('media'); return; }
 
   const cols = 5 - shelfSize();
-  host.innerHTML = '<div class="lib-top"><input class="lib-search" aria-label="Search library" placeholder="Search library">'
+  host.innerHTML = '<div class="lib-top"><div class="lib-find"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>'
+    + '<input class="lib-search" type="search" aria-label="Search library" placeholder="Search the library">'
     + '<select class="lib-kind" aria-label="Reference kind"><option value="">All</option><option value="book">Books</option>'
     + '<option value="film">Films</option><option value="series">Series</option><option value="paper">Papers</option>'
-    + '<option value="project">Projects</option><option value="passage">Passages</option></select></div>'
+    + '<option value="project">Projects</option><option value="passage">Passages</option></select></div></div>'
     + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><span class="shelf-size" title="Cover size">'
     + '<i class="shelf-ticks"><b></b><b></b><b></b><b></b></i><i class="shelf-fill"></i>'
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
@@ -25703,54 +25750,138 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return words ? words.length : 0;
   }
 
-  // The books, films and series an answer suggested hang in the right margin,
-  // each beside the paragraph that talks about it (Antoine's pick, 2026-09-23).
-  // A work the text never names by title waits beside the last paragraph.
-  // Clicking a cover goes out to Amazon or IMDb.
-  function seCoverNorm(t){ return String(t || '').toLowerCase().replace(/[\u2018\u2019']/g, "'").replace(/\s+/g, ' ').trim(); }
-  function seHangCovers(html, works){
+  // The books, films and series an answer suggested sit inside the text, each
+  // beside the paragraph that talks about it, alternating right and left with the
+  // words wrapping round them (Antoine's pick "C", 2026-09-23). A work the text
+  // never names by title waits beside the last paragraph.
+  // Clicking a cover opens its card, not a website: a book's contents, a film's
+  // rating and a line written for this conversation, and a small button out to
+  // Amazon or IMDb.
+  function seCoverNorm(t){ return String(t || '').toLowerCase().replace(/[‘’']/g, "'").replace(/\s+/g, ' ').trim(); }
+  function seHangCovers(html, works, convoId){
     var box = document.createElement('div'); box.innerHTML = html;
     var blocks = Array.prototype.slice.call(box.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'))
       .filter(function(b){ return !b.parentElement.closest('li, blockquote'); });
     if(!blocks.length) return html;
-    works.forEach(function(w){
+    works.forEach(function(w, i){
       var name = seCoverNorm(libShortTitle(w.title).replace(/…$/, ''));
       var at = blocks.find(function(b){ return name && seCoverNorm(b.textContent).indexOf(name) >= 0; }) || blocks[blocks.length - 1];
-      var out = libOutLink({ kind: w.kind, title: w.title, creator: w.creator || '' }, seOutFacts[roomMediaArtKey(w)] || null);
       var key = roomMediaArtKey(w), art = roomMediaArtCache.get(key) || '';
-      var a = document.createElement('a');
-      a.className = 'se-cover'; a.href = out.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-      a.title = w.title + (w.creator ? ' — ' + w.creator : '') + ' · ' + out.label;
-      a.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '"'
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'se-cover ' + (i % 2 ? 'is-left' : 'is-right');
+      btn.title = w.title + (w.creator ? ' — ' + w.creator : '');
+      btn.dataset.convo = convoId || '';
+      btn.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '"'
         + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"' : '') + '>' + (art ? '' : qEsc(libShortTitle(w.title))) + '</span>';
-      at.insertBefore(a, at.firstChild);
+      at.insertBefore(btn, at.firstChild);
     });
     return '<div class="se-covered">' + box.innerHTML + '</div>';
   }
-  // What the catalogues say each cover's own page is — the ISBN or the IMDb id —
-  // so a click lands on the book or the film, never on a search for it.
+  // The server's catalogue facts first (scored matches, and an ISBN fallback that
+  // still works when Open Library is down), the browser's own lookup second.
   var seOutFacts = {};
-  function seResolveOut(a, span){
-    var key = span.dataset.coverArt;
-    if (seOutFacts[key] || a.dataset.resolving) return;
-    a.dataset.resolving = '1';
-    api('/api/convos/outlink?kind=' + encodeURIComponent(span.dataset.coverKind) + '&title=' + encodeURIComponent(span.dataset.coverTitle)
-      + '&creator=' + encodeURIComponent(span.dataset.coverCreator) + '&year=' + encodeURIComponent(span.dataset.coverYear || ''))
-      .then(function(f){
-        seOutFacts[key] = f || {};
-        if (!f || !(f.isbn || f.imdbId)) return;
-        var out = libOutLink({ kind: span.dataset.coverKind, title: span.dataset.coverTitle, creator: span.dataset.coverCreator }, f);
-        document.querySelectorAll('.se-cover [data-cover-art="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]').forEach(function(s){ s.parentElement.href = out.url; });
-      }).catch(function(){ seOutFacts[key] = {}; });
-  }
-  function seLoadCovers(root){
-    root.querySelectorAll('.se-cover [data-cover-art]').forEach(function(el){ seResolveOut(el.parentElement, el); });
-    root.querySelectorAll('[data-cover-art]:not([style])').forEach(function(el){
-      roomFindMediaArt({ kind: el.dataset.coverKind, title: el.dataset.coverTitle, creator: el.dataset.coverCreator, year: el.dataset.coverYear }).then(function(u){
-        if(u && el.isConnected){ el.style.backgroundImage = 'url("' + u.replace(/"/g, '%22') + '")'; el.textContent = ''; }
-      });
+  function sePaintArt(key, u){
+    if(!u) return;
+    roomMediaArtCache.set(key, u);
+    document.querySelectorAll('[data-cover-art="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]').forEach(function(el){
+      el.style.backgroundImage = 'url("' + u.replace(/"/g, '%22') + '")'; el.textContent = '';
     });
   }
+  function seLoadCovers(root){
+    root.querySelectorAll('.se-cover [data-cover-art]').forEach(function(el){
+      var key = el.dataset.coverArt, d = el.dataset;
+      if (seOutFacts[key]) return;
+      seOutFacts[key] = { pending: true };
+      api('/api/convos/outlink?kind=' + encodeURIComponent(d.coverKind) + '&title=' + encodeURIComponent(d.coverTitle)
+        + '&creator=' + encodeURIComponent(d.coverCreator) + '&year=' + encodeURIComponent(d.coverYear || ''))
+        .catch(function(){ return {}; })
+        .then(function(f){
+          seOutFacts[key] = f || {};
+          if (f && /^https:\/\//.test(f.cover || '')) { sePaintArt(key, f.cover); return; }
+          if (roomMediaArtCache.get(key)) return;
+          roomFindMediaArt({ kind: d.coverKind, title: d.coverTitle, creator: d.coverCreator, year: d.coverYear })
+            .then(function(u){ sePaintArt(key, u); });
+        });
+    });
+  }
+
+  // ---------- The card a cover opens ----------
+  var seCard = null, seCardFor = null;
+  function seCardClose(){ if (seCard) { seCard.remove(); seCard = null; seCardFor = null; } }
+  function seCardPlace(anchor){
+    if (!seCard || !anchor.isConnected) return;
+    var r = anchor.getBoundingClientRect(), w = seCard.offsetWidth, h = seCard.offsetHeight;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var left = r.left - w - 14 >= 8 ? r.left - w - 14 : Math.min(r.right + 14, vw - w - 8);
+    if (vw < 560) left = Math.max(8, (vw - w) / 2);
+    var top = Math.max(8, Math.min(r.top, vh - h - 8));
+    seCard.style.left = left + 'px'; seCard.style.top = top + 'px';
+  }
+  function seCardHtml(d, card){
+    var kind = d.coverKind, book = kind === 'book';
+    var f = card || {};
+    var out = libOutLink({ kind: kind, title: d.coverTitle, creator: d.coverCreator }, f.isbn || f.imdbId ? f : (seOutFacts[d.coverArt] || null));
+    var meta = [];
+    if (book) { if (d.coverCreator) meta.push(d.coverCreator); if (f.year || d.coverYear) meta.push(f.year || d.coverYear); }
+    else {
+      if (f.year || d.coverYear) meta.push(f.year || d.coverYear);
+      if (f.runtime) meta.push(kind === 'series' ? f.runtime + ' min/ep' : Math.floor(f.runtime / 60) + 'h ' + String(f.runtime % 60).padStart(2, '0'));
+      if (f.seasons) meta.push(f.seasons + (f.seasons === 1 ? ' season' : ' seasons'));
+      (f.genres || []).forEach(function(g){ meta.push(g); });
+    }
+    var html = '<button type="button" class="se-card-x" data-card-close aria-label="Close">✕</button>'
+      + '<b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
+      + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '');
+    if (!book) {
+      if (f.by) html += '<div class="se-card-by">' + (kind === 'series' ? 'Created by ' : 'Directed by ') + qEsc(f.by) + '</div>';
+      if (f.rating) html += '<div class="se-card-rate">' + libStars(f.rating) + '<em>' + Number(f.rating).toFixed(1) + '</em><span>'
+        + libVotes(f.votes) + (f.ratingFrom === 'imdb' ? ' votes on IMDb' : ' votes') + '</span></div>';
+      if (f.fromBook) html += '<div class="se-card-by">Based on a book' + (f.book ? ' — in your Library' : '') + '</div>';
+      html += card ? (f.note ? '<p class="se-card-note">' + qEsc(f.note) + '</p>' : '') : '<p class="se-card-wait">Looking it up…</p>';
+    } else {
+      var c = libContents[libNorm(libShortTitle(d.coverTitle)) + '|' + libNorm(d.coverCreator)];
+      if (!c || c.busy) html += '<p class="se-card-wait">Looking for the contents…</p>';
+      else if (c.entries.length) html += '<h6>Contents</h6><ol class="se-card-toc">' + c.entries.map(function(x){
+          return '<li class="' + (x.l ? 'sub' : (/^(part|pt\.|book|section|volume)\b/i.test(x.t) ? 'part' : '')) + '"><span>' + qEsc(x.t) + '</span>' + (x.p ? '<em>' + qEsc(x.p) + '</em>' : '') + '</li>';
+        }).join('') + '</ol><small class="se-card-src">' + qEsc(c.source) + '</small>';
+      else html += '<p class="se-card-wait">No catalogue lists its contents.</p>';
+    }
+    html += '<a class="se-card-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>';
+    return html;
+  }
+  function seCardOpen(btn){
+    var span = btn.querySelector('[data-cover-art]'); if (!span) return;
+    var d = span.dataset;
+    if (seCardFor === d.coverArt) { seCardClose(); return; }
+    seCardClose();
+    seCard = document.createElement('div'); seCard.className = 'se-card'; seCard.setAttribute('role', 'dialog');
+    seCardFor = d.coverArt;
+    document.body.appendChild(seCard);
+    var paint = function(card){ if (!seCard || seCardFor !== d.coverArt) return; seCard.innerHTML = seCardHtml(d, card); seCardPlace(btn); };
+    paint(null);
+    if (d.coverKind === 'book') {
+      var key = libNorm(libShortTitle(d.coverTitle)) + '|' + libNorm(d.coverCreator);
+      if (!libContents[key]) {
+        libContents[key] = { busy: true };
+        api('/api/convos/contents?title=' + encodeURIComponent(libShortTitle(d.coverTitle)) + '&author=' + encodeURIComponent(d.coverCreator || ''))
+          .then(function(o){ libContents[key] = { entries: o.entries || [], source: o.source || '' }; })
+          .catch(function(){ libContents[key] = { entries: [], source: '' }; })
+          .then(function(){ paint(seOutFacts[d.coverArt] || {}); });
+      } else paint(seOutFacts[d.coverArt] || {});
+    } else if (btn.dataset.convo) {
+      api('/api/convos/' + encodeURIComponent(btn.dataset.convo) + '/work-card?kind=' + encodeURIComponent(d.coverKind) + '&title=' + encodeURIComponent(d.coverTitle)
+        + '&creator=' + encodeURIComponent(d.coverCreator) + '&year=' + encodeURIComponent(d.coverYear || ''))
+        .then(function(card){ paint(card || {}); }).catch(function(){ paint({}); });
+    }
+  }
+  document.addEventListener('click', function(ev){
+    var btn = ev.target.closest && ev.target.closest('.se-cover');
+    if (btn) { ev.preventDefault(); seCardOpen(btn); return; }
+    if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
+  });
+  document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') seCardClose(); });
+  window.addEventListener('resize', seCardClose);
+  document.addEventListener('scroll', function(ev){ if (seCard && seCard.contains(ev.target)) return; seCardClose(); }, true);
 
   function logHtml(e){
     var html = '';
@@ -25820,7 +25951,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var shown = (you && m.body) ? m.body : m.text;
       var renderedBody = plan ? qEsc(m.text) : fmtBody(shown, !you, m.id || null);
       if(!you && !plan) renderedBody = srcStripHtml(renderedBody);
-      if(!you && !plan && m.works && m.works.length) renderedBody = seHangCovers(renderedBody, m.works);
+      if(!you && !plan && m.works && m.works.length) renderedBody = seHangCovers(renderedBody, m.works, e.convoId);
       var showWordCount = !you && !plan && (e.type === 'open' || e.type === 'side');
       var wordCountHtml = '';
       if(showWordCount){

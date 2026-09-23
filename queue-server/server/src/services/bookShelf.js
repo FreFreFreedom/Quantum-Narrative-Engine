@@ -254,7 +254,7 @@ async function fetchBlurb(title, author) {
   } catch (err) { return ''; }
 }
 
-const RELEVANCE_MAX_WORDS = 110;
+const RELEVANCE_MAX_WORDS = 40;
 
 // What this book is doing on THIS shelf: the second summary, written against
 // what the app already knows he is working on rather than against the book in

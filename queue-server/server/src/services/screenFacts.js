@@ -41,6 +41,9 @@ export function bindScreenFacts(database) {
   // Older rows predate the IMDb lookup.
   try { db.exec('ALTER TABLE screen_facts ADD COLUMN imdb_id TEXT'); } catch (err) { /* already there */ }
   try { db.exec("ALTER TABLE screen_facts ADD COLUMN rating_from TEXT NOT NULL DEFAULT 'tmdb'"); } catch (err) { /* already there */ }
+  // Runtime, genres, who made it, where from — the scannable line under the
+  // title in the Room's film card. Rows from before it are fetched once more.
+  try { db.exec('ALTER TABLE screen_facts ADD COLUMN extra TEXT'); } catch (err) { /* already there */ }
 }
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -76,7 +79,7 @@ async function fetchFacts(kind, title, year) {
   let hit = (found?.results || [])[0];
   if (!hit && year) hit = ((await tmdbFetch(path, { query: title }))?.results || [])[0];
   if (!hit) return null;
-  const detail = await tmdbFetch(`${kind === 'series' ? '/tv' : '/movie'}/${hit.id}`, { append_to_response: 'keywords,external_ids' });
+  const detail = await tmdbFetch(`${kind === 'series' ? '/tv' : '/movie'}/${hit.id}`, { append_to_response: 'keywords,external_ids,credits' });
   const words = [...(detail?.keywords?.keywords || []), ...(detail?.keywords?.results || [])].map((k) => k.name || '').join(', ');
   const imdbId = String(detail?.imdb_id || detail?.external_ids?.imdb_id || '');
   let rating = Number(hit.vote_average || 0), votes = Number(hit.vote_count || 0), from = 'tmdb';
@@ -94,6 +97,15 @@ async function fetchFacts(kind, title, year) {
     year: String(hit.release_date || hit.first_air_date || '').slice(0, 4),
     overview: String(hit.overview || detail?.overview || '').slice(0, 2000),
     from_book: BOOK_KEYWORDS.test(words) ? 1 : 0,
+    extra: JSON.stringify({
+      runtime: kind === 'series' ? Number((detail?.episode_run_time || [])[0] || 0) : Number(detail?.runtime || 0),
+      seasons: kind === 'series' ? Number(detail?.number_of_seasons || 0) : 0,
+      genres: (detail?.genres || []).map((g) => g.name).slice(0, 2),
+      by: kind === 'series'
+        ? (detail?.created_by || []).map((p) => p.name).slice(0, 2).join(', ')
+        : (detail?.credits?.crew || []).filter((p) => p.job === 'Director').map((p) => p.name).slice(0, 2).join(', '),
+      country: (detail?.production_countries || detail?.origin_country || []).map((c) => c.iso_3166_1 || c).slice(0, 2).join(', '),
+    }),
   };
 }
 
@@ -111,6 +123,7 @@ function shape(owner, row, asked) {
     ratingFrom: row.rating_from || 'tmdb',
     imdbId: row.imdb_id || '',
     relevance: row.relevance || '',
+    ...(() => { try { return JSON.parse(row.extra || '{}'); } catch (e) { return {}; } })(),
   };
 }
 
@@ -128,17 +141,17 @@ export async function screenFactsFor(owner, items = []) {
     let row = rowOf(kind, it.title, it.year);
     // A row cached before IMDb was wired in has no tconst: fetch it once more so
     // the number becomes the real one.
-    if ((!row || (!row.imdb_id && row.rating_from !== 'imdb')) && fetched < FETCH_CAP) {
+    if ((!row || (!row.imdb_id && row.rating_from !== 'imdb') || row.extra == null) && fetched < FETCH_CAP) {
       fetched += 1;
       const facts = await fetchFacts(kind, it.title, it.year);
       if (facts) {
-        db.prepare(`INSERT INTO screen_facts (key, kind, title, year, tmdb_id, imdb_id, rating_from, poster, rating, votes, overview, from_book)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        db.prepare(`INSERT INTO screen_facts (key, kind, title, year, tmdb_id, imdb_id, rating_from, poster, rating, votes, overview, from_book, extra)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                     ON CONFLICT(key) DO UPDATE SET poster=excluded.poster, rating=excluded.rating, votes=excluded.votes,
                       imdb_id=excluded.imdb_id, rating_from=excluded.rating_from,
-                      overview=excluded.overview, from_book=excluded.from_book, fetched_at=CURRENT_TIMESTAMP`)
+                      overview=excluded.overview, from_book=excluded.from_book, extra=excluded.extra, fetched_at=CURRENT_TIMESTAMP`)
           .run(keyOf(kind, it.title, it.year), kind, it.title, String(it.year || ''), facts.tmdb_id, facts.imdb_id,
-            facts.rating_from, facts.poster, facts.rating, facts.votes, facts.overview, facts.from_book);
+            facts.rating_from, facts.poster, facts.rating, facts.votes, facts.overview, facts.from_book, facts.extra);
         row = rowOf(kind, it.title, it.year);
       }
     }
@@ -156,7 +169,7 @@ export async function screenFactsFor(owner, items = []) {
   return out;
 }
 
-const RELEVANCE_MAX_WORDS = 90;
+const RELEVANCE_MAX_WORDS = 40;
 
 // The second reading: not what it is, but what it is doing here.
 export async function screenRelevance(owner, item, { refresh = false } = {}) {
