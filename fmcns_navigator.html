@@ -38,6 +38,7 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
    offline. Both are variable (one file covers 400-700) and latin-subset, ~232KB total.
    Literata: SIL OFL 1.1, github.com/googlefonts/literata.
    Source Sans 3: SIL OFL 1.1, github.com/adobe-fonts/source-sans.
+   Cinzel (added 2026-09-23, Room titles): SIL OFL 1.1, github.com/NDISCOVER/Cinzel.
    Files came from the Google Fonts latin subset; to update, re-fetch the woff2 the css2
    endpoint names for the latin unicode-range and drop it in queue-server/public/fonts/.
    Opening the master file over file:// cannot resolve /fonts, so every stack below must
@@ -46,6 +47,8 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
   src:url('/fonts/literata-normal.woff2') format('woff2'); }
 @font-face { font-family:'Literata'; font-style:italic; font-weight:400 700; font-display:swap;
   src:url('/fonts/literata-italic.woff2') format('woff2'); }
+@font-face { font-family:'Cinzel'; font-style:normal; font-weight:400 900; font-display:swap;
+  src:url('/fonts/cinzel-normal.woff2') format('woff2'); }
 @font-face { font-family:'Source Sans 3'; font-style:normal; font-weight:400 700; font-display:swap;
   src:url('/fonts/sourcesans3-normal.woff2') format('woff2'); }
 @font-face { font-family:'Source Sans 3'; font-style:italic; font-weight:400 700; font-display:swap;
@@ -872,7 +875,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .ws-room { flex:1; min-width:0; min-height:0; display:none; position:relative; }
 .ws-room.open { display:flex; }
 /* Entering the Room: a dark doorway with a breathing point of light, the thread's
-   name settling in the reading font, then an iris opening from that point onto the
+   name settling in Cinzel, then an iris opening from that point onto the
    Room itself. Antoine picked it (#8, "Entering, not loading") from the 2026-09-23
    mockups. Plays only on arriving — not on a thread switch — and a click skips it.
    The hole is a mask on the veil, so what shows through is the live Room, not a copy. */
@@ -885,7 +888,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-door-eye { position:absolute; left:50%; top:52%; width:10px; height:10px; margin:-5px; border-radius:50%;
   background:var(--c-accent); box-shadow:0 0 30px var(--c-accent); animation:roomDoorBreathe 1.2s ease-in-out infinite; }
 @keyframes roomDoorBreathe { 50% { transform:scale(1.8); opacity:.6; } }
-.room-door-title { position:absolute; left:8%; right:8%; top:40%; text-align:center; font-family:var(--room-font, var(--font-read));
+.room-door-title { position:absolute; left:8%; right:8%; top:40%; text-align:center; font-family:'Cinzel', var(--font-read); font-weight:500;
   font-size:clamp(20px, 3vw, 34px); color:var(--c-ink); letter-spacing:.3em; opacity:0;
   transition:opacity .9s ease, letter-spacing 1.6s ease; }
 .room-door.lit .room-door-title { opacity:1; letter-spacing:.06em; }
