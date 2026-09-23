@@ -13441,6 +13441,17 @@ function libShortTitle(t) {
 // Out to where the thing itself lives: a book on Amazon, a film or series on
 // IMDb. Deep-linked when we hold the identifier the catalogue gave us (an ISBN,
 // a tconst), a search for it when we do not — never a dead link.
+// Amazon's /dp/ address takes an ISBN-10 (it is the book's ASIN); a 978 ISBN-13
+// lands on a search page instead, so it is converted first.
+function libIsbn10(isbn) {
+  const d = String(isbn || '').replace(/[^0-9Xx]/g, '');
+  if (d.length === 10) return d.toUpperCase();
+  if (d.length !== 13 || !d.startsWith('978')) return '';
+  const core = d.slice(3, 12);
+  let sum = 0; for (let i = 0; i < 9; i++) sum += (10 - i) * Number(core[i]);
+  const c = (11 - sum % 11) % 11;
+  return core + (c === 10 ? 'X' : String(c));
+}
 function libOutLink(w, f) {
   if (w.kind === 'film' || w.kind === 'series') {
     const id = (f && f.imdbId) || '';
@@ -13449,7 +13460,7 @@ function libOutLink(w, f) {
               : 'https://www.imdb.com/find/?s=tt&q=' + encodeURIComponent(w.title) };
   }
   if (w.kind === 'book') {
-    const isbn = (f && f.isbn) || '';
+    const isbn = libIsbn10(f && f.isbn);
     const q = [libShortTitle(w.title), w.creator || ''].filter(Boolean).join(' ');
     return { label: 'Amazon',
       url: isbn ? 'https://www.amazon.com/dp/' + encodeURIComponent(isbn)
@@ -25705,7 +25716,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     works.forEach(function(w){
       var name = seCoverNorm(libShortTitle(w.title).replace(/…$/, ''));
       var at = blocks.find(function(b){ return name && seCoverNorm(b.textContent).indexOf(name) >= 0; }) || blocks[blocks.length - 1];
-      var out = libOutLink({ kind: w.kind, title: w.title, creator: w.creator || '' }, null);
+      var out = libOutLink({ kind: w.kind, title: w.title, creator: w.creator || '' }, seOutFacts[roomMediaArtKey(w)] || null);
       var key = roomMediaArtKey(w), art = roomMediaArtCache.get(key) || '';
       var a = document.createElement('a');
       a.className = 'se-cover'; a.href = out.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
@@ -25716,7 +25727,24 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     });
     return '<div class="se-covered">' + box.innerHTML + '</div>';
   }
+  // What the catalogues say each cover's own page is — the ISBN or the IMDb id —
+  // so a click lands on the book or the film, never on a search for it.
+  var seOutFacts = {};
+  function seResolveOut(a, span){
+    var key = span.dataset.coverArt;
+    if (seOutFacts[key] || a.dataset.resolving) return;
+    a.dataset.resolving = '1';
+    api('/api/convos/outlink?kind=' + encodeURIComponent(span.dataset.coverKind) + '&title=' + encodeURIComponent(span.dataset.coverTitle)
+      + '&creator=' + encodeURIComponent(span.dataset.coverCreator) + '&year=' + encodeURIComponent(span.dataset.coverYear || ''))
+      .then(function(f){
+        seOutFacts[key] = f || {};
+        if (!f || !(f.isbn || f.imdbId)) return;
+        var out = libOutLink({ kind: span.dataset.coverKind, title: span.dataset.coverTitle, creator: span.dataset.coverCreator }, f);
+        document.querySelectorAll('.se-cover [data-cover-art="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]').forEach(function(s){ s.parentElement.href = out.url; });
+      }).catch(function(){ seOutFacts[key] = {}; });
+  }
   function seLoadCovers(root){
+    root.querySelectorAll('.se-cover [data-cover-art]').forEach(function(el){ seResolveOut(el.parentElement, el); });
     root.querySelectorAll('[data-cover-art]:not([style])').forEach(function(el){
       roomFindMediaArt({ kind: el.dataset.coverKind, title: el.dataset.coverTitle, creator: el.dataset.coverCreator, year: el.dataset.coverYear }).then(function(u){
         if(u && el.isConnected){ el.style.backgroundImage = 'url("' + u.replace(/"/g, '%22') + '")'; el.textContent = ''; }

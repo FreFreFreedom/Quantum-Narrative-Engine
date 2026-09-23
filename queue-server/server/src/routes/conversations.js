@@ -130,6 +130,17 @@ export function conversationsRoutes() {
     res.json({ facts: { ...onScreen, ...inPrint } });
   }));
 
+  // Where a margin cover should go: the book's own Amazon page (its ISBN) or the
+  // film's own IMDb page (its tconst). Same cached facts the Library uses.
+  router.get('/outlink', asyncHandler(async (req, res) => {
+    const owner = req.user?.id || 'antoine';
+    const it = { id: 'x', kind: String(req.query.kind || 'book'), title: String(req.query.title || '').slice(0, 300),
+      creator: String(req.query.creator || '').slice(0, 200), year: String(req.query.year || '').slice(0, 8) };
+    if (!it.title.trim()) return res.status(400).json({ error: 'title required' });
+    if (it.kind === 'book') return res.json({ isbn: (await bookFacts.bookFactsFor(owner, [it])).x?.isbn || '' });
+    res.json({ imdbId: (await screen.screenFactsFor(owner, [it])).x?.imdbId || '' });
+  }));
+
   // A book's table of contents, from the catalogues in turn (services/bookContents.js).
   router.get('/contents', asyncHandler(async (req, res) => {
     const title = String(req.query.title || '').slice(0, 300);
