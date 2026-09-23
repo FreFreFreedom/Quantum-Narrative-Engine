@@ -259,6 +259,27 @@ export function resolveInterestEntry(owner, id, input) {
     return { ok: true };
   });
 }
+// Books, films and series a Room answer suggested go straight into the Library —
+// Antoine's rule (2026-09-23): what the model recommended should not have to be
+// saved by hand. A title already saved under the same kind is reused as it is,
+// never duplicated because this time the answer also named the author.
+export function saveSuggestedWorks(owner, works = []) {
+  if (!db || !owner) return [];
+  const out = [];
+  for (const raw of (Array.isArray(works) ? works : []).slice(0, 12)) {
+    const c = candidate(raw);
+    if (!c.title || !c.kind) continue;
+    const have = db.prepare('SELECT id,title,creator,year FROM interest_works WHERE owner=? AND kind=?').all(owner, c.kind)
+      .find(w => norm(w.title) === norm(c.title));
+    if (have) { out.push({ ...c, creator: have.creator || c.creator, year: have.year || c.year, id: have.id, added: false }); continue; }
+    const saved = saveWork(owner, c, true);
+    if (!saved) continue;
+    // kept=1 so undoing a screenshot import never sweeps these away with it.
+    db.prepare('UPDATE interest_works SET kept=1 WHERE id=?').run(saved.id);
+    out.push({ ...c, id: saved.id, added: saved.added });
+  }
+  return out;
+}
 export function listInterests(owner, { query = '', kind = '', limit = 100, offset = 0 } = {}) {
   if (!db || !owner) return [];
   const words = norm(clean(query, 300)).split(' ').filter(Boolean).slice(0, 12);

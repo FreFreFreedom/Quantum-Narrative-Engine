@@ -13347,7 +13347,11 @@ function shelfPanel(b) {
   return '<div class="shelf-panel">'
     + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
     + '<div><b>' + qEsc(d.title) + '</b>' + (d.author ? '<small>' + qEsc(d.author) + '</small>' : '')
-    + '<div class="shelf-facts">' + facts + '</div></div>'
+    + '<div class="shelf-facts">' + facts + '</div>'
+    + (() => { const out = libOutLink({ kind: 'book', title: d.title, creator: d.author || '' }, null);
+        return '<div class="shelf-acts"><a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
+          + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a></div>'; })()
+    + '</div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
     + shelfNotesMarkup(d)
     // What sat here when nothing was kept was the book's first page — the
@@ -23219,6 +23223,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (meta.answered) out.answered = meta.answered;
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) out.attachments = meta.attachments;
+        if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
       }
       return out;
     });
@@ -23356,7 +23361,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var arrivedWhole = !e.stream;
           // id carried straight from the save, so the answer he is reading can be
           // marked as a chapter right away instead of only after a reload.
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0 });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0, works: d.works || null });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           // /interview, /grill-me and "answer now" all report the mode they left the
           // conversation in, so the toggle and the composer reflect it at once — no
@@ -23440,7 +23445,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           e.note = d.message || 'Could not answer now — try again.';
         } else if(d.text){
           var arrivedWhole = !e.stream;
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, works: d.works || null });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           e.clarify = d.mode || 'normal';
           if(e.type === 'open' && onDone) onDone();

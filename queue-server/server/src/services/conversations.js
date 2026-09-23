@@ -38,7 +38,7 @@ import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplici
 import { chapterize } from './chapters.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
-import { bindInterestLibrary, interestContext, INTEREST_TOOLS, interestTool } from './interestLibrary.js';
+import { bindInterestLibrary, interestContext, INTEREST_TOOLS, interestTool, saveSuggestedWorks } from './interestLibrary.js';
 import { referenceQuote, REFERENCE_TOOLS, referenceTool } from './referenceLibrary.js';
 import { bindBookShelf, shelfContext, BOOK_TOOLS, bookTool } from './bookShelf.js';
 import { bindScreenFacts } from './screenFacts.js';
@@ -1956,6 +1956,30 @@ const studioDispatch = (convoId) => (name, input) => name === LINKED_CONVERSATIO
   ? bookTool(db.prepare('SELECT created_by FROM convos WHERE id=?').get(convoId)?.created_by,name,input)
   : dispatchStudioTool(db, name, input);
 
+// When he asks for books, films or series, the works the answer suggests are
+// picked out of it, saved to the Library, and ride on the message so the Room can
+// hang their covers under it. One small call on the cheap lane, and only on a
+// turn whose question asked for something to read or watch — any failure just
+// means no covers, never a lost answer.
+const WORKS_ASK = /\b(recommend\w*|suggest\w*|books?|novels?|reads?|reading|films?|movies?|watch\w*|documentar\w*|series|shows?|livres?|romans?|lire|lectures?|recommand\w*|sugg[eè]r\w*|regarder)\b/i;
+async function suggestedWorks(convoId, userId, answer) {
+  const text = String(answer || '');
+  if (text.length < 80 || !WORKS_ASK.test(lastUserText(convoId))) return null;
+  const result = await generateText({
+    feature: 'summary', maxTokens: 900, label: 'conversations:works', timeoutMs: 20_000, maxAttempts: 2,
+    prompt: 'Below is an answer from a reading-and-film advisor. List every book, film and TV series the answer recommends or puts forward as a suggestion. Skip works it only mentions in passing as background.\n'
+      + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series","title":"exact title, no subtitle","creator":"author for a book, director for a film, creator for a series","year":"year if known"}]}. {"works":[]} if there are none.\n\n'
+      + '=== ANSWER ===\n' + text.slice(0, 12000),
+  });
+  if (result.error) return null;
+  const list = firstJson(result.text)?.works;
+  if (!Array.isArray(list) || !list.length) return null;
+  const saved = saveSuggestedWorks(userId || 'antoine', list);
+  if (!saved.length) return null;
+  if (saved.some(w => w.added)) broadcastAll('recommendations:updated', {});
+  return saved.map(({ kind, title, creator, year }) => ({ kind, title, creator, year }));
+}
+
 function saveAssistantTurn(convoId, text, meta = null) {
   const mid = randomUUID();
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta) VALUES (?,?,?,?,?,?)`)
@@ -2107,14 +2131,15 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // The id travels back with the answer. Without it the just-arrived turn has no
   // anchor on screen until the conversation is reloaded, and Chapter — which needs
   // a message to point at — is hidden on exactly the answer he is reading.
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}) });
+  const works = await suggestedWorks(convoId, userId, result.text);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   chapterize(convoId); // and re-read where the subject changed, same discipline
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, cost: spentUsd };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, cost: spentUsd, works };
 }
 
 // The non-streaming twin. Reached only when the client does not ask for NDJSON,
@@ -2165,14 +2190,15 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   // The id travels back with the answer. Without it the just-arrived turn has no
   // anchor on screen until the conversation is reloaded, and Chapter — which needs
   // a message to point at — is hidden on exactly the answer he is reading.
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
+  const works = await suggestedWorks(convoId, userId, result.text);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(works ? { works } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   chapterize(convoId); // and re-read where the subject changed, same discipline
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, works };
 }
 
 // Start (or re-enter) Interview mode and ask the first question right away,
