@@ -17434,7 +17434,7 @@ function shelfPanel(b) {
     + '<div><b>' + qEsc(d.title) + '</b>' + (d.author ? '<small>' + qEsc(d.author) + '</small>' : '')
     + '<div class="shelf-facts">' + facts + '</div>'
     + (() => { const bw = { kind: 'book', title: d.title, creator: d.author || '' };
-        return '<div class="shelf-acts">' + [libOutLink(bw, null), libGoogleLink(bw, null)].map(out =>
+        return '<div class="shelf-acts">' + [libOutLink(bw, null), libGoogleLink(bw, null), libYouTubeLink(bw)].filter(Boolean).map(out =>
           '<a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
           + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>').join('') + '</div>'; })()
     + '</div>'
@@ -17519,9 +17519,11 @@ function libOutLink(w, f) {
   if (w.kind === 'book') {
     const isbn = libIsbn10(f && f.isbn);
     const q = [libShortTitle(w.title), w.creator || ''].filter(Boolean).join(' ');
-    return { label: 'Amazon',
-      url: isbn ? 'https://www.amazon.com/dp/' + encodeURIComponent(isbn)
-                : 'https://www.amazon.com/s?i=stripbooks&k=' + encodeURIComponent(q) };
+    // A search by title and author, always: the /dp/ address built from a catalogue
+    // ISBN often named an edition Amazon does not sell and opened a dead page (his
+    // report, 2026-09-24). The search lands on the book every time.
+    void isbn;
+    return { label: 'Amazon', url: 'https://www.amazon.com/s?i=stripbooks&k=' + encodeURIComponent(q) };
   }
   return null;
 }
@@ -17535,6 +17537,13 @@ function libGoogleLink(w, f) {
   return { label: 'Google Books',
     url: isbn ? 'https://books.google.com/books?vid=ISBN' + encodeURIComponent(isbn)
               : 'https://www.google.com/search?tbm=bks&q=' + encodeURIComponent(q) };
+}
+
+// A YouTube search for the book — talks, interviews, lectures by or about it.
+function libYouTubeLink(w) {
+  if (!w || w.kind !== 'book') return null;
+  const q = [libShortTitle(w.title), w.creator || ''].filter(Boolean).join(' ');
+  return { label: 'YouTube', url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q) };
 }
 
 // A book's table of contents, from real catalogues only (Library of Congress,
@@ -17643,7 +17652,7 @@ function libScreenPanel(w) {
       ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-rescreen title="Write it again">⟳</button></h6><p>' + qEsc(libForty(f.relevance)) + '</p></div>'
       : (libScreenBusy ? waitHtml('weaving', 'Working out what it gives you', 'p', 'shelf-note-wait') : ''))
     + '<div class="shelf-acts">'
-    + [libOutLink(w, f), libGoogleLink(w, f)].filter(Boolean).map(out =>
+    + [libOutLink(w, f), libGoogleLink(w, f), libYouTubeLink(w)].filter(Boolean).map(out =>
         '<a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
           + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>').join('')
     + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</div></div>';
@@ -30677,7 +30686,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       else html += '<p class="se-card-wait">No catalogue lists its contents.</p>';
     }
     var gb = libGoogleLink({ kind: kind, title: d.coverTitle, creator: d.coverCreator }, f.isbn ? f : (seOutFacts[d.coverArt] || null));
-    html += '<div class="se-card-outs">' + [out, gb].filter(Boolean).map(function(o){
+    var yt = libYouTubeLink({ kind: kind, title: d.coverTitle, creator: d.coverCreator });
+    html += '<div class="se-card-outs">' + [out, gb, yt].filter(Boolean).map(function(o){
       return '<a class="se-card-out" href="' + qEscAttr(o.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(o.label) + ' <span aria-hidden="true">↗</span></a>';
     }).join('') + '</div>';
     return html;
