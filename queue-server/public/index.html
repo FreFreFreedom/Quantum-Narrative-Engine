@@ -2980,11 +2980,14 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-quote-pop .se-define { order:1; flex:1 1 100%; margin:0; padding:13px 18px 14px; border-top:0;
   border-bottom:1px solid color-mix(in srgb, var(--c-on-solid) 16%, transparent);
   font-family:var(--font-read); font-size:20px; line-height:1.35; color:inherit; white-space:normal; }
-.se-define .w { display:block; font-family:'Cinzel', var(--font-read); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
-.se-define .w::after { content:''; display:block; width:26px; height:1px; margin:6px 0 9px; background:var(--pop-gold); }
+.se-define .head { display:flex; align-items:baseline; gap:10px; }
+.se-define .w { font-family:'Cinzel', var(--font-read); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
+.se-define .head + .here { position:relative; padding-top:16px; }
+.se-define .head + .here::before { content:''; position:absolute; top:6px; left:0; width:26px; height:1px; background:var(--pop-gold); }
 .se-define .here p { margin:0; color:inherit; }
 .se-define .plain { margin-top:10px; font-size:19px; font-style:italic; color:color-mix(in srgb, var(--c-on-solid) 78%, transparent); }
-.se-define .pos { font-style:normal; font-family:'Cinzel', var(--font-read); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--pop-gold); margin-right:7px; }
+.se-define .pos { font-family:'Cinzel', var(--font-read); font-size:9.5px; letter-spacing:.18em; text-transform:uppercase; color:color-mix(in srgb, var(--c-on-solid) 65%, transparent); }
+:root[data-look="creamnavy"] .se-define .pos { color:#b8c1cf; }
 .se-define p { margin:4px 0 0; }
 .se-define p + p { margin-top:3px; }
 /* "Remember this" (plan "side talks in the Room, and remember this"): the
@@ -28835,7 +28838,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var box = pop.querySelector('.se-define');
     if(!box){
       box = document.createElement('div'); box.className = 'se-define';
-      box.innerHTML = '<div class="here" hidden></div><div class="plain" hidden></div>';
+      box.innerHTML = '<div class="head" hidden><span class="w"></span><span class="pos"></span></div><div class="here" hidden></div>';
       pop.appendChild(box);
     }
     return box;
@@ -28844,12 +28847,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var key = word.toLowerCase().replace(/[’']s$/, '');
     var paint = function(entry){
       if(!entry) return;
+      // Only the word class comes from the dictionary now (his pick 1, 2026-09-24):
+      // it sits beside the word; the plain senses are gone.
       var box = defineBox(pop); if(!box) return;
-      var slot = box.querySelector('.plain');
-      slot.innerHTML = entry.meanings.slice(0, 3).map(function(m){
-        return '<p><span class="pos">' + qEsc(m.pos) + '</span>' + qEsc(m.def) + '</p>';
-      }).join('');
-      slot.hidden = false;
+      var pos = entry.meanings[0] && entry.meanings[0].pos;
+      if(pos){ box.querySelector('.head .pos').textContent = pos; }
       placeQuotePop();
     };
     if(key in defineCache){ paint(defineCache[key]); return; }
@@ -28917,8 +28919,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var paint = function(text){
       if(!text) return;
       var box = defineBox(pop); if(!box) return;
+      var head = box.querySelector('.head');
+      head.querySelector('.w').textContent = word;
+      head.hidden = false;
       var slot = box.querySelector('.here');
-      slot.innerHTML = '<span class="w">' + qEsc(word) + '</span><p>' + qEsc(text) + '</p>';
+      slot.innerHTML = '<p>' + qEsc(text) + '</p>';
       slot.hidden = false;
       placeQuotePop();
     };
