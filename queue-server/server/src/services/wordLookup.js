@@ -44,7 +44,7 @@ export async function lookupWord(convoId, { word, sentence = '' } = {}) {
       + (mind ? `\n\n=== THE READER ===\n${mind}` : ''),
     feature: 'quick',
     label: 'room:define',
-    maxTokens: 160,
+    maxTokens: 600,
     timeoutMs: 30_000,
   });
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
