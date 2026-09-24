@@ -22,6 +22,13 @@ export function bindWordLookup(database) {
   )`);
 }
 
+// One sentence, always: what comes back is cut at the first full stop that ends a
+// sentence (a "e.g." or "U.S." does not), and stripped of numbering and quotes.
+export function firstSentence(raw) {
+  const t = String(raw || '').trim().replace(/^["“]|["”]$/g, '').replace(/^\s*(?:\d+[.:)]|[-*•])\s*/, '').replace(/\s+/g, ' ');
+  const m = t.match(/^.*?[.!?](?=\s+[A-Z“"]|$)/);
+  return (m ? m[0] : t).trim();
+}
 const MAX_ANSWER = 7000;
 function messageText(convoId, messageId) {
   if (!messageId) return '';
@@ -31,11 +38,11 @@ function messageText(convoId, messageId) {
 
 const PROMPT = `You are a dictionary that knows where the reader is. He is reading an answer in a
 long conversation and selected ONE word. Write, for him, what that word means as it is used
-in THIS sentence, and the shade it carries here that the plain word would miss. Plain
+in THIS sentence, with the shade it carries here that the plain word would miss. Plain
 English — it is his second language. No jargon, no etymology, no other senses, no list,
-no numbering, no heading, no markdown, no quotation marks around the word. Two short
-sentences of prose, about 35 words in all. Do not begin with the word itself, and do not
-begin with "In this context".`;
+no numbering, no heading, no markdown, no quotation marks around the word. ONE sentence
+of prose, 15 to 25 words, and nothing after it. Do not begin with the word itself, and do
+not begin with "In this context".`;
 
 export async function lookupWord(convoId, { word, sentence = '', messageId = null } = {}) {
   const w = String(word || '').trim().toLowerCase().replace(/[’']s$/, '');
@@ -44,7 +51,7 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
   if (!convo) return { error: 'not_found' };
   if (db) {
     const hit = db.prepare('SELECT text FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, w);
-    if (hit && hit.text.split(/\s+/).length >= 8) return { ok: true, text: hit.text, cached: true };
+    if (hit && hit.text.split(/\s+/).length >= 8 && !/[.!?]\s+[A-Z]/.test(hit.text)) return { ok: true, text: hit.text, cached: true };
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 600);
   const recap = String(convo.recap || '').slice(0, 1200);
@@ -63,7 +70,7 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
     timeoutMs: 30_000,
   });
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
-  const text = out.text.trim().replace(/^["“]|["”]$/g, '').replace(/^\s*(?:\d+[.:)]|[-*•])\s*/, '');
+  const text = firstSentence(out.text);
   if (text.split(/\s+/).length < 8) return { error: 'too_short' };
   if (db) db.prepare('INSERT OR REPLACE INTO word_lookups (convo_id, word, sentence, text) VALUES (?,?,?,?)').run(convoId, w, sent, text);
   return { ok: true, text };
@@ -75,9 +82,9 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
 const GLOSSARY_PROMPT = `You are a dictionary that knows where the reader is. Below is one answer from a long
 conversation. The reader's first language is French; he reads English well but not every
 word. From the CANDIDATE WORDS, choose up to 14 that he may not know, or that carry a
-special shade in this answer. For each, write what it means as used here, and the shade
-the plain word would miss: two short sentences of plain prose, about 30 words, no jargon,
-no etymology, no other senses. Do not begin with the word itself.
+special shade in this answer. For each, write what it means as used here, with the shade
+the plain word would miss: ONE sentence of plain prose, 15 to 25 words, no jargon, no
+etymology, no other senses. Do not begin with the word itself.
 Answer with JSON only, no markdown fence: {"words":[{"word":"…","text":"…"}]}`;
 
 function candidateWords(text) {
@@ -95,7 +102,13 @@ export async function glossaryFor(convoId, messageId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const hit = db.prepare('SELECT json FROM message_glossaries WHERE message_id=?').get(messageId);
-  if (hit) { try { return { ok: true, words: JSON.parse(hit.json), cached: true }; } catch { /* rebuild */ } }
+  if (hit) {
+    try {
+      const words = JSON.parse(hit.json);
+      const twoSentence = Object.values(words).some((t) => /[.!?]\s+[A-Z]/.test(String(t)));
+      if (!twoSentence) return { ok: true, words, cached: true };
+    } catch { /* rebuild */ }
+  }
   const answer = messageText(convoId, messageId);
   if (!answer || answer.split(/\s+/).length < 40) return { ok: true, words: {} };
   const cands = candidateWords(answer);
@@ -111,7 +124,7 @@ export async function glossaryFor(convoId, messageId) {
   const words = {};
   for (const it of (parsed && parsed.words) || []) {
     const w = String(it.word || '').trim().toLowerCase().replace(/[’']s$/, '');
-    const t = String(it.text || '').trim().replace(/^\s*(?:\d+[.:)]|[-*•])\s*/, '');
+    const t = firstSentence(it.text);
     if (!w || t.split(/\s+/).length < 6) continue;
     words[w] = t;
     db.prepare('INSERT OR REPLACE INTO word_lookups (convo_id, word, sentence, text) VALUES (?,?,?,?)').run(convoId, w, '', t);
