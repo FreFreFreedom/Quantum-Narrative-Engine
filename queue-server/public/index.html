@@ -1031,6 +1031,11 @@ body::after {
 #wsRoom .room-toolbar .arch-title { font:500 12px/1.3 'Cinzel', var(--font-read); letter-spacing:.22em; text-transform:uppercase;
   color:var(--c-kept-echo, var(--c-accent)); }
 #wsRoom .room-toolbar .room-turns { display:none; }
+#wsRoom.is-arriving .room-toolbar .arch-title { animation:roomTitleSettle .9s cubic-bezier(.22,.61,.36,1) both; }
+#wsRoom.is-arriving .room-toolbar .room-titlebtn::after { animation:roomLineDraw .6s cubic-bezier(.22,.61,.36,1) .35s both; }
+#wsRoom.is-arriving #roomConvo { animation:fmcnsFade .6s cubic-bezier(.22,.61,.36,1) .4s both; }
+@keyframes roomTitleSettle { from { opacity:0; letter-spacing:.42em; } }
+@keyframes roomLineDraw { from { width:0; } }
 #roomConvo .se-log { --log-top-inset:52px; padding-top:112px; scroll-padding-top:112px;
   -webkit-mask-image:linear-gradient(to bottom, transparent 0, transparent 56px, rgba(0,0,0,.35) 80px, #000 120px);
           mask-image:linear-gradient(to bottom, transparent 0, transparent 56px, rgba(0,0,0,.35) 80px, #000 120px); }
@@ -1805,20 +1810,6 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    unconditionally because that breakpoint positions the panels against it. */
 .ws-room { flex:1; min-width:0; min-height:0; display:none; position:relative; }
 .ws-room.open { display:flex; }
-/* Entering the Room: the thread's name held in Cinzel on a dark veil long enough
-   to read, then the veil fades onto the live Room. Antoine picked it (#1, "Held
-   name, slow fade", 2026-09-23) over the iris and the blinds. Plays only on
-   arriving — not on a thread switch — and a click skips it. */
-/* In two steps, never overlapping: the name fades out first, and only then does the
-   veil lift. Crossfaded together, the name and the conversation's own words showed
-   at once — two texts on top of each other. */
-.room-door { position:absolute; inset:0; z-index:var(--z-sheet); cursor:pointer; background:var(--c-stage);
-  transition:opacity .9s ease .55s; }
-.room-door.open { opacity:0; pointer-events:none; }
-.room-door-title { position:absolute; left:8%; right:8%; top:44%; text-align:center; font-family:'Cinzel', var(--font-read); font-weight:500;
-  font-size:clamp(20px, 3vw, 34px); color:var(--c-ink); letter-spacing:.06em; opacity:0; transition:opacity .8s ease; }
-.room-door.lit .room-door-title { opacity:1; }
-.room-door.open .room-door-title { opacity:0; transition:opacity .5s ease; }
 .room-threads { position:relative; width:var(--threads-w, 250px); min-width:0; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 .room-cards { position:relative; width:var(--cards-w, 290px); min-width:0; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 /* ── Every sidebar is draggable, and remembers its width ──────────────────────
@@ -13230,29 +13221,16 @@ function syncRoomDoor() {
   roomDoorWasShown = shown;
 }
 function playRoomDoor() {
+  // Arriving: the title's letters draw together as it fades in, its gold line
+  // draws, then the conversation appears (his pick "Title settles", 2026-09-24,
+  // over the held name on a veil). Nothing covers the Room.
   const room = document.getElementById('wsRoom');
-  const old = room.querySelector('.room-door');
-  if (old) old.remove();
-  if (prefersReducedMotion()) return;
-  const d = document.createElement('div');
-  d.className = 'room-door';
-  d.setAttribute('aria-hidden', 'true');
-  d.innerHTML = '<div class="room-door-title"></div>';
-  room.appendChild(d);
-  fillRoomDoorTitle();
-  // A forced layout, not requestAnimationFrame: a tab that is not frontmost gets no
-  // frames, and the name would stay invisible behind a door that opens anyway.
-  void d.offsetWidth;
-  d.classList.add('lit');
-  let opened = false;
-  const open = () => {
-    if (opened) return;
-    opened = true;
-    d.classList.add('open');
-    setTimeout(() => d.remove(), 1500);
-  };
-  const timer = setTimeout(open, 2800); // long enough to read the name
-  d.addEventListener('click', () => { clearTimeout(timer); open(); });
+  if (!room || prefersReducedMotion()) return;
+  room.classList.remove('is-arriving');
+  void room.offsetWidth; // a forced layout, not a frame: a background tab gets none
+  room.classList.add('is-arriving');
+  clearTimeout(playRoomDoor.t);
+  playRoomDoor.t = setTimeout(() => room.classList.remove('is-arriving'), 1400);
 }
 // The threads usually arrive after the doorway has started, so renderRoomHead()
 // calls this too; it writes the name once and never changes it mid-animation.
