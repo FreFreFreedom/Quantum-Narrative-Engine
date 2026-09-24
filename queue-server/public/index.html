@@ -15262,8 +15262,13 @@ async function roomFindMediaArt(item) {
         const plain = (v) => String(v || '').replace(/[:–—]/g, ' ').replace(/\s+/g, ' ').trim();
         const who = plain(item?.creator).includes(',')
           ? plain(item.creator).split(',').map((p) => p.trim()).reverse().join(' ') : plain(item?.creator);
-        for (const q of [plain(title) + (who ? ' ' + who : ''), plain(title)]) {
-          const r = await fetch('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=1&fields=cover_i');
+        // Title and author as separate fields first — the surest match ("The 25th
+        // Hour" by Benioff found nothing as one run-on query) — then the looser ones.
+        const surname = who.split(' ').pop();
+        const tries = [surname ? 'title=' + encodeURIComponent(plain(title)) + '&author=' + encodeURIComponent(surname) : '',
+          'q=' + encodeURIComponent(plain(title) + (who ? ' ' + who : '')), 'q=' + encodeURIComponent(plain(title))].filter(Boolean);
+        for (const q of tries) {
+          const r = await fetch('https://openlibrary.org/search.json?' + q + '&limit=1&fields=cover_i');
           if (!r.ok) continue;
           const id = (await r.json())?.docs?.[0]?.cover_i;
           if (!id) continue;
