@@ -2667,7 +2667,7 @@ span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:var(--fs-2xs)
 .stars i { display:block; color:var(--c-ink-5); }
 .stars b { position:absolute; left:0; top:0; display:block; overflow:hidden; white-space:nowrap;
   color:var(--c-accent,#c8a56a); }
-.lib-based { display:flex; gap:10px; align-items:center; margin:11px 0 0; padding:8px 9px;
+.lib-based { display:flex; gap:14px; align-items:center; margin:11px 0 0; padding:8px 9px;
   border:1px solid var(--c-border-2); border-radius:10px; }
 .lib-based small { display:block; font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
 .lib-based b { font-size:15px; font-weight:600; }
@@ -2675,7 +2675,8 @@ span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:var(--fs-2xs)
 a.lib-based:hover { border-color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 50%, transparent); }
 a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .lib-based-by { display:block; font-size:var(--fs-base); color:var(--c-ink-4); margin-top:1px; }
-.lib-bchip { width:22px; height:32px; border-radius:2px; background:var(--c-surface-3,var(--c-surface-2)); border:1px solid var(--c-border-2); flex:none; }
+.lib-bchip { width:46px; height:68px; border-radius:3px; background:var(--c-surface-3,var(--c-surface-2)) center/cover no-repeat; border:1px solid var(--c-border-2); flex:none; }
+.lib-bchip.has-cover { border-color:transparent; box-shadow:0 2px 8px rgba(0,0,0,.35); }
 /* An opened item reads like a page about that book, not like a row that grew:
    jacket and title together at the top, then two headed passages of prose. The
    actions are words under a rule, so nothing competes with the reading. */
@@ -17243,7 +17244,7 @@ function libScreenPanel(w) {
   const book = f.book && f.book.title
     // The whole box is the book's Amazon page (his ask, 2026-09-24).
     ? '<a class="lib-based" href="' + qEscAttr(libOutLink({ kind: 'book', title: f.book.title, creator: f.book.author || '' }, null).url) + '" target="_blank" rel="noopener noreferrer" title="Open on Amazon">'
-      + '<span class="lib-bchip"></span><div><small>From a book' + (f.book.where === 'shelf' ? ' · on your shelf' : f.book.where === 'library' ? ' · in your library' : '') + '</small><b>'
+      + '<span class="lib-bchip" data-bt="' + qEscAttr(f.book.title) + '" data-ba="' + qEscAttr(f.book.author || '') + '"></span><div><small>From a book' + (f.book.where === 'shelf' ? ' · on your shelf' : f.book.where === 'library' ? ' · in your library' : '') + '</small><b>'
       + qEsc(f.book.title) + ' <span aria-hidden="true">↗</span></b>' + (f.book.author ? '<span class="lib-based-by">' + qEsc(f.book.author) + '</span>' : '')
       + '</div></a>' : '';
   return '<div class="shelf-panel">'
@@ -17541,6 +17542,12 @@ async function renderInterestLibrary(opts) {
     if (next) next.onclick = () => { interestLibraryOffset += 40; renderInterestLibrary(); };
 
     putBack();
+    // The source book's own cover in its box, found the way the wall finds covers.
+    host.querySelectorAll('.lib-bchip[data-bt]').forEach((chip) => {
+      roomFindMediaArt({ kind: 'book', title: chip.dataset.bt, creator: chip.dataset.ba }).then((u) => {
+        if (/^https:\/\//.test(u || '') && chip.isConnected) { chip.style.backgroundImage = 'url("' + u + '")'; chip.classList.add('has-cover'); }
+      }).catch(() => {});
+    });
 
     // What the wall knows about everything on it — posters, covers, ratings,
     // publisher blurbs — in one call, cached on the server, so a repaint is free.
