@@ -13,7 +13,9 @@
 window.FMCNS_LOOKS = {
   atlas:    { name: 'Daylight atlas', dark: false },
   darkroom: { name: 'Darkroom',       dark: true  },
-  bean:     { name: 'Black bean & gold', dark: true }
+  bean:     { name: 'Black bean & gold', dark: true },
+  navy:     { name: 'Navy & cognac', dark: true },
+  plum:     { name: 'Plum, taupe & gold', dark: true }
 };
 window.FMCNS_LOOK_DAY = 'atlas';
 window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom stays in the menu)
@@ -208,10 +210,74 @@ window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom
   --c-kept-line: rgba(201,164,92,.75); --c-kept-echo: #d9b877; --c-kept-rule: #c9a45c;
   --orb-1: #8e1b2c; --orb-2: #c9a45c; --orb-inv: 1;
 }
+/* Navy & cognac — Antoine's pick "N3" (2026-09-24): an ink-navy page, blacker navy side
+   panels, warm paper text, and one cognac leather accent; kept lines and headings in a
+   lighter cognac. */
+:root[data-look="navy"] {
+  color-scheme: dark;
+  --c-bg: #141c2c; --c-bg-2: #0e1420; --c-stage: #10172a; --c-mapstage: #10172a;
+  --c-surface: #1c2740; --c-surface-2: #1f2a40; --c-surface-3: #26334d;
+  --c-surface-rgb: 28 39 64;
+  --c-border: #243049; --c-border-2: #2e3b58; --c-border-3: #3f4d6e;
+  --c-ink: #ece6db; --c-ink-2: #cfc8bb; --c-ink-3: #b5aea2;
+  --c-ink-4: #a09c94; --c-ink-5: #8c8a86;
+  --c-ink-solid: #ece6db; --c-ink-solid-2: #cfc8bb; --c-on-solid: #141c2c;
+  --c-halo: #10172a;
+  --c-accent: #b0642e;
+  --c-on-accent: #fbf2e6;
+  --c-on-brand: #141c2c; --c-on-amber: #141c2c; --c-on-danger: #141c2c; --c-on-info: #0d1d2b;
+  --c-cast: #dba46e;
+  --c-ring: rgba(176,100,46,.55);
+  --c-hover-wash: rgba(236,230,219,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #33261a;
+  --c-info: #9fb4d0; --c-info-tint: #1a2438;
+  --c-success-tint: #1d2d2a;
+  --c-danger: #e0707a; --c-danger-tint: #3a1620;
+  --c-violet: #c7a3d9; --c-violet-tint: #2a2040; --c-violet-tint-2: #221a36;
+  --c-brand: #dba46e; --c-warm-tint: #2e2014;
+  --c-amber: #dba46e; --c-amber-tint: #2a2216;
+  --c-plot-1: #dba46e; --c-plot-2: #9fb4d0; --c-plot-3: #b0642e;
+  --c-plot-4: #8fb0a0; --c-plot-5: #c7a3d9; --c-plot-6: #e0c9a0;
+  --c-plot-7: #8c8a86; --c-plot-8: #e8b27a;
+  --c-kept-line: rgba(211,154,98,.75); --c-kept-echo: #dba46e; --c-kept-rule: #b0642e;
+  --orb-1: #24406e; --orb-2: #dba46e; --orb-inv: 1;
+}
+/* Plum, taupe & gold — Antoine's pick "N4" (2026-09-24): a plum page, near-black plum side
+   panels, parchment text; taupe is the accent and gold is kept for headings and kept lines. */
+:root[data-look="plum"] {
+  color-scheme: dark;
+  --c-bg: #2b1418; --c-bg-2: #1f0e12; --c-stage: #241115; --c-mapstage: #241115;
+  --c-surface: #3a1c22; --c-surface-2: #3a1f24; --c-surface-3: #452630;
+  --c-surface-rgb: 58 28 34;
+  --c-border: #3f2228; --c-border-2: #4d2b33; --c-border-3: #653a44;
+  --c-ink: #e8dcc8; --c-ink-2: #cdbfa9; --c-ink-3: #b8a891;
+  --c-ink-4: #aa9982; --c-ink-5: #9c8b76;
+  --c-ink-solid: #e8dcc8; --c-ink-solid-2: #cdbfa9; --c-on-solid: #2b1418;
+  --c-halo: #241115;
+  --c-accent: #9c8b76;
+  --c-on-accent: #1f0e12;
+  --c-on-brand: #1f0e12; --c-on-amber: #1f0e12; --c-on-danger: #1f0e12; --c-on-info: #0d1d2b;
+  --c-cast: #cfae6e;
+  --c-ring: rgba(207,174,110,.5);
+  --c-hover-wash: rgba(232,220,200,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #3a2410;
+  --c-info: #a9b4cc; --c-info-tint: #231a28;
+  --c-success-tint: #2a2414;
+  --c-danger: #e0707a; --c-danger-tint: #3e1219;
+  --c-violet: #c7a3d9; --c-violet-tint: #33183a; --c-violet-tint-2: #2a1430;
+  --c-brand: #cfae6e; --c-warm-tint: #33200e;
+  --c-amber: #cfae6e; --c-amber-tint: #2e2214;
+  --c-plot-1: #cfae6e; --c-plot-2: #c2283a; --c-plot-3: #e0a458;
+  --c-plot-4: #b8927e; --c-plot-5: #c7a3d9; --c-plot-6: #a9b4cc;
+  --c-plot-7: #9c8b76; --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(207,174,110,.7); --c-kept-echo: #cfae6e; --c-kept-rule: #cfae6e;
+  --orb-1: #5a2233; --orb-2: #cfae6e; --orb-inv: 1;
+}
 /* The side panels sit a shade blacker than the page, as in the mockup. */
-:root[data-look="bean"] .room-threads, :root[data-look="bean"] .room-cards { background:var(--c-bg-2); }
-:root[data-look="bean"] .se-body h1, :root[data-look="bean"] .se-body h2,
-:root[data-look="bean"] .se-body h3, :root[data-look="bean"] .se-body h4 { color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) :is(.room-threads, .room-cards) { background:var(--c-bg-2); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) .se-body :is(h1, h2, h3, h4) { color:var(--c-kept-echo); }
 * { box-sizing: border-box; }
 /* Keyboard focus, once, for every control family the app has. Three rules covered 222
    buttons before this. Only :focus-visible, so a mouse click never draws a ring. */
@@ -255,7 +321,8 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .boot-orb { position:fixed; inset:0; z-index:var(--z-preview); display:grid; place-items:center; background:var(--c-bg-2); }
 .boot-orb[hidden] { display:none; }
 .login-metal { width:132px; height:132px; margin:0 auto 18px; }
-:root[data-look="bean"] .login-metal { filter:sepia(.9) saturate(1.5) hue-rotate(-12deg) brightness(.9); }
+:root:is([data-look="bean"],[data-look="plum"]) .login-metal { filter:sepia(.9) saturate(1.5) hue-rotate(-12deg) brightness(.9); }
+:root[data-look="navy"] .login-metal { filter:sepia(.85) saturate(1.8) hue-rotate(-22deg) brightness(.85); }
 :root[data-look="darkroom"] .login-metal { filter:sepia(.6) saturate(1.6) hue-rotate(130deg) brightness(.85); }
 .loginbox button .torb { margin-right:6px; }
 .se-mic, .se-talk { display:flex; align-items:center; justify-content:center; flex:none; width:26px; height:26px; padding:0;
@@ -1746,7 +1813,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   pointer-events:none; }
 .dark .se-kept, :root[data-look="darkroom"] .se-kept { border-bottom-color:var(--c-kept-line, rgba(111,207,160,.45)); }
 :root[data-look="darkroom"] .se-kept-echo { border-left-color:#6fcfa0; color:#6fcfa0; }
-:root[data-look="bean"] .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
 .se-quote-pop { position:fixed; z-index:var(--z-popover); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
   border-radius:var(--r-md); padding:3px; display:flex; gap:2px; box-shadow:0 6px 18px rgba(0,0,0,.22);
   animation:sePopIn .12s var(--ease); }
