@@ -3000,6 +3000,10 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-rec-menu { position:absolute; right:2px; top:10px; }
 .room-rec-menu summary { list-style:none; cursor:pointer; padding:0 4px; }
 .room-rec-menu button { position:absolute; right:0; z-index:2; background:var(--c-surface-2); color:var(--c-ink); border:1px solid var(--c-border-2); padding:5px 10px; }
+/* The ⋯ belongs to its own row: without a positioned row it pinned itself to the top
+   corner of the whole panel, and its menu, squeezed to nothing, spelled Remove downwards. */
+.interest-item, .room-rec-host article { position:relative; }
+.room-rec-menu button { top:calc(100% + 4px); white-space:nowrap; width:auto; border-radius:var(--r-md); box-shadow:var(--sh-md); font-size:13px; }
 .room-rec-status { font-size:11px; color:var(--c-ink-3); margin:5px 0; }
 .room-rec-requests { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; }
 .room-rec-requests button,.room-rec-steering button { font:inherit; background:none; color:var(--c-ink); border:1px solid var(--c-border-2); border-radius:4px; cursor:pointer; }
