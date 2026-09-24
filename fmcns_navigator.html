@@ -2449,6 +2449,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-lanepop[hidden] { display:none; }
 .se-lanepop .h { font-family:'Cinzel',var(--font-read); font-size:9.5px; letter-spacing:.28em; text-transform:uppercase; color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 60%, var(--c-ink-5)); padding:10px 18px 4px; }
 .se-lanepop .h.off { opacity:.45; }
+.se-lanepop .h.g { display:flex; justify-content:space-between; align-items:center; width:100%; border:0; background:none; cursor:pointer; text-align:left; padding:9px 18px; }
+.se-lanepop .h.g:hover, .se-lanepop .h.g.is-open { color:var(--c-kept-echo, var(--c-accent)); }
+.se-lanepop .h.g small { font-family:var(--font-ui); font-size:10px; letter-spacing:0; color:var(--c-ink-5); }
 .se-lanepop .it { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:7px 18px; border:0; background:none; text-align:left; cursor:pointer;
   font-family:var(--font-read); font-size:17px; line-height:1.2; color:var(--c-ink-3); }
 .se-lanepop .it:hover { color:var(--c-ink); background:color-mix(in srgb, var(--c-ink) 5%, transparent); }
@@ -27250,13 +27253,26 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return '<span>' + qEsc(m || name) + '</span>'
       + (eff ? '<span class="dot">·</span><span>' + qEsc(eff) + '</span>' : '') + '<span class="chev">▾</span>';
   }
+  // Which maker is unfolded in the list. Only one at a time: the one in use when the
+  // list opens, then whichever heading he touches (too many models otherwise).
+  var lanePopGroup = null;
   function lanePopHtml(e){
     var cur = laneKeyOf(e.lane);
     var html = '<button type="button" class="it' + (e.lane ? '' : ' on') + '" data-lane="">Auto <small>the app chooses</small></button><hr>';
     var groups = LANE_POP_GROUPS.slice();
     freeApiLanes(laneCatalog).forEach(function(p){ groups.push([p.label || p.id, [p.id]]); });
+    var curGroup = null;
+    groups.forEach(function(g){ if(g[1].indexOf(cur) >= 0) curGroup = g[0]; });
+    var openGroup = lanePopGroup || curGroup;
     groups.forEach(function(g, gi){
       var rows = '';
+      var total = 0;
+      g[1].forEach(function(key){ total += Math.max(1, laneModelsFor(key, laneCatalog).length); });
+      if(g[0] !== openGroup){
+        var offAll = laneCatalog ? g[1].every(function(key){ return !laneAvailable(key, laneCatalog); }) : false;
+        html += (gi ? '<hr>' : '') + '<button type="button" class="h g' + (offAll ? ' off' : '') + '" data-group="' + qEscAttr(g[0]) + '">' + qEsc(g[0]) + '<small>' + total + ' ▸</small></button>';
+        return;
+      }
       g[1].forEach(function(key){
         var off = laneCatalog ? !laneAvailable(key, laneCatalog) : false;
         var models = laneModelsFor(key, laneCatalog);
@@ -27278,7 +27294,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
       });
       if(!rows) return;
-      html += (gi ? '<hr>' : '') + '<div class="h">' + qEsc(g[0]) + '</div>' + rows;
+      html += (gi ? '<hr>' : '') + '<button type="button" class="h g is-open" data-group="' + qEscAttr(g[0]) + '">' + qEsc(g[0]) + '<small>▾</small></button>' + rows;
     });
     return html;
   }
@@ -28522,6 +28538,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         laneBtn.onclick = function(ev){
           ev.stopPropagation();
           if(!lanePop.hidden){ closePop(); return; }
+          lanePopGroup = null;
           ensureLaneCatalog().then(function(){ lanePop.innerHTML = lanePopHtml(e); });
           lanePop.innerHTML = lanePopHtml(e);
           lanePop.hidden = false; laneBtn.setAttribute('aria-expanded', 'true');
@@ -28531,6 +28548,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         lanePop.onclick = function(ev){
           var b = ev.target.closest('button'); if(!b || b.disabled) return;
           ev.stopPropagation();
+          if(b.hasAttribute('data-group')){
+            lanePopGroup = b.classList.contains('is-open') ? '' : b.getAttribute('data-group');
+            lanePop.innerHTML = lanePopHtml(e); lanePopPlace(laneBtn, lanePop); return;
+          }
           if(b.hasAttribute('data-effort')){
             if(e.lane) e.lane = { provider: e.lane.provider, account: e.lane.account || null, model: e.lane.model || null, effort: b.getAttribute('data-effort') || null, tag: e.lane.tag };
           } else {
