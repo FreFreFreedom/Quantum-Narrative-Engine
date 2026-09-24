@@ -15,7 +15,8 @@ window.FMCNS_LOOKS = {
   darkroom: { name: 'Darkroom',       dark: true  },
   bean:     { name: 'Black bean & gold', dark: true },
   navy:     { name: 'Navy & cognac', dark: true },
-  plum:     { name: 'Plum, taupe & gold', dark: true }
+  plum:     { name: 'Plum, taupe & gold', dark: true },
+  ember:    { name: 'Ember', dark: true }
 };
 window.FMCNS_LOOK_DAY = 'atlas';
 window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom stays in the menu)
@@ -140,6 +141,10 @@ window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom
   --c-plot-7: #7e8fb0; --c-plot-8: #c08a3e;
   /* The Talk orb's two colours; --orb-inv flips its ramp for a night page. */
   --orb-1: #c8472e; --orb-2: #f0b9a8; --orb-inv: 0;
+  /* The Room's dusk glow, and the glass its cards are made of — light glass on a day page. */
+  --glow-1: #e5bdb2; --glow-2: #eddfd8;
+  --glass: rgba(255,255,255,.55); --glass-2: rgba(255,255,255,.6);
+  --q-av: #1e1c19; --q-avink: #f1f0eb;
 }
 /* ─── Look: Darkroom ────────────────────────────────────────────────────────
    Deep teal-green, pale text, a safelight amber-coral — the room where images are
@@ -176,6 +181,7 @@ window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom
   --c-plot-4: #6fcfa0; --c-plot-5: #b08be0; --c-plot-6: #c9b06a;
   --c-plot-7: #7e8fb0; --c-plot-8: #c9b06a;
   --orb-1: #1d6b5e; --orb-2: #f0965a; --orb-inv: 1;
+  --glow-1: #478368; --glow-2: #244338;
 }
 /* Black bean & gold — Antoine's pick "D1" (2026-09-23): a near-black red page, black
    side panels, gold where the eye should land (headings, the accent, kept lines) and
@@ -286,22 +292,68 @@ body::after {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:2147483000; opacity:.22; mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
-/* The dusk glow (Antoine's pick 2026-09-24, from the "Visionary" mockups): in these three
-   looks the Room's conversation sits under a warm light falling from its top-left corner,
-   his messages and the answers are glass cards, and the composer is glass too. A look
-   joins by giving --glow-1/--glow-2 and adding itself to this selector. */
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) .room-main {
-  background:radial-gradient(120% 90% at 8% 0%, var(--glow-1) 0%, var(--glow-2) 32%, var(--c-bg) 72%), var(--c-bg); }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) .room-main .room-toolbar { background:transparent; border-bottom-color:transparent; }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) #roomConvo .se-turn.you .se-body {
+/* Ember — Antoine's pick "V2" from the dusk-glow mockups (2026-09-24): a coal-black page, a
+   red-orange glow, warm ivory text and one ember accent. */
+:root[data-look="ember"] {
+  color-scheme: dark;
+  --c-bg: #170f0e; --c-bg-2: #1f1716; --c-stage: #130c0b; --c-mapstage: #130c0b;
+  --c-surface: #241a18; --c-surface-2: #2d2220; --c-surface-3: #372927;
+  --c-surface-rgb: 36 26 24;
+  --c-border: #2e2220; --c-border-2: #3d2d2a; --c-border-3: #56403b;
+  --c-ink: #f3e7dc; --c-ink-2: #dccabb; --c-ink-3: #c2b0a2;
+  --c-ink-4: #a8958a; --c-ink-5: #8a786d;
+  --c-ink-solid: #f3e7dc; --c-ink-solid-2: #dccabb; --c-on-solid: #170f0e;
+  --c-halo: #130c0b;
+  --c-accent: #d9764a;
+  --c-on-accent: #170f0e;
+  --c-on-brand: #170f0e; --c-on-amber: #170f0e; --c-on-danger: #170f0e; --c-on-info: #0d1d2b;
+  --c-cast: #f0a57c;
+  --c-ring: rgba(217,118,74,.5);
+  --c-hover-wash: rgba(243,231,220,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #e0a458; --c-warn-tint: #3a2410;
+  --c-info: #9fb4d0; --c-info-tint: #1c1a24;
+  --c-success-tint: #2a2414;
+  --c-danger: #e0707a; --c-danger-tint: #3a1216;
+  --c-violet: #c7a3d9; --c-violet-tint: #2c1a2a; --c-violet-tint-2: #241622;
+  --c-brand: #f0a57c; --c-warm-tint: #33190e;
+  --c-amber: #f0a57c; --c-amber-tint: #2e1c12;
+  --c-plot-1: #f0a57c; --c-plot-2: #c2283a; --c-plot-3: #e0a458;
+  --c-plot-4: #b8927e; --c-plot-5: #c7a3d9; --c-plot-6: #9fb4d0;
+  --c-plot-7: #8a786d; --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(240,165,124,.7); --c-kept-echo: #f0a57c; --c-kept-rule: #d9764a;
+  --orb-1: #7a2416; --orb-2: #d9764a; --orb-inv: 1;
+  --glow-1: #a3402a; --glow-2: #4a1d17;
+}
+/* The dusk-glow Room (Antoine, 2026-09-24: "everything about these mockups… I WANT THEM"),
+   in every look. The three columns float as rounded panels on a darker frame; the
+   conversation sits under a warm light falling from its top-left corner (each look gives
+   --glow-1/--glow-2); his messages, the answers and the composer are glass cards; each
+   answer carries a small Q. Above 820px only — below it the side panels are overlays. */
+:root { --glass: rgba(0,0,0,.34); --glass-2: color-mix(in srgb, var(--c-bg-2) 78%, transparent);
+  --q-av: color-mix(in srgb, var(--c-bg) 45%, #000); --q-avink: var(--c-kept-echo, var(--c-accent)); }
+.room-main { background:radial-gradient(120% 90% at 8% 0%, var(--glow-1, var(--c-bg)) 0%, var(--glow-2, var(--c-bg)) 32%, var(--c-bg) 72%), var(--c-bg); }
+.room-main .room-toolbar { background:transparent; border-bottom-color:transparent; }
+#roomConvo .se-turn.you .se-body {
   background:color-mix(in srgb, var(--c-ink) 7%, transparent); border:1px solid color-mix(in srgb, var(--c-ink) 10%, transparent); }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) #roomConvo .se-turn:not(.you):not(.plan) > .se-body {
-  background:rgba(0,0,0,.34); border:1px solid color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:14px; padding:12px 16px; }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) .room-convo .se-draftbox {
-  background:color-mix(in srgb, var(--c-bg-2) 78%, transparent); border-color:color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:16px; }
+#roomConvo .se-turn:not(.you):not(.plan) > .se-body {
+  background:var(--glass); border:1px solid color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:14px; padding:12px 16px; }
+.room-convo .se-draftbox {
+  background:var(--glass-2); border-color:color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:16px; }
+#roomConvo .se-turn:not(.you):not(.plan) { position:relative; padding-left:44px; }
+#roomConvo .se-turn:not(.you):not(.plan)::before { content:'Q'; position:absolute; left:6px; top:14px; width:26px; height:26px; border-radius:50%;
+  background:var(--q-av); color:var(--q-avink); font:600 11px/26px 'Cinzel', serif; text-align:center; }
+@media (min-width: 821px) {
+  #wsRoom.open { padding:10px; background:color-mix(in srgb, var(--c-bg-2) 55%, #000); }
+  #wsRoom .room-threads, #wsRoom .room-cards { border:none; border-radius:16px; background:color-mix(in srgb, var(--c-bg) 93%, var(--c-ink)); }
+  #wsRoom .room-threads:not(.collapsed) { margin-right:10px; }
+  #wsRoom .room-cards:not(.collapsed) { margin-left:10px; }
+  #wsRoom .room-threads.collapsed.peek, #wsRoom .room-cards.collapsed.peek { border-radius:16px; }
+  #wsRoom .room-main { border-radius:18px; }
+}
 /* The side panels sit a shade blacker than the page, as in the mockup. */
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) :is(.room-threads, .room-cards) { background:var(--c-bg-2); }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) .se-body :is(h1, h2, h3, h4) { color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"]) :is(.room-threads, .room-cards) { background:var(--c-bg-2); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"]) .se-body :is(h1, h2, h3, h4) { color:var(--c-kept-echo); }
 * { box-sizing: border-box; }
 /* Keyboard focus, once, for every control family the app has. Three rules covered 222
    buttons before this. Only :focus-visible, so a mouse click never draws a ring. */
@@ -347,6 +399,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .login-metal { width:132px; height:132px; margin:0 auto 18px; }
 :root:is([data-look="bean"],[data-look="plum"]) .login-metal { filter:sepia(.9) saturate(1.5) hue-rotate(-12deg) brightness(.9); }
 :root[data-look="navy"] .login-metal { filter:sepia(.85) saturate(1.8) hue-rotate(-22deg) brightness(.85); }
+:root[data-look="ember"] .login-metal { filter:sepia(.9) saturate(2) hue-rotate(-30deg) brightness(.85); }
 :root[data-look="darkroom"] .login-metal { filter:sepia(.6) saturate(1.6) hue-rotate(130deg) brightness(.85); }
 .loginbox button .torb { margin-right:6px; }
 .se-mic, .se-talk { display:flex; align-items:center; justify-content:center; flex:none; width:26px; height:26px; padding:0;
@@ -1837,7 +1890,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   pointer-events:none; }
 .dark .se-kept, :root[data-look="darkroom"] .se-kept { border-bottom-color:var(--c-kept-line, rgba(111,207,160,.45)); }
 :root[data-look="darkroom"] .se-kept-echo { border-left-color:#6fcfa0; color:#6fcfa0; }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
 .se-quote-pop { position:fixed; z-index:var(--z-popover); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
   border-radius:var(--r-md); padding:3px; display:flex; gap:2px; box-shadow:0 6px 18px rgba(0,0,0,.22);
   animation:sePopIn .12s var(--ease); }
