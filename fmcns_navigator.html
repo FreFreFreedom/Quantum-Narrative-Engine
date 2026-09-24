@@ -2737,7 +2737,13 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   color:var(--c-ink-5); font-size:var(--fs-xs); line-height:1; cursor:pointer; }
 .shelf-note h6 [data-renote]:hover, .shelf-note h6 [data-rescreen]:hover { color:var(--c-ink); }
 .shelf-note p { margin:0; font-family:var(--font-read); font-size:17px; line-height:1.66; color:var(--c-ink-2); max-width:70ch; }
-.shelf-note.is-ours p { color:var(--c-ink); border-left:2px solid var(--c-cast,var(--c-accent)); padding-left:14px; }
+/* Every section of a card the same way (his pick 3, 2026-09-24): no bars, one text
+   colour, and the title's short gold hairline under each section name. */
+.shelf-note.is-ours p { color:var(--c-read, var(--c-ink-2)); border-left:0; padding-left:0; }
+.shelf-note:not(.lib-toc) h6 { position:relative; padding-bottom:9px; margin-bottom:12px; }
+.shelf-note:not(.lib-toc) h6::after { content:''; position:absolute; left:0; bottom:0; width:24px; height:1px;
+  background:var(--c-kept-echo, var(--c-accent)); opacity:.8; }
+.shelf-note p { color:var(--c-read, var(--c-ink-2)); }
 .shelf-note-wait { margin:18px 0 0; font-size:14px; font-style:italic; color:var(--c-ink-5); }
 .shelf-kept { margin-top:22px; display:flex; flex-direction:column; gap:10px; }
 .shelf-kept blockquote { margin:0; background:rgba(87,195,180,.07); border-left:3px solid var(--c-cast,var(--c-accent));
