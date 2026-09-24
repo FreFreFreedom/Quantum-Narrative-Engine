@@ -17,7 +17,7 @@ import { listChapters, chapterize, recaseChapters } from '../services/chapters.j
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import * as interests from '../services/interestLibrary.js';
-import { lookupWord } from '../services/wordLookup.js';
+import { lookupWord, glossaryFor } from '../services/wordLookup.js';
 
 // The lanes the manual model picker (plan "chat-model-picker") may point a
 // conversation at. Kept in sync by hand with turnRouter.js's FORCED_LANES and
@@ -490,8 +490,15 @@ export function conversationsRoutes() {
 
   // POST /api/convos/:id/define — the word selected, read in its sentence, for him.
   router.post('/:id/define', asyncHandler(async (req, res) => {
-    const out = await lookupWord(req.params.id, { word: req.body?.word, sentence: req.body?.sentence });
+    const out = await lookupWord(req.params.id, { word: req.body?.word, sentence: req.body?.sentence, messageId: req.body?.messageId || null });
     if (out.error) return res.status(out.error === 'not_found' ? 404 : out.error === 'not_a_word' ? 400 : 500).json(out);
+    res.json(out);
+  }));
+
+  // GET /api/convos/:id/glossary/:messageId — one answer's words, read ahead of time.
+  router.get('/:id/glossary/:messageId', asyncHandler(async (req, res) => {
+    const out = await glossaryFor(req.params.id, req.params.messageId);
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 500).json(out);
     res.json(out);
   }));
 

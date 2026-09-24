@@ -28880,9 +28880,28 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       return text.slice(from, Math.min(to + 1, text.length)).trim().slice(0, 600);
     } catch(_) { return ''; }
   }
-  function defineHere(e, word, sentence, pop){
+  // Read ahead: for the last answers on screen, one call each fetches the words a
+  // reader may not know, read where they stand; they land in the same cache a click
+  // reads from. Once per answer per session; the server keeps them for good.
+  function warmGlossary(e, log){
+    if(!e || !e.convoId || !log || e.busy) return;
+    if(!e.glossWarmed) e.glossWarmed = {};
+    var turns = Array.from(log.querySelectorAll('.se-turn[data-msg-id]:not(.you):not(.plan)')).slice(-4);
+    turns.forEach(function(t){
+      var id = t.getAttribute('data-msg-id');
+      if(!id || e.glossWarmed[id]) return;
+      e.glossWarmed[id] = 1;
+      api('/api/convos/' + e.convoId + '/glossary/' + encodeURIComponent(id))
+        .then(function(d){
+          var words = (d && d.words) || {};
+          Object.keys(words).forEach(function(w){ defineHereCache[e.convoId + '|' + w] = words[w]; });
+        })
+        .catch(function(){ delete e.glossWarmed[id]; });
+    });
+  }
+  function defineHere(e, word, sentence, pop, messageId){
     if(!e || !e.convoId) return;
-    var key = e.convoId + '|' + word.toLowerCase();
+    var key = e.convoId + '|' + word.toLowerCase().replace(/[’']s$/, '');
     var paint = function(text){
       if(!text) return;
       var box = defineBox(pop); if(!box) return;
@@ -28892,7 +28911,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       placeQuotePop();
     };
     if(key in defineHereCache){ paint(defineHereCache[key]); return; }
-    apiWrite('/api/convos/' + e.convoId + '/define', 'POST', { word: word, sentence: sentence })
+    apiWrite('/api/convos/' + e.convoId + '/define', 'POST', { word: word, sentence: sentence, messageId: messageId || null })
       .then(function(d){ var t = d && d.text ? d.text : ''; defineHereCache[key] = t; paint(t); })
       .catch(function(){});
   }
@@ -29015,7 +29034,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         placeQuotePop();
         // One word selected: its meaning opens under the bar by itself.
         if(/^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage)){
-          defineHere(e, passage, sentenceAround(range, passage), quotePop);
+          defineHere(e, passage, sentenceAround(range, passage), quotePop, msgId);
           defineWord(passage, quotePop);
         }
       }, settleMs);
@@ -30097,6 +30116,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // Painted here, next to the strip, because they are the same thing seen twice.
     var rail = host.querySelector('.se-rail');
     if(rail) paintRail(rail, log, e, repaintHere);
+    // Every answer's words are read ahead of time, so a click on one is instant.
+    warmGlossary(e, log);
 
     // Lane tag -> re-ask the last question on a different lane. The router's
     // forced path does the rest; this is just the typed /ask, triggered by click.
