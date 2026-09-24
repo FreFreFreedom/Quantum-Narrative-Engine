@@ -2754,6 +2754,21 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-rail-drop { display:none; flex:none; font-weight:400; font-size:11px; line-height:1; padding:3px; color:var(--c-ink-5); border-radius:4px; }
 .se-rail:hover .se-rail-item:hover .se-rail-drop { display:block; }
 .se-rail-drop:hover { color:var(--c-ink); background:var(--c-surface-2); }
+/* Small and tight (his pick A, 2026-09-24): a narrow list, one line per kept
+   chapter, and the search folded into an icon in the head. */
+#roomConvo .se-rail:hover, #roomConvo .se-rail:focus-within { width:250px; padding:6px 5px; border-radius:12px; }
+#roomConvo .se-rail-head { align-items:center; padding-left:10px; padding-right:4px; }
+#roomConvo .se-rail:hover .se-rail-head, #roomConvo .se-rail:focus-within .se-rail-head { padding-top:4px; padding-bottom:6px; border-bottom-color:transparent; }
+.se-rail-findbtn { display:flex; align-items:center; justify-content:center; width:24px; height:24px; padding:0; border:0; border-radius:6px; background:none; color:var(--c-ink-5); cursor:pointer; }
+.se-rail-findbtn:hover, .se-rail.is-searching .se-rail-findbtn { color:var(--c-ink-2); background:var(--c-hover-wash); }
+.se-rail-findbtn svg { width:13px; height:13px; }
+#roomConvo .se-rail:not(.is-searching) .se-rail-find { display:none; }
+#roomConvo .se-rail-find { margin:0 4px 6px; padding:5px 10px; }
+#roomConvo .se-rail-find input { font:13px var(--font-ui); }
+#roomConvo .se-rail-item { gap:10px; min-height:26px; padding:5px 8px; border-radius:7px; }
+#roomConvo .se-rail-num { width:16px; font:500 10px/1 'Cinzel', var(--font-read); }
+#roomConvo .se-rail-name { display:block; white-space:nowrap; text-overflow:ellipsis; font:13px/1.35 var(--font-ui); }
+#roomConvo .se-rail-item.is-here::before { top:6px; bottom:6px; }
 .se-rail-mark { display:none; flex:none; width:10px; height:12px; color:var(--c-brand); }
 .se-rail:hover .se-rail-item.is-saved .se-rail-mark, .se-rail:focus-within .se-rail-item.is-saved .se-rail-mark { display:block; }
 /* Sections inside a chapter — an answer's headings, and the lines he kept — and the
@@ -28223,9 +28238,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var text = body ? body.textContent.replace(/\s+/g, ' ') : '';
       var snip = String(c.snippet || c.label || '').replace(/\s+/g, ' ').trim();
       var at = snip ? text.indexOf(snip) : -1;
-      if(at !== -1 && t === snip){
+      // A label that is the passage cut short ("These two books by Matth") is
+      // widened the same way, to the end of its last word.
+      var prefix = t && t !== snip && snip.indexOf(t) === 0;
+      if(at !== -1 && (t === snip || prefix)){
         var from = at; while(from > 0 && /[\w\u2019'\u00C0-\u024F-]/.test(text[from - 1])) from--;
-        var to = at + snip.length; while(to < text.length && /[\w\u2019'\u00C0-\u024F-]/.test(text[to])) to++;
+        var to = at + t.length; while(to < text.length && /[\w\u2019'\u00C0-\u024F-]/.test(text[to])) to++;
         t = text.slice(from, to).trim();
       }
       var words = t.split(' ');
@@ -28303,12 +28321,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var subs = [];
     var had = rail.querySelector('.se-rail-find input');
     var q = e.railQuery || '', typing = had && document.activeElement === had;
-    rail.innerHTML = '<div class="se-rail-head">Kept<b>' + chapters.length + '</b></div>'
+    var searching = !!(e.railSearch || q);
+    rail.classList.toggle('is-searching', searching);
+    rail.innerHTML = '<div class="se-rail-head"><span>Kept \u00b7 ' + chapters.length + '</span>'
+      + '<button type="button" class="se-rail-findbtn" aria-label="Find in this conversation"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3.2 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>'
       + '<label class="se-rail-find"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3.2 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
       + '<input type="search" placeholder="Find in this conversation" aria-label="Find in this conversation" value="' + qEscAttr(q) + '"></label>'
       + '<div class="se-rail-hits"></div>'
       + '<div class="se-rail-list">' + chapters.map(function(c, ci){
-      var name = c.label || railName(c, log);
+      var name = railName(c, log);
       return '<button type="button" class="se-rail-item is-saved"'
         + ' data-chapter="' + qEscAttr(c.messageId) + '" aria-label="' + qEscAttr(name) + '">'
         + '<span class="se-rail-dash"></span>'
@@ -28349,6 +28370,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       };
     });
     var input = rail.querySelector('.se-rail-find input'), hits = rail.querySelector('.se-rail-hits');
+    var findBtn = rail.querySelector('.se-rail-findbtn');
+    if(findBtn) findBtn.onclick = function(ev){
+      ev.stopPropagation();
+      e.railSearch = !rail.classList.contains('is-searching');
+      rail.classList.toggle('is-searching', e.railSearch);
+      if(e.railSearch) input.focus(); else { input.value = ''; runFind(); }
+    };
     var runFind = function(){
       e.railQuery = input.value;
       var found = railFind(log, input.value);
