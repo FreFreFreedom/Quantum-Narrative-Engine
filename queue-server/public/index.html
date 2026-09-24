@@ -275,10 +275,11 @@ window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom
   --c-kept-line: rgba(207,174,110,.7); --c-kept-echo: #cfae6e; --c-kept-rule: #cfae6e;
   --orb-1: #5a2233; --orb-2: #cfae6e; --orb-inv: 1;
 }
-/* Paper grain over the two newest night looks (Antoine, 2026-09-24: "i like the texture
-   paper"), exactly as in the theme mockup: fine fractal noise, blended so it only lifts and
-   darkens the colours already there. It never takes a click. */
-:root:is([data-look="navy"],[data-look="plum"]) body::after {
+/* Paper grain over every look (Antoine, 2026-09-24: "i like the texture paper", then
+   "it should be integrated for the other looks"), exactly as in the theme mockup: fine
+   fractal noise, blended so it only lifts and darkens the colours already there. It never
+   takes a click. A new look gets it for free. */
+body::after {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:2147483000; opacity:.22; mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
