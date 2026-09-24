@@ -17,13 +17,12 @@ export function bindWordLookup(database) {
 }
 
 const PROMPT = `You are a dictionary that knows where the reader is. He is reading an answer in a
-long conversation and selected ONE word. Explain that word as it is used in THIS sentence,
-for him: plain English (it is his second language), no jargon, no etymology, no list of
-other senses. Two short sentences at most, about 35 words in all:
-  1. what the word means here, said plainly;
-  2. what it does in this sentence or this conversation — the shade the plain word would miss.
-Never start with the word itself or with "In this context". No quotation marks around
-the word. Plain prose, no markdown.`;
+long conversation and selected ONE word. Write, for him, what that word means as it is used
+in THIS sentence, and the shade it carries here that the plain word would miss. Plain
+English — it is his second language. No jargon, no etymology, no other senses, no list,
+no numbering, no heading, no markdown, no quotation marks around the word. Two short
+sentences of prose, about 35 words in all. Do not begin with the word itself, and do not
+begin with "In this context".`;
 
 export async function lookupWord(convoId, { word, sentence = '' } = {}) {
   const w = String(word || '').trim().toLowerCase().replace(/[’']s$/, '');
@@ -32,7 +31,7 @@ export async function lookupWord(convoId, { word, sentence = '' } = {}) {
   if (!convo) return { error: 'not_found' };
   if (db) {
     const hit = db.prepare('SELECT text FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, w);
-    if (hit) return { ok: true, text: hit.text, cached: true };
+    if (hit && hit.text.split(/\s+/).length >= 8) return { ok: true, text: hit.text, cached: true };
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 600);
   const recap = String(convo.recap || '').slice(0, 1200);
@@ -45,11 +44,12 @@ export async function lookupWord(convoId, { word, sentence = '' } = {}) {
       + (mind ? `\n\n=== THE READER ===\n${mind}` : ''),
     feature: 'quick',
     label: 'room:define',
-    maxTokens: 120,
+    maxTokens: 160,
     timeoutMs: 30_000,
   });
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
-  const text = out.text.trim().replace(/^["“]|["”]$/g, '');
+  const text = out.text.trim().replace(/^["“]|["”]$/g, '').replace(/^\s*(?:\d+[.:)]|[-*•])\s*/, '');
+  if (text.split(/\s+/).length < 8) return { error: 'too_short' };
   if (db) db.prepare('INSERT OR REPLACE INTO word_lookups (convo_id, word, sentence, text) VALUES (?,?,?,?)').run(convoId, w, sent, text);
   return { ok: true, text };
 }
