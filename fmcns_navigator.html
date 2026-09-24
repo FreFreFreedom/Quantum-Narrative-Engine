@@ -17244,18 +17244,18 @@ function libContentsMarkup(title, author, isbn) {
     + '</ol><small>' + qEsc(c.source) + '</small></details>';
 }
 
-// "What it is" and "Why it is here" are read at a glance: 40 words at most (his
-// rule, 2026-09-23). Whole sentences while they fit; a first sentence longer than
-// that is cut at the 40th word.
+// "What it is" and "Why it is here" are about 40 words each (his rule, 2026-09-24),
+// written to that length on the server. This is only the guard for an old or runaway
+// note: whole sentences up to 55 words, never a cut through the middle of one.
 function libForty(text) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   if (!t) return '';
   const count = (x) => x.split(' ').filter(Boolean).length;
-  if (count(t) <= 40) return t;
+  if (count(t) <= 55) return t;
   const sentences = t.match(/[^.!?…]+[.!?…]+["'\u201d\u2019)]*\s*/g) || [];
   let out = '';
-  for (const x of sentences) { if (count(out + x) > 40) break; out += x; }
-  return out.trim() || t.split(' ').slice(0, 40).join(' ').replace(/[,;:]$/, '') + '…';
+  for (const x of sentences) { if (count(out + x) > 55) break; out += x; }
+  return out.trim() || t.split(' ').slice(0, 55).join(' ').replace(/[,;:]$/, '') + '…';
 }
 function libStars(v) {
   const pct = Math.max(0, Math.min(100, (Number(v) || 0) * 10));

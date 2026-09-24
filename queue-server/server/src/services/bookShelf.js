@@ -21,7 +21,7 @@
 // something to bet a feature on.
 
 import { randomUUID } from 'node:crypto';
-import { wholeSentences, looksCut, PROSE_TOKENS } from './bookFacts.js';
+import { wholeSentences, looksCut, PROSE_TOKENS, NOTE_WORDS, tooShort, writeAbout } from './bookFacts.js';
 import { uniqueTitle } from './knowledgeDocs.js';
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
@@ -56,6 +56,7 @@ export function bindBookShelf(database) {
   // asks for it again — the same rule the book/tag-lens caches follow.
   try { db.exec('ALTER TABLE shelf_books ADD COLUMN blurb TEXT'); } catch (err) { /* already there */ }
   try { db.exec('ALTER TABLE shelf_books ADD COLUMN relevance TEXT'); } catch (err) { /* already there */ }
+  try { db.exec('ALTER TABLE shelf_books ADD COLUMN about TEXT'); } catch (err) { /* already there */ }
 }
 
 export const BOOK_PREFIX = 'Book: ';
@@ -222,7 +223,7 @@ export function bookDetail(owner, id) {
     chars: row.chars, pages: Array.isArray(pages) ? pages.length : 0,
     added: row.created_at, filename: row.filename,
     passages, talks, mentions,
-    blurb: row.blurb || '', relevance: row.relevance || '',
+    blurb: row.about || row.blurb || '', relevance: row.relevance || '',
     opening: (contentOf(row) || '').slice(0, 900).replace(/\s+/g, ' ').trim(),
   };
 }
@@ -254,8 +255,6 @@ async function fetchBlurb(title, author) {
   } catch (err) { return ''; }
 }
 
-const RELEVANCE_MAX_WORDS = 40;
-
 // What this book is doing on THIS shelf: the second summary, written against
 // what the app already knows he is working on rather than against the book in
 // general. One cheap call, then it is stored.
@@ -265,11 +264,11 @@ async function writeRelevance(row, blurb) {
     `BOOK: "${row.title}"${row.author ? ` by ${row.author}` : ''}${row.year ? ` (${row.year})` : ''}`,
     blurb ? `WHAT ITS PUBLISHER SAYS:\n${blurb.slice(0, 1200)}` : '',
     mindBlock(`${row.title} ${row.author || ''} ${String(blurb || '').slice(0, 600)}`),
-    `Write at most ${RELEVANCE_MAX_WORDS} words saying what this book gives HIM — the thinking it feeds, where it bites on what he is working on, and what he would reach into it for.`,
+    `Say what this book gives HIM — the thinking it feeds, where it bites on what he is working on, and what he would reach into it for. ${NOTE_WORDS}.`,
     'Plain words, no jargon, no equations, no hedging, no preamble, no bullet list, and never a summary of the plot. If you do not know the book, say what it is likely to carry and mark that as a guess in four words. Write prose, nothing else.',
   ].filter(Boolean).join('\n\n');
   let raw = '';
-  for (let tries = 0; tries < 2 && looksCut(raw); tries += 1) {
+  for (let tries = 0; tries < 2 && (looksCut(raw) || tooShort(raw)); tries += 1) {
     const out = await generateText({
       prompt, feature: 'studio', label: 'shelf-relevance', maxTokens: PROSE_TOKENS, timeoutMs: 60_000, maxAttempts: 2,
     });
@@ -290,12 +289,17 @@ export async function bookNotes(owner, id, { refresh = false } = {}) {
     blurb = await fetchBlurb(row.title, row.author);
     if (blurb) db.prepare('UPDATE shelf_books SET blurb=? WHERE id=?').run(blurb, id);
   }
+  let about = row.about || '';
+  if (!about) {
+    about = await writeAbout({ kind: 'book', title: row.title, creator: row.author || '', year: row.year || '', source: blurb });
+    if (about) db.prepare('UPDATE shelf_books SET about=? WHERE id=?').run(about, id);
+  }
   let relevance = row.relevance || '';
-  if (!relevance || refresh || looksCut(relevance)) {
+  if (!relevance || refresh || looksCut(relevance) || tooShort(relevance)) {
     const written = await writeRelevance(row, blurb);
     if (written) { relevance = written; db.prepare('UPDATE shelf_books SET relevance=? WHERE id=?').run(relevance, id); }
   }
-  return { id, blurb, relevance };
+  return { id, blurb: about || blurb, relevance };
 }
 
 // ─── Finding the passage ─────────────────────────────────────────────────────

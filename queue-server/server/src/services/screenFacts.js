@@ -14,7 +14,7 @@
 // opens the panel and then kept, exactly like a book's.
 
 import { tmdbFetch } from './filmEnrichment.js';
-import { wholeSentences, looksCut, PROSE_TOKENS } from './bookFacts.js';
+import { wholeSentences, looksCut, PROSE_TOKENS, NOTE_WORDS, tooShort, writeAbout } from './bookFacts.js';
 import { imdbRatings } from './imdbRatings.js';
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
@@ -48,6 +48,8 @@ export function bindScreenFacts(database) {
   try { db.exec('ALTER TABLE screen_facts ADD COLUMN matcher INTEGER NOT NULL DEFAULT 0'); } catch (err) { /* already there */ }
   // The book it was made from, by name, read once from Wikidata (added 2026-09-24).
   try { db.exec('ALTER TABLE screen_facts ADD COLUMN book_author TEXT'); } catch (err) { /* already there */ }
+  // The synopsis, rewritten by the app to about forty words like every card note.
+  try { db.exec('ALTER TABLE screen_facts ADD COLUMN about TEXT'); } catch (err) { /* already there */ }
   try { db.exec('ALTER TABLE screen_facts ADD COLUMN book_checked INTEGER NOT NULL DEFAULT 0'); } catch (err) { /* already there */ }
 }
 
@@ -156,7 +158,7 @@ function shape(owner, row, asked) {
   return {
     title: asked.title, kind: asked.kind, year: row.year || asked.year || '',
     poster: row.poster || '', rating: row.rating || 0, votes: row.votes || 0,
-    overview: row.overview || '', fromBook: !!row.from_book, book,
+    overview: row.about || row.overview || '', fromBook: !!row.from_book, book,
     ratingFrom: row.rating_from || 'tmdb',
     imdbId: row.imdb_id || '',
     relevance: row.relevance || '',
@@ -216,8 +218,6 @@ export async function screenFactsFor(owner, items = []) {
   return out;
 }
 
-const RELEVANCE_MAX_WORDS = 40;
-
 // The second reading: not what it is, but what it is doing here.
 export async function screenRelevance(owner, item, { refresh = false } = {}) {
   if (!db) return { error: 'no_db' };
@@ -225,21 +225,27 @@ export async function screenRelevance(owner, item, { refresh = false } = {}) {
   const row = rowOf(kind, item.title, item.year);
   // A note already stored but cut off is worth one rewrite, unasked: he should not
   // have to click ⟳ on every card an earlier ceiling truncated.
-  if (row?.relevance && !refresh && !looksCut(row.relevance)) return { relevance: row.relevance };
+  let about = row?.about || '';
+  if (!about && row) {
+    about = await writeAbout({ kind, title: item.title, year: row.year, source: row.overview });
+    if (about) db.prepare('UPDATE screen_facts SET about=? WHERE key=?').run(about, keyOf(kind, item.title, item.year));
+  }
+  const overview = about || row?.overview || '';
+  if (row?.relevance && !refresh && !looksCut(row.relevance) && !tooShort(row.relevance)) return { relevance: row.relevance, overview };
   const prompt = [
     `A ${kind} saved in a research tool its owner uses to think with.`,
     `${kind === 'series' ? 'SERIES' : 'FILM'}: "${item.title}"${row?.year ? ` (${row.year})` : ''}`,
     row?.overview ? `WHAT IT IS ABOUT:\n${row.overview.slice(0, 900)}` : '',
     mindBlock(`${item.title} ${String(row?.overview || '').slice(0, 600)}`),
-    `Write at most ${RELEVANCE_MAX_WORDS} words on what this gives HIM — the thinking it feeds, the scene or mechanism it shows that his written sources argue in the abstract.`,
+    `Say what this gives HIM — the thinking it feeds, the scene or mechanism it shows that his written sources argue in the abstract. ${NOTE_WORDS}.`,
     'Plain words, no jargon, no plot summary, no preamble, no bullets. Prose only. If you do not know it, say what it is likely to carry and mark that as a guess in four words.',
   ].filter(Boolean).join('\n\n');
   let raw = '';
-  for (let tries = 0; tries < 2 && looksCut(raw); tries += 1) {
+  for (let tries = 0; tries < 2 && (looksCut(raw) || tooShort(raw)); tries += 1) {
     const out = await generateText({ prompt, feature: 'studio', label: 'screen-relevance', maxTokens: PROSE_TOKENS, timeoutMs: 60_000, maxAttempts: 2 });
     raw = String(out?.text || '').trim();
   }
   const text = wholeSentences(raw.slice(0, 1000));
   if (text && row) db.prepare('UPDATE screen_facts SET relevance=? WHERE key=?').run(text, keyOf(kind, item.title, item.year));
-  return { relevance: text };
+  return { relevance: text, overview };
 }
