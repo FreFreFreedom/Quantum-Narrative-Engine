@@ -75,8 +75,10 @@ export function referenceSaved(owner, identity) {return !!db.prepare('SELECT 1 F
 export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
   ownerCheck(owner);
   const media=db.prepare('SELECT id,kind,title,creator,year,state FROM interest_works WHERE owner=?').all(owner).map(r=>({...r,type:'media'}));
-  const passages=db.prepare('SELECT id,text,source_title FROM saved_passages WHERE created_by=? AND deleted_at IS NULL').all(owner)
-    .map(r=>({type:'passage',id:r.id,kind:'passage',title:r.text.slice(0,100),text:r.text,sourceTitle:r.source_title}));
+  // A passage kept from a conversation carries no source line; only one from a
+  // book or a document names where it came from.
+  const passages=db.prepare('SELECT id,text,source_title,convo_id,message_id FROM saved_passages WHERE created_by=? AND deleted_at IS NULL').all(owner)
+    .map(r=>({type:'passage',id:r.id,kind:'passage',title:r.text.slice(0,100),text:r.text,sourceTitle:(r.convo_id||r.message_id)?'':(r.source_title||'')}));
   const saved=db.prepare('SELECT id,snapshot FROM reference_saves WHERE owner=? ORDER BY created_at DESC').all(owner).map(r=>({...parse(r.snapshot),type:'saved',id:r.id}));
   const words=String(query).toLowerCase().slice(0,250).split(/\s+/).filter(Boolean);
   const importedKeys=new Set(media.map(mediaKey).filter(Boolean));
@@ -91,7 +93,7 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
     counts[r.kind]=(counts[r.kind]||0)+1;
     if(r.kind==='book') bookTitles.push(r.title);
   }
-  return {items:items.slice(start,start+cap).map(({text,...r})=>({...r,excerpt:text?.slice(0,300)})),total:items.length,counts,bookTitles};
+  return {items:items.slice(start,start+cap).map(({text,...r})=>({...r,excerpt:text?.slice(0,r.kind==='passage'?2000:300)})),total:items.length,counts,bookTitles};
 }
 // ─── Analogies found in conversation ────────────────────────────────────────
 // The mind harvest reads each Room conversation every few messages; when it meets a
