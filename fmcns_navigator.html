@@ -556,7 +556,7 @@ body::after {
   --c-plot-7: #7e8fb0;
   --c-plot-8: #c08a3e;
   --c-kept-line: rgba(179,139,69,.7);
-  --c-kept-echo: #8f6c2e;
+  --c-kept-echo: #75561d;
   --c-kept-rule: #b38b45;
   --orb-1: #b38b45;
   --orb-2: #e1d1b5;
@@ -574,6 +574,9 @@ body::after {
   --c-border: #44526a; --c-border-2: #536074; --c-border-3: #6b7482;
   --c-ink: #f1e8d4; --c-ink-2: #d5d5d2; --c-ink-3: #b8c1cf; --c-ink-4: #b8c1cf; --c-ink-5: #8e9aad;
   --c-ink-solid: #f1e8d4; --c-on-solid: #2c3e5c; --c-hover-wash: rgba(241,232,212,0.06); color: #f1e8d4;
+  /* Gold on navy needs to be lit, not the page's deep gold: the brand, the doors and the
+     thread list all take their colour from these two. */
+  --c-kept-echo: #e2bf76; --c-accent: #e2bf76; --c-ink-5: #aeb6c4;
 }
 /* Oxblood, brass & parchment — Antoine's pick "OXBLOOD · BRASS · PARCHMENT" (2026-09-24), from the dusk-glow palette mockups. */
 :root[data-look="oxblood"] {
@@ -1632,6 +1635,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    gold Cinzel, the place you are in in full gold, marked by the title's short hairline
    under it — under the icon while the rail is shut, under the word once it opens. */
 .rail-item { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
+:root[data-look="creamnavy"] .rail-item, :root[data-look="creamnavy"] .rail-btnrow .rail-item { color:color-mix(in srgb, var(--c-kept-echo) 75%, var(--c-ink-5)); }
 .rail-item:hover, .rail-btnrow .rail-item:hover { color:var(--c-kept-echo, var(--c-accent)); }
 .rail-btnrow .rail-item { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
 .rail-nav .rail-item .rail-label { font-weight:500; font-size:var(--fs-2xs); letter-spacing:.2em; }
