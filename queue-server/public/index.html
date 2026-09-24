@@ -1021,6 +1021,16 @@ body::after {
    2026-09-24), so a line is never sliced by a hard edge. */
 #wsRoom .room-main { position:relative; }
 #wsRoom .room-main > .room-toolbar { position:absolute; top:0; left:0; right:0; z-index:8; }
+/* The title in gold Cinzel capitals, centred, a short gold line under it (his pick 2,
+   2026-09-24). Still the same button: a click opens everything about the thread. */
+#wsRoom .room-toolbar .room-titlebtn { position:relative; margin:0 auto; padding:6px 14px 11px; background:none; border-color:transparent; }
+#wsRoom .room-toolbar .room-titlebtn:hover:not(:disabled), #wsRoom .room-toolbar .room-titlebtn[aria-expanded="true"] {
+  background:color-mix(in srgb, var(--c-ink) 6%, transparent); border-color:transparent; }
+#wsRoom .room-toolbar .room-titlebtn::after { content:''; position:absolute; left:50%; bottom:3px; width:56px; height:1px; transform:translateX(-50%);
+  background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, transparent); }
+#wsRoom .room-toolbar .arch-title { font:500 12px/1.3 'Cinzel', var(--font-read); letter-spacing:.22em; text-transform:uppercase;
+  color:var(--c-kept-echo, var(--c-accent)); }
+#wsRoom .room-toolbar .room-turns { display:none; }
 #roomConvo .se-log { --log-top-inset:44px; padding-top:72px; scroll-padding-top:72px;
   -webkit-mask-image:linear-gradient(to bottom, transparent 0, transparent 24px, #000 88px);
           mask-image:linear-gradient(to bottom, transparent 0, transparent 24px, #000 88px); }
