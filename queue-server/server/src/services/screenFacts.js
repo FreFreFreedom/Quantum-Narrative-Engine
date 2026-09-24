@@ -46,6 +46,9 @@ export function bindScreenFacts(database) {
   try { db.exec('ALTER TABLE screen_facts ADD COLUMN extra TEXT'); } catch (err) { /* already there */ }
   // Rows matched before candidates were scored may be the wrong film; asked again once.
   try { db.exec('ALTER TABLE screen_facts ADD COLUMN matcher INTEGER NOT NULL DEFAULT 0'); } catch (err) { /* already there */ }
+  // The book it was made from, by name, read once from Wikidata (added 2026-09-24).
+  try { db.exec('ALTER TABLE screen_facts ADD COLUMN book_author TEXT'); } catch (err) { /* already there */ }
+  try { db.exec('ALTER TABLE screen_facts ADD COLUMN book_checked INTEGER NOT NULL DEFAULT 0'); } catch (err) { /* already there */ }
 }
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -73,6 +76,22 @@ function bookHere(owner, title) {
     if (saved) return { title: saved.title, where: 'library', id: saved.id };
   } catch (err) { /* none saved */ }
   return null;
+}
+
+// Which book a film or series was made from, by its IMDb id: Wikidata's "based on"
+// (P144), kept only when that work has an author (P50), so a film based on a true
+// story, a comic without one or another film never reads as a book. Free, no key.
+async function sourceBook(imdbId) {
+  if (!/^tt\d+$/.test(imdbId || '')) return null;
+  const q = `SELECT ?bookLabel ?authorLabel WHERE { ?f wdt:P345 "${imdbId}" . ?f wdt:P144 ?book . ?book wdt:P50 ?author .
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } LIMIT 1`;
+  try {
+    const r = await fetch('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(q),
+      { headers: { 'User-Agent': 'QNE/1.0 (personal research app)', Accept: 'application/sparql-results+json' }, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return undefined;
+    const b = (await r.json())?.results?.bindings?.[0];
+    return b ? { title: b.bookLabel?.value || '', author: b.authorLabel?.value || '' } : null;
+  } catch (e) { return undefined; }   // undefined = could not ask; try again another time
 }
 
 async function fetchFacts(kind, title, year) {
@@ -130,7 +149,10 @@ function rowOf(kind, title, year) {
 
 function shape(owner, row, asked) {
   if (!row) return null;
-  const book = row.from_book ? bookHere(owner, row.book_title || asked.title) : null;
+  // Only a book it was really made from, named; nothing at all otherwise.
+  const book = row.book_title
+    ? { title: row.book_title, author: row.book_author || '', ...(bookHere(owner, row.book_title) || {}), title: row.book_title }
+    : null;
   return {
     title: asked.title, kind: asked.kind, year: row.year || asked.year || '',
     poster: row.poster || '', rating: row.rating || 0, votes: row.votes || 0,
@@ -168,6 +190,15 @@ export async function screenFactsFor(owner, items = []) {
                       overview=excluded.overview, from_book=excluded.from_book, extra=excluded.extra, matcher=excluded.matcher, tmdb_id=excluded.tmdb_id, year=excluded.year, fetched_at=CURRENT_TIMESTAMP`)
           .run(keyOf(kind, it.title, it.year), kind, it.title, String(facts.year || it.year || ''), facts.tmdb_id, facts.imdb_id,
             facts.rating_from, facts.poster, facts.rating, facts.votes, facts.overview, facts.from_book, facts.extra, SCREEN_MATCHER);
+        row = rowOf(kind, it.title, it.year);
+      }
+    }
+    if (row && row.imdb_id && !row.book_checked && fetched < FETCH_CAP) {
+      fetched += 1;
+      const src = await sourceBook(row.imdb_id);
+      if (src !== undefined) {
+        db.prepare('UPDATE screen_facts SET book_title=?, book_author=?, book_checked=1, from_book=? WHERE key=?')
+          .run(src?.title || null, src?.author || null, src?.title ? 1 : 0, keyOf(kind, it.title, it.year));
         row = rowOf(kind, it.title, it.year);
       }
     }

@@ -2650,8 +2650,9 @@ span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:10px; color:#
   color:var(--c-accent,#c8a56a); }
 .lib-based { display:flex; gap:10px; align-items:center; margin:11px 0 0; padding:8px 9px;
   border:1px solid var(--c-border-2); border-radius:10px; }
-.lib-based small { display:block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
-.lib-based b { font-size:12px; font-weight:600; }
+.lib-based small { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
+.lib-based b { font-size:15px; font-weight:600; }
+.lib-based-by { display:block; font-size:13px; color:var(--c-ink-4); margin-top:1px; }
 .lib-bchip { width:22px; height:32px; border-radius:2px; background:var(--c-surface-3,var(--c-surface-2)); border:1px solid var(--c-border-2); flex:none; }
 /* An opened item reads like a page about that book, not like a row that grew:
    jacket and title together at the top, then two headed passages of prose. The
@@ -4369,11 +4370,11 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-target" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.6"/><path d="M8 .8v2.2M8 13v2.2M.8 8h2.2M13 8h2.2"/></symbol>
   <symbol id="ic-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.2"/><path d="M8 1.4v1.8M8 12.8v1.8M1.4 8h1.8M12.8 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3"/></symbol>
   <symbol id="ic-moon" viewBox="0 0 16 16"><path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/></symbol>
-  <symbol id="ic-look" viewBox="0 0 16 16"><path d="M8 1.8A6.2 6.2 0 1 0 8 14.2c1 0 1.6-.6 1.6-1.4s-.5-1.2-1.1-1.4c-.7-.2-1-.6-1-1.2 0-.7.6-1.3 1.4-1.3h1.5a3.4 3.4 0 0 0 3.4-3.4c0-2-2.3-3.7-6.8-3.7z"/><circle cx="5.4" cy="6.2" r="1"/><circle cx="8" cy="4.8" r="1"/><circle cx="10.6" cy="6" r="1"/></symbol>
+  <symbol id="ic-look" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></symbol>
   <!-- Sliders, not a gear and emphatically not a sun: this sits one row above the Look
        button, whose symbol is a sun or a moon, and a radial settings glyph beside it read
        as a second theme switch. -->
-  <symbol id="ic-settings" viewBox="0 0 16 16"><path d="M2.4 4.6h11.2M2.4 8h11.2M2.4 11.4h11.2"/><circle cx="6" cy="4.6" r="1.5"/><circle cx="10.4" cy="8" r="1.5"/><circle cx="5.2" cy="11.4" r="1.5"/></symbol>
+  <symbol id="ic-settings" viewBox="0 0 24 24"><path d="M14.5 5.5a4 4 0 0 0-5 5L4 16v4h4l5.5-5.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z"/></symbol>
   <symbol id="ic-upload" viewBox="0 0 16 16"><path d="M8 11.4V3.2"/><path d="M4.6 6.6 8 3.2l3.4 3.4"/><path d="M3 12.4v.8a1.4 1.4 0 0 0 1.4 1.4h7.2a1.4 1.4 0 0 0 1.4-1.4v-.8"/></symbol>
 </defs></svg>
 
@@ -17184,10 +17185,12 @@ function libScreenPanel(w) {
   const rating = f.rating
     ? '<div class="lib-rate">' + libStars(f.rating) + '<em>' + f.rating.toFixed(1) + '</em>'
       + '<span>/10 · ' + libVotes(f.votes) + (f.ratingFrom === 'imdb' ? ' votes on IMDb' : ' votes') + '</span></div>' : '';
-  const book = f.fromBook
-    ? '<div class="lib-based"><span class="lib-bchip"></span><div><small>From a book</small><b>'
-      + qEsc(f.book ? f.book.title + (f.book.where === 'shelf' ? ' — on your shelf' : ' — in your library') : 'not in your library yet')
-      + '</b></div></div>' : '';
+  // The book it was made from, named, whether or not it is on the shelf; nothing
+  // at all when it was not made from one (his rule, 2026-09-24).
+  const book = f.book && f.book.title
+    ? '<div class="lib-based"><span class="lib-bchip"></span><div><small>From a book' + (f.book.where === 'shelf' ? ' · on your shelf' : f.book.where === 'library' ? ' · in your library' : '') + '</small><b>'
+      + qEsc(f.book.title) + '</b>' + (f.book.author ? '<span class="lib-based-by">' + qEsc(f.book.author) + '</span>' : '')
+      + '</div></div>' : '';
   return '<div class="shelf-panel">'
     + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
     + '<div><b title="' + qEscAttr(w.title) + '">' + (w.url && /^https:\/\//.test(w.url)
@@ -30089,7 +30092,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var choice = stored();
     var look = resolve(choice);
     var use = btn.querySelector('use');
-    if (use) use.setAttribute('href', choice === 'auto' ? '#ic-look' : (LOOKS[look].dark ? '#ic-moon' : '#ic-sun'));
+    if (use) use.setAttribute('href', '#ic-look');   // one symbol, the half disc, whatever the look (his pick)
     var label = choice === 'auto' ? 'Match my Mac' : LOOKS[look].name;
     btn.title = 'Look: ' + label;
     btn.setAttribute('aria-label', 'Look: ' + label);
