@@ -1214,6 +1214,11 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .se-micwave { display:none; flex:1 1 60px; min-width:40px; height:26px; color:var(--c-accent); }
 .se-compose.se-dictating .se-micwave { display:block; }
 .se-compose.se-dictating .se-lanewrap, .se-compose.se-dictating .se-talk { display:none; }
+/* Cancel, while dictating only: drops what was heard and gives the box back as it was. */
+.se-miccancel { display:none; align-items:center; justify-content:center; flex:none; width:26px; height:26px; padding:0; border:1px solid transparent; border-radius:50%; background:none; color:var(--c-ink-4); cursor:pointer; }
+.se-compose.se-dictating .se-miccancel { display:flex; }
+.se-miccancel:hover { color:var(--c-ink); }
+.se-miccancel .ic { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; }
 /* The voice glow and the stop button's beam sit over their host, never taking a click. */
 .qne-fx { position:absolute; inset:0; pointer-events:none; border-radius:inherit; z-index:1; }
 .qne-fx > div, .qne-fx-fill { width:100%; height:100%; border-radius:inherit; }
@@ -2462,7 +2467,8 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 /* Placement 1 (his pick, 2026-09-24): the model after the line, before the microphone,
    in the dimmest gold — a word you find when you look for it. */
 .room-convo .se-lanewrap { order:1; margin-right:4px; }
-.room-convo .se-spend, .room-convo .se-micwave, .room-convo .se-mic, .room-convo .se-talk, .room-convo .se-send { order:2; }
+.room-convo .se-spend, .room-convo .se-miccancel, .room-convo .se-micwave, .room-convo .se-mic, .room-convo .se-talk, .room-convo .se-send { order:2; }
+.room-convo .se-miccancel { width:30px; height:30px; margin-bottom:2px; }
 .room-convo .se-lanebtn { font-size:9px; letter-spacing:.2em; color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
 .room-convo .se-lanebtn.is-set { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, var(--c-ink-5)); }
 .room-convo .se-lanebtn:hover, .room-convo .se-lanebtn[aria-expanded="true"] { color:var(--c-kept-echo, var(--c-accent)); }
@@ -7310,10 +7316,10 @@ window.qneVoice = (function () {
   // Dictate keeps the live waveform in the composer (Antoine, 2026-09-24: the rising glow
   // was tried here and he chose the waveform back; the glow stays on Talk).
   function wireDictate(host, e, input) {
-    var mic = host.querySelector('.se-mic'), compose = host.querySelector('.se-compose'), wave = host.querySelector('.se-micwave');
+    var mic = host.querySelector('.se-mic'), compose = host.querySelector('.se-compose'), wave = host.querySelector('.se-micwave'), cancel = host.querySelector('.se-miccancel');
     if (!mic || !SR) return;
     mic.hidden = false;
-    var rec = null, meter = null, stopWave = null;
+    var rec = null, meter = null, stopWave = null, before = '';
     function setBox(v) { input.value = v; input.dispatchEvent(new Event('input')); }
     function cleanup() {
       rec = null;
@@ -7324,6 +7330,7 @@ window.qneVoice = (function () {
     }
     function start() {
       var base = input.value && !/\s$/.test(input.value) ? input.value + ' ' : input.value;
+      before = input.value;
       rec = new SR();
       rec.lang = lang(); rec.continuous = true; rec.interimResults = true;
       rec.onresult = function (ev) {
@@ -7340,6 +7347,12 @@ window.qneVoice = (function () {
       stopWave = waveLoop(wave, function () { return meter ? meter.level() : 0.05; });
     }
     mic.onclick = function (ev) { ev.stopPropagation(); if (rec) rec.stop(); else start(); input.focus(); };
+    // Cancel: what was heard is dropped and the box goes back to what it held before.
+    if (cancel) cancel.onclick = function (ev) {
+      ev.stopPropagation();
+      if (rec) { var r = rec; r.onresult = null; r.abort(); cleanup(); }
+      setBox(before); input.focus();
+    };
     // Enter sends what was heard; the late final result must not land in the emptied box.
     input.addEventListener('keydown', function (ev) {
       if (rec && ev.key === 'Enter' && !ev.shiftKey) { var r = rec; r.onresult = null; r.abort(); cleanup(); }
@@ -28289,7 +28302,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
               : '')
         +     '<textarea class="se-input" rows="1" placeholder="…"></textarea><span class="se-quill" aria-hidden="true"></span>'
         +     '<span class="se-spend" hidden></span>'
-        +     '<canvas class="se-micwave" aria-hidden="true"></canvas><button type="button" class="se-mic" hidden title="Dictate" aria-label="Dictate"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"/><path d="M3.4 7.6a4.6 4.6 0 0 0 9.2 0M8 12.2v2"/></svg></button><button type="button" class="se-talk" hidden title="Talk" aria-label="Talk"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.8v2.4M5.25 4.8v6.4M8 2.5v11M10.75 4.8v6.4M13.5 6.8v2.4"/></svg></button>'
+        +     '<button type="button" class="se-miccancel" title="Cancel dictation" aria-label="Cancel dictation"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button><canvas class="se-micwave" aria-hidden="true"></canvas><button type="button" class="se-mic" hidden title="Dictate" aria-label="Dictate"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"/><path d="M3.4 7.6a4.6 4.6 0 0 0 9.2 0M8 12.2v2"/></svg></button><button type="button" class="se-talk" hidden title="Talk" aria-label="Talk"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.8v2.4M5.25 4.8v6.4M8 2.5v11M10.75 4.8v6.4M13.5 6.8v2.4"/></svg></button>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
         +   '</div>'
         +   '</div>'
