@@ -63,6 +63,17 @@ window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom
   src:url('/fonts/literata-italic.woff2') format('woff2'); }
 @font-face { font-family:'Cinzel'; font-style:normal; font-weight:400 900; font-display:swap;
   src:url('/fonts/cinzel-normal.woff2') format('woff2'); }
+/* Fraunces and Cardo (his picks, 2026-09-24, Room reading faces): SIL OFL 1.1, latin subset. */
+@font-face { font-family:'Fraunces'; font-style:normal; font-weight:300 700; font-display:swap;
+  src:url('/fonts/fraunces-normal.woff2') format('woff2'); }
+@font-face { font-family:'Fraunces'; font-style:italic; font-weight:300 700; font-display:swap;
+  src:url('/fonts/fraunces-italic.woff2') format('woff2'); }
+@font-face { font-family:'Cardo'; font-style:normal; font-weight:400; font-display:swap;
+  src:url('/fonts/cardo-400-normal.woff2') format('woff2'); }
+@font-face { font-family:'Cardo'; font-style:normal; font-weight:700; font-display:swap;
+  src:url('/fonts/cardo-700-normal.woff2') format('woff2'); }
+@font-face { font-family:'Cardo'; font-style:italic; font-weight:400; font-display:swap;
+  src:url('/fonts/cardo-400-italic.woff2') format('woff2'); }
 @font-face { font-family:'Source Sans 3'; font-style:normal; font-weight:400 700; font-display:swap;
   src:url('/fonts/sourcesans3-normal.woff2') format('woff2'); }
 @font-face { font-family:'Source Sans 3'; font-style:italic; font-weight:400 700; font-display:swap;
@@ -14310,6 +14321,8 @@ const ROOM_TYPE_KEY = 'fmcns_room_type';
 const ROOM_FONTS = [
   ['dyslexic', 'OpenDyslexic', "'OpenDyslexic',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"],
   ['serif', 'Literata', "'Literata',Georgia,'Iowan Old Style','Times New Roman',serif"],
+  ['fraunces', 'Fraunces', "'Fraunces','Iowan Old Style',Georgia,serif"],
+  ['cardo', 'Cardo', "'Cardo','Palatino Linotype',Palatino,Georgia,serif"],
   ['iowan', 'Iowan Old Style', "'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif"],
   ['charter', 'Charter', "Charter,'Bitstream Charter','Source Serif 4',Georgia,serif"],
   ['georgia', 'Georgia', "Georgia,'Times New Roman',serif"],
