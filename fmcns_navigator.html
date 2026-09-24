@@ -2574,21 +2574,27 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-card b { display:block; margin-top:5px; font-size:11px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
 .shelf-card small { display:block; color:var(--c-ink-4); font-size:10px; }
 .shelf-open { display:block; position:relative; width:100%; padding:0; border:0; background:none; cursor:pointer; }
-/* Held at the top of the pane: scrolled loose, its open menu lands in the middle
-   of the wall over whatever card is there. */
-.lib-top { position:sticky; top:0; z-index:4; padding:12px 0 14px; margin:0; background:var(--c-bg); }
-.lib-find { display:flex; align-items:center; height:38px; border:1px solid var(--c-border); border-radius:999px;
-  background:var(--c-surface); padding:0 4px 0 14px; transition:border-color .2s ease, box-shadow .2s ease; }
-.lib-find:focus-within { border-color:var(--c-border-2); box-shadow:0 0 0 3px var(--c-hover-wash); }
-.lib-find svg { flex:none; width:15px; height:15px; fill:none; stroke:var(--c-ink-5); stroke-width:1.8; stroke-linecap:round; }
-.lib-top .lib-search { flex:1; min-width:0; height:100%; border:0; background:transparent; padding:0 10px; outline:none; box-shadow:none;
-  font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink); }
-.lib-top .lib-search::placeholder { color:var(--c-ink-5); }
-.lib-top .lib-kind { flex:none; width:auto; height:28px; margin:0; border:0; border-left:1px solid var(--c-border); border-radius:0 999px 999px 0;
-  background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
-  -webkit-appearance:none; appearance:none; padding:0 30px 0 14px; cursor:pointer; box-shadow:none;
-  font-family:var(--font-ui); font-size:var(--fs-xs); letter-spacing:.04em; color:var(--c-ink-3); }
-.lib-top .lib-kind:focus { outline:none; color:var(--c-ink); }
+/* The library's head scrolls away with the wall rather than floating over it (his ask,
+   2026-09-24): tabs in the Room's engraved capitals, a search icon, and ✦ for the
+   suggestions of the one type open. */
+.lib-top { display:flex; align-items:center; gap:10px; padding:10px 0 12px; margin:0; }
+.lib-tabs { flex:1; min-width:0; display:flex; gap:16px; overflow-x:auto; scrollbar-width:none; }
+.lib-tabs::-webkit-scrollbar { display:none; }
+.lib-tabs button { flex:none; padding:4px 0; border:0; background:none; box-shadow:none; min-width:0; height:auto; cursor:pointer;
+  font-family:'Cinzel',var(--font-read); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-4);
+  border-bottom:1px solid transparent; transition:color .2s ease, border-color .2s ease; }
+.lib-tabs button:hover { color:var(--c-ink-2); }
+.lib-tabs button.on { color:var(--c-kept-echo, var(--c-accent)); border-bottom-color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, transparent); }
+.lib-tools { flex:none; display:flex; gap:4px; }
+.lib-tools button { width:28px; height:28px; min-width:0; padding:0; border:0; border-radius:50%; background:none; box-shadow:none; cursor:pointer;
+  display:grid; place-items:center; color:var(--c-ink-4); font-size:13px; transition:color .2s ease, background .2s ease; }
+.lib-tools button:hover { color:var(--c-ink); background:var(--c-hover-wash); }
+.lib-tools button.on { color:var(--c-kept-echo, var(--c-accent)); }
+.lib-tools svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; }
+.lib-find { margin:0 0 14px; border-bottom:1px solid var(--c-border-2); animation:fmcnsFade .25s ease both; }
+.lib-find .lib-search { width:100%; height:34px; border:0; background:transparent; padding:0 2px; outline:none; box-shadow:none;
+  font-family:var(--font-ui); font-size:15px; color:var(--c-ink); }
+.lib-find .lib-search::placeholder { color:var(--c-ink-5); }
 .lib-bar { display:flex; justify-content:flex-end; margin:0 0 8px; }
 .shelf-name { position:absolute; inset:auto 0 0; padding:18px 7px 7px; font-size:10px; line-height:1.3; text-align:left;
   color:var(--c-ink); background:linear-gradient(transparent,rgba(0,0,0,.86)); border-radius:0 0 6px 6px;
@@ -4759,16 +4765,12 @@ button:active { transform: translateY(1px) scale(.99); }
              and five headings before any content, in a 290px column. A tab strip
              says the same thing in one row and shows one pane at a time. -->
         <div class="room-tabs" id="roomTabs" role="tablist">
-          <button type="button" data-room-primary="discover" role="tab">Discover</button>
           <button type="button" data-room-primary="library" role="tab">Library</button>
           <button type="button" data-room-primary="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
           <button type="button" data-room-more aria-haspopup="menu" aria-expanded="false" role="button">More…</button>
           <div class="room-secondary-tabs" id="roomSecondaryTabs" role="menu" hidden>
             <button type="button" data-room-pane="attached" role="menuitem">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
             <button type="button" data-room-pane="ideas" role="menuitem">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
-            <button type="button" data-room-pane="papers" role="menuitem">Papers <span class="room-tabcount" id="roomPapersCount"></span></button>
-            <button type="button" data-room-pane="apps" role="menuitem">Projects <span class="room-tabcount" id="roomAppsCount"></span></button>
-            <button type="button" data-room-pane="analogies" role="menuitem">Analogies <span class="room-tabcount" id="roomAnaCount"></span></button>
             <button type="button" data-room-pane="mind" role="menuitem">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
             <button type="button" data-room-pane="extract" role="menuitem">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
           </div>
@@ -13877,7 +13879,7 @@ function initRoom() {
   const strip = document.getElementById('roomTabs');
   if (strip) {
     let pane = 'attached';
-    try { const saved = localStorage.getItem(ROOM_PANE_KEY); if (saved && ROOM_PANES[saved]) pane = saved; } catch (e) {}
+    try { const saved = localStorage.getItem(ROOM_PANE_KEY); if (saved && ROOM_PANES[saved]) pane = ['papers', 'apps', 'analogies'].includes(saved) ? 'interests' : saved; } catch (e) {}
     const apply = () => {
       document.getElementById('roomCards').classList.toggle('side-layout', pane === 'side');
       applyRoomCardsWidth();
@@ -15118,8 +15120,8 @@ function recRead(key, fallback) { try { return localStorage.getItem('fmcns.rec.'
 function recSave(key, value) { try { localStorage.setItem('fmcns.rec.' + key, String(value)); } catch (e) {} }
 function recScope(kind) { return kind!=='media' && recRead(kind + '.scope', 'thread') === 'all' ? 'all' : roomSel; }
 function recKey(kind, scope) { return kind + ':' + scope; }
-function recHost(kind) { return document.getElementById(kind === 'media' ? 'roomMediaHost' : kind === 'papers' ? 'roomPapersHost' : 'roomAppsHost'); }
-function recVisible(kind) { return kind==='media' ? !!document.getElementById('roomMediaHost') && document.getElementById('roomInterests')?.classList.contains('is-active') : document.querySelector('[data-room-pane="' + kind + '"]')?.classList.contains('active'); }
+function recHost(kind) { return document.querySelector('#roomInterests [data-lib-rec="' + kind + '"]') || document.getElementById(kind === 'media' ? 'roomMediaHost' : kind === 'papers' ? 'roomPapersHost' : 'roomAppsHost'); }
+function recVisible(kind) { if (kind !== 'media' && document.querySelector('#roomInterests.is-active [data-lib-rec="' + kind + '"]')) return true; return kind==='media' ? !!document.getElementById('roomMediaHost') && document.getElementById('roomInterests')?.classList.contains('is-active') : document.querySelector('[data-room-pane="' + kind + '"]')?.classList.contains('active'); }
 async function loadRoomRecommendations(kind, initialize = false) {
   const scope = recScope(kind), key = recKey(kind, scope);
   if (!scope) { renderRoomRecommendations(kind); return; }
@@ -15322,6 +15324,18 @@ let roomAna = { steer: null, items: [] };
 let roomAnaAsking = false; // true only while an ask POST is in flight, not while a request generates in the background
 const roomAnaRegenBusy = new Set();
 
+// Which analogy cards are already in the library, read from the library itself
+// once, so a card kept yesterday still says Kept.
+const roomAnaKept = new Set();
+let roomAnaKeptRead = false;
+function roomAnaReadKept() {
+  if (roomAnaKeptRead) return;
+  roomAnaKeptRead = true;
+  api('/api/recommendations/library?limit=100&kind=analogy').then((out) => {
+    (out.items || []).forEach((w) => { const m = String(w.identity || '').match(/^analogy:(.+)$/); if (m) roomAnaKept.add(m[1]); });
+    renderRoomAnalogies();
+  }).catch(() => { roomAnaKeptRead = false; });
+}
 function roomAnaCards() { return (roomAna.items || []).filter(i => i.card); }
 
 async function loadRoomAnalogies() {
@@ -15441,9 +15455,10 @@ function roomAnaRequestLine(req) {
 }
 
 function renderRoomAnalogies() {
-  const host = document.getElementById('roomAnalogiesHost');
+  const host = document.querySelector('#roomInterests [data-lib-ana]') || document.getElementById('roomAnalogiesHost');
   if (!host) return;
   const cards = roomAnaCards();
+  roomAnaReadKept();
   setRoomTabCount('roomAnaCount', cards.length);
   if (!roomSel) { host.innerHTML = ''; return; }
   const steer = roomAna.steer || { when: 'pause' };
@@ -15469,6 +15484,7 @@ function renderRoomAnalogies() {
       + (c.reading ? '<p>' + qEsc(c.reading) + '</p>' : '')
       + '<div class="room-ana-acts">'
       +   '<button type="button" data-ana-bring="' + idx + '"' + (regenning ? ' disabled' : '') + '>Bring</button>'
+      +   '<button type="button" data-ana-keep="' + qEscAttr(it.id) + '"' + (roomAnaKept.has(it.id) ? ' disabled>Kept' : '>Keep') + '</button>'
       +   (c.anchor_message_id ? '<button type="button" data-ana-jump="' + idx + '"' + (regenning ? ' disabled' : '') + '>Source</button>' : '')
       +   '<button type="button" data-ana-regen="' + qEscAttr(it.id) + '" title="Try another one in this spot"' + (regenning ? ' disabled' : '') + '>'
       +     (regenning ? 'Refreshing…' : 'Refresh') + '</button>'
@@ -15484,6 +15500,14 @@ function renderRoomAnalogies() {
     + '</div>';
   host.innerHTML = html;
 
+  host.querySelectorAll('[data-ana-keep]').forEach(b => {
+    b.onclick = async () => {
+      const id = b.getAttribute('data-ana-keep');
+      b.disabled = true;
+      try { await apiWrite('/api/recommendations/library/save', 'POST', { type: 'analogy', id }); roomAnaKept.add(id); b.textContent = 'Kept'; libData = null; }
+      catch (e) { b.disabled = false; b.textContent = e.message; }
+    };
+  });
   const when = host.querySelector('[data-ana-when]');
   if (when) when.onclick = () => roomAnaSteer({ when: steer.when === 'asked' ? 'pause' : 'asked' });
   host.querySelectorAll('[data-ana-drop]').forEach(b => {
@@ -16702,6 +16726,13 @@ let interestLibraryRequest = 0;
 let interestLibraryQuery = '';
 let interestLibraryKind = '';
 let interestLibraryOffset = 0;
+// The library's own tabs (his pick D, 2026-09-24). Suggestions live inside one type,
+// behind its button, where the Discover tab and three panes used to be.
+const LIB_KINDS = [['', 'All'], ['book', 'Books'], ['film', 'Films'], ['series', 'Series'], ['paper', 'Papers'],
+  ['project', 'Projects'], ['analogy', 'Analogies'], ['passage', 'Passages']];
+const LIB_SUGGEST = { book: 'media', film: 'media', series: 'media', paper: 'papers', project: 'apps', analogy: 'analogies' };
+let libSuggesting = false;
+let libFinding = false;
 try { interestLibraryKind = localStorage.getItem('qne-interest-kind') || ''; interestLibraryQuery = localStorage.getItem('qne-interest-query') || ''; } catch (_) {}
 function interestEditForm(host, item, save) {
   host.innerHTML = '<form class="interest-edit">'
@@ -17178,15 +17209,42 @@ async function renderInterestLibrary(opts) {
   const scroller = libScroller(host);
   const wasAt = scroller ? scroller.scrollTop : 0;
   const putBack = () => { if (scroller && quiet) scroller.scrollTop = wasAt; };
-  const discover = recRead('library.mode', 'saved') === 'discover';
-  if (discover) { host.innerHTML = '<div class="room-rec-host" id="roomMediaHost"></div>'; openRoomRecommendations('media'); return; }
+  if (!LIB_KINDS.some((k) => k[0] === interestLibraryKind)) interestLibraryKind = '';
+  const suggestKind = LIB_SUGGEST[interestLibraryKind] || '';
+  const finding = libFinding || !!interestLibraryQuery;
+  const top = '<div class="lib-top"><div class="lib-tabs" role="tablist">'
+    + LIB_KINDS.map(([k, label]) => '<button type="button" role="tab" data-lib-tab="' + k + '" class="' + (k === interestLibraryKind ? 'on' : '') + '">' + label + '</button>').join('')
+    + '</div><div class="lib-tools">'
+    + (suggestKind ? '<button type="button" class="lib-suggest' + (libSuggesting ? ' on' : '') + '" data-lib-suggest title="Suggestions">✦</button>' : '')
+    + '<button type="button" class="lib-findbtn' + (finding ? ' on' : '') + '" data-lib-find title="Search" aria-label="Search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg></button>'
+    + '</div></div>'
+    + (finding && !libSuggesting ? '<div class="lib-find"><input class="lib-search" type="search" aria-label="Search library" placeholder="Search"></div>' : '');
+  const wireTop = () => {
+    host.querySelectorAll('[data-lib-tab]').forEach((b) => { b.onclick = () => {
+      interestLibraryKind = b.dataset.libTab; interestLibraryOffset = 0; libSuggesting = false;
+      try { localStorage.setItem('qne-interest-kind', interestLibraryKind); } catch (_) {}
+      renderInterestLibrary();
+    }; });
+    const sg = host.querySelector('[data-lib-suggest]');
+    if (sg) sg.onclick = () => { libSuggesting = !libSuggesting; renderInterestLibrary(); };
+    const fb = host.querySelector('[data-lib-find]');
+    if (fb) fb.onclick = () => {
+      if (finding && !libSuggesting) { libFinding = false; interestLibraryQuery = ''; try { localStorage.setItem('qne-interest-query', ''); } catch (_) {} }
+      else { libFinding = true; libSuggesting = false; }
+      renderInterestLibrary();
+      const f = host.querySelector('.lib-search'); if (f) f.focus();
+    };
+  };
+  if (libSuggesting && suggestKind) {
+    host.innerHTML = top + (suggestKind === 'analogies' ? '<div data-lib-ana></div>'
+      : '<div class="room-rec-host"' + (suggestKind === 'media' ? ' id="roomMediaHost"' : '') + ' data-lib-rec="' + suggestKind + '"></div>');
+    wireTop();
+    if (suggestKind === 'analogies') renderRoomAnalogies(); else openRoomRecommendations(suggestKind);
+    return;
+  }
 
   const cols = 5 - shelfSize();
-  host.innerHTML = '<div class="lib-top"><div class="lib-find"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>'
-    + '<input class="lib-search" type="search" aria-label="Search library" placeholder="Search the library">'
-    + '<select class="lib-kind" aria-label="Reference kind"><option value="">All</option><option value="book">Books</option>'
-    + '<option value="film">Films</option><option value="series">Series</option><option value="paper">Papers</option>'
-    + '<option value="project">Projects</option><option value="passage">Passages</option></select></div></div>'
+  host.innerHTML = top
     + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><span class="shelf-size" title="Cover size">'
     + '<i class="shelf-ticks"><b></b><b></b><b></b><b></b></i><i class="shelf-fill"></i>'
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
@@ -17194,15 +17252,19 @@ async function renderInterestLibrary(opts) {
     + '<div class="shelf-grid" style="--shelf-cols:' + cols + '"></div><div class="shelf-slot"></div></div>'
     + '<div class="interest-results">' + (quiet ? '' : waitHtml('searching', 'Loading')) + '</div>';
   putBack();
+  wireTop();
 
-  const search = host.querySelector('.lib-search'), filter = host.querySelector('.lib-kind');
-  search.value = interestLibraryQuery; filter.value = interestLibraryKind;
-  const refresh = () => {
-    interestLibraryQuery = search.value; interestLibraryKind = filter.value; interestLibraryOffset = 0;
-    try { localStorage.setItem('qne-interest-query', interestLibraryQuery); localStorage.setItem('qne-interest-kind', interestLibraryKind); } catch (_) {}
-    renderInterestLibrary();
-  };
-  search.onkeydown = ev => { if (ev.key === 'Enter') refresh(); }; search.onchange = refresh; filter.onchange = refresh;
+  const search = host.querySelector('.lib-search');
+  if (search) {
+    search.value = interestLibraryQuery;
+    const refresh = () => {
+      interestLibraryQuery = search.value; interestLibraryOffset = 0;
+      try { localStorage.setItem('qne-interest-query', interestLibraryQuery); } catch (_) {}
+      renderInterestLibrary();
+    };
+    search.onkeydown = ev => { if (ev.key === 'Enter') refresh(); if (ev.key === 'Escape') { search.value = ''; libFinding = false; refresh(); } };
+    search.onchange = refresh;
+  }
 
   const shelfHost = host.querySelector('#roomShelf');
   const slot = host.querySelector('.shelf-slot');

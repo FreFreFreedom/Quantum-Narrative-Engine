@@ -32,6 +32,14 @@ export function resolveReference(owner, ref) {
   } else if (ref.type === 'saved') {
     r = db.prepare('SELECT * FROM reference_saves WHERE id=? AND owner=?').get(ref.id,owner);
     if(r) return {...parse(r.snapshot),type:'saved',id:r.id};
+  } else if (ref.type === 'analogy') {
+    // An analogy card lives as a message in the Room thread's analogy side thread;
+    // keeping one copies it into the library like any other saved reference.
+    r = db.prepare(`SELECT m.id,m.meta FROM convo_messages m JOIN convos c ON c.id=m.convo_id
+      WHERE m.id=? AND c.subject_type='analogy' AND c.created_by=? AND c.deleted_at IS NULL`).get(ref.id,owner);
+    const c = r && parse(r.meta);
+    if(c && c.kind==='arrival') return {type:'analogy',id:r.id,kind:'analogy',title:c.title || [c.left,c.right].filter(Boolean).join(' ↔ '),
+      creator:[c.left,c.right].filter(Boolean).join(' ↔ '),sentence:c.reading || '',text:c.reading || '',origin:'Analogy',identity:'analogy:'+r.id};
   } else if (ref.type === 'recommendation') {
     r = db.prepare('SELECT r.*,c.kind,c.scope FROM recommendations r JOIN recommendation_collections c ON c.id=r.collection_id WHERE r.id=? AND r.dismissed=0').get(ref.id);
     if(r) {
