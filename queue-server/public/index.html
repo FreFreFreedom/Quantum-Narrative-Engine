@@ -2621,6 +2621,15 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   font-family:'Cinzel',var(--font-read); font-size:var(--fs-xs); letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-3); }
 .lib-kindpop button:hover { color:var(--c-ink); }
 .lib-kindpop button.on { color:var(--c-kept-echo, var(--c-accent)); }
+.lib-kindpop { top:0; }
+.lib-kindpop-foot { grid-column:1 / -1; display:flex; justify-content:center; gap:24px; margin-top:6px; padding-top:10px; border-top:1px solid var(--c-border); }
+.lib-kindpop .lib-kindpop-foot button { justify-content:center; gap:7px; align-items:center; color:var(--c-kept-echo, var(--c-accent)); }
+.lib-kindpop-foot svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; }
+.lib-tabchev { width:11px; height:11px; margin-left:2px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; opacity:.7; transition:transform .2s ease; }
+.lib-tabchev.open { transform:rotate(180deg); }
+.room-tabs button:not(.active) .lib-tabchev { display:none; }
+.lib-top:empty { display:none; }
+.lib-top { padding:0; min-height:0; }
 .lib-kindpop .lib-kindpop-suggest { grid-column:1 / -1; justify-content:center; margin-top:6px; padding-top:10px; border-top:1px solid var(--c-border);
   color:var(--c-kept-echo, var(--c-accent)); }
 .lib-tools { flex:none; display:flex; gap:4px; }
@@ -13973,6 +13982,11 @@ function initRoom() {
       const primary = ev.target.closest('[data-room-primary]');
       if (primary) {
         const key = primary.getAttribute('data-room-primary');
+        if (key === 'library' && pane === 'interests') {
+          libKindOpen = !libKindOpen;
+          renderInterestLibrary({ quiet: true });
+          return;
+        }
         pane = key === 'side' ? 'side' : 'interests';
         if (key === 'discover' || key === 'library') recSave('library.mode', key === 'discover' ? 'discover' : 'saved');
         try { localStorage.setItem(ROOM_PANE_KEY, pane); } catch (e) {}
@@ -16808,6 +16822,16 @@ let libFinding = false;
 let libKindOpen = false;
 let libCloseWired = false;
 let libCounts = null;   // { book: 24, film: 19, … } from the last fetch
+function libSyncTab() {
+  const tab = document.querySelector('#roomTabs [data-room-primary="library"]');
+  if (!tab) return;
+  const label = interestLibraryKind ? (LIB_KINDS.find((k) => k[0] === interestLibraryKind) || LIB_KINDS[0])[1] : 'Library';
+  tab.innerHTML = '<span>' + label + (libSuggesting ? ' ✦' : '') + '</span>'
+    + (interestLibraryKind && libCountFor(interestLibraryKind) ? ' <span class="room-tabcount">' + libCountFor(interestLibraryKind) + '</span>' : '')
+    + '<svg class="lib-tabchev' + (libKindOpen ? ' open' : '') + '" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 7l3 3 3-3"/></svg>';
+  tab.setAttribute('aria-haspopup', 'menu');
+  tab.setAttribute('aria-expanded', String(libKindOpen));
+}
 function libCountFor(k) {
   if (!libCounts) return '';
   if (!k) return String(Object.values(libCounts).reduce((a, b) => a + b, 0) || '');
@@ -17293,24 +17317,21 @@ async function renderInterestLibrary(opts) {
   if (!LIB_KINDS.some((k) => k[0] === interestLibraryKind)) interestLibraryKind = '';
   const suggestKind = LIB_SUGGEST[interestLibraryKind] || '';
   const finding = libFinding || !!interestLibraryQuery;
-  // One line (his pick D, 2026-09-24): the kind you are in, with its count, opens a
-  // small grid of every kind; suggestions for that kind sit at the grid's foot.
+  // The Library tab itself names the kind you are in and opens the kind grid
+  // (his ask, 2026-09-24): no second line under the tabs. Search and suggestions
+  // sit at the grid's foot.
   const kindLabel = (LIB_KINDS.find((k) => k[0] === interestLibraryKind) || LIB_KINDS[0])[1];
-  const top = '<div class="lib-top"><button type="button" class="lib-kindbtn' + (libKindOpen ? ' open' : '') + '" data-lib-kindbtn aria-haspopup="menu" aria-expanded="' + libKindOpen + '">'
-    + '<span>' + kindLabel + (libSuggesting ? ' <em>✦</em>' : '') + '</span><b data-lib-count="' + interestLibraryKind + '">' + libCountFor(interestLibraryKind) + '</b>'
-    + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 7l3 3 3-3"/></svg></button>'
-    + '<span class="lib-gap"></span><div class="lib-tools">'
-    + '<button type="button" class="lib-findbtn' + (finding ? ' on' : '') + '" data-lib-find title="Search" aria-label="Search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg></button>'
-    + '</div>'
+  libSyncTab();
+  const top = '<div class="lib-top">'
     + (libKindOpen ? '<div class="lib-kindpop" role="menu">'
       + LIB_KINDS.map(([k, label]) => '<button type="button" role="menuitem" data-lib-tab="' + k + '" class="' + (k === interestLibraryKind && !libSuggesting ? 'on' : '') + '"><span>' + label + '</span><b data-lib-count="' + k + '">' + libCountFor(k) + '</b></button>').join('')
-      + (suggestKind ? '<button type="button" role="menuitem" class="lib-kindpop-suggest' + (libSuggesting ? ' on' : '') + '" data-lib-suggest>✦ ' + (libSuggesting ? 'Back to yours' : 'Suggestions') + '</button>' : '')
-      + '</div>' : '')
+      + '<div class="lib-kindpop-foot">'
+      + (suggestKind ? '<button type="button" role="menuitem" class="' + (libSuggesting ? 'on' : '') + '" data-lib-suggest>✦ ' + (libSuggesting ? 'Back to yours' : 'Suggestions') + '</button>' : '')
+      + '<button type="button" role="menuitem" class="' + (finding ? 'on' : '') + '" data-lib-find><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg> ' + (finding ? 'Clear search' : 'Search') + '</button>'
+      + '</div></div>' : '')
     + '</div>'
     + (finding && !libSuggesting ? '<div class="lib-find"><input class="lib-search" type="search" aria-label="Search library" placeholder="Search"></div>' : '');
   const wireTop = () => {
-    const kb = host.querySelector('[data-lib-kindbtn]');
-    if (kb) kb.onclick = (ev) => { ev.stopPropagation(); libKindOpen = !libKindOpen; renderInterestLibrary({ quiet: true }); };
     host.querySelectorAll('[data-lib-tab]').forEach((b) => { b.onclick = () => {
       interestLibraryKind = b.dataset.libTab; interestLibraryOffset = 0; libSuggesting = false; libKindOpen = false;
       try { localStorage.setItem('qne-interest-kind', interestLibraryKind); } catch (_) {}
@@ -17330,7 +17351,7 @@ async function renderInterestLibrary(opts) {
   if (!libCloseWired) {
     libCloseWired = true;
     document.addEventListener('mousedown', (ev) => {
-      if (!libKindOpen || (ev.target.closest && ev.target.closest('.lib-kindpop, [data-lib-kindbtn]'))) return;
+      if (!libKindOpen || (ev.target.closest && ev.target.closest('.lib-kindpop, [data-room-primary="library"]'))) return;
       libKindOpen = false; renderInterestLibrary({ quiet: true });
     }, true);
   }
@@ -17386,6 +17407,7 @@ async function renderInterestLibrary(opts) {
       const onShelf = new Set((shelf.books || []).map((b) => libNorm(b.title)));
       libCounts = { ...out.counts, book: (shelf.books || []).length + (out.bookTitles || []).filter((t) => !onShelf.has(libNorm(t))).length };
       host.querySelectorAll('[data-lib-count]').forEach((el) => { el.textContent = libCountFor(el.dataset.libCount); });
+      libSyncTab();
     }
 
     // One wall. A saved interest that is also a book on the shelf appears once,
