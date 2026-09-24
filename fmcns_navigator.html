@@ -1617,6 +1617,16 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rail-btnrow .rail-item, .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow .rail-item {
   flex:0 0 auto; width:100%; justify-content:flex-start; padding:0 7px; gap:10px; }
 .rail-btnrow .rail-item:hover { color:var(--c-kept-echo, var(--c-accent)); }
+/* The rail reads like the thread title (his ask, 2026-09-24): every word in muted
+   gold Cinzel, the place you are in in full gold, marked by the title's short hairline
+   under it — under the icon while the rail is shut, under the word once it opens. */
+.rail-item { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
+.rail-item:hover, .rail-btnrow .rail-item:hover { color:var(--c-kept-echo, var(--c-accent)); }
+.rail-btnrow .rail-item { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
+.rail-nav .rail-item .rail-label { font-weight:500; font-size:var(--fs-2xs); letter-spacing:.2em; }
+.rail-item.active::before { left:7px; top:auto; bottom:3px; width:18px; height:1px;
+  transition:left .3s cubic-bezier(.22,.61,.36,1), width .3s cubic-bezier(.22,.61,.36,1); }
+.railbar:hover .rail-item.active::before, .railbar:focus-within .rail-item.active::before, .railbar.pinned .rail-item.active::before { left:35px; width:28px; }
 /* ---------- The quota read-out in the rail ---------- */
 /* Two accounts down, two windows across, the money on a last line. The figure is what
    is LEFT of that window; the hairline under it fills with what has been USED, so the
