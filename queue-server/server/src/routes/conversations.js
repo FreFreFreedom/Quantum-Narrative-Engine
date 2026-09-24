@@ -143,7 +143,7 @@ export function conversationsRoutes() {
     res.json({ imdbId: f.imdbId || '', cover: f.poster || '' });
   }));
 
-  // The film/book card in a Room answer: the catalogue facts plus a 40-word line
+  // The film/book card in a Room answer: the catalogue facts plus a 75-word line
   // on the work written for this conversation (services/workNotes.js).
   router.get('/:id/work-card', asyncHandler(async (req, res) => {
     const owner = req.user?.id || 'antoine';

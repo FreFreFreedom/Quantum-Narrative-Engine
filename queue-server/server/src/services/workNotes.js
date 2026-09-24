@@ -1,7 +1,7 @@
 // The line under a film or book cover in a Room answer: what the work is, told
 // for THIS conversation — the part of it that bears on what is being discussed.
-// Antoine's ask (2026-09-23): a synopsis "relevant for us", scannable, 40 words
-// at most. One small call on the cheap lane, cached per conversation and work, so
+// Antoine's ask (2026-09-23): a synopsis "relevant for us", about 75 words, for
+// books and films alike. One small call on the cheap lane, cached per conversation and work, so
 // reopening the card costs nothing; a failure just means no line.
 
 import { generateText } from './ai/text.js';
@@ -17,29 +17,29 @@ export function bindWorkNotes(database) {
     PRIMARY KEY (convo_id, key)
   )`);
   // Lines saved before the finished-sentence check was added.
-  // v2 (2026-09-23): he found v1 lines read like a catalogue blurb; v2 lines are
-  // about 40 words and tied to the conversation. Older lines are written again.
+  // v3 (2026-09-23): he found v1 lines read like a catalogue blurb; lines are now
+  // about 75 words and tied to the conversation. Older lines are written again.
   try { db.exec(`ALTER TABLE work_notes ADD COLUMN v INTEGER NOT NULL DEFAULT 1`); } catch {}
   db.exec(`DELETE FROM work_notes WHERE trim(text) NOT GLOB '*[.!?…]' AND trim(text) NOT GLOB '*[.!?…]["'')”]'`);
 }
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
-const MAX_WORDS = 40;
-const NOTE_V = 2;
+const MAX_WORDS = 75;
+const NOTE_V = 3;
 
 function forty(text) {
   const t = String(text || '').replace(/\s+/g, ' ').trim().replace(/^["“]|["”]$/g, '');
   const words = t.split(' ');
   // A cheap model sometimes stops mid-sentence; half a sentence is worse than none.
-  if (words.length <= MAX_WORDS + 6) {   // "about 40": a finished 44-word line beats a cut one
+  if (words.length <= MAX_WORDS + 10) {   // "about 75": a finished line a little long beats a cut one
     if (/[.!?…]["')\u201d]?$/.test(t)) return t;
     const end = Math.max(t.lastIndexOf('. '), t.lastIndexOf('! '), t.lastIndexOf('? '));
-    return end > 40 ? t.slice(0, end + 1) : '';
+    return end > 120 ? t.slice(0, end + 1) : '';
   }
-  const cut = words.slice(0, MAX_WORDS + 6).join(' ');
+  const cut = words.slice(0, MAX_WORDS + 10).join(' ');
   const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
-  return end > 60 ? cut.slice(0, end + 1) : cut.replace(/[,;:]$/, '') + '…';
+  return end > 200 ? cut.slice(0, end + 1) : cut.replace(/[,;:]$/, '') + '…';
 }
 
 export async function workNote(convoId, { kind = 'film', title = '', creator = '', year = '', overview = '' } = {}, { refresh = false } = {}) {
@@ -51,11 +51,11 @@ export async function workNote(convoId, { kind = 'film', title = '', creator = '
     .all(convoId).reverse().map((m) => (m.role === 'user' ? 'HIM: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1200)).join('\n\n');
   const what = kind === 'book' ? 'book' : kind === 'series' ? 'TV series' : 'film';
   const out = await generateText({
-    feature: 'summary', maxTokens: 700, label: 'room:work-note', timeoutMs: 30_000, maxAttempts: 2,
+    feature: 'summary', maxTokens: 1000, label: 'room:work-note', timeoutMs: 30_000, maxAttempts: 2,
     prompt: [
-      `Write 35 to ${MAX_WORDS} words about the ${what} "${title}"${creator ? ` (${creator}${year ? ', ' + year : ''})` : year ? ` (${year})` : ''} for the conversation below.`,
+      `Write ${MAX_WORDS - 10} to ${MAX_WORDS + 5} words about the ${what} "${title}"${creator ? ` (${creator}${year ? ', ' + year : ''})` : year ? ` (${year})` : ''} for the conversation below.`,
       'Not a catalogue synopsis. Say, in one short clause, what happens in it — then spend most of the words on why it matters HERE: which idea of this conversation it shows, and how (a scene, a mechanism, a character). Use the conversation\'s own ideas and words.',
-      'Plain simple words, no jargon, no preamble, no quotation marks, never the ending. Two sentences, both finished. If you do not know the work, say so in five words.',
+      'Plain simple words, no jargon, no preamble, no quotation marks, never the ending. Three or four sentences, all finished. If you do not know the work, say so in five words.',
       overview ? `Catalogue synopsis (for facts only): ${String(overview).slice(0, 1200)}` : '',
       '=== THE CONVERSATION (latest turns) ===', msgs.slice(-6000),
     ].filter(Boolean).join('\n\n'),

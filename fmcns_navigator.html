@@ -878,13 +878,16 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    to read, then the veil fades onto the live Room. Antoine picked it (#1, "Held
    name, slow fade", 2026-09-23) over the iris and the blinds. Plays only on
    arriving — not on a thread switch — and a click skips it. */
+/* In two steps, never overlapping: the name fades out first, and only then does the
+   veil lift. Crossfaded together, the name and the conversation's own words showed
+   at once — two texts on top of each other. */
 .room-door { position:absolute; inset:0; z-index:var(--z-sheet); cursor:pointer; background:var(--c-stage);
-  transition:opacity 1.2s ease; }
+  transition:opacity .9s ease .55s; }
 .room-door.open { opacity:0; pointer-events:none; }
 .room-door-title { position:absolute; left:8%; right:8%; top:44%; text-align:center; font-family:'Cinzel', var(--font-read); font-weight:500;
   font-size:clamp(20px, 3vw, 34px); color:var(--c-ink); letter-spacing:.06em; opacity:0; transition:opacity .8s ease; }
 .room-door.lit .room-door-title { opacity:1; }
-.room-door.open .room-door-title { opacity:0; transition:opacity .9s ease; }
+.room-door.open .room-door-title { opacity:0; transition:opacity .5s ease; }
 .room-threads { position:relative; width:var(--threads-w, 250px); min-width:0; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 .room-cards { position:relative; width:var(--cards-w, 290px); min-width:0; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 /* ── Every sidebar is draggable, and remembers its width ──────────────────────
@@ -1128,28 +1131,28 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
   transition:transform .25s ease, box-shadow .25s ease; }
 .se-cover:hover > span, .se-cover:focus-visible > span { transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.34); }
 @media (max-width:520px) { .se-cover { width:130px; } .se-cover > span { width:130px; height:195px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } }
-.se-card { position:fixed; z-index:var(--z-popover); width:min(320px, calc(100vw - 16px)); max-height:min(520px, calc(100vh - 16px)); overflow:auto;
+.se-card { position:fixed; z-index:var(--z-popover); width:min(560px, calc(100vw - 16px)); max-height:min(720px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
-  padding:16px 18px 16px; font-family:var(--font-ui); color:var(--c-ink); }
-.se-card-x { position:absolute; top:8px; right:8px; width:24px; height:24px; border:0; background:none; color:var(--c-ink-5); cursor:pointer; border-radius:6px; }
+  padding:28px 32px 28px; border-radius:16px; font-family:var(--font-ui); color:var(--c-ink); }
+.se-card-x { position:absolute; top:14px; right:14px; width:30px; height:30px; font-size:16px; border:0; background:none; color:var(--c-ink-5); cursor:pointer; border-radius:6px; }
 .se-card-x:hover { background:var(--c-hover-wash); color:var(--c-ink); }
-.se-card-title { display:block; padding-right:22px; font-family:var(--font-read); font-style:italic; font-weight:500; font-size:17px; line-height:1.25; }
-.se-card-meta { margin-top:4px; font-size:var(--fs-xs); color:var(--c-ink-5); letter-spacing:.02em; }
-.se-card-by { margin-top:6px; font-size:var(--fs-sm); color:var(--c-ink-3); }
-.se-card-rate { display:flex; align-items:baseline; gap:6px; margin-top:10px; font-size:var(--fs-sm); color:var(--c-ink-5); }
-.se-card-rate em { font-style:normal; font-weight:600; color:var(--c-ink); font-size:var(--fs-base); }
-.se-card-note { margin:12px 0 0; font-family:var(--font-read); font-size:14px; line-height:1.5; color:var(--c-ink-2); }
-.se-card-wait { margin:12px 0 0; font-size:var(--fs-sm); color:var(--c-ink-5); }
-.se-card h6 { margin:14px 0 6px; font-size:var(--fs-2xs); font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); }
+.se-card-title { display:block; padding-right:22px; font-family:var(--font-read); font-style:italic; font-weight:500; font-size:30px; line-height:1.2; padding-right:36px; }
+.se-card-meta { margin-top:6px; font-size:17px; color:var(--c-ink-5); letter-spacing:.02em; }
+.se-card-by { margin-top:12px; font-size:18px; color:var(--c-ink-3); }
+.se-card-rate { display:flex; align-items:baseline; gap:8px; margin-top:10px; font-size:16px; color:var(--c-ink-5); }
+.se-card-rate em { font-style:normal; font-weight:600; color:var(--c-ink); font-size:19px; }
+.se-card-note { margin:18px 0 0; font-family:var(--font-read); font-size:20px; line-height:1.6; color:var(--c-ink-2); }
+.se-card-wait { margin:18px 0 0; font-size:16px; color:var(--c-ink-5); }
+.se-card h6 { margin:22px 0 8px; font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); }
 .se-card-toc { list-style:none; margin:0; padding:0; }
-.se-card-toc li { display:flex; gap:10px; align-items:baseline; padding:4px 0; border-bottom:1px dotted var(--c-border); font-size:var(--fs-sm); }
+.se-card-toc li { display:flex; gap:10px; align-items:baseline; padding:7px 0; border-bottom:1px dotted var(--c-border); font-size:16px; }
 .se-card-toc li span { flex:1; min-width:0; }
-.se-card-toc li em { font-style:normal; font-size:var(--fs-2xs); color:var(--c-ink-5); }
+.se-card-toc li em { font-style:normal; font-size:13px; font-variant-numeric:tabular-nums; color:var(--c-ink-5); }
 .se-card-toc li.part { font-weight:600; padding-top:8px; }
 .se-card-toc li.sub { padding-left:14px; color:var(--c-ink-3); }
-.se-card-src { display:block; margin-top:6px; font-size:var(--fs-2xs); color:var(--c-ink-5); }
-.se-card-out { display:inline-flex; align-items:center; gap:5px; margin-top:14px; padding:6px 12px; border:1px solid var(--c-border-2); border-radius:999px;
-  font-size:var(--fs-xs); letter-spacing:.04em; color:var(--c-ink); text-decoration:none; }
+.se-card-src { display:block; margin-top:8px; font-size:12px; color:var(--c-ink-5); }
+.se-card-out { display:inline-flex; align-items:center; gap:6px; margin-top:22px; padding:9px 18px; border:1px solid var(--c-border-2); border-radius:999px;
+  font-size:15px; font-weight:500; letter-spacing:.02em; color:var(--c-ink); text-decoration:none; }
 .se-card-outs { display:flex; flex-wrap:wrap; gap:8px; }
 .se-card-out:hover { background:var(--c-hover-wash); }
 .se-body.md > :first-child { margin-top:0; }
@@ -9901,7 +9904,7 @@ function playRoomDoor() {
     if (opened) return;
     opened = true;
     d.classList.add('open');
-    setTimeout(() => d.remove(), 1300);
+    setTimeout(() => d.remove(), 1500);
   };
   const timer = setTimeout(open, 2800); // long enough to read the name
   d.addEventListener('click', () => { clearTimeout(timer); open(); });
@@ -25924,6 +25927,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var vw = window.innerWidth, vh = window.innerHeight;
     var left = r.left - w - 14 >= 8 ? r.left - w - 14 : Math.min(r.right + 14, vw - w - 8);
     if (vw < 560) left = Math.max(8, (vw - w) / 2);
+    left = Math.max(8, Math.min(left, vw - w - 8));   // never past either edge of the window
     var top = Math.max(8, Math.min(r.top, vh - h - 8));
     seCard.style.left = left + 'px'; seCard.style.top = top + 'px';
   }
@@ -25949,6 +25953,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if (f.fromBook) html += '<div class="se-card-by">Based on a book' + (f.book ? ' — in your Library' : '') + '</div>';
       html += card ? (f.note ? '<p class="se-card-note">' + qEsc(f.note) + '</p>' : '') : '<p class="se-card-wait">Looking it up…</p>';
     } else {
+      if (f.note) html += '<p class="se-card-note">' + qEsc(f.note) + '</p>';
+      else if (!card) html += '<p class="se-card-wait">Looking it up…</p>';
       var c = libContents[libNorm(libShortTitle(d.coverTitle)) + '|' + libNorm(d.coverCreator)];
       if (!c || c.busy) html += '<p class="se-card-wait">Looking for the contents…</p>';
       else if (c.entries.length) html += '<h6>Contents</h6><ol class="se-card-toc">' + c.entries.map(function(x){
@@ -25972,6 +25978,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     document.body.appendChild(seCard);
     var paint = function(card){ if (!seCard || seCardFor !== d.coverArt) return; seCard.innerHTML = seCardHtml(d, card); seCardPlace(btn); };
     paint(null);
+    // Books and films alike get the line written for this conversation; a book
+    // also gets its contents, fetched alongside and painted whichever lands first.
+    var cardData = null;
+    if (btn.dataset.convo) {
+      api('/api/convos/' + encodeURIComponent(btn.dataset.convo) + '/work-card?kind=' + encodeURIComponent(d.coverKind) + '&title=' + encodeURIComponent(d.coverTitle)
+        + '&creator=' + encodeURIComponent(d.coverCreator) + '&year=' + encodeURIComponent(d.coverYear || ''))
+        .then(function(card){ cardData = card || {}; }).catch(function(){ cardData = {}; })
+        .then(function(){ paint(cardData); });
+    }
     if (d.coverKind === 'book') {
       var key = libNorm(libShortTitle(d.coverTitle)) + '|' + libNorm(d.coverCreator);
       if (!libContents[key]) {
@@ -25979,12 +25994,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         api('/api/convos/contents?title=' + encodeURIComponent(libShortTitle(d.coverTitle)) + '&author=' + encodeURIComponent(d.coverCreator || ''))
           .then(function(o){ libContents[key] = { entries: o.entries || [], source: o.source || '' }; })
           .catch(function(){ libContents[key] = { entries: [], source: '' }; })
-          .then(function(){ paint(seOutFacts[d.coverArt] || {}); });
-      } else paint(seOutFacts[d.coverArt] || {});
-    } else if (btn.dataset.convo) {
-      api('/api/convos/' + encodeURIComponent(btn.dataset.convo) + '/work-card?kind=' + encodeURIComponent(d.coverKind) + '&title=' + encodeURIComponent(d.coverTitle)
-        + '&creator=' + encodeURIComponent(d.coverCreator) + '&year=' + encodeURIComponent(d.coverYear || ''))
-        .then(function(card){ paint(card || {}); }).catch(function(){ paint({}); });
+          .then(function(){ paint(cardData); });
+      } else paint(cardData);
     }
   }
   document.addEventListener('click', function(ev){
