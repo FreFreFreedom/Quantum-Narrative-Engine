@@ -27523,6 +27523,61 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }, 250);
   }
 
+  // What rides with the draft beyond the words: screenshots, PDFs, files. Kept in
+  // IndexedDB, not localStorage — one screenshot is bigger than localStorage holds —
+  // keyed by the same box key, so a refresh or a trip to another page brings them
+  // back with the text and the quotes (his ask, 2026-09-24).
+  var ATT_DB = null;
+  function attDb(){
+    if(ATT_DB) return ATT_DB;
+    ATT_DB = new Promise(function(res){
+      try {
+        var rq = indexedDB.open('fmcns_room_attachments', 1);
+        rq.onupgradeneeded = function(){ rq.result.createObjectStore('drafts'); };
+        rq.onsuccess = function(){ res(rq.result); };
+        rq.onerror = function(){ res(null); };
+      } catch(err){ res(null); }
+    });
+    return ATT_DB;
+  }
+  function attSig(list){
+    return (list || []).map(function(a){ return [a.kind, a.name, a.id || '', (a.dataUrl || '').length].join(':'); }).join('|');
+  }
+  function persistAttachments(e){
+    if(!e || !e.key || !e.attRestored) return;
+    var sig = attSig(e.pendingAttachments);
+    if(sig === e.attSaved) return;
+    e.attSaved = sig;
+    var list = (e.pendingAttachments || []).slice();
+    attDb().then(function(db){
+      if(!db) return;
+      try {
+        var st = db.transaction('drafts', 'readwrite').objectStore('drafts');
+        if(list.length) st.put({ list: list, at: Date.now() }, e.key); else st.delete(e.key);
+      } catch(err){}
+    });
+  }
+  function restoreAttachments(e, repaint){
+    if(!e || !e.key || e.attRestoring || e.attRestored) return;
+    e.attRestoring = true;
+    attDb().then(function(db){
+      if(!db){ e.attRestored = true; return; }
+      try {
+        var rq = db.transaction('drafts', 'readonly').objectStore('drafts').get(e.key);
+        rq.onsuccess = function(){
+          var row = rq.result;
+          e.attRestored = true;
+          if(row && Array.isArray(row.list) && row.list.length && !(e.pendingAttachments || []).length){
+            e.pendingAttachments = row.list;
+            e.attSaved = attSig(row.list);
+            if(repaint) repaint();
+          }
+        };
+        rq.onerror = function(){ e.attRestored = true; };
+      } catch(err){ e.attRestored = true; }
+    });
+  }
+
   // What he has already sent, so the arrow keys can walk back through it — the
   // shell habit, in the Room. One flat list for every box: typing the same thing
   // again usually means reaching for it in another conversation, not this one.
@@ -28479,6 +28534,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // The draft lives on the entry, not in the box, so a rebuilt card gets it back —
     // and in localStorage, so a REFRESH gets it back too.
     loadDraft(e);
+    restoreAttachments(e, repaint);
     input.value = e.draft || '';
     // Typing anywhere leaves the history behind and makes this the live draft again.
     input.oninput = function(){ e.histList = null; e.histAt = -1; e.draft = input.value; saveDraft(e); grow(input); };
@@ -29878,6 +29934,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
 
   function fillEmbed(host, e, opts){
+    persistAttachments(e);
     var log = host.querySelector('.se-log');
     // Hold the reading position. A repaint that yanks you to the bottom while you
     // are three turns up reading is the sort of thing that makes a panel feel cheap.
