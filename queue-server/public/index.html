@@ -1016,7 +1016,12 @@ body::after {
 .room-main .room-toolbar { background:transparent; border-bottom-color:transparent; }
 /* "No card" (Antoine's pick B, 2026-09-24, after trying C): an answer's words sit straight
    on the glow; only his own message keeps a faint bubble. */
-#roomConvo .se-turn.you .se-body { background:color-mix(in srgb, var(--c-ink) 6%, transparent); border:none; }
+/* His prompt: no bubble, set to the right with a gold line beside it (his pick 6,
+   2026-09-24), a little smaller than the answers, and no "You" above it. */
+#wsRoom #roomConvo .se-turn.you .se-body, #roomConvo.room-convo .se-turn.you .se-body { max-width:70%; background:none; border:none; border-right:1.5px solid color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, transparent);
+  border-radius:0; padding:2px 16px 2px 0; text-align:right; font-size:calc(var(--room-size) * .9); color:var(--c-ink-2); }
+#roomConvo.room-convo .se-turn.you .se-who { display:none; }
+#roomConvo.room-convo .se-turn.you .se-who:has(.se-lane) { display:flex; }
 /* The title floats over the conversation and the text melts away under it (his pick B,
    2026-09-24), so a line is never sliced by a hard edge. */
 #wsRoom .room-main { position:relative; }
