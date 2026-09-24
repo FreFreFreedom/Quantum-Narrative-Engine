@@ -16,7 +16,17 @@ window.FMCNS_LOOKS = {
   bean:     { name: 'Black bean & gold', dark: true },
   navy:     { name: 'Navy & cognac', dark: true },
   plum:     { name: 'Plum, taupe & gold', dark: true },
-  ember:    { name: 'Ember', dark: true }
+  ember:    { name: 'Ember', dark: true },
+  dusknavy: { name: 'Navy with a cognac glow', dark: true },
+  slatenavy:{ name: 'Slate navy, gold & cream', dark: true },
+  creamnavy:{ name: 'Cream page, navy panel, gold', dark: false },
+  oxblood:  { name: 'Oxblood, brass & parchment', dark: true },
+  midnight: { name: 'Midnight, champagne & pearl', dark: true },
+  espresso: { name: 'Espresso, caramel & linen', dark: true },
+  teal:     { name: 'Deep teal, bronze & sand', dark: true },
+  slate:    { name: 'Slate, gold & cream', dark: true },
+  sapphire: { name: 'Sapphire, silver & porcelain', dark: true },
+  cherry:   { name: 'Black cherry, gold leaf & ecru', dark: true }
 };
 window.FMCNS_LOOK_DAY = 'atlas';
 window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom stays in the menu)
@@ -292,6 +302,677 @@ body::after {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:2147483000; opacity:.22; mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
+/* Navy with a cognac glow — Antoine's pick "V6" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="dusknavy"] {
+  color-scheme: dark;
+  --c-bg: #121722;
+  --c-surface-rgb: 31 36 45;
+  --c-bg-2: #171c27;
+  --c-stage: #0e121b;
+  --c-mapstage: #0e121b;
+  --c-surface: #1f242d;
+  --c-surface-2: #242b39;
+  --c-surface-3: #31343c;
+  --c-border: #242b39;
+  --c-border-2: #383e4a;
+  --c-border-3: #50555d;
+  --c-ink: #ede8de;
+  --c-ink-2: #d0cabd;
+  --c-ink-3: #b8b5b2;
+  --c-ink-4: #a5a5a9;
+  --c-ink-5: #9a9ca4;
+  --c-ink-solid: #ede8de;
+  --c-ink-solid-2: #d0cabd;
+  --c-on-solid: #121722;
+  --c-halo: #0e121b;
+  --c-accent: #c07a44;
+  --c-on-accent: #fbf2e6;
+  --c-on-brand: #121722;
+  --c-on-amber: #121722;
+  --c-on-danger: #121722;
+  --c-on-info: #0d1d2b;
+  --c-cast: #e0aa74;
+  --c-ring: rgba(192,122,68,0.5);
+  --c-hover-wash: rgba(237,232,222,0.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 10px rgba(0,0,0,.5);
+  --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c;
+  --c-warn-tint: #302c2b;
+  --c-info: #9fb4d0;
+  --c-info-tint: #232a37;
+  --c-success-tint: #1b292f;
+  --c-danger: #e0707a;
+  --c-danger-tint: #2f232e;
+  --c-violet: #c7a3d9;
+  --c-violet-tint: #2b2b3c;
+  --c-violet-tint-2: #202231;
+  --c-brand: #e0aa74;
+  --c-warm-tint: #2b292c;
+  --c-amber: #e0aa74;
+  --c-amber-tint: #27262a;
+  --c-plot-1: #e0aa74;
+  --c-plot-2: #9fb4d0;
+  --c-plot-3: #c07a44;
+  --c-plot-4: #b8927e;
+  --c-plot-5: #c7a3d9;
+  --c-plot-6: #e5c39e;
+  --c-plot-7: #9a9ca4;
+  --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(224,170,116,.7);
+  --c-kept-echo: #e0aa74;
+  --c-kept-rule: #c07a44;
+  --orb-1: #604431;
+  --orb-2: #e0aa74;
+  --orb-inv: 1;
+  --glow-1: #a0643a;
+  --glow-2: #2d2f3a;
+}
+/* Slate navy, gold & cream — Antoine's pick "N10" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="slatenavy"] {
+  color-scheme: dark;
+  --c-bg: #22324c;
+  --c-surface-rgb: 46 61 84;
+  --c-bg-2: #1a2740;
+  --c-stage: #1b283d;
+  --c-mapstage: #1b283d;
+  --c-surface: #2e3d54;
+  --c-surface-2: #2c3f5f;
+  --c-surface-3: #3f4b5f;
+  --c-border: #33476a;
+  --c-border-2: #465775;
+  --c-border-3: #5c6a82;
+  --c-ink: #efe7d6;
+  --c-ink-2: #d8cfbd;
+  --c-ink-3: #bcbab4;
+  --c-ink-4: #a6a9ac;
+  --c-ink-5: #9aa0a8;
+  --c-ink-solid: #efe7d6;
+  --c-ink-solid-2: #d8cfbd;
+  --c-on-solid: #22324c;
+  --c-halo: #1b283d;
+  --c-accent: #d8b56e;
+  --c-on-accent: #1a2740;
+  --c-on-brand: #22324c;
+  --c-on-amber: #22324c;
+  --c-on-danger: #22324c;
+  --c-on-info: #0d1d2b;
+  --c-cast: #e3c68a;
+  --c-ring: rgba(216,181,110,0.5);
+  --c-hover-wash: rgba(239,231,214,0.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 10px rgba(0,0,0,.5);
+  --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c;
+  --c-warn-tint: #3d434e;
+  --c-info: #9fb4d0;
+  --c-info-tint: #31425c;
+  --c-success-tint: #2a4254;
+  --c-danger: #e0707a;
+  --c-danger-tint: #3d3b52;
+  --c-violet: #c7a3d9;
+  --c-violet-tint: #394260;
+  --c-violet-tint-2: #2f3b57;
+  --c-brand: #e3c68a;
+  --c-warm-tint: #394453;
+  --c-amber: #e3c68a;
+  --c-amber-tint: #354152;
+  --c-plot-1: #e3c68a;
+  --c-plot-2: #9fb4d0;
+  --c-plot-3: #d8b56e;
+  --c-plot-4: #b8927e;
+  --c-plot-5: #c7a3d9;
+  --c-plot-6: #e8d3a8;
+  --c-plot-7: #9aa0a8;
+  --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(216,181,110,.75);
+  --c-kept-echo: #e3c68a;
+  --c-kept-rule: #d8b56e;
+  --orb-1: #746d5b;
+  --orb-2: #e3c68a;
+  --orb-inv: 1;
+  --glow-1: #928870;
+  --glow-2: #4c535a;
+}
+/* Cream page, navy panel, gold — Antoine's pick "D8" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="creamnavy"] {
+  color-scheme: light;
+  --c-bg: #f2ecdf;
+  --c-surface-rgb: 249 246 239;
+  --c-bg-2: #ece6da;
+  --c-stage: #e8e3d6;
+  --c-mapstage: #e8e3d6;
+  --c-surface: #f9f6ef;
+  --c-surface-2: #e6dfd0;
+  --c-surface-3: #dad4c7;
+  --c-border: #dcd3c1;
+  --c-border-2: #cdc5b7;
+  --c-border-3: #b6b1a7;
+  --c-ink: #1d2a40;
+  --c-ink-2: #2f3b50;
+  --c-ink-3: #515864;
+  --c-ink-4: #6b6e74;
+  --c-ink-5: #7a7b7d;
+  --c-ink-solid: #1d2a40;
+  --c-ink-solid-2: #2f3b50;
+  --c-on-solid: #f2ecdf;
+  --c-halo: #f2ecdf;
+  --c-accent: #b38b45;
+  --c-on-accent: #1d2a40;
+  --c-on-brand: #f4fbf7;
+  --c-on-amber: #fffaf2;
+  --c-on-danger: #fdf1ef;
+  --c-on-info: #f2f7fa;
+  --c-cast: #8f6c2e;
+  --c-ring: rgba(179,139,69,0.45);
+  --c-hover-wash: rgba(29,42,64,0.05);
+  --sh-xs: 0 1px 2px rgba(30,28,25,.05);
+  --sh-sm: 0 2px 10px rgba(30,28,25,.07);
+  --sh-md: 0 10px 26px rgba(30,28,25,.12);
+  --c-warn: #9a6420;
+  --c-warn-tint: #f6e7cf;
+  --c-info: #3f6b85;
+  --c-info-tint: #e6edf0;
+  --c-success-tint: #dfeee6;
+  --c-danger: #a8382c;
+  --c-danger-tint: #f8e0dc;
+  --c-violet: #5c3f80;
+  --c-violet-tint: #ece5f4;
+  --c-violet-tint-2: #faf8fd;
+  --c-brand: #8f6c2e;
+  --c-warm-tint: #eae2d1;
+  --c-amber: #b38b45;
+  --c-amber-tint: #eee6d6;
+  --c-plot-1: #2c3e5c;
+  --c-plot-2: #3f6b85;
+  --c-plot-3: #8f6c2e;
+  --c-plot-4: #2f7d63;
+  --c-plot-5: #8b6fb0;
+  --c-plot-6: #b38b45;
+  --c-plot-7: #7e8fb0;
+  --c-plot-8: #c08a3e;
+  --c-kept-line: rgba(179,139,69,.7);
+  --c-kept-echo: #8f6c2e;
+  --c-kept-rule: #b38b45;
+  --orb-1: #b38b45;
+  --orb-2: #e1d1b5;
+  --orb-inv: 0;
+  --glow-1: #d4c6aa;
+  --glow-2: #e8dfcd;
+  --glass: rgba(255,255,255,.55);
+  --glass-2: rgba(255,255,255,.6);
+  --q-av: #1d2a40;
+  --q-avink: #f2ecdf;
+}
+/* Its side panels and the rail are the dark panel colour, with their own ink. */
+:root[data-look="creamnavy"] :is(#wsRoom .room-threads, #wsRoom .room-cards, .rail-inner) {
+  --c-bg: #2c3e5c; --c-bg-2: #2c3e5c; --c-surface: #3a4e70; --c-surface-2: #3a4e70; --c-surface-3: #4c5d7a;
+  --c-border: #44526a; --c-border-2: #536074; --c-border-3: #6b7482;
+  --c-ink: #f1e8d4; --c-ink-2: #d5d5d2; --c-ink-3: #b8c1cf; --c-ink-4: #b8c1cf; --c-ink-5: #8e9aad;
+  --c-ink-solid: #f1e8d4; --c-on-solid: #2c3e5c; --c-hover-wash: rgba(241,232,212,0.06); color: #f1e8d4;
+}
+/* Oxblood, brass & parchment — Antoine's pick "OXBLOOD · BRASS · PARCHMENT" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="oxblood"] {
+  color-scheme: dark;
+  --c-bg: #3e1216;
+  --c-surface-rgb: 72 30 32;
+  --c-bg-2: #2b0d0f;
+  --c-stage: #320e12;
+  --c-mapstage: #320e12;
+  --c-surface: #481e20;
+  --c-surface-2: #4d2426;
+  --c-surface-3: #562e2e;
+  --c-border: #522a2b;
+  --c-border-2: #613c3a;
+  --c-border-3: #73514d;
+  --c-ink: #e8dcc4;
+  --c-ink-2: #cfbeaa;
+  --c-ink-3: #b8a393;
+  --c-ink-4: #a68d80;
+  --c-ink-5: #9c8176;
+  --c-ink-solid: #e8dcc4;
+  --c-ink-solid-2: #cfbeaa;
+  --c-on-solid: #3e1216;
+  --c-halo: #320e12;
+  --c-accent: #a8844a;
+  --c-on-accent: #e8dcc4;
+  --c-on-brand: #3e1216;
+  --c-on-amber: #3e1216;
+  --c-on-danger: #3e1216;
+  --c-on-info: #0d1d2b;
+  --c-cast: #bb9e6f;
+  --c-ring: rgba(168,132,74,0.5);
+  --c-hover-wash: rgba(232,220,196,0.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 10px rgba(0,0,0,.5);
+  --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c;
+  --c-warn-tint: #552721;
+  --c-info: #9fb4d0;
+  --c-info-tint: #4a252c;
+  --c-success-tint: #432524;
+  --c-danger: #e0707a;
+  --c-danger-tint: #551f24;
+  --c-violet: #c7a3d9;
+  --c-violet-tint: #512631;
+  --c-violet-tint-2: #491e26;
+  --c-brand: #bb9e6f;
+  --c-warm-tint: #4d2321;
+  --c-amber: #bb9e6f;
+  --c-amber-tint: #4b201f;
+  --c-plot-1: #bb9e6f;
+  --c-plot-2: #9fb4d0;
+  --c-plot-3: #a8844a;
+  --c-plot-4: #b8927e;
+  --c-plot-5: #c7a3d9;
+  --c-plot-6: #cdb791;
+  --c-plot-7: #9c8176;
+  --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(168,132,74,0.7);
+  --c-kept-echo: #bb9e6f;
+  --c-kept-rule: #a8844a;
+  --orb-1: #6e452d;
+  --orb-2: #bb9e6f;
+  --orb-inv: 1;
+  --glow-1: #87634a;
+  --glow-2: #5a312a;
+}
+/* Midnight, champagne & pearl — Antoine's pick "MIDNIGHT · CHAMPAGNE · PEARL" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="midnight"] {
+  color-scheme: dark;
+  --c-bg: #111a2e;
+  --c-surface-rgb: 30 38 57;
+  --c-bg-2: #0c1220;
+  --c-stage: #0e1525;
+  --c-mapstage: #0e1525;
+  --c-surface: #1e2639;
+  --c-surface-2: #252d3e;
+  --c-surface-3: #303747;
+  --c-border: #2b3343;
+  --c-border-2: #3e4553;
+  --c-border-3: #555b65;
+  --c-ink: #ece8df;
+  --c-ink-2: #cbc9c4;
+  --c-ink-3: #adadac;
+  --c-ink-4: #96979a;
+  --c-ink-5: #898b8f;
+  --c-ink-solid: #ece8df;
+  --c-ink-solid-2: #cbc9c4;
+  --c-on-solid: #111a2e;
+  --c-halo: #0e1525;
+  --c-accent: #cdb07a;
+  --c-on-accent: #111a2e;
+  --c-on-brand: #111a2e;
+  --c-on-amber: #111a2e;
+  --c-on-danger: #111a2e;
+  --c-on-info: #0d1d2b;
+  --c-cast: #d6c198;
+  --c-ring: rgba(205,176,122,0.5);
+  --c-hover-wash: rgba(236,232,223,0.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 10px rgba(0,0,0,.5);
+  --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c;
+  --c-warn-tint: #2f2e35;
+  --c-info: #9fb4d0;
+  --c-info-tint: #222c41;
+  --c-success-tint: #1a2c39;
+  --c-danger: #e0707a;
+  --c-danger-tint: #2e2639;
+  --c-violet: #c7a3d9;
+  --c-violet-tint: #2a2d46;
+  --c-violet-tint-2: #20253c;
+  --c-brand: #d6c198;
+  --c-warm-tint: #292e3b;
+  --c-amber: #d6c198;
+  --c-amber-tint: #252b39;
+  --c-plot-1: #d6c198;
+  --c-plot-2: #9fb4d0;
+  --c-plot-3: #cdb07a;
+  --c-plot-4: #b8927e;
+  --c-plot-5: #c7a3d9;
+  --c-plot-6: #dfd1b4;
+  --c-plot-7: #898b8f;
+  --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(205,176,122,0.7);
+  --c-kept-echo: #d6c198;
+  --c-kept-rule: #cdb07a;
+  --orb-1: #665e50;
+  --orb-2: #d6c198;
+  --orb-inv: 1;
+  --glow-1: #837b6b;
+  --glow-2: #3c3f45;
+}
+/* Espresso, caramel & linen — Antoine's pick "ESPRESSO · CARAMEL · LINEN" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="espresso"] {
+  color-scheme: dark;
+  --c-bg: #2b1d16;
+  --c-surface-rgb: 54 40 33;
+  --c-bg-2: #1e140f;
+  --c-stage: #221712;
+  --c-mapstage: #221712;
+  --c-surface: #362821;
+  --c-surface-2: #3c2e26;
+  --c-surface-3: #45382f;
+  --c-border: #42342b;
+  --c-border-2: #53453b;
+  --c-border-3: #66594e;
+  --c-ink: #e7dcc8;
+  --c-ink-2: #cbbfad;
+  --c-ink-3: #b1a595;
+  --c-ink-4: #9d9183;
+  --c-ink-5: #928678;
+  --c-ink-solid: #e7dcc8;
+  --c-ink-solid-2: #cbbfad;
+  --c-on-solid: #2b1d16;
+  --c-halo: #221712;
+  --c-accent: #a8703c;
+  --c-on-accent: #e7dcc8;
+  --c-on-brand: #2b1d16;
+  --c-on-amber: #2b1d16;
+  --c-on-danger: #2b1d16;
+  --c-on-info: #0d1d2b;
+  --c-cast: #bb9066;
+  --c-ring: rgba(168,112,60,0.5);
+  --c-hover-wash: rgba(231,220,200,0.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 10px rgba(0,0,0,.5);
+  --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c;
+  --c-warn-tint: #453121;
+  --c-info: #9fb4d0;
+  --c-info-tint: #392f2c;
+  --c-success-tint: #322f24;
+  --c-danger: #e0707a;
+  --c-danger-tint: #442924;
+  --c-violet: #c7a3d9;
+  --c-violet-tint: #413031;
+  --c-violet-tint-2: #372826;
+  --c-brand: #bb9066;
+  --c-warm-tint: #3c2b20;
+  --c-amber: #bb9066;
+  --c-amber-tint: #39291e;
+  --c-plot-1: #bb9066;
+  --c-plot-2: #9fb4d0;
+  --c-plot-3: #a8703c;
+  --c-plot-4: #b8927e;
+  --c-plot-5: #c7a3d9;
+  --c-plot-6: #cdae8d;
+  --c-plot-7: #928678;
+  --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(168,112,60,0.7);
+  --c-kept-echo: #bb9066;
+  --c-kept-rule: #a8703c;
+  --orb-1: #634227;
+  --orb-2: #bb9066;
+  --orb-inv: 1;
+  --glow-1: #7f6044;
+  --glow-2: #4b3628;
+}
+/* Deep teal, bronze & sand — Antoine's pick "DEEP TEAL · BRONZE · SAND" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="teal"] {
+  color-scheme: dark;
+  --c-bg: #12353a;
+  --c-surface-rgb: 30 62 64;
+  --c-bg-2: #0d2529;
+  --c-stage: #0e2a2e;
+  --c-mapstage: #0e2a2e;
+  --c-surface: #1e3e40;
+  --c-surface-2: #244244;
+  --c-surface-3: #2e4949;
+  --c-border: #2a4747;
+  --c-border-2: #3c5450;
+  --c-border-3: #51635c;
+  --c-ink: #d9c7a5;
+  --c-ink-2: #bbb195;
+  --c-ink-3: #a09d87;
+  --c-ink-4: #8b8e7b;
+  --c-ink-5: #7f8575;
+  --c-ink-solid: #d9c7a5;
+  --c-ink-solid-2: #bbb195;
+  --c-on-solid: #12353a;
+  --c-halo: #0e2a2e;
+  --c-accent: #8a6436;
+  --c-on-accent: #d9c7a5;
+  --c-on-brand: #12353a;
+  --c-on-amber: #12353a;
+  --c-on-danger: #12353a;
+  --c-on-info: #0d1d2b;
+  --c-cast: #a28257;
+  --c-ring: rgba(138,100,54,0.5);
+  --c-hover-wash: rgba(217,199,165,0.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 10px rgba(0,0,0,.5);
+  --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c;
+  --c-warn-tint: #30453f;
+  --c-info: #9fb4d0;
+  --c-info-tint: #23444c;
+  --c-success-tint: #1b4444;
+  --c-danger: #e0707a;
+  --c-danger-tint: #2f3d43;
+  --c-violet: #c7a3d9;
+  --c-violet-tint: #2b4450;
+  --c-violet-tint-2: #203e47;
+  --c-brand: #a28257;
+  --c-warm-tint: #233e3d;
+  --c-amber: #a28257;
+  --c-amber-tint: #203d3d;
+  --c-plot-1: #a28257;
+  --c-plot-2: #9fb4d0;
+  --c-plot-3: #8a6436;
+  --c-plot-4: #b8927e;
+  --c-plot-5: #c7a3d9;
+  --c-plot-6: #b89e76;
+  --c-plot-7: #7f8575;
+  --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(138,100,54,0.7);
+  --c-kept-echo: #a28257;
+  --c-kept-rule: #8a6436;
+  --orb-1: #484a38;
+  --orb-2: #a28257;
+  --orb-inv: 1;
+  --glow-1: #66624b;
+  --glow-2: #324640;
+}
+/* Slate, gold & cream — Antoine's pick "SLATE NAVY · GOLD · CREAM" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="slate"] {
+  color-scheme: dark;
+  --c-bg: #2c3e5c;
+  --c-surface-rgb: 56 72 99;
+  --c-bg-2: #1f2b40;
+  --c-stage: #23324a;
+  --c-mapstage: #23324a;
+  --c-surface: #384863;
+  --c-surface-2: #3d4d66;
+  --c-surface-3: #47556c;
+  --c-border: #43526a;
+  --c-border-2: #546174;
+  --c-border-3: #687280;
+  --c-ink: #ede3cf;
+  --c-ink-2: #d0cabe;
+  --c-ink-3: #b6b4ae;
+  --c-ink-4: #a2a3a2;
+  --c-ink-5: #96999b;
+  --c-ink-solid: #ede3cf;
+  --c-ink-solid-2: #d0cabe;
+  --c-on-solid: #2c3e5c;
+  --c-halo: #23324a;
+  --c-accent: #c9a45c;
+  --c-on-accent: #2c3e5c;
+  --c-on-brand: #2c3e5c;
+  --c-on-amber: #2c3e5c;
+  --c-on-danger: #2c3e5c;
+  --c-on-info: #0d1d2b;
+  --c-cast: #d4b77f;
+  --c-ring: rgba(201,164,92,0.5);
+  --c-hover-wash: rgba(237,227,207,0.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 10px rgba(0,0,0,.5);
+  --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c;
+  --c-warn-tint: #464d5c;
+  --c-info: #9fb4d0;
+  --c-info-tint: #3a4c6a;
+  --c-success-tint: #334d63;
+  --c-danger: #e0707a;
+  --c-danger-tint: #454560;
+  --c-violet: #c7a3d9;
+  --c-violet-tint: #424c6e;
+  --c-violet-tint-2: #384666;
+  --c-brand: #d4b77f;
+  --c-warm-tint: #404d60;
+  --c-amber: #d4b77f;
+  --c-amber-tint: #3d4a60;
+  --c-plot-1: #d4b77f;
+  --c-plot-2: #9fb4d0;
+  --c-plot-3: #c9a45c;
+  --c-plot-4: #b8927e;
+  --c-plot-5: #c7a3d9;
+  --c-plot-6: #dec99f;
+  --c-plot-7: #96999b;
+  --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(201,164,92,0.7);
+  --c-kept-echo: #d4b77f;
+  --c-kept-rule: #c9a45c;
+  --orb-1: #736c5c;
+  --orb-2: #d4b77f;
+  --orb-inv: 1;
+  --glow-1: #8d8470;
+  --glow-2: #515964;
+}
+/* Sapphire, silver & porcelain — Antoine's pick "SAPPHIRE · SILVER · PORCELAIN" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="sapphire"] {
+  color-scheme: dark;
+  --c-bg: #1b2d5a;
+  --c-surface-rgb: 40 57 99;
+  --c-bg-2: #13203f;
+  --c-stage: #162448;
+  --c-mapstage: #162448;
+  --c-surface: #283963;
+  --c-surface-2: #2e3e67;
+  --c-surface-3: #39486e;
+  --c-border: #35446b;
+  --c-border-2: #485578;
+  --c-border-3: #5e6987;
+  --c-ink: #f0eee9;
+  --c-ink-2: #d0d1d4;
+  --c-ink-3: #b3b7c1;
+  --c-ink-4: #9da3b2;
+  --c-ink-5: #9097a9;
+  --c-ink-solid: #f0eee9;
+  --c-ink-solid-2: #d0d1d4;
+  --c-on-solid: #1b2d5a;
+  --c-halo: #162448;
+  --c-accent: #b9bcc2;
+  --c-on-accent: #1b2d5a;
+  --c-on-brand: #1b2d5a;
+  --c-on-amber: #1b2d5a;
+  --c-on-danger: #1b2d5a;
+  --c-on-info: #0d1d2b;
+  --c-cast: #cacbce;
+  --c-ring: rgba(185,188,194,0.5);
+  --c-hover-wash: rgba(240,238,233,0.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 10px rgba(0,0,0,.5);
+  --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c;
+  --c-warn-tint: #383e5a;
+  --c-info: #9fb4d0;
+  --c-info-tint: #2b3d68;
+  --c-success-tint: #233d61;
+  --c-danger: #e0707a;
+  --c-danger-tint: #37365e;
+  --c-violet: #c7a3d9;
+  --c-violet-tint: #333e6c;
+  --c-violet-tint-2: #293664;
+  --c-brand: #cacbce;
+  --c-warm-tint: #304068;
+  --c-amber: #cacbce;
+  --c-amber-tint: #2d3d66;
+  --c-plot-1: #cacbce;
+  --c-plot-2: #9fb4d0;
+  --c-plot-3: #b9bcc2;
+  --c-plot-4: #b8927e;
+  --c-plot-5: #c7a3d9;
+  --c-plot-6: #d9d9d9;
+  --c-plot-7: #9097a9;
+  --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(185,188,194,0.7);
+  --c-kept-echo: #cacbce;
+  --c-kept-rule: #b9bcc2;
+  --orb-1: #626d89;
+  --orb-2: #cacbce;
+  --orb-inv: 1;
+  --glow-1: #81899d;
+  --glow-2: #425074;
+}
+/* Black cherry, gold leaf & ecru — Antoine's pick "BLACK CHERRY · GOLD LEAF · ECRU" (2026-09-24), from the dusk-glow palette mockups. */
+:root[data-look="cherry"] {
+  color-scheme: dark;
+  --c-bg: #2e0d16;
+  --c-surface-rgb: 57 25 33;
+  --c-bg-2: #20090f;
+  --c-stage: #250a12;
+  --c-mapstage: #250a12;
+  --c-surface: #391921;
+  --c-surface-2: #3f2026;
+  --c-surface-3: #482a2f;
+  --c-border: #44262b;
+  --c-border-2: #54383a;
+  --c-border-3: #684e4d;
+  --c-ink: #e6dcc5;
+  --c-ink-2: #cabdab;
+  --c-ink-3: #b1a193;
+  --c-ink-4: #9e8b81;
+  --c-ink-5: #937f76;
+  --c-ink-solid: #e6dcc5;
+  --c-ink-solid-2: #cabdab;
+  --c-on-solid: #2e0d16;
+  --c-halo: #250a12;
+  --c-accent: #c9a24e;
+  --c-on-accent: #2e0d16;
+  --c-on-brand: #2e0d16;
+  --c-on-amber: #2e0d16;
+  --c-on-danger: #2e0d16;
+  --c-on-info: #0d1d2b;
+  --c-cast: #d2b372;
+  --c-ring: rgba(201,162,78,0.5);
+  --c-hover-wash: rgba(230,220,197,0.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 10px rgba(0,0,0,.5);
+  --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c;
+  --c-warn-tint: #482321;
+  --c-info: #9fb4d0;
+  --c-info-tint: #3c212c;
+  --c-success-tint: #352024;
+  --c-danger: #e0707a;
+  --c-danger-tint: #471b24;
+  --c-violet: #c7a3d9;
+  --c-violet-tint: #432231;
+  --c-violet-tint-2: #3a1926;
+  --c-brand: #d2b372;
+  --c-warm-tint: #422121;
+  --c-amber: #d2b372;
+  --c-amber-tint: #3e1e1f;
+  --c-plot-1: #d2b372;
+  --c-plot-2: #9fb4d0;
+  --c-plot-3: #c9a24e;
+  --c-plot-4: #b8927e;
+  --c-plot-5: #c7a3d9;
+  --c-plot-6: #dac393;
+  --c-plot-7: #937f76;
+  --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(201,162,78,0.7);
+  --c-kept-echo: #d2b372;
+  --c-kept-rule: #c9a24e;
+  --orb-1: #74502f;
+  --orb-2: #d2b372;
+  --orb-inv: 1;
+  --glow-1: #8d6d4b;
+  --glow-2: #52322a;
+}
 /* Ember — Antoine's pick "V2" from the dusk-glow mockups (2026-09-24): a coal-black page, a
    red-orange glow, warm ivory text and one ember accent. */
 :root[data-look="ember"] {
@@ -352,8 +1033,8 @@ body::after {
   #wsRoom .room-main { border-radius:18px; }
 }
 /* The side panels sit a shade blacker than the page, as in the mockup. */
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"]) :is(.room-threads, .room-cards) { background:var(--c-bg-2); }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"]) .se-body :is(h1, h2, h3, h4) { color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) :is(.room-threads, .room-cards) { background:var(--c-bg-2); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-body :is(h1, h2, h3, h4) { color:var(--c-kept-echo); }
 * { box-sizing: border-box; }
 /* Keyboard focus, once, for every control family the app has. Three rules covered 222
    buttons before this. Only :focus-visible, so a mouse click never draws a ring. */
@@ -1890,7 +2571,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   pointer-events:none; }
 .dark .se-kept, :root[data-look="darkroom"] .se-kept { border-bottom-color:var(--c-kept-line, rgba(111,207,160,.45)); }
 :root[data-look="darkroom"] .se-kept-echo { border-left-color:#6fcfa0; color:#6fcfa0; }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
 .se-quote-pop { position:fixed; z-index:var(--z-popover); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
   border-radius:var(--r-md); padding:3px; display:flex; gap:2px; box-shadow:0 6px 18px rgba(0,0,0,.22);
   animation:sePopIn .12s var(--ease); }
