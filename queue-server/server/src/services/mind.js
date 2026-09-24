@@ -21,6 +21,7 @@ import { broadcastAll } from '../realtime.js';
 import { triggerMindMirror } from './mindMirror.js';
 import { triggerMentionScan } from './entityMentions.js';
 import { STOPWORDS } from '../lib/stopwords.js';
+import { saveFoundAnalogy } from './referenceLibrary.js';
 
 let db = null;
 export function bindMindDb(database) {
@@ -393,9 +394,9 @@ function enforceCap() {
 const ANSWER_CHARS = 2000;
 function transcriptFor(turns) {
   if (!turns.length) return '(none)';
-  return turns.map((t) => (t.role === 'user'
-    ? `HE ASKED: ${t.text}`
-    : `THE ANSWER: ${String(t.text).slice(0, ANSWER_CHARS)}`)).join('\n\n');
+  return turns.map((t, i) => (t.role === 'user'
+    ? `[T${i + 1}] HE ASKED: ${t.text}`
+    : `[T${i + 1}] THE ANSWER: ${String(t.text).slice(0, ANSWER_CHARS)}`)).join('\n\n');
 }
 
 // The slice of a thread the harvest has not read yet. `seen` counts HIS messages
@@ -435,6 +436,10 @@ Use "replaces" to REPAIR the list too, when this conversation gives you what it 
 USE "contradicts" WHEN HE CHANGED HIS MIND. If this conversation REVERSES something in the list — he dropped an approach he had decided on, rejected a preference he used to hold, or corrected a claim about the paradigm — return the new, true claim with the old fact's id in "contradicts". The old one is then retired. This is different from "replaces", which sharpens a fact that is still true. A memory that can only ever add will end up holding both halves of every reversal and believing both.
 
 USE "merges" WHEN SEVERAL FACTS ARE ONE IDEA. Look at the list as a whole, not only at this conversation. When three or four entries are the same idea seen from different angles, return ONE strong statement of it — the claim in "text", the combined reasoning in "detail" — with every id it absorbs in "merges". Memory should get denser as it grows, not longer. Folding four weak facts into one that carries all four is worth more than a new one.
+
+ALSO RETURN, IN THE SAME ARRAY, EVERY REAL ANALOGY IN THE CONVERSATION — whether he said it or the answer did:
+  {"kind": "analogy", "left": "<one side, a few words>", "right": "<the other side, a few words>", "pattern": "<the shape both share, one plain sentence>", "turn": "T<n>", "said_by": "he"|"answer"}
+Only a real one: two things from DIFFERENT worlds or scales (a prison and an immune system, a cell and a city, a film character and a nation) sharing ONE pattern you can name. A passing comparison ("it's like a list"), a metaphor for style, or two examples of the same kind of thing are NOT analogies — leave them out. Most conversations hold none or one; never pad.
 
 WHAT YOU ALREADY KNOW:
 ${facts}
@@ -519,7 +524,7 @@ function applyHarvestItems(items, { sourceConvoId = null, sourceNote = null } = 
 // The extraction job. Never called on the request path — fire-and-forget after an
 // assistant turn. Reads only the turns since the watermark, never the whole thread.
 async function runHarvest(convoId, force) {
-  const convo = db.prepare(`SELECT id, subject_type, turns, mind_seen_turns FROM convos WHERE id=? AND deleted_at IS NULL`).get(convoId);
+  const convo = db.prepare(`SELECT id, subject_type, title, turns, mind_seen_turns FROM convos WHERE id=? AND deleted_at IS NULL`).get(convoId);
   // A side talk is a tangent, not standing memory to harvest — same reasoning
   // as roomWorldLook and analogyLook skipping it in conversations.js/roomAnalogies.js.
   if (!convo || convo.subject_type === 'side') return;
@@ -527,14 +532,14 @@ async function runHarvest(convoId, force) {
   // the watermark has always meant and what the trigger counts — but the slice
   // handed to the model runs from his first unseen message to the end, answers
   // included, so the pass sees what the conversation actually worked out.
-  const all = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant') ORDER BY created_at`).all(convoId);
+  const all = db.prepare(`SELECT id, role, text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant') ORDER BY created_at`).all(convoId);
   const userCount = all.filter((m) => m.role === 'user').length;
   const newTurns = unseenTurns(all, convo.mind_seen_turns || 0);
   if (!force && newTurns.filter((m) => m.role === 'user').length < HARVEST_AFTER_TURNS) return;
 
   const factList = listFacts({ activeOnly: true }).map((f) => ({ id: f.id, text: f.text, kind: f.kind }));
   const result = await generateText({
-    feature: 'summary', maxTokens: 1500, label: 'mind:harvest',
+    feature: 'summary', maxTokens: 2200, label: 'mind:harvest',
     prompt: buildHarvestPrompt(newTurns, factList),
   });
   if (result.error) { console.error('[mind] harvest model error:', result.error); return; }
@@ -543,7 +548,17 @@ async function runHarvest(convoId, force) {
   // next harvest pass retries these same turns rather than silently losing them.
   if (!items) { console.error('[mind] harvest: unparseable model reply, watermark not advanced'); return; }
 
-  const wrote = applyHarvestItems(items, { sourceConvoId: convoId });
+  const wrote = applyHarvestItems(items.filter((it) => it?.kind !== 'analogy'), { sourceConvoId: convoId });
+  // Analogies go to the library, marked found, not into memory.
+  let found = 0;
+  for (const it of items.filter((x) => x?.kind === 'analogy')) {
+    const turn = newTurns[Number(String(it.turn || '').replace(/\D/g, '')) - 1];
+    try {
+      if (saveFoundAnalogy('antoine', { left: it.left, right: it.right, pattern: it.pattern, saidBy: it.said_by,
+        convoId, messageId: turn?.id || null, convoTitle: convo.title || '' })) found += 1;
+    } catch (e) { console.error('[mind] analogy save failed:', e.message); }
+  }
+  if (found) broadcastAll('library:updated', { analogies: found });
   // Advance the watermark to the full count of chat turns seen.
   db.prepare(`UPDATE convos SET mind_seen_turns=? WHERE id=?`).run(userCount, convoId);
   if (wrote > 0) broadcastAll('mind:updated', {});

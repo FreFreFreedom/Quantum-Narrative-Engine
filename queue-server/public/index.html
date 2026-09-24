@@ -2590,6 +2590,17 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-card b { display:block; margin-top:5px; font-size:11px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
 .shelf-card small { display:block; color:var(--c-ink-4); font-size:10px; }
 .shelf-open { display:block; position:relative; width:100%; padding:0; border:0; background:none; cursor:pointer; }
+.lib-ana { display:flex; flex-direction:column; gap:5px; padding:12px 0; }
+.lib-ana-sides { font-family:'Cinzel',var(--font-read); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+.lib-ana-pattern { font-family:var(--room-font, var(--font-read)); font-size:16px; line-height:1.5; color:var(--c-read, var(--c-ink-2)); }
+.lib-ana-foot { display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--c-ink-5); }
+.lib-ana-foot button { border:0; background:none; box-shadow:none; padding:0; min-width:0; height:auto; font:inherit; color:var(--c-ink-4); cursor:pointer; }
+.lib-ana-foot button:hover { color:var(--c-kept-echo, var(--c-accent)); }
+.lib-ana-acts { margin-left:auto; display:flex; gap:12px; }
+.lib-ana.is-found { opacity:.55; transition:opacity .2s ease; }
+.lib-ana.is-found:hover { opacity:.9; }
+.lib-ana.is-found .lib-ana-sides { color:var(--c-ink-4); }
+.lib-ana [data-ana-keep-lib] { color:var(--c-kept-echo, var(--c-accent)); }
 /* The library's head scrolls away with the wall rather than floating over it (his ask,
    2026-09-24): tabs in the Room's engraved capitals, a search icon, and ✦ for the
    suggestions of the one type open. */
@@ -15104,6 +15115,7 @@ function roomBeginEditFact(el) {
 // tab). The backend broadcasts `mind:updated`; if a realtime channel is wired to
 // window events it lands here. Local mutations already refetch directly.
 window.addEventListener('mind:updated', () => { loadRoomMind(); });
+window.addEventListener('library:updated', () => { libData = null; if (document.getElementById('roomInterests')?.classList.contains('is-active')) renderInterestLibrary({ quiet: false }); });
 
 // ── Background world-look ideas for this thread (plan "room-world-ideas") ─────
 // Same three-shelf world-look every suggestion/seed already gets, keyed to this
@@ -17315,6 +17327,15 @@ async function renderInterestLibrary(opts) {
     const results = host.querySelector('.interest-results');
     results.innerHTML = review.entries.map(e => '<div class="interest-item" data-review="' + qEscAttr(e.id) + '"><div>' + qEsc(e.observed || e.candidate.title || 'Unclear title') + '</div><small>Needs review · ' + qEsc(e.filename) + '</small><button data-edit>Review</button> <button data-dismiss>Dismiss</button></div>').join('')
       + rest.map(w => {
+        // An analogy: its two sides, the shared pattern, who said it. One the harvest
+        // found on its own reads faint until he keeps it.
+        if (w.kind === 'analogy') return '<div class="interest-item lib-ana' + (w.found ? ' is-found' : '') + '" data-interest="' + qEscAttr(w.id) + '">'
+          + '<div class="lib-ana-sides">' + qEsc(w.creator || '') + '</div>'
+          + '<div class="lib-ana-pattern">' + qEsc(w.title || '') + '</div>'
+          + '<div class="lib-ana-foot">' + (w.saidBy ? '<span>' + (w.saidBy === 'you' ? 'You' : 'The answer') + '</span>' : '')
+          + (w.convoId ? '<button type="button" data-ana-src>' + qEsc(w.sourceTitle || 'Source') + ' ↗</button>' : '')
+          + '<span class="lib-ana-acts">' + (w.found ? '<button type="button" data-ana-keep-lib>Keep</button>' : '')
+          + '<button type="button" data-attach>Attach</button><button type="button" data-remove title="' + (w.found ? 'Not an analogy' : 'Remove') + '" aria-label="Remove">✕</button></span></div></div>';
         const passage = w.kind === 'passage' || w.type === 'passage';
         const title = w.url && /^https:\/\//.test(w.url) ? '<a href="' + qEscAttr(w.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(w.title) + '</a>' : qEsc(w.title);
         const text = passage ? (w.excerpt || w.title || '') : (w.excerpt ? '<p>' + qEsc(w.excerpt) + '</p>' : '');
@@ -17394,6 +17415,17 @@ async function renderInterestLibrary(opts) {
     });
     results.querySelectorAll('[data-interest]').forEach(el => {
       const w = rest.find(w => w.id === el.dataset.interest);
+      const keepA = el.querySelector('[data-ana-keep-lib]');
+      if (keepA) keepA.onclick = async () => { try { await apiWrite('/api/recommendations/library/keep', 'POST', { id: w.id }); libData = null; renderInterestLibrary(); } catch (err) { keepA.textContent = err.message; } };
+      const srcA = el.querySelector('[data-ana-src]');
+      if (srcA) srcA.onclick = () => {
+        if (w.convoId !== roomSel) roomSelect(w.convoId);
+        if (!w.messageId) return;
+        const sel = (window.CSS && CSS.escape) ? CSS.escape(w.messageId) : w.messageId;
+        let tries = 0;
+        const find = () => { const t = document.querySelector('#roomConvo .se-log [data-msg-id="' + sel + '"]'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'center' }); else if (++tries < 20) setTimeout(find, 150); };
+        find();
+      };
       el.querySelector('[data-attach]').onclick = async () => { try { const r = await window.studioReferenceAttach({ type: w.type, id: w.id }); el.querySelector('[data-attach]').textContent = 'Attached to ' + r.destination; } catch (err) { el.querySelector('[data-attach]').textContent = err.message; } };
       el.querySelector('[data-remove]').onclick = async () => { try { await apiWrite('/api/recommendations/library/remove', 'POST', { type: w.type, id: w.id }); renderInterestLibrary(); if (w.type === 'passage' && window.loadRoomPassages) window.loadRoomPassages(); } catch (err) { el.textContent = err.message; } };
     });
@@ -18446,6 +18478,8 @@ const WS_ROUTES = {
   'agent:review:updated': scheduleQLoad,
   'queue:updated': scheduleQLoad,
   'task:ended': scheduleQLoad,
+  // New analogies the harvest found land in the library as they are found.
+  'library:updated': () => window.dispatchEvent(new CustomEvent('library:updated')),
   'ideas:updated': () => { scheduleQLoad(); if (coreOpen() && coreView === 'flow' && typeof loadIdeas === 'function') loadIdeas(); },
   // The Room streams its own turn as it arrives, so this is only about the thread
   // list — titles, new threads, deletions — and only while the Room is on screen.

@@ -14,6 +14,11 @@ export function bindReferenceLibrary(database) {
     id TEXT PRIMARY KEY, owner TEXT NOT NULL, identity TEXT NOT NULL, source_id TEXT NOT NULL,
     snapshot TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE(owner,identity)
   )`);
+  // An analogy found on its own and then thrown away must not come back the next
+  // time the conversation is read.
+  db.exec(`CREATE TABLE IF NOT EXISTS reference_dismissed (
+    owner TEXT NOT NULL, identity TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(owner,identity)
+  )`);
 }
 function ownerCheck(owner) { if (owner !== 'antoine') fail('Reference not found.',404); }
 export function resolveReference(owner, ref) {
@@ -79,8 +84,37 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
   const start=Math.max(0,Number(offset)||0), cap=Math.max(1,Math.min(100,Number(limit)||40));
   return {items:items.slice(start,start+cap).map(({text,...r})=>({...r,excerpt:text?.slice(0,300)})),total:items.length};
 }
+// ─── Analogies found in conversation ────────────────────────────────────────
+// The mind harvest reads each Room conversation every few messages; when it meets a
+// real analogy — two things from different worlds or scales sharing one nameable
+// pattern — it lands here, marked found. Keep promotes it; ✕ dismisses it for good.
+export function analogyIdentity(left,right) {
+  const pair=[norm(left),norm(right)].sort();
+  return 'analogy-found:'+pair.join('|');
+}
+export function saveFoundAnalogy(owner,{left,right,pattern,saidBy,convoId,messageId,convoTitle}) {
+  if(!db || !left || !right || !pattern) return null;
+  const identity=analogyIdentity(left,right);
+  if(db.prepare('SELECT 1 FROM reference_dismissed WHERE owner=? AND identity=?').get(owner,identity)) return null;
+  if(db.prepare('SELECT 1 FROM reference_saves WHERE owner=? AND identity=?').get(owner,identity)) return null;
+  const snap={type:'saved',kind:'analogy',title:String(pattern).slice(0,240),creator:String(left).slice(0,120)+' ↔ '+String(right).slice(0,120),
+    text:String(pattern).slice(0,600),found:true,saidBy:saidBy==='he'?'you':'answer',convoId:convoId||null,messageId:messageId||null,
+    sourceTitle:convoTitle||'',origin:'Found in conversation',identity};
+  const id=randomUUID();
+  db.prepare('INSERT OR IGNORE INTO reference_saves(id,owner,identity,source_id,snapshot) VALUES(?,?,?,?,?)').run(id,owner,identity,messageId||convoId||id,JSON.stringify(snap));
+  return id;
+}
+export function keepFoundAnalogy(owner,id) {
+  ownerCheck(owner);
+  const r=db.prepare('SELECT snapshot FROM reference_saves WHERE id=? AND owner=?').get(id,owner);
+  if(!r) fail('Reference not found.',404);
+  const snap={...parse(r.snapshot),found:false};
+  db.prepare('UPDATE reference_saves SET snapshot=? WHERE id=? AND owner=?').run(JSON.stringify(snap),id,owner);
+  return {ok:true};
+}
 export function removeReference(owner,ref) {
   const item=resolveReference(owner,ref);
+  if(item.type==='saved' && item.found && item.identity) db.prepare('INSERT OR IGNORE INTO reference_dismissed(owner,identity) VALUES(?,?)').run(owner,item.identity);
   if(item.type==='saved')db.prepare('DELETE FROM reference_saves WHERE id=? AND owner=?').run(item.id,owner);
   else if(item.type==='passage')db.prepare('UPDATE saved_passages SET deleted_at=CURRENT_TIMESTAMP WHERE id=? AND created_by=?').run(item.id,owner);
   else if(item.type==='media') {

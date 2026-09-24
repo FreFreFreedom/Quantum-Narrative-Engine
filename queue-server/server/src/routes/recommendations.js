@@ -14,6 +14,7 @@ export function recommendationRoutes() {
   router.post('/library/attach', action(req=>library.referenceQuote(owner(req),req.body)));
   router.post('/library/read', action(req=>library.resolveReference(owner(req),req.body)));
   router.post('/library/remove', action(req=>library.removeReference(owner(req),req.body)));
+  router.post('/library/keep', action(req=>library.keepFoundAnalogy(owner(req),String(req.body?.id||''))));
   router.get('/', action(req => recommendations.listRecommendations(String(req.query.kind || ''), String(req.query.scope || 'all'))));
   router.post('/initialize', action(req => recommendations.initializeCollection(req.body?.kind, req.body?.scope)));
   router.patch('/settings', action(req => recommendations.changeSettings(req.body?.kind, req.body?.scope, req.body || {})));
