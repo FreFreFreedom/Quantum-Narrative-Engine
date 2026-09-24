@@ -2952,7 +2952,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    it when there is room (Antoine's pick "G1", 2026-09-23). */
 /* A kept line is washed in parchment (his pick D3, 2026-09-24): no underline, no echo in
    the margin, nothing that moves the text. Darker looks get the same wash in their own gold. */
-.se-kept { background:rgba(214,190,140,.45); color:inherit; border-bottom:0; border-radius:2px; cursor:default;
+.se-kept { background:rgba(214,190,140,.45); color:inherit; border-bottom:0; border-radius:2px; cursor:pointer;
   -webkit-box-decoration-break:clone; box-decoration-break:clone; }
 :root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"],[data-look="darkroom"]) .se-kept { background:color-mix(in srgb, var(--c-kept-rule, #cfa966) 22%, transparent); }
 .dark .se-kept { background:color-mix(in srgb, var(--c-kept-rule, #cfa966) 22%, transparent); }
@@ -29061,6 +29061,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   function placeQuotePop(){
     if(!quotePop) return;
+    if(quotePop.classList.contains('se-kept-pop')) return killQuotePop();
     var sel = window.getSelection && window.getSelection();
     if(!sel || !sel.rangeCount || !String(sel).trim()) return killQuotePop();
     var r = sel.getRangeAt(0).getBoundingClientRect();
@@ -29077,7 +29078,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // alone — which a phone and a tablet never send — so on touch the whole set was
     // unreachable and read as gone. touchend is the same moment on a touch screen,
     // given a longer beat because the handles settle after the gesture ends.
-    var offer = function(settleMs){
+    var offer = function(settleMs, gesture){
       // After the gesture the selection is final; a frame later it is also painted,
       // which is when getBoundingClientRect is worth reading.
       clearTimeout(quoteOfferTimer);
@@ -29148,8 +29149,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           saveMark(e, msgId, passage, repaint);
         });
         // Keep the line itself, not the place and not the context: it goes on the
-        // Passages shelf and is read there.
-        mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
+        // Passages shelf and is read there. Like a Kindle, a selection of five words
+        // or more, made by hand, is kept the moment it is let go — the button then
+        // becomes its Undo. One word is for the dictionary, a few are for quoting.
+        var auto = gesture && passage.split(' ').length >= 5;
+        if(auto){
+          var kept = autoKeep(e, msgId, passage, repaint);
+          mk('seed', 'Undo', 'Un-keep this line', function(){ kept.then(function(out){ unkeepPassage(e, out, repaint); }); });
+        } else mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
           keepPassage(e, msgId, passage, repaint);
         });
         // Aside and Remember only make sense against the Room's own main thread
@@ -29184,11 +29191,31 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       }, settleMs);
     };
     log.quoteOffer=offer;
-    log.addEventListener('mouseup', function(){ offer(0); });
+    log.addEventListener('mouseup', function(){ offer(0, true); });
     log.addEventListener('keyup', function(){ offer(0); });
     // Passive: the gesture is the browser's own text selection and must not be
     // interfered with — this only reads what it produced.
-    log.addEventListener('touchend', function(){ offer(350); }, { passive: true });
+    log.addEventListener('touchend', function(){ offer(350, true); }, { passive: true });
+    // Tap a kept line: its Undo.
+    log.addEventListener('click', function(ev){
+      var mark = ev.target.closest && ev.target.closest('mark.se-kept[data-pid]');
+      var sel = window.getSelection && window.getSelection();
+      if(!mark || (sel && String(sel).trim())) return;
+      killQuotePop();
+      var pid = mark.getAttribute('data-pid');
+      quotePop = document.createElement('div');
+      quotePop.className = 'se-quote-pop se-kept-pop';
+      quotePop.onmousedown = function(x){ x.preventDefault(); x.stopPropagation(); };
+      var b = document.createElement('button');
+      b.type = 'button'; b.title = 'Un-keep this line';
+      b.innerHTML = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-seed"/></svg>Undo';
+      b.onclick = function(x){ x.stopPropagation(); killQuotePop(); unkeepPassage(e, { passage: { id: pid } }, repaint); };
+      quotePop.appendChild(b);
+      document.body.appendChild(quotePop);
+      var r = mark.getBoundingClientRect(), h = quotePop.offsetHeight || 30;
+      quotePop.style.left = Math.max(6, Math.min(window.innerWidth - quotePop.offsetWidth - 6, ev.clientX - quotePop.offsetWidth / 2)) + 'px';
+      quotePop.style.top = (r.top > h + 12 ? r.top - h - 6 : r.bottom + 8) + 'px';
+    });
   }
   // contains(), not ===: the popover is a bar of buttons, so a click lands on a
   // CHILD. Comparing against the bar itself tore it down on mousedown, before the
@@ -29203,7 +29230,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   document.addEventListener('selectionchange', function(){
     if(quotePop && quotePop.contains(document.activeElement))return;
     var sel=window.getSelection();
-    if(!sel || !String(sel).trim()){clearTimeout(quoteOfferTimer);killQuotePop();return;}
+    if(!sel || !String(sel).trim()){clearTimeout(quoteOfferTimer);if(!(quotePop && quotePop.classList.contains('se-kept-pop')))killQuotePop();return;}
     if(mouseDragging)return;
     var node=sel.anchorNode, el=node && (node.nodeType===1?node:node.parentElement);
     var log=el && el.closest && el.closest('.se-log');
@@ -29644,7 +29671,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Keep a line. The reading of it is written server-side straight after, so this
   // returns as soon as the line is safe rather than waiting on a model.
   function keepPassage(e, messageId, text, repaint){
-    apiWrite('/api/passages', 'POST', {
+    return apiWrite('/api/passages', 'POST', {
       text: text,
       convoId: e.convoId || null,
       messageId: messageId || null,
@@ -29654,8 +29681,37 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         e.note = (out && out.already) ? 'Already kept.' : 'Kept — it is in Passages.';
         if(repaint) repaint();
         if(window.loadRoomPassages) window.loadRoomPassages();
+        return out;
       })
-      .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); });
+      .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); return null; });
+  }
+  // The selection a hand makes grows in steps (a drag, then a handle nudged on a
+  // phone). The same selection is never kept twice, and a longer one that swallows
+  // the line kept a moment ago replaces it rather than stacking beside it.
+  var lastAutoKeep = null;
+  function autoKeep(e, msgId, text, repaint){
+    var prev = lastAutoKeep;
+    if(prev && prev.msgId === msgId && prev.text === text) return prev.done;
+    var done = keepPassage(e, msgId, text, repaint);
+    lastAutoKeep = { msgId: msgId, text: text, done: done, at: Date.now() };
+    if(prev && prev.msgId === msgId && Date.now() - prev.at < 20000
+      && (text.indexOf(prev.text) !== -1 || prev.text.indexOf(text) !== -1)){
+      Promise.all([prev.done, done]).then(function(r){
+        var old = r[0], now = r[1];
+        if(old && !old.already && old.passage && now && now.passage && now.passage.id !== old.passage.id) unkeepPassage(e, old, null, true);
+      });
+    }
+    return done;
+  }
+  function unkeepPassage(e, out, repaint, quiet){
+    var id = out && out.passage && out.passage.id;
+    if(!id) return;
+    apiWrite('/api/passages/' + encodeURIComponent(id), 'DELETE')
+      .then(function(){
+        if(!quiet){ e.note = 'Un-kept.'; if(repaint) repaint(); }
+        if(window.loadRoomPassages) window.loadRoomPassages();
+      })
+      .catch(function(){});
   }
 
   // A kept line stays visible in the answer it came out of, the way a highlight
@@ -29673,6 +29729,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(!body) return;
       var el = highlightIn(body, text, 'se-kept');
       if(el) el.title = 'Kept — it is in Passages';
+      body.querySelectorAll('mark.se-kept:not([data-pid])').forEach(function(m){ m.setAttribute('data-pid', p.id); });
       // No margin echo any more (his pick D3): the wash alone marks it.
     });
   }
@@ -29973,6 +30030,55 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     preview.innerHTML = pieces.join('');
   }
 
+  // Reading position, like a book: each thread reopens on the line you were
+  // reading. Saved as the answer at the top of the view plus how far into it, not
+  // as raw pixels — the log fills in stages and covers arrive late, so a pixel
+  // count taken before that lands somewhere else.
+  var READ_POS_KEY = 'fmcns_read_pos';
+  function readPosAll(){ try { return JSON.parse(localStorage.getItem(READ_POS_KEY) || '{}') || {}; } catch(err){ return {}; } }
+  function saveReadPos(log){
+    var key = log._posKey; if(!key || log._posRestoring) return;
+    var all = readPosAll(), pos;
+    if(log.scrollHeight - log.scrollTop - log.clientHeight < 24) pos = { bottom: 1 };
+    else {
+      var lr = log.getBoundingClientRect(), turns = log.querySelectorAll('.se-turn[data-msg-id]');
+      for(var i = 0; i < turns.length; i++){
+        var tr = turns[i].getBoundingClientRect();
+        if(tr.bottom > lr.top + 4){ pos = { msg: turns[i].getAttribute('data-msg-id'), off: Math.round(lr.top - tr.top) }; break; }
+      }
+    }
+    if(!pos) return;
+    pos.at = Date.now(); all[key] = pos;
+    var keys = Object.keys(all);
+    if(keys.length > 200) keys.sort(function(a, b){ return (all[a].at || 0) - (all[b].at || 0); }).slice(0, keys.length - 200).forEach(function(k){ delete all[k]; });
+    try { localStorage.setItem(READ_POS_KEY, JSON.stringify(all)); } catch(err){}
+  }
+  function restoreReadPos(log, key){
+    if(!key) return;
+    if(!log._posWired){
+      log._posWired = 1;
+      log.addEventListener('scroll', function(){ clearTimeout(log._posTimer); log._posTimer = setTimeout(function(){ saveReadPos(log); }, 250); }, { passive: true });
+    }
+    if(log._posKey === key) return;
+    // Only once the thread's answers are actually on the page.
+    if(!log.querySelector('.se-turn[data-msg-id]')) return;
+    log._posKey = key;
+    var pos = readPosAll()[key];
+    if(!pos || pos.bottom) return;
+    var apply = function(){
+      var turn = log.querySelector('.se-turn[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(pos.msg) : pos.msg) + '"]');
+      if(!turn) return;
+      log._posRestoring = 1;
+      log.scrollTop = Math.max(0, log.scrollTop + (turn.getBoundingClientRect().top - log.getBoundingClientRect().top) + (pos.off || 0));
+      setTimeout(function(){ log._posRestoring = 0; }, 60);
+    };
+    apply();
+    // Covers and art load after the text and push it down; settle once more,
+    // unless the reader has already moved.
+    var was = log.scrollTop;
+    setTimeout(function(){ if(log._posKey === key && Math.abs(log.scrollTop - was) < 4) apply(); }, 700);
+  }
+
   function fillEmbed(host, e, opts){
     persistAttachments(e);
     var log = host.querySelector('.se-log');
@@ -30000,6 +30106,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       }
       srcLoadArt(log);
       markKeptIn(log, e.convoId);
+      restoreReadPos(log, e.convoId || host.getAttribute('data-se'));
     }
     var filebar = host.querySelector('.se-filebar');
     if(filebar){
