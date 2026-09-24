@@ -1103,6 +1103,16 @@ body::after {
 :root[data-look="sapphire"] { --c-read:#cfd2d8; }
 :root[data-look="cherry"] { --c-read:#e8d4a4; }
 #roomConvo .se-turn:not(.you) .se-body { color:var(--c-read, var(--c-ink-2)); }
+/* The empty message box: no dots, only a faint gold stroke that draws itself now and then
+   (his pick 2·A, 2026-09-24). Everywhere else keeps the quiet dots. */
+.se-quill { display:none; }
+.room-convo .se-input::placeholder { color:transparent; }
+.room-convo .se-compose:has(.se-input:placeholder-shown) .se-quill { display:block; position:absolute; left:2px;
+  top:calc(6px + var(--room-size) * .75); height:1px; width:0; pointer-events:none;
+  background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, transparent), transparent);
+  animation:seQuill 7s ease-in-out infinite; }
+@keyframes seQuill { 0% { width:0; opacity:0; } 45% { width:90px; opacity:1; } 75% { width:90px; opacity:0; } 100% { opacity:0; } }
+@media (prefers-reduced-motion: reduce) { .room-convo .se-compose:has(.se-input:placeholder-shown) .se-quill { animation:none; width:90px; opacity:.5; } }
 /* A drop capital opens every answer, always (his pick, 2026-09-24): the first
    letter of its first paragraph, large and in the look's gold. */
 #roomConvo .se-turn:not(.you):not(.plan) .se-body > p:first-child::first-letter {
@@ -27653,7 +27663,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +     ((opts.type === 'open' || opts.type === 'side')
               ? '<button type="button" class="se-attach" title="Add an image, PDF or text file" aria-label="Add an image, PDF or text file"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-upload"/></svg></button><input type="file" class="se-file-input" hidden multiple accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.md,.txt,.csv,.json,.js,.mjs,.cjs,.ts,.tsx,.jsx,.html,.css,.xml,.yaml,.yml,.log,.srt">'
               : '')
-        +     '<textarea class="se-input" rows="1" placeholder="…"></textarea>'
+        +     '<textarea class="se-input" rows="1" placeholder="…"></textarea><span class="se-quill" aria-hidden="true"></span>'
         +     '<span class="se-spend" hidden></span>'
         +     '<canvas class="se-micwave" aria-hidden="true"></canvas><button type="button" class="se-mic" hidden title="Dictate" aria-label="Dictate"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"/><path d="M3.4 7.6a4.6 4.6 0 0 0 9.2 0M8 12.2v2"/></svg></button><button type="button" class="se-talk" hidden title="Talk" aria-label="Talk"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M3.2 4.6a6 6 0 0 0 0 6.8M12.8 4.6a6 6 0 0 1 0 6.8"/></svg></button>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
