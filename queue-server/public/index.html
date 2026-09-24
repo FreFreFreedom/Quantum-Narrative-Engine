@@ -12,10 +12,11 @@
    a look later is one entry here and one block of values in the stylesheet. */
 window.FMCNS_LOOKS = {
   atlas:    { name: 'Daylight atlas', dark: false },
-  darkroom: { name: 'Darkroom',       dark: true  }
+  darkroom: { name: 'Darkroom',       dark: true  },
+  bean:     { name: 'Black bean & gold', dark: true }
 };
 window.FMCNS_LOOK_DAY = 'atlas';
-window.FMCNS_LOOK_NIGHT = 'darkroom';
+window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom stays in the menu)
 (function () {
   var v = null;
   try { v = localStorage.getItem('fmcns-look'); } catch (e) {}
@@ -171,6 +172,42 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
   --c-plot-4: #6fcfa0; --c-plot-5: #b08be0; --c-plot-6: #c9b06a;
   --c-plot-7: #7e8fb0; --c-plot-8: #c9b06a;
 }
+/* Black bean & gold — Antoine's pick "D1" (2026-09-23): a near-black red page, black
+   side panels, gold where the eye should land (headings, the accent, kept lines) and
+   parchment text rather than white, to be easy on the eyes at night. */
+:root[data-look="bean"] {
+  color-scheme: dark;
+  --c-bg: #1a0409; --c-bg-2: #0f0205; --c-stage: #120306; --c-mapstage: #120306;
+  --c-surface: #22060d; --c-surface-2: #2b0710; --c-surface-3: #330a15;
+  --c-surface-rgb: 34 6 13;
+  --c-border: #2e0a13; --c-border-2: #3f111c; --c-border-3: #5a2029;
+  --c-ink: #ecd9bf; --c-ink-2: #dcc8ad; --c-ink-3: #cbb79e;
+  --c-ink-4: #a8927c; --c-ink-5: #8f7a66;
+  --c-ink-solid: #ecd9bf; --c-ink-solid-2: #dcc8ad; --c-on-solid: #1a0409;
+  --c-halo: #120306;
+  --c-accent: #c9a45c;
+  --c-on-accent: #1a0409;
+  --c-on-brand: #1a0409; --c-on-amber: #1a0409; --c-on-danger: #1a0409; --c-on-info: #0d1d2b;
+  --c-cast: #d9b877;
+  --c-ring: rgba(201,164,92,.5);
+  --c-hover-wash: rgba(236,217,191,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #3a2410;
+  --c-info: #9fb4d0; --c-info-tint: #1c1a2a;
+  --c-success-tint: #2a2410;
+  --c-danger: #e0707a; --c-danger-tint: #3a0c14;
+  --c-violet: #c7a3d9; --c-violet-tint: #2c1428; --c-violet-tint-2: #241022;
+  --c-brand: #d9b877; --c-warm-tint: #33200a;
+  --c-amber: #d9b877; --c-amber-tint: #2e2210;
+  --c-plot-1: #d9b877; --c-plot-2: #c2283a; --c-plot-3: #e0a458;
+  --c-plot-4: #b8927e; --c-plot-5: #c7a3d9; --c-plot-6: #9fb4d0;
+  --c-plot-7: #8f7a66; --c-plot-8: #e8c77f;
+  --c-kept-line: rgba(201,164,92,.75); --c-kept-echo: #d9b877; --c-kept-rule: #c9a45c;
+}
+/* The side panels sit a shade blacker than the page, as in the mockup. */
+:root[data-look="bean"] .room-threads, :root[data-look="bean"] .room-cards { background:var(--c-bg-2); }
+:root[data-look="bean"] .se-body h1, :root[data-look="bean"] .se-body h2,
+:root[data-look="bean"] .se-body h3, :root[data-look="bean"] .se-body h4 { color:var(--c-kept-echo); }
 * { box-sizing: border-box; }
 /* Keyboard focus, once, for every control family the app has. Three rules covered 222
    buttons before this. Only :focus-visible, so a mouse click never draws a ring. */
@@ -1649,8 +1686,17 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-phase { font-size:var(--fs-sm); color:var(--c-ink-5); margin-top:3px; font-style:italic; }
 /* Quote a passage into the next question. Sits on the selection, follows it, and
    is removed the moment the selection is dropped. */
-.se-kept { background:linear-gradient(transparent 56%, rgba(87,195,180,.28) 56%); color:inherit;
-  border-radius:1px; cursor:default; }
+/* A kept line: underlined in the look's own colour, and echoed in the margin beside
+   it when there is room (Antoine's pick "G1", 2026-09-23). */
+.se-kept { background:none; color:var(--c-ink); border-bottom:1px solid var(--c-kept-line, rgba(47,125,99,.45));
+  border-radius:0; cursor:default; }
+.se-turn.has-echo { padding-right:232px !important; }
+.se-kept-echo { position:absolute; top:0; right:6px; width:196px; padding-left:13px; border-left:1.5px solid var(--c-kept-rule, #2f7d63);
+  font-family:var(--font-read); font-style:italic; font-size:14px; line-height:1.5; color:var(--c-kept-echo, #2f7d63);
+  pointer-events:none; }
+.dark .se-kept, :root[data-look="darkroom"] .se-kept { border-bottom-color:var(--c-kept-line, rgba(111,207,160,.45)); }
+:root[data-look="darkroom"] .se-kept-echo { border-left-color:#6fcfa0; color:#6fcfa0; }
+:root[data-look="bean"] .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
 .se-quote-pop { position:fixed; z-index:var(--z-popover); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
   border-radius:var(--r-md); padding:3px; display:flex; gap:2px; box-shadow:0 6px 18px rgba(0,0,0,.22);
   animation:sePopIn .12s var(--ease); }
@@ -25147,7 +25193,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(!body) return;
       var el = highlightIn(body, text, 'se-kept');
       if(el) el.title = 'Kept — it is in Passages';
+      if(el && turn) keptEcho(log, turn, el, text);
     });
+  }
+  // The kept line again, in the margin beside where it starts — only where the
+  // column leaves room for it; on a narrow screen the underline alone says it.
+  function keptEcho(log, turn, mark, text){
+    // An answer with a kept line gives up a strip on its right for the echo — only
+    // where the column is wide enough to lose it; narrow, the underline alone says it.
+    if(log.clientWidth < 720 || turn.classList.contains('you')) return;
+    turn.classList.add('has-echo');
+    var tr = turn.getBoundingClientRect(), mr = mark.getBoundingClientRect();
+    if(!tr.width) return;
+    var n = document.createElement('div');
+    n.className = 'se-kept-echo';
+    var words = text.replace(/\s+/g, ' ').trim().split(' ');
+    var t = words.length > 26 ? words.slice(0, 26).join(' ') + '\u2026' : words.join(' ');
+    n.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    n.style.top = Math.max(0, mr.top - tr.top) + 'px';
+    turn.appendChild(n);
   }
   // A line kept from another pane has to show up here too, without a reload.
   window.addEventListener('passages:changed', function(){
