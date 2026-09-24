@@ -195,3 +195,32 @@ export function chapterize(convoId, { force = false } = {}) {
   });
   return { ok: true };
 }
+
+// Chapter names written before 2026-09-23 came out all lowercase ("better call saul
+// prequel"). This fixes only their capitals, in place: the same chapters, the same
+// places, one small call. The whole rebuild re-reads the thread and can fail on a
+// cheap model; a list of short names cannot. Returns how many names changed.
+export async function recaseChapters(convoId) {
+  if (!db || !convoId) return { changed: 0 };
+  const rows = db.prepare(`SELECT id, label FROM convo_chapters WHERE convo_id=?`).all(convoId);
+  if (!rows.length) return { changed: 0 };
+  const result = await generateText({
+    feature: 'summary', maxTokens: 900, label: 'convo:chapters-recase',
+    prompt: `Fix the capital letters in these chapter names. Sentence case: capital first letter; names of people, places, books, films, shows, organisations and countries keep their capitals ("better call saul prequel" becomes "Better Call Saul prequel", "american versus canadian justice systems" becomes "American versus Canadian justice systems"). Change nothing else — not one word.
+
+Return ONLY a JSON array of strings, same order, same count (${rows.length}):
+${JSON.stringify(rows.map((r) => r.label))}`,
+  });
+  const out = parseChapters(result.text);
+  if (result.error || !out || out.length !== rows.length) return { changed: 0, error: result.error || 'unreadable reply' };
+  let changed = 0;
+  const upd = db.prepare(`UPDATE convo_chapters SET label=? WHERE id=?`);
+  rows.forEach((r, i) => {
+    const t = String(out[i] || '').replace(/\s+/g, ' ').trim();
+    // Same words, only the case may differ — anything else is refused.
+    if (!t || t === r.label || t.toLowerCase() !== r.label.toLowerCase()) return;
+    upd.run(t, r.id); changed++;
+  });
+  if (changed) broadcastAll('chapters:updated', { convoId });
+  return { changed };
+}

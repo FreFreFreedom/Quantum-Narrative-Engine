@@ -13,7 +13,7 @@ import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
 import { rhymeSoon } from '../services/boardRhyme.js';
 import { proposeRemember, saveRemembered } from '../services/mind.js';
-import { listChapters, chapterize } from '../services/chapters.js';
+import { listChapters, chapterize, recaseChapters } from '../services/chapters.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import * as interests from '../services/interestLibrary.js';
@@ -840,6 +840,11 @@ export function conversationsRoutes() {
   router.post('/:id/chapters/rebuild', (req, res) => {
     res.json(chapterize(req.params.id, { force: true }));
   });
+
+  // Put the capitals back in chapter names written all lowercase.
+  router.post('/:id/chapters/recase', asyncHandler(async (req, res) => {
+    res.json(await recaseChapters(req.params.id));
+  }));
 
   // Chapters — saved places inside one conversation.
   router.get('/:id/marks', (req, res) => {
