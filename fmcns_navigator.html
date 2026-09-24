@@ -1015,10 +1015,11 @@ body::after {
   --q-av: color-mix(in srgb, var(--c-bg) 45%, #000); --q-avink: var(--c-kept-echo, var(--c-accent)); }
 .room-main { background:radial-gradient(120% 90% at 8% 0%, var(--glow-1, var(--c-bg)) 0%, var(--glow-2, var(--c-bg)) 32%, var(--c-bg) 72%), var(--c-bg); }
 .room-main .room-toolbar { background:transparent; border-bottom-color:transparent; }
-#roomConvo .se-turn.you .se-body {
-  background:color-mix(in srgb, var(--c-ink) 7%, transparent); border:1px solid color-mix(in srgb, var(--c-ink) 10%, transparent); }
+/* "Whisper glass" (Antoine's pick C, 2026-09-24): the dark card read as too much contrast,
+   so an answer is a barely-there lift of the ink over the glow, with no edge. */
+#roomConvo .se-turn.you .se-body { background:color-mix(in srgb, var(--c-ink) 6%, transparent); border:none; }
 #roomConvo .se-turn:not(.you):not(.plan) > .se-body {
-  background:var(--glass); border:1px solid color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:14px; padding:12px 16px; }
+  background:color-mix(in srgb, var(--c-ink) 3.5%, transparent); border:none; border-radius:16px; padding:14px 18px; }
 .room-convo .se-draftbox {
   background:var(--glass-2); border-color:color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:16px; }
 #roomConvo .se-turn:not(.you):not(.plan) { position:relative; padding-left:44px; }
