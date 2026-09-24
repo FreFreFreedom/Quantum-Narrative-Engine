@@ -503,6 +503,12 @@ on the page. Words drawn *inside* a mocked-up screen are part of the design and 
 Same instinct as "No explaining inside the app", one step earlier: prose wrapped around
 a design is the designer defending it.
 
+**A control never moves when its panel opens or shuts** (2026-09-24). Settings and
+Look sat stacked in the shut rail and side by side in the open one, so hovering the
+rail slid the button away from the pointer reaching for it. Every button in a
+collapsible bar keeps the same spot in both states; if the open state has more room,
+it spends it on labels beside the icons, never on rearranging them.
+
 ### Don't leave published pages behind (added 2026-09-09)
 
 A visual Antoine only has to **look at once** — mockups, palette comparisons, a chart to
