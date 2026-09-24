@@ -2428,6 +2428,14 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    above it, grouped by who makes the model, with the thinking dial under the chosen one. */
 .room-convo .se-lanepick, .room-convo .se-lanemodel, .room-convo .se-laneeffort, .room-convo .se-lane-clear { display:none !important; }
 .room-convo .se-lanewrap { max-width:200px; overflow:visible; align-self:flex-end; margin-bottom:9px; }
+/* Placement 1 (his pick, 2026-09-24): the model after the line, before the microphone,
+   in the dimmest gold — a word you find when you look for it. */
+.room-convo .se-lanewrap { order:1; margin-right:4px; }
+.room-convo .se-spend, .room-convo .se-micwave, .room-convo .se-mic, .room-convo .se-talk, .room-convo .se-send { order:2; }
+.room-convo .se-lanebtn { font-size:9px; letter-spacing:.2em; color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
+.room-convo .se-lanebtn.is-set { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, var(--c-ink-5)); }
+.room-convo .se-lanebtn:hover, .room-convo .se-lanebtn[aria-expanded="true"] { color:var(--c-kept-echo, var(--c-accent)); }
+.room-convo .se-lanebtn .chev { font-size:7px; }
 .room-convo .se-input { padding:5px 4px; }
 .se-lanebtn { display:none; }
 .room-convo .se-lanebtn { display:inline-flex; align-items:center; gap:6px; max-width:200px; padding:4px 2px; border:0; background:none; cursor:pointer;
@@ -27238,7 +27246,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var name = seLaneName(e.lane.tag || LANE_LABELS[key] || key);
     var m = e.lane.model ? laneModelShort(e.lane.model) : '';
     var eff = e.lane.effort ? String(LANE_EFFORT_LABELS[e.lane.effort] || e.lane.effort).split(' ')[0] : '';
-    return '<span>' + qEsc(name) + '</span>' + (m ? '<span class="dot">·</span><span>' + qEsc(m) + '</span>' : '')
+    // The model's own name is enough on the line; the maker is in the list.
+    return '<span>' + qEsc(m || name) + '</span>'
       + (eff ? '<span class="dot">·</span><span>' + qEsc(eff) + '</span>' : '') + '<span class="chev">▾</span>';
   }
   function lanePopHtml(e){
