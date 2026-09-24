@@ -27515,7 +27515,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function paintSpend(host, e){
     var el = host.querySelector('.se-spend');
     if(!el) return;
-    var m = spendMark(e);
+    // Only while ChatGPT's billed lane is the one picked: every other lane is a
+    // subscription or free, so a price beside it is noise (his ask, 2026-09-24).
+    var m = e.lane && e.lane.provider === 'openai' ? spendMark(e) : null;
     if(!m){ el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
     // Warm only when this answer IS the dearest so far and there is a thread to
