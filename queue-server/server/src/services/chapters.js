@@ -45,7 +45,7 @@ export function bindChaptersDb(database) {
 const REBUILD_EVERY = 6;
 const MAX_MESSAGES = 120;      // how many messages the model is shown
 const PREVIEW_CHARS = 220;     // of each one
-const MAX_CHAPTERS = 14;
+const MAX_CHAPTERS = 24;
 
 function chatMessages(convoId) {
   try {
@@ -86,7 +86,11 @@ function buildPrompt(messages) {
   const lines = messages.map((m, i) => {
     const who = m.role === 'user' ? 'HE' : 'THE ANSWER';
     const body = String(m.text || '').replace(/\s+/g, ' ').slice(0, PREVIEW_CHARS);
-    return `[${i}] (${m.id}) ${who}: ${body}`;
+    // An answer's own section headings say what it went on to cover, far past the
+    // first 220 characters — the only place a subject change inside one long
+    // answer shows up.
+    const heads = [...String(m.text || '').matchAll(/^#{1,4}\s+(.+)$/gm)].map((x) => x[1].replace(/[*_`]/g, '').trim()).slice(0, 6);
+    return `[${i}] (${m.id}) ${who}: ${body}${heads.length ? ` [sections: ${heads.join(' / ')}]` : ''}`;
   }).join('\n');
 
   return `Below is a long conversation between a man and an AI he thinks with. Split it into chapters, so he can see the shape of it and jump back to a place in it.
@@ -100,7 +104,7 @@ The first entry is always the very first message.
 
 The label names the thing itself, in the conversation's own words. "Fractal justice across scales", "Page breaks and layout", "Which books carry the pattern". NEVER a label about the conversation rather than the subject: no "Introduction", no "Opening question", no "Further discussion", no "Clarification", no "Conclusion". Never number them. Sentence case: capital first letter, lowercase after it, but names of people, places, books, films and shows keep their capitals ("Better Call Saul prequel", "The Wire's structure").
 
-Between 2 and ${MAX_CHAPTERS} chapters. A short conversation that never left its subject is ONE chapter, and that is a correct answer — do not invent turns it did not take.
+Between 2 and ${MAX_CHAPTERS} chapters. Prefer more, finer chapters over a few broad ones: a named idea he spent two or three exchanges on ("Due process versus crime control") deserves its own chapter. A short conversation that never left its subject is ONE chapter, and that is a correct answer — do not invent turns it did not take.
 
 Use only message ids that appear in the list. Any other id is thrown away.
 

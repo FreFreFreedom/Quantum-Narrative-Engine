@@ -1814,6 +1814,33 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-rail-item.is-saved .se-rail-name { font-style:italic; }
 .se-rail-mark { display:none; flex:none; width:10px; height:12px; color:var(--c-brand); }
 .se-rail:hover .se-rail-item.is-saved .se-rail-mark, .se-rail:focus-within .se-rail-item.is-saved .se-rail-mark { display:block; }
+/* Sections inside a chapter — an answer's headings, and the lines he kept — and the
+   search field. Only when the rail is open; closed, it stays a column of ticks. */
+.se-rail-find, .se-rail-hits, .se-rail-sub { display:none; }
+.se-rail:hover .se-rail-find, .se-rail:focus-within .se-rail-find { display:flex; }
+.se-rail:hover .se-rail-sub, .se-rail:focus-within .se-rail-sub { display:flex; }
+.se-rail:hover .se-rail-hits, .se-rail:focus-within .se-rail-hits { display:block; }
+.se-rail-find { align-items:center; gap:8px; margin:0 6px 8px; padding:7px 12px; border:1px solid var(--c-border); border-radius:999px;
+  background:var(--c-bg); color:var(--c-ink-5); }
+.se-rail-find:focus-within { border-color:var(--c-border-2); color:var(--c-ink-3); }
+.se-rail-find svg { width:14px; height:14px; flex:none; }
+.se-rail-find input { flex:1; min-width:0; border:0; outline:0; background:none; font:14px var(--font-read); color:var(--c-ink); }
+.se-rail-find input::placeholder { color:var(--c-ink-5); font-style:italic; }
+.se-rail-find input::-webkit-search-cancel-button { opacity:.5; }
+.se-rail.is-finding:hover .se-rail-list, .se-rail.is-finding:focus-within .se-rail-list { display:none; }
+.se-rail-hit { display:block; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--c-border); cursor:pointer;
+  padding:9px 12px; font:13.5px/1.5 var(--font-read); color:var(--c-ink-3); border-radius:0; }
+.se-rail-hit:hover { background:var(--c-hover-wash); color:var(--c-ink); }
+.se-rail-hit mark { background:rgba(233,185,73,.4); color:var(--c-ink); border-radius:2px; padding:0 1px; }
+.se-rail-none { padding:10px 12px; font:italic 13.5px var(--font-read); color:var(--c-ink-5); }
+.se-rail-sub { pointer-events:auto; align-items:center; width:100%; background:none; border:0; cursor:pointer; text-align:left;
+  padding:4px 12px 4px 41px; min-height:26px; border-radius:8px; }
+.se-rail-sub:hover, .se-rail-sub:focus-visible { background:var(--c-hover-wash); outline:none; }
+.se-rail-subname { flex:1; min-width:0; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  font:12.5px/1.4 var(--font-ui); color:var(--c-ink-5); }
+.se-rail-sub:hover .se-rail-subname { color:var(--c-ink); }
+.se-rail-sub.is-kept .se-rail-subname { font-family:var(--font-read); font-style:italic; font-size:13px; color:var(--c-brand); }
+.se-rail-sub.is-kept .se-rail-subname::before { content:'\201C'; margin-right:2px; }
 /* A gutter for the dashes, so a closed rail never sits on top of the words. */
 .se-wrap.has-rail .se-log { padding-left:30px; }
 @media (max-width: 720px) { .se-rail { display:none; } .se-wrap.has-rail .se-log { padding-left:0; } }
@@ -24857,6 +24884,53 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Chapter';
   }
 
+  // The sections inside each chapter, in reading order: an answer's own headings,
+  // and the lines he kept (from the kept list, which knows its message).
+  function railSections(log, e, chapters){
+    var out = chapters.map(function(){ return []; });
+    if(!log) return out;
+    var kept = (window.roomPassagesList ? window.roomPassagesList() : []).filter(function(p){ return p.convo_id === e.convoId && p.message_id; });
+    var ci = -1, starts = {};
+    chapters.forEach(function(c, i){ starts[c.messageId] = i; });
+    log.querySelectorAll('[data-msg-id]').forEach(function(turn){
+      var id = turn.getAttribute('data-msg-id');
+      if(starts[id] != null) ci = starts[id];
+      if(ci < 0) return;
+      var body = turn.querySelector('.se-body') || turn, seen = {};
+      body.querySelectorAll('h1, h2, h3, h4').forEach(function(h){
+        var t = h.textContent.replace(/\s+/g, ' ').trim();
+        if(t.length < 3 || seen[t]) return;
+        seen[t] = 1;
+        out[ci].push({ kind: 'head', text: t, messageId: id, find: t });
+      });
+      kept.filter(function(p){ return p.message_id === id; }).forEach(function(p){
+        var t = String(p.text || '').replace(/\s+/g, ' ').trim();
+        if(t.length < 3) return;
+        var words = t.split(' ');
+        out[ci].push({ kind: 'kept', text: words.length > 12 ? words.slice(0, 12).join(' ') + '\u2026' : t, messageId: id, find: t });
+      });
+    });
+    return out;
+  }
+  // Every place the words appear, newest last, with a little text either side.
+  function railFind(log, query){
+    var q = String(query || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if(q.length < 2 || !log) return [];
+    var found = [];
+    log.querySelectorAll('[data-msg-id]').forEach(function(turn){
+      if(found.length >= 30) return;
+      var body = turn.querySelector('.se-body') || turn;
+      var text = body.textContent.replace(/\s+/g, ' '), low = text.toLowerCase(), at = low.indexOf(q);
+      while(at !== -1 && found.length < 30){
+        var from = Math.max(0, text.lastIndexOf(' ', Math.max(0, at - 40)) + 1);
+        var to = text.indexOf(' ', Math.min(text.length, at + q.length + 60)); if(to === -1) to = text.length;
+        found.push({ messageId: turn.getAttribute('data-msg-id'), before: (from > 0 ? '\u2026' : '') + text.slice(from, at), match: text.slice(at, at + q.length), after: text.slice(at + q.length, to) + (to < text.length ? '\u2026' : '') });
+        at = low.indexOf(q, at + q.length);
+      }
+    });
+    return found;
+  }
+
   function paintRail(rail, log, e, repaint){
     loadChapters(e, repaint);
     var chapters = (e.chapters || []).filter(function(c){
@@ -24869,7 +24943,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       return;
     }
     rail.hidden = false;
-    rail.innerHTML = '<div class="se-rail-head">Chapters<b>' + chapters.length + '</b></div>' + chapters.map(function(c, ci){
+    // Inside each chapter, the places worth finding again: the headings the answers
+    // gave their own sections, and every line he kept. Read from the transcript and
+    // the kept list, so they cost nothing and are there the moment they exist —
+    // a talk about "due process versus crime control" inside a chapter named for
+    // something else is still one click away.
+    var subs = railSections(log, e, chapters);
+    var had = rail.querySelector('.se-rail-find input');
+    var q = e.railQuery || '', typing = had && document.activeElement === had;
+    rail.innerHTML = '<div class="se-rail-head">Chapters<b>' + chapters.length + '</b></div>'
+      + '<label class="se-rail-find"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3.2 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+      + '<input type="search" placeholder="Find in this conversation" aria-label="Find in this conversation" value="' + qEscAttr(q) + '"></label>'
+      + '<div class="se-rail-hits"></div>'
+      + '<div class="se-rail-list">' + chapters.map(function(c, ci){
       var name = railName(c, log);
       return '<button type="button" class="se-rail-item' + (c.kind === 'saved' ? ' is-saved' : '') + '"'
         // aria-label, never title: the browser draws its own tooltip from title, and
@@ -24880,8 +24966,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         + '<span class="se-rail-num">' + (ci + 1 < 10 ? '0' : '') + (ci + 1) + '</span>'
         + '<span class="se-rail-name">' + qEsc(name) + '</span>'
         + (c.kind === 'saved' ? '<svg class="se-rail-mark" viewBox="0 0 10 12" aria-hidden="true"><path d="M1 1h8v10L5 8 1 11z" fill="currentColor"/></svg>' : '')
-        + '</button>';
-    }).join('');
+        + '</button>'
+        + (subs[ci] || []).map(function(x, xi){
+            return '<button type="button" class="se-rail-sub' + (x.kind === 'kept' ? ' is-kept' : '') + '" data-sub="' + ci + ':' + xi + '" aria-label="' + qEscAttr(x.text) + '">'
+              + '<span class="se-rail-subname">' + qEsc(x.text) + '</span></button>';
+          }).join('');
+    }).join('') + '</div>';
 
     // Sit beside the log, not beside the whole panel: the head and the composer are
     // not part of what the rail points into. The gutter class goes on the wrap so
@@ -24903,6 +24993,33 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         jumpToPassage(log, c.messageId, c.kind === 'saved' ? c.snippet : '');
       };
     });
+
+    rail.querySelectorAll('[data-sub]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        var ij = b.getAttribute('data-sub').split(':'), x = (subs[+ij[0]] || [])[+ij[1]];
+        if(x) jumpToPassage(log, x.messageId, x.find);
+      };
+    });
+    var input = rail.querySelector('.se-rail-find input'), hits = rail.querySelector('.se-rail-hits');
+    var runFind = function(){
+      e.railQuery = input.value;
+      var found = railFind(log, input.value);
+      rail.classList.toggle('is-finding', !!input.value.trim());
+      hits.innerHTML = !input.value.trim() ? '' : found.length ? found.map(function(h, hi){
+          return '<button type="button" class="se-rail-hit" data-hit="' + hi + '">' + qEsc(h.before) + '<mark>' + qEsc(h.match) + '</mark>' + qEsc(h.after) + '</button>';
+        }).join('') : '<p class="se-rail-none">Not in this conversation.</p>';
+      hits.querySelectorAll('[data-hit]').forEach(function(b){
+        b.onclick = function(ev){ ev.stopPropagation(); var h = found[+b.getAttribute('data-hit')]; if(h) jumpToPassage(log, h.messageId, h.match); b.blur(); };
+      });
+    };
+    input.oninput = runFind;
+    input.onkeydown = function(ev){
+      if(ev.key === 'Enter'){ var first = hits.querySelector('[data-hit]'); if(first) first.click(); }
+      if(ev.key === 'Escape'){ input.value = ''; runFind(); input.blur(); }
+    };
+    if(q) runFind();
+    if(typing){ input.focus(); try { input.setSelectionRange(q.length, q.length); } catch(_) {} }
 
     railHere(rail, log, chapters);
     // One listener per painted rail, replaced on every repaint — onscroll, not
