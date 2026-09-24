@@ -1611,6 +1611,11 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rail-sep { margin:10px 14px; background:linear-gradient(90deg, transparent, var(--c-border), transparent); }
 .rail-btnrow .rail-label { display:none; }
 .rail-btnrow .rail-item { color:var(--c-ink-4); }
+/* Symbols only, so they never need the row: they stay stacked in the icon column in
+   both states, and opening the rail moves neither of them (his ask, 2026-09-24). */
+.rail-btnrow, .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow { flex-direction:column; }
+.rail-btnrow .rail-item, .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow .rail-item {
+  flex:0 0 auto; width:100%; justify-content:flex-start; padding:0 7px; gap:10px; }
 .rail-btnrow .rail-item:hover { color:var(--c-kept-echo, var(--c-accent)); }
 /* ---------- The quota read-out in the rail ---------- */
 /* Two accounts down, two windows across, the money on a last line. The figure is what
