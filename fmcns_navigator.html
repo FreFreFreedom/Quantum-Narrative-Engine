@@ -1022,6 +1022,25 @@ body::after {
   border-radius:0; padding:2px 16px 2px 0; text-align:right; font-size:calc(var(--room-size) * .9); color:var(--c-ink-2); }
 #roomConvo.room-convo .se-turn.you .se-who { display:none; }
 #roomConvo.room-convo .se-turn.you .se-who:has(.se-lane) { display:flex; }
+/* The ink the Room's answers are read in, one per look, each taken from that look's own
+   palette (his picks, 2026-09-24). */
+:root, :root[data-look="atlas"] { --c-read:#6a2a1a; }
+:root[data-look="darkroom"] { --c-read:#c3dccf; }
+:root[data-look="bean"] { --c-read:#d9b877; }
+:root[data-look="navy"] { --c-read:#dccbb0; }
+:root[data-look="plum"] { --c-read:#dcc08a; }
+:root[data-look="ember"] { --c-read:#e9d2bf; }
+:root[data-look="dusknavy"] { --c-read:#f2dcc0; }
+:root[data-look="slatenavy"] { --c-read:#efe7d6; }
+:root[data-look="creamnavy"] { --c-read:#1d2a40; }
+:root[data-look="oxblood"] { --c-read:#e2cc9c; }
+:root[data-look="midnight"] { --c-read:#ece8df; }
+:root[data-look="espresso"] { --c-read:#e7dcc8; }
+:root[data-look="teal"] { --c-read:#cfd6c4; }
+:root[data-look="slate"] { --c-read:#ede3cf; }
+:root[data-look="sapphire"] { --c-read:#cfd2d8; }
+:root[data-look="cherry"] { --c-read:#e8d4a4; }
+#roomConvo .se-turn:not(.you) .se-body { color:var(--c-read, var(--c-ink-2)); }
 /* A drop capital opens every answer, always (his pick, 2026-09-24): the first
    letter of its first paragraph, large and in the look's gold. */
 #roomConvo .se-turn:not(.you):not(.plan) .se-body > p:first-child::first-letter {
