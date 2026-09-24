@@ -1642,6 +1642,19 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rail-item.active::before { left:7px; top:auto; bottom:3px; width:18px; height:1px;
   transition:left .3s cubic-bezier(.22,.61,.36,1), width .3s cubic-bezier(.22,.61,.36,1); }
 .railbar:hover .rail-item.active::before, .railbar:focus-within .rail-item.active::before, .railbar.pinned .rail-item.active::before { left:35px; width:28px; }
+/* Doors and their children (his pick 3). A door is lit while one of its children is
+   the place you are in; its children show under it, smaller, in the brand's letters,
+   and only while the rail is open — shut, the door's icon carries the hairline. */
+.rail-door.is-open { color:var(--c-kept-echo, var(--c-accent)); }
+.rail-door.is-open::before { content:''; position:absolute; left:7px; bottom:3px; width:18px; height:1px; background:var(--c-kept-echo, var(--c-accent)); }
+.railbar:hover .rail-door.is-open::before, .railbar:focus-within .rail-door.is-open::before, .railbar.pinned .rail-door.is-open::before { width:0; }
+.rail-kids { display:none; flex-direction:column; gap:0; margin:-2px 0 4px; }
+.rail-door.is-open + .rail-kids { display:flex; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-kids { display:none; }
+.rail-nav .rail-kid { height:26px; padding-left:36px; }
+.rail-nav .rail-kid .rail-label { font-family:'Genos',var(--font-read); font-size:11.5px; font-weight:300; letter-spacing:.24em; }
+.rail-nav .rail-kid.active::before, .railbar:hover .rail-nav .rail-kid.active::before, .railbar.pinned .rail-nav .rail-kid.active::before { left:36px; width:20px; bottom:2px; }
+.rail-brand { margin:22px 0 26px; }
 /* ---------- The quota read-out in the rail ---------- */
 /* Two accounts down, two windows across, the money on a last line. The figure is what
    is LEFT of that window; the hairline under it fills with what has been USED, so the
@@ -4612,40 +4625,38 @@ button:active { transform: translateY(1px) scale(.99); }
       <span class="rail-label rail-wordmark"><span>Quantum</span><span>Narrative</span><span>Engine</span></span>
     </button>
     <div class="rail-nav" role="tablist" aria-label="App modes">
-      <button id="modeContentBtn" class="rail-item active" role="tab" aria-selected="true" title="Content navigator">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg>
-        <span class="rail-label">Content</span>
-      </button>
-      <button id="modeMapBtn" class="rail-item" role="tab" aria-selected="false" title="Map">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"/></svg>
-        <span class="rail-label">Map</span>
-      </button>
-      <div class="rail-sep"></div>
-      <!-- Flat, and every one of them a real destination. These five used to be
-           children of an "Architecture" item that was also their sibling in a top
-           bar — a hierarchy that existed only to be redrawn twice. The top bar is
-           gone, so the rail carries them itself: an icon each, so a collapsed rail
-           still shows all of them and which one you are in. -->
-      <button class="rail-item" data-rail-sub="graph" role="tab" aria-selected="false" title="The architecture graph">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg>
-        <span class="rail-label">Architecture</span>
-      </button>
-      <button class="rail-item" data-rail-sub="blocks" role="tab" aria-selected="false" title="Building blocks — Discover and the Library">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-cards"/></svg>
-        <span class="rail-label">Building blocks</span>
-      </button>
-      <button class="rail-item" data-rail-sub="mind" role="tab" aria-selected="false" title="Signals — the intel feed">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-spark"/></svg>
-        <span class="rail-label">Signals</span>
-      </button>
-      <button class="rail-item" data-rail-sub="flow" role="tab" aria-selected="false" title="Flow — tasks, suggestions and ideas">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-bolt"/></svg>
-        <span class="rail-label">Flow</span>
-      </button>
+      <!-- Four doors (his pick 3, 2026-09-24): Room, then World, Build and Work. Each
+           door opens on the child it last showed; its children unfold under it, in
+           smaller letters, only while that door is the one you are in. The ids and
+           data-rail-sub attributes are the old ones, so every handler still binds. -->
       <button class="rail-item" data-rail-sub="room" role="tab" aria-selected="false" title="Room — a place to think, with cards pulled in when they matter">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chat"/></svg>
         <span class="rail-label">Room</span>
       </button>
+      <button class="rail-item rail-door" data-door="world" title="World — the content and the map">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"/></svg>
+        <span class="rail-label">World</span>
+      </button>
+      <div class="rail-kids" data-kids="world">
+        <button id="modeContentBtn" class="rail-item rail-kid active" data-kid="content" role="tab" aria-selected="true" title="Content navigator"><span class="rail-label">Content</span></button>
+        <button id="modeMapBtn" class="rail-item rail-kid" data-kid="map" role="tab" aria-selected="false" title="Map"><span class="rail-label">Map</span></button>
+      </div>
+      <button class="rail-item rail-door" data-door="build" title="Build — the architecture and its building blocks">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg>
+        <span class="rail-label">Build</span>
+      </button>
+      <div class="rail-kids" data-kids="build">
+        <button class="rail-item rail-kid" data-rail-sub="graph" data-kid="graph" role="tab" aria-selected="false" title="The architecture graph"><span class="rail-label">Architecture</span></button>
+        <button class="rail-item rail-kid" data-rail-sub="blocks" data-kid="blocks" role="tab" aria-selected="false" title="Building blocks — Discover and the Library"><span class="rail-label">Blocks</span></button>
+      </div>
+      <button class="rail-item rail-door" data-door="work" title="Work — signals and the flow of tasks">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-bolt"/></svg>
+        <span class="rail-label">Work</span>
+      </button>
+      <div class="rail-kids" data-kids="work">
+        <button class="rail-item rail-kid" data-rail-sub="mind" data-kid="mind" role="tab" aria-selected="false" title="Signals — the intel feed"><span class="rail-label">Signals</span></button>
+        <button class="rail-item rail-kid" data-rail-sub="flow" data-kid="flow" role="tab" aria-selected="false" title="Flow — tasks, suggestions and ideas"><span class="rail-label">Flow</span></button>
+      </div>
     </div>
     <!-- The foot carries one read-out and two buttons, and nothing else. Pause and the
          queue status line moved to the build panel — the queue's own surface — and the
@@ -13316,6 +13327,10 @@ function initRailControls() {
   document.querySelectorAll('[data-rail-sub]').forEach(b => {
     b.onclick = () => goCoreDest(b.getAttribute('data-rail-sub'));
   });
+  // A door opens on the child it last showed.
+  document.querySelectorAll('.rail-door').forEach(b => {
+    b.onclick = () => goDoor(b.getAttribute('data-door'));
+  });
   startUsagePolling();
 }
 
@@ -13560,6 +13575,25 @@ function renderWorkspace() {
 // The rail's sub-items mirror whichever Architecture destination is open. Called
 // from renderWorkspace() and setArchTab() rather than sharing their data-attribute
 // selectors, so nothing double-binds the clicks initCore()/initArchNav() own.
+// The four doors of the rail and the children each one holds; the last child a
+// door showed is remembered so the door reopens where it was.
+const RAIL_DOORS = { world: ['content', 'map'], build: ['graph', 'blocks'], work: ['mind', 'flow'] };
+function goDoor(door) {
+  const kids = RAIL_DOORS[door] || [];
+  let kid = null;
+  try { kid = localStorage.getItem('fmcns_door_' + door); } catch (e) {}
+  if (!kids.includes(kid)) kid = kids[0];
+  if (kid === 'content' || kid === 'map') setMode(kid); else goCoreDest(kid);
+}
+function syncRailDoors() {
+  document.querySelectorAll('.rail-door').forEach((d) => {
+    const door = d.getAttribute('data-door');
+    const kids = document.querySelector('.rail-kids[data-kids="' + door + '"]');
+    const on = kids ? kids.querySelector('.rail-kid.active') : null;
+    d.classList.toggle('is-open', !!on);
+    if (on) { try { localStorage.setItem('fmcns_door_' + door, on.getAttribute('data-kid')); } catch (e) {} }
+  });
+}
 function syncRailSub() {
   // Only one of the rail's destinations is lit at a time, and none of the five
   // Core ones is lit while you are in Content or Map.
@@ -13570,6 +13604,7 @@ function syncRailSub() {
     b.classList.toggle('active', on);
     b.setAttribute('aria-selected', String(on));
   });
+  syncRailDoors();
 }
 
 // The five places Core can be, named once. Graph / Building blocks / Mind are
