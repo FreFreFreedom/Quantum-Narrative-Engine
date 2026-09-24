@@ -1607,7 +1607,13 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .railbar:hover .rail-item.active::before, .railbar:focus-within .rail-item.active::before, .railbar.pinned .rail-item.active::before { width:12px; }
 .rail-item.active::before { transition:width var(--t-med) var(--ease); }
 .rail-brand { color:var(--c-kept-echo, var(--c-accent)); }
-.rail-wordmark { font-family:'Cinzel',var(--font-read); font-size:14px; font-weight:500; letter-spacing:.32em; color:var(--c-kept-echo, var(--c-accent)); }
+/* The brand (his pick 30, 2026-09-24): the symbol, a vertical hairline, the full name on
+   three lines in Genos capitals. The bar and the name fade with the rail's other labels,
+   so shut, only the symbol stays — in the same column as every icon under it. */
+.rail-brand { height:64px; gap:12px; align-items:center; }
+.rail-brand-bar { width:1px; height:44px; flex:none; background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 60%, transparent); opacity:0; transition:opacity var(--t-fast) var(--ease); }
+.railbar:hover .rail-brand-bar, .railbar:focus-within .rail-brand-bar, .railbar.pinned .rail-brand-bar { opacity:1; }
+.rail-wordmark { display:flex; flex-direction:column; gap:1px; font-family:'Genos',var(--font-read); font-size:12.5px; font-weight:300; letter-spacing:.3em; line-height:1.35; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); white-space:nowrap; }
 .rail-sep { margin:10px 14px; background:linear-gradient(90deg, transparent, var(--c-border), transparent); }
 .rail-btnrow .rail-label { display:none; }
 .rail-btnrow .rail-item { color:var(--c-ink-4); }
@@ -2533,6 +2539,32 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    long idea title there cuts off nearly all of it. */
 .room-ideas .wl-title { white-space:normal; overflow:visible; text-overflow:clip; }
 .room-idea-round { border:1px solid var(--c-border); border-radius:var(--r-md); margin-bottom:8px; overflow:hidden; }
+/* The connection suggestion: one line in the tab row's grammar, two hairline actions,
+   and the evidence under it when opened (plans/room-connections.md). */
+.conn-suggest { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:8px 8px 10px; margin-bottom:10px; border-bottom:1px solid var(--c-border); }
+.conn-name { display:inline-flex; align-items:center; gap:8px; border:0; background:none; padding:0; cursor:pointer;
+  font-family:'Cinzel',var(--font-read); font-size:var(--fs-2xs); letter-spacing:.2em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+.conn-name .ic { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.2; }
+.conn-name small { font-family:var(--font-ui); font-size:var(--fs-2xs); letter-spacing:0; opacity:.6; }
+.conn-acts { margin-left:auto; display:inline-flex; gap:14px; }
+.conn-acts button { border:0; background:none; padding:2px 0; cursor:pointer; font-family:'Cinzel',var(--font-read); font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--c-ink-5); position:relative; }
+.conn-acts button:hover { color:var(--c-kept-echo, var(--c-accent)); }
+.conn-acts button:first-child { color:var(--c-ink-3); }
+.conn-reaches { flex:1 0 100%; display:flex; flex-direction:column; gap:2px; padding:4px 0 0 21px; }
+.conn-reaches button { border:0; background:none; padding:3px 0; cursor:pointer; text-align:left; font-family:var(--font-read); font-size:var(--fs-base); line-height:1.4; color:var(--c-ink-3); }
+.conn-reaches button:hover { color:var(--c-ink); }
+.conn-key { flex:1 0 100%; display:flex; gap:8px; padding-top:6px; }
+.conn-key input { flex:1; min-width:0; background:transparent; border:0; border-bottom:1px solid var(--c-border-2); color:var(--c-ink); font:inherit; font-size:var(--fs-sm); padding:4px 2px; }
+.conn-key button { border:0; background:none; cursor:pointer; font-family:'Cinzel',var(--font-read); font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+/* Settings → Connections: one line per source, a switch at the end. */
+.ai-conn-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--c-border); flex-wrap:wrap; }
+.ai-conn-row b { font-weight:500; font-size:var(--fs-sm); color:var(--c-ink-2); }
+.ai-conn-row small { font-size:var(--fs-xs); color:var(--c-ink-5); }
+.ai-conn-row .conn-key { padding-top:0; }
+.ai-conn-switch { margin-left:auto; width:30px; height:16px; border-radius:8px; border:1px solid var(--c-border-3); background:transparent; padding:0; position:relative; cursor:pointer; flex:none; }
+.ai-conn-switch span { position:absolute; top:2px; left:2px; width:10px; height:10px; border-radius:50%; background:var(--c-ink-5); transition:left var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
+.ai-conn-row.is-on .ai-conn-switch { border-color:var(--c-kept-echo, var(--c-accent)); }
+.ai-conn-row.is-on .ai-conn-switch span { left:16px; background:var(--c-kept-echo, var(--c-accent)); }
 .room-idea-round-head { display:flex; align-items:center; gap:6px; width:100%; padding:6px 8px; background:none; border:none; font:inherit; font-size:var(--fs-sm); text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); cursor:pointer; text-align:left; }
 .room-idea-round-head:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .room-idea-round-head .ic { width:12px; height:12px; flex:none; }
@@ -4516,7 +4548,8 @@ button:active { transform: translateY(1px) scale(.99); }
   <div class="rail-inner">
     <button id="railToggle" class="rail-brand" aria-expanded="false" title="Keep this panel open (or press [ )" aria-label="Keep this panel open">
       <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-brand"/></svg>
-      <span class="rail-label rail-wordmark">QNE</span>
+      <span class="rail-brand-bar" aria-hidden="true"></span>
+      <span class="rail-label rail-wordmark"><span>Quantum</span><span>Narrative</span><span>Engine</span></span>
     </button>
     <div class="rail-nav" role="tablist" aria-label="App modes">
       <button id="modeContentBtn" class="rail-item active" role="tab" aria-selected="true" title="Content navigator">
@@ -13595,7 +13628,7 @@ function setRoomTabCount(id, n) {
    drop the thing you are looking at from under you. */
 const ROOM_TAB_HAS = {
   attached: () => roomAttachedCards().length > 0 || roomLinks.length > 0 || roomPickOpen,
-  ideas: () => roomIdeasReports.length > 0 || roomIdeasRunning,
+  ideas: () => roomIdeasReports.length > 0 || roomIdeasRunning || !!connSuggestion(),
   // The one tab that shows even while empty: every other pane only ever holds
   // results, but this one holds a question box — hiding it until something has
   // already arrived makes the asking unreachable.
@@ -15250,6 +15283,7 @@ function roomBeginEditFact(el) {
 // tab). The backend broadcasts `mind:updated`; if a realtime channel is wired to
 // window events it lands here. Local mutations already refetch directly.
 window.addEventListener('mind:updated', () => { loadRoomMind(); });
+window.addEventListener('load', () => { setTimeout(() => loadConnections(true), 1500); });
 window.addEventListener('library:updated', () => { libData = null; if (document.getElementById('roomInterests')?.classList.contains('is-active')) renderInterestLibrary({ quiet: false }); });
 
 // ── Background world-look ideas for this thread (plan "room-world-ideas") ─────
@@ -16318,18 +16352,79 @@ function renderRoomIdeas() {
   if (!host) return;
   setRoomTabCount('roomIdeaCount', roomIdeasReports.length);
   if (!roomSel) { host.innerHTML = ''; return; }
+  const reach = connSuggestHtml();
   if (roomIdeasRunning) {
-    host.innerHTML = `<div class="tv-empty">🔭 Looking at the world — real projects, hidden products, bold ideas. This takes a minute or two.</div>`;
+    host.innerHTML = reach + `<div class="tv-empty">🔭 Looking at the world — real projects, hidden products, bold ideas. This takes a minute or two.</div>`;
     return;
   }
   if (!roomIdeasReports.length) {
-    host.innerHTML = `<div class="tv-empty">
+    host.innerHTML = reach + `<div class="tv-empty">
       <button type="button" class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here."><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>Look at the world</button>
     </div>`;
     return;
   }
-  host.innerHTML = roomIdeasReports.map((report, idx) => roomIdeaRoundHtml(report, idx)).join('');
+  host.innerHTML = reach + roomIdeasReports.map((report, idx) => roomIdeaRoundHtml(report, idx)).join('');
 }
+
+// ── Connections (plans/room-connections.md, 2026-09-24) ─────────────────────
+// Outside sources the Room reaches for and cannot open yet. The server counts each
+// reach; the strongest un-dismissed one is proposed here, one at a time, as a single
+// quiet row. Nothing is wired behind a connection yet — Connect stores a token and
+// turns the row on; he decides which source gets built first.
+let connData = null;
+let connOpen = false;          // the suggestion row opened to its evidence
+async function loadConnections(quiet) {
+  try { connData = await api('/api/connections'); } catch (e) { connData = connData || { catalogue: [], suggestions: [], others: [] }; }
+  renderRoomIdeas();
+  if (typeof renderAiSettings === 'function' && document.getElementById('aiConnections')) renderAiSettings();
+}
+function connSuggestion() { return connData && connData.suggestions && connData.suggestions[0] || null; }
+function connSuggestHtml() {
+  const sg = connSuggestion();
+  if (!sg) return '';
+  const rows = connOpen ? `<div class="conn-reaches">${sg.reaches.map(r =>
+      `<button type="button" data-conn-jump="${qEscAttr(r.convoId || '')}" data-conn-msg="${qEscAttr(r.messageId || '')}" title="${qEscAttr(r.convoTitle || '')}">${qEsc(r.what)}</button>`).join('')}</div>` : '';
+  return `<div class="conn-suggest${connOpen ? ' is-open' : ''}" data-conn="${qEscAttr(sg.source)}">
+    <button type="button" class="conn-name" data-conn-toggle title="${qEscAttr(sg.gives || '')}"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-brand"/></svg><span>${qEsc(sg.name)}</span><small>${sg.count}</small></button>
+    <span class="conn-acts"><button type="button" data-conn-connect>Connect</button><button type="button" data-conn-dismiss>Not now</button></span>
+    ${rows}</div>`;
+}
+function connJump(convoId, messageId) {
+  if (convoId && convoId !== roomSel) roomSelect(convoId);
+  if (!messageId) return;
+  const sel = (window.CSS && CSS.escape) ? CSS.escape(messageId) : messageId;
+  let tries = 0;
+  const find = () => { const t = document.querySelector('#roomConvo .se-log [data-msg-id="' + sel + '"]'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'center' }); else if (++tries < 20) setTimeout(find, 150); };
+  find();
+}
+// Connect: a source that needs nothing turns on at once; one that needs his account
+// opens the provider's key page and asks for the key in a small field. The key is
+// posted once and never shown again.
+async function connConnect(source, host) {
+  const c = (connData?.catalogue || []).find(x => x.id === source);
+  if (!c) return;
+  if (c.needs === 'none' || c.needs === 'file') {
+    connData = await apiWrite('/api/connections/' + encodeURIComponent(source) + '/on', 'POST', { on: true }); renderRoomIdeas(); return;
+  }
+  if (c.keyUrl) window.open(c.keyUrl, '_blank', 'noopener');
+  const row = host ? host.querySelector('[data-conn="' + source + '"]') : null;
+  if (!row) return;
+  const field = document.createElement('form');
+  field.className = 'conn-key';
+  field.innerHTML = '<input type="password" autocomplete="off" placeholder="Paste the key" aria-label="Key"><button type="submit">Save</button>';
+  row.appendChild(field);
+  field.querySelector('input').focus();
+  field.onsubmit = async (ev) => {
+    ev.preventDefault();
+    const token = field.querySelector('input').value.trim();
+    if (!token) return;
+    connData = await apiWrite('/api/connections/' + encodeURIComponent(source) + '/on', 'POST', { on: true, token }); renderRoomIdeas();
+  };
+}
+async function connDismiss(source) {
+  connData = await apiWrite('/api/connections/' + encodeURIComponent(source) + '/dismiss', 'POST', {}); connOpen = false; renderRoomIdeas();
+}
+window.addEventListener('connections:updated', () => loadConnections(true));
 
 // One collapsible block per world-look round — newest expanded, older ones
 // collapsed by default. Reuses worldPartsHtml() exactly as every other
@@ -16363,6 +16458,15 @@ function roomIdeaRoundHtml(report, idx) {
 // renderRoomIdeas() redraws the host from scratch on every state change, so a
 // per-row handler would only ever survive one render.
 function roomIdeasHostClick(ev) {
+  const connRow = ev.target.closest('.conn-suggest');
+  if (connRow) {
+    const source = connRow.getAttribute('data-conn');
+    if (ev.target.closest('[data-conn-toggle]')) { connOpen = !connOpen; renderRoomIdeas(); if (connOpen) apiWrite('/api/connections/seen', 'POST', {}).catch(() => {}); }
+    else if (ev.target.closest('[data-conn-connect]')) connConnect(source, connRow.parentElement);
+    else if (ev.target.closest('[data-conn-dismiss]')) connDismiss(source);
+    else { const j = ev.target.closest('[data-conn-jump]'); if (j) connJump(j.getAttribute('data-conn-jump'), j.getAttribute('data-conn-msg')); }
+    return;
+  }
   const toggle = ev.target.closest('[data-room-idea-toggle]');
   if (toggle) {
     const id = toggle.getAttribute('data-room-idea-toggle');
@@ -18364,6 +18468,20 @@ function renderFreeProvidersSection() {
     </div>`;
 }
 
+// Every source in the catalogue, one line each: name, state, switch. The off ones
+// that the Room has reached for say how often. This is the whole "store".
+function connSettingsHtml() {
+  const d = connData || { catalogue: [], others: [] };
+  if (!d.catalogue.length) return '<div class="ai-fp-sub">Loading…</div>';
+  const state = (c) => c.on ? 'On' : c.needs === 'account' ? (c.hasToken ? 'Off' : 'Needs your account') : c.needs === 'file' ? 'Needs your export' : 'Off';
+  const rows = d.catalogue.map(c => `<div class="ai-conn-row${c.on ? ' is-on' : ''}" data-conn-row="${qEscAttr(c.id)}">
+      <b>${qEsc(c.name)}</b><small>${qEsc(state(c))}${!c.on && c.reaches ? ' · reached for ' + c.reaches + (c.reaches === 1 ? ' time' : ' times') : ''}</small>
+      <button type="button" class="ai-conn-switch" role="switch" aria-checked="${c.on ? 'true' : 'false'}" title="${c.on ? 'Turn off' : 'Turn on'}"><span></span></button>
+    </div>`).join('');
+  const others = (d.others || []).length
+    ? `<div class="ai-fp-sub" style="margin-top:8px;">Also reached for: ${d.others.map(o => qEsc(o.name) + ' · ' + o.count).join(', ')}</div>` : '';
+  return rows + others;
+}
 function renderAiSettings() {
   const host = document.getElementById('aiBody');
   if (!aiSettings) { host.innerHTML = 'Loading…'; return; }
@@ -18505,6 +18623,8 @@ function renderAiSettings() {
       ${cd['claude-side']?.active
         ? `<div class="usage-alert" style="margin-top:6px;">2nd Claude account: quota exhausted</div>`
         : `<div class="ai-fp-sub" title="Order: the second Claude subscription first (the smaller bank, spent first on purpose), then the main one when it runs out for a few hours, then a free model only if both are out. Second-account jobs run on your Mac, so the runner has to be attached.">Second account first, then main, then free</div>`}
+      <div class="ai-section-head" style="margin-top:18px;">Connections</div>
+      <div id="aiConnections" class="ai-conn">${connSettingsHtml()}</div>
       <details class="ai-voice">
         <summary>How Idea Studio thinks</summary>
         <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" title="The lens your brainstorming conversations think through: the register, what to reach for, what to push back on. It sits on top of the rules that keep answers honest, so rewriting it breaks nothing. Empty means no persona at all." placeholder="Leave empty for a plain, neutral assistant — no personality.">${qEsc(aiSettings.studioPersona || '')}</textarea>
@@ -18637,6 +18757,26 @@ function renderAiSettings() {
     }
   };
 
+  const connHost = document.getElementById('aiConnections');
+  if (connHost) connHost.onclick = async (ev) => {
+    const sw = ev.target.closest('.ai-conn-switch'); if (!sw) return;
+    const id = sw.closest('[data-conn-row]').getAttribute('data-conn-row');
+    const c = (connData?.catalogue || []).find(x => x.id === id); if (!c) return;
+    if (c.on) { connData = await apiWrite('/api/connections/' + encodeURIComponent(id) + '/on', 'POST', { on: false }); renderAiSettings(); renderRoomIdeas(); return; }
+    if (c.needs === 'account' && !c.hasToken) {
+      if (c.keyUrl) window.open(c.keyUrl, '_blank', 'noopener');
+      const row = sw.closest('[data-conn-row]');
+      if (row.querySelector('.conn-key')) return;
+      const f = document.createElement('form'); f.className = 'conn-key';
+      f.innerHTML = '<input type="password" autocomplete="off" placeholder="Paste the key" aria-label="Key"><button type="submit">Save</button>';
+      row.appendChild(f); f.querySelector('input').focus();
+      f.onsubmit = async (e2) => { e2.preventDefault(); const token = f.querySelector('input').value.trim(); if (!token) return;
+        connData = await apiWrite('/api/connections/' + encodeURIComponent(id) + '/on', 'POST', { on: true, token }); renderAiSettings(); renderRoomIdeas(); };
+      return;
+    }
+    connData = await apiWrite('/api/connections/' + encodeURIComponent(id) + '/on', 'POST', { on: true }); renderAiSettings(); renderRoomIdeas();
+  };
+
   // Debounced, so picking an engine and then its model is one write, not two.
   let saveTimer = null;
   const aiSaveSoon = () => { clearTimeout(saveTimer); saveTimer = setTimeout(aiSaveSettings, 400); };
@@ -18695,6 +18835,7 @@ const WS_ROUTES = {
   'task:ended': scheduleQLoad,
   // New analogies the harvest found land in the library as they are found.
   'library:updated': () => window.dispatchEvent(new CustomEvent('library:updated')),
+  'connections:updated': () => window.dispatchEvent(new CustomEvent('connections:updated')),
   'ideas:updated': () => { scheduleQLoad(); if (coreOpen() && coreView === 'flow' && typeof loadIdeas === 'function') loadIdeas(); },
   // The Room streams its own turn as it arrives, so this is only about the thread
   // list — titles, new threads, deletions — and only while the Room is on screen.
@@ -29856,6 +29997,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(hiddenInterview) hiddenInterview.click();
       };
       cmds.appendChild(interviewTool);
+      // Connected outside sources (plans/room-connections.md). Nothing answers a click
+      // yet: the row says so, and stays until the source is wired.
+      ((connData && connData.catalogue) || []).filter(function(c){ return c.on; }).forEach(function(c){
+        cmds.appendChild(dot());
+        var row = document.createElement('button');
+        row.type = 'button'; row.className = 'se-cmd'; row.disabled = true;
+        row.textContent = c.name; row.title = 'Connected — not wired yet';
+        cmds.appendChild(row);
+      });
       if(commandRows(e).length) cmds.appendChild(dot());
     }
     var rows = commandRows(e);

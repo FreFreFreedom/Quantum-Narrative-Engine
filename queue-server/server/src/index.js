@@ -67,6 +67,8 @@ import { bindDocExtractionDb } from './services/docExtraction.js';
 import { mindRoutes } from './routes/mind.js';
 import { bindChaptersDb } from './services/chapters.js';
 import { bindMindDb } from './services/mind.js';
+import { bindConnections } from './services/connections.js';
+import { connectionsRoutes } from './routes/connections.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { bindDashboardDb } from './services/dashboard.js';
 import { killTextCalls, activeTextCallCount } from './services/textCallRegistry.js';
@@ -138,6 +140,7 @@ try { resumeAllStrayRequests(); } catch (e) { console.error('[room] analogy requ
 bindPassagesDb(db);
 bindDocExtractionDb(db);
 bindMindDb(db);
+bindConnections(db);
 bindChaptersDb(db);
 bindDashboardDb(db);
 bindTagCommunitiesDb(db);
@@ -418,6 +421,7 @@ app.use('/api/convos', requireAuth, conversationsRoutes());
 app.use('/api/recommendations', requireAuth, recommendationRoutes());
 app.use('/api/passages', requireAuth, passagesRoutes());
 app.use('/api/mind', requireAuth, mindRoutes());
+app.use('/api/connections', requireAuth, connectionsRoutes());
 app.use('/api/dashboard', requireAuth, dashboardRoutes());
 
 // Serve the single-file frontend app (fmcns_navigator.html, copied to

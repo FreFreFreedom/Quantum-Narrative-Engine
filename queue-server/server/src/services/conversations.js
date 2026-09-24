@@ -36,6 +36,7 @@ import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTo
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
 import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory } from './mind.js';
 import { chapterize } from './chapters.js';
+import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
 import { bindInterestLibrary, interestContext, INTEREST_TOOLS, interestTool, saveSuggestedWorks } from './interestLibrary.js';
@@ -2995,6 +2996,17 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   const userMeta = Object.keys(meta).length ? JSON.stringify(meta) : null;
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta) VALUES (?,?,?,?,?,?)`)
     .run(mid, convoId, 'user', 'chat', sendText, userMeta);
+  // The free ear for outside sources (plans/room-connections.md): a pasted link or a
+  // phrase like "the passage I underlined" is a reach, written before the answer runs.
+  try {
+    const hits = detectReach(typed);
+    if (hits.length) {
+      const title = db.prepare('SELECT title FROM convos WHERE id=?').get(convoId)?.title || '';
+      let n = 0;
+      for (const h of hits) if (recordReach(userId || 'antoine', { ...h, saidBy: 'he', convoId, messageId: mid, convoTitle: title })) n += 1;
+      if (n) broadcastAll('connections:updated', { reaches: n });
+    }
+  } catch (e) { console.error('[connections] reach pre-pass failed:', e?.message || e); }
   const out = onToken
     ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus, signal, imageList.map((x) => x.dataUrl))
     : await runChatTurn(convoId, userId, turn, imageList.map((x) => x.dataUrl));

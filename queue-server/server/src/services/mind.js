@@ -22,6 +22,7 @@ import { triggerMindMirror } from './mindMirror.js';
 import { triggerMentionScan } from './entityMentions.js';
 import { STOPWORDS } from '../lib/stopwords.js';
 import { saveFoundAnalogy } from './referenceLibrary.js';
+import { recordReach } from './connections.js';
 
 let db = null;
 export function bindMindDb(database) {
@@ -441,6 +442,10 @@ ALSO RETURN, IN THE SAME ARRAY, EVERY REAL ANALOGY IN THE CONVERSATION — wheth
   {"kind": "analogy", "left": "<one side, a few words>", "right": "<the other side, a few words>", "pattern": "<the shape both share, one plain sentence>", "turn": "T<n>", "said_by": "he"|"answer"}
 Only a real one: two things from DIFFERENT worlds or scales (a prison and an immune system, a cell and a city, a film character and a nation) sharing ONE pattern you can name. A passing comparison ("it's like a list"), a metaphor for style, or two examples of the same kind of thing are NOT analogies — leave them out. Most conversations hold none or one; never pad.
 
+ALSO RETURN EVERY MOMENT THE CONVERSATION REACHES FOR SOMETHING KEPT OUTSIDE THIS TOOL:
+  {"kind": "reach", "source": "kindle"|"readwise"|"youtube"|"zotero"|"notion"|"drive"|"gmail"|"calendar"|"other", "name": "<for other: the app or place named>", "what": "<the thing reached for, a few words>", "turn": "T<n>", "said_by": "he"|"answer"}
+A reach is real when he or the answer names a thing kept somewhere else — a passage he underlined in a book, a lecture or a video, a paper in his reference manager, a document, an email, a date to hold, notes in another app — and this tool could not open it. A book or film title alone is NOT a reach (the library already takes those). Most conversations hold none.
+
 WHAT YOU ALREADY KNOW:
 ${facts}
 
@@ -548,7 +553,17 @@ async function runHarvest(convoId, force) {
   // next harvest pass retries these same turns rather than silently losing them.
   if (!items) { console.error('[mind] harvest: unparseable model reply, watermark not advanced'); return; }
 
-  const wrote = applyHarvestItems(items.filter((it) => it?.kind !== 'analogy'), { sourceConvoId: convoId });
+  const wrote = applyHarvestItems(items.filter((it) => it?.kind !== 'analogy' && it?.kind !== 'reach'), { sourceConvoId: convoId });
+  // Reaches go to the connections ledger (plans/room-connections.md), never into memory.
+  let reached = 0;
+  for (const it of items.filter((x) => x?.kind === 'reach')) {
+    const turn = newTurns[Number(String(it.turn || '').replace(/\D/g, '')) - 1];
+    try {
+      if (recordReach('antoine', { source: it.source, name: it.name, what: it.what, saidBy: it.said_by,
+        convoId, messageId: turn?.id || null, convoTitle: convo.title || '' })) reached += 1;
+    } catch (e) { console.error('[mind] reach save failed:', e.message); }
+  }
+  if (reached) broadcastAll('connections:updated', { reaches: reached });
   // Analogies go to the library, marked found, not into memory.
   let found = 0;
   for (const it of items.filter((x) => x?.kind === 'analogy')) {
