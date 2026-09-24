@@ -1022,6 +1022,11 @@ body::after {
   border-radius:0; padding:2px 16px 2px 0; text-align:right; font-size:calc(var(--room-size) * .9); color:var(--c-ink-2); }
 #roomConvo.room-convo .se-turn.you .se-who { display:none; }
 #roomConvo.room-convo .se-turn.you .se-who:has(.se-lane) { display:flex; }
+/* A drop capital opens every answer, always (his pick, 2026-09-24): the first
+   letter of its first paragraph, large and in the look's gold. */
+#roomConvo .se-turn:not(.you):not(.plan) .se-body > p:first-child::first-letter {
+  float:left; font-size:3.2em; line-height:.86; padding:.06em .12em 0 0; font-weight:400;
+  color:var(--c-kept-echo, var(--c-accent)); }
 /* The title floats over the conversation and the text melts away under it (his pick B,
    2026-09-24), so a line is never sliced by a hard edge. */
 #wsRoom .room-main { position:relative; }
@@ -2401,7 +2406,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   display:flex; align-items:center; gap:7px; }
 .se-turn.you .se-who { color:var(--c-brand); }
 .se-body { font-family:var(--room-font); font-size:var(--room-size); font-weight:var(--room-weight,400);
-  line-height:var(--room-leading,1.6); text-align:var(--room-align,left); white-space:pre-wrap; word-break:break-word; color:var(--c-ink-2); }
+  line-height:var(--room-leading,1.6); text-align:var(--room-align,left); text-wrap:var(--room-wrap,wrap); white-space:pre-wrap; word-break:break-word; color:var(--c-ink-2); }
 .se-turn.you .se-body { color:var(--c-ink); }
 /* Antoine's small measure at the end of every finished answer in the Room and
    its Side Talks. Kept outside .se-body so it is never mistaken for part of the
@@ -14260,7 +14265,8 @@ const ROOM_FONTS = [
 // Kindle's Boldness, and the three line spacings both apps show as icons.
 const ROOM_WEIGHTS = [['Light', 300], ['Regular', 400], ['Bold', 600]];
 const ROOM_LEADINGS = [['Tight', 1.42], ['Normal', 1.62], ['Loose', 1.95]];
-const ROOM_ALIGNS = [['Left', 'left'], ['Justified', 'justify']];
+// Left, centred, or left with the lines evened out (his three, 2026-09-24).
+const ROOM_ALIGNS = [['Left', 'left'], ['Centred', 'center'], ['Balanced', 'balanced']];
 // A face added after the setting already existed reaches nobody, because every
 // browser has a saved choice. Stamped settings are left alone; an unstamped one
 // is moved to the new face once, keeping his size and width.
@@ -14276,7 +14282,8 @@ function applyRoomType() {
   d.setProperty('--room-width', roomType.width + '%');
   d.setProperty('--room-weight', String(roomType.weight));
   d.setProperty('--room-leading', String(roomType.leading));
-  d.setProperty('--room-align', roomType.align);
+  d.setProperty('--room-align', roomType.align === 'center' ? 'center' : 'left');
+  d.setProperty('--room-wrap', roomType.align === 'balanced' ? 'balance' : 'wrap');
 }
 function saveRoomType() {
   try { localStorage.setItem(ROOM_TYPE_KEY, JSON.stringify(roomType)); } catch (e) {}
@@ -14291,7 +14298,7 @@ function saveRoomType() {
         width: Number.isFinite(saved.width) ? Math.min(100, Math.max(45, saved.width)) : 90,
         weight: ROOM_WEIGHTS.some((w) => w[1] === Number(saved.weight)) ? Number(saved.weight) : 400,
         leading: ROOM_LEADINGS.some((l) => l[1] === Number(saved.leading)) ? Number(saved.leading) : 1.62,
-        align: saved.align === 'justify' ? 'justify' : 'left',
+        align: ROOM_ALIGNS.some((a) => a[1] === saved.align) ? saved.align : 'left',
         v: ROOM_TYPE_V,
       };
     }
