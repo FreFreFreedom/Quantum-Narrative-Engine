@@ -2985,6 +2985,14 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
     re-ask on a different lane. */
  .se-lane { display:inline-block; margin-left:6px; padding:0 5px; font-size:var(--fs-2xs); letter-spacing:.04em; text-transform:none; color:var(--c-brand); border:1px solid var(--c-border); border-radius:var(--r-sm); cursor:pointer; vertical-align:middle; }
  .se-lane:hover { border-color:var(--c-brand); text-decoration:underline; }
+ /* Where a new model takes over: one quiet ruled line with its symbol, and nothing
+    under the answers that follow on the same model. */
+ .se-who:has(.se-lane-change) { display:flex; align-items:center; gap:10px; margin:6px 0 12px; }
+ .se-who:has(.se-lane-change)::before, .se-who:has(.se-lane-change)::after { content:''; flex:1; height:1px; background:color-mix(in srgb, var(--c-ink) 9%, transparent); }
+ .se-lane.se-lane-change { display:inline-flex; align-items:center; gap:7px; margin:0; padding:2px 4px; border:none; background:none;
+   font-family:var(--font-ui); font-size:var(--fs-2xs); letter-spacing:.14em; text-transform:uppercase; color:var(--c-ink-4); }
+ .se-lane.se-lane-change:hover { color:var(--c-ink-2); text-decoration:none; }
+ .se-lane-mark { width:12px; height:12px; flex:none; color:var(--c-kept-echo, var(--c-accent)); opacity:.85; }
  .se-implement { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px 0; }
  .se-implement .se-cmd { border:1px solid var(--c-border); border-radius:var(--r-sm); padding:2px 8px; }
  .se-implement .se-cmd:hover:not(:disabled) { border-color:var(--c-brand); text-decoration:none; }
@@ -26509,6 +26517,28 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }).catch(function(){ laneCatalog = {}; return laneCatalog; });
     return laneCatalogPromise;
   }
+  // A model's symbol and short name, for the line that marks where a new model
+  // takes over in the Room. Simple drawn marks, not the companies' logos.
+  function seLaneName(tag){
+    var t = String(tag || ''), l = t.toLowerCase();
+    if (/google|gemini/.test(l)) return 'Gemini';
+    if (/claude/.test(l)) return 'Claude';
+    if (/chatgpt|gpt|openai|codex/.test(l)) return 'ChatGPT';
+    if (/opencode/.test(l)) return 'OpenCode';
+    if (l === 'git') return 'Repo';
+    return t.split(' · ')[0];
+  }
+  function seLaneMark(tag){
+    var l = String(tag || '').toLowerCase();
+    var path = /google|gemini/.test(l)
+      ? '<path fill="currentColor" d="M12 1c.6 5.6 5.4 10.4 11 11-5.6.6-10.4 5.4-11 11-.6-5.6-5.4-10.4-11-11C6.6 11.4 11.4 6.6 12 1z"/>'
+      : /claude/.test(l)
+      ? '<g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v7M12 15v7M2 12h7M15 12h7M5 5l5 5M14 14l5 5M19 5l-5 5M10 14l-5 5"/></g>'
+      : /chatgpt|gpt|openai|codex/.test(l)
+      ? '<g fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="12" rx="4" ry="9.5"/><ellipse cx="12" cy="12" rx="4" ry="9.5" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="4" ry="9.5" transform="rotate(120 12 12)"/></g>'
+      : '';
+    return path ? '<svg class="se-lane-mark" viewBox="0 0 24 24" aria-hidden="true">' + path + '</svg>' : '';
+  }
   var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google', openai: 'ChatGPT (billed)', codex: 'ChatGPT', 'codex-pro': 'ChatGPT Pro' };
   // The two ChatGPT subscriptions are one lane with two logins, not two lanes: the
   // picker shows them apart, everything below carries {provider:'codex', account}.
@@ -29517,18 +29547,28 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       html += '<details class="se-recap" open><summary>Summary the assistant now works from</summary>'
            +  '<div class="se-recap-body">' + qEsc(e.recap) + '</div></details>';
     }
+    var prevLane = null;
     e.msgs.forEach(function(m, idx){
       var plan = m.kind === 'plan';
       var you = m.role === 'user';
       var tag = (!you && !plan && m.laneTag) ? m.laneTag : '';
+      // The model is named only where it changes (his pick F, 2026-09-24): one quiet
+      // line with its symbol when a different model takes over, nothing under the
+      // answers that follow on the same one.
+      var laneShown = false;
+      if (tag) {
+        laneShown = tag !== prevLane || !!m.checked || !!m.answered;
+        prevLane = tag;
+      }
       if (tag && m.checked) tag = tag + ' ↻ ' + m.checked;
       else if (tag && m.answered) tag = tag + ' ·2nd';
       var who = you ? 'You' : plan ? 'Plan' : '';
       // The lane tag: clickable. 'git' means a free repo lookup with no model; the
       // others are the model that answered. Clicking re-asks the last question on
       // a different lane (the router's forced path, triggered from here).
-      var tagHtml = tag
-        ? ' <span class="se-lane" data-lane="' + qEsc(tag) + '" title="Answered on the ' + qEsc(tag) + ' lane — click to re-ask on a different lane.">' + qEsc(tag) + '</span>'
+      var tagHtml = (tag && laneShown)
+        ? '<span class="se-lane se-lane-change" data-lane="' + qEsc(m.laneTag) + '" title="' + qEsc(tag) + ' — click to re-ask on a different lane.">'
+          + seLaneMark(tag) + '<span class="se-lane-name">' + qEsc(seLaneName(tag)) + '</span></span>'
         : '';
       // The two per-message controls sit UNDER the message, right-aligned, not
       // floating over its top-right corner: a right-aligned bubble reaches the
