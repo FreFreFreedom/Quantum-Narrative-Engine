@@ -28,6 +28,8 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-09-24 — Waiting is drawn with orbs; never add dots or a spinner.** Every place the app works on something uses `orbHtml(state, size)` (Thinking Orbs, nine named motions) or `waitHtml(state, text)` for an orb plus a shimmering line; the Queue's moving stage uses `matrixHtml()`. One rAF loop draws them all in the look's accent, so plain markup is enough. The Room composer has Dictate (browser speech, free) and a Talk overlay (ElevenLabs orb + `speechSynthesis`, free). See `plans/living-orbs-dictate-talk.md`.
+
 **2026-09-19 — Amazon book tabs mean book-title YouTube searches.** When Antoine
 asks to do the YouTube searches for the books open on Amazon in Edge, search each
 book title rather than its author names. Open one YouTube results tab per unique

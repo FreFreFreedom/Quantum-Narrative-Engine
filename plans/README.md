@@ -1,5 +1,7 @@
 # Plan Backlog
 
+- [Living orbs, Dictate, Talk](living-orbs-dictate-talk.md) — **DONE**, 2026-09-24. Animated orbs everywhere the app makes him wait, dictation in the Room composer, and a spoken Talk mode; all free, open-source parts inlined.
+
 - [Room sidebar and composer studies](room-sidebar-and-composer-studies.md) — **PARTIAL / SELECTED LAYOUT SHIPPED**, 2026-09-18. Three visible Room places plus More; Attachment drawer selected and shipped. Cover/poster metadata remains.
 
 - [Compact Room menu](room-menu-studies.md) — **IMPLEMENTED**, 2026-09-18. First short icon-and-label menu selected and shipped; Reading opens on hover.
