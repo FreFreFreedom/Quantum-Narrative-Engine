@@ -41,7 +41,7 @@ long conversation and selected ONE word. Write, for him, what that word means as
 in THIS sentence, with the shade it carries here that the plain word would miss. Plain
 English — it is his second language. No jargon, no etymology, no other senses, no list,
 no numbering, no heading, no markdown, no quotation marks around the word. ONE sentence
-of prose, 15 to 25 words, and nothing after it. Do not begin with the word itself, and do
+of prose, about 15 words — never more than 18 — and nothing after it. Do not begin with the word itself, and do
 not begin with "In this context".`;
 
 export async function lookupWord(convoId, { word, sentence = '', messageId = null } = {}) {
@@ -51,7 +51,7 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
   if (!convo) return { error: 'not_found' };
   if (db) {
     const hit = db.prepare('SELECT text FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, w);
-    if (hit && hit.text.split(/\s+/).length >= 8 && !/[.!?]\s+[A-Z]/.test(hit.text)) return { ok: true, text: hit.text, cached: true };
+    if (hit && hit.text.split(/\s+/).length >= 8 && hit.text.split(/\s+/).length <= 20 && !/[.!?]\s+[A-Z]/.test(hit.text)) return { ok: true, text: hit.text, cached: true };
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 600);
   const recap = String(convo.recap || '').slice(0, 1200);
@@ -83,8 +83,8 @@ const GLOSSARY_PROMPT = `You are a dictionary that knows where the reader is. Be
 conversation. The reader's first language is French; he reads English well but not every
 word. From the CANDIDATE WORDS, choose up to 14 that he may not know, or that carry a
 special shade in this answer. For each, write what it means as used here, with the shade
-the plain word would miss: ONE sentence of plain prose, 15 to 25 words, no jargon, no
-etymology, no other senses. Do not begin with the word itself.
+the plain word would miss: ONE sentence of plain prose, about 15 words — never more than
+18 — no jargon, no etymology, no other senses. Do not begin with the word itself.
 Answer with JSON only, no markdown fence: {"words":[{"word":"…","text":"…"}]}`;
 
 function candidateWords(text) {
@@ -105,8 +105,8 @@ export async function glossaryFor(convoId, messageId) {
   if (hit) {
     try {
       const words = JSON.parse(hit.json);
-      const twoSentence = Object.values(words).some((t) => /[.!?]\s+[A-Z]/.test(String(t)));
-      if (!twoSentence) return { ok: true, words, cached: true };
+      const tooLong = Object.values(words).some((t) => /[.!?]\s+[A-Z]/.test(String(t)) || String(t).split(/\s+/).length > 20);
+      if (!tooLong) return { ok: true, words, cached: true };
     } catch { /* rebuild */ }
   }
   const answer = messageText(convoId, messageId);
