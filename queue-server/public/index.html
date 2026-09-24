@@ -1869,6 +1869,21 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-cards.collapsed.peek { position:absolute; top:var(--room-topbar, 0px); right:0; bottom:0; z-index:var(--z-panel);
   width:var(--cards-w, 290px); min-width:0; max-width:92vw; padding:14px;
   border-left-color:var(--c-border); border-top:1px solid var(--c-border); box-shadow:var(--sh-md); }
+/* Smooth open, keep and fold (his ask, 2026-09-24). A peek arrives at its full
+   width at once and glides in a few pixels as it fades up, so the mouse always has
+   the whole panel to land on; it leaves by fading where it stands. Keeping and
+   folding a column eases its width while the contents fade, so nothing is seen
+   squeezed through a thin strip. */
+.room-threads, .room-cards { transition:width .32s cubic-bezier(.22,.61,.36,1), margin .32s cubic-bezier(.22,.61,.36,1), padding .32s cubic-bezier(.22,.61,.36,1), border-color .2s ease; }
+.room-threads > *, .room-cards > * { transition:opacity .22s ease .08s; }
+.room-threads.collapsed:not(.peek) > *, .room-cards.collapsed:not(.peek) > * { opacity:0; transition:opacity .12s ease; }
+.room-threads.collapsed.peek, .room-cards.collapsed.peek { transition:none; animation:roomPeekL .22s cubic-bezier(.22,.61,.36,1) both; }
+.room-cards.collapsed.peek { animation-name:roomPeekR; }
+.room-threads.collapsed.peek.peek-out, .room-cards.collapsed.peek.peek-out { animation:none; opacity:0; transform:translateX(-6px); transition:opacity .16s ease, transform .16s ease; pointer-events:none; }
+.room-cards.collapsed.peek.peek-out { transform:translateX(6px); }
+@keyframes roomPeekL { from { opacity:0; transform:translateX(-10px); } }
+@keyframes roomPeekR { from { opacity:0; transform:translateX(10px); } }
+@media (prefers-reduced-motion: reduce) { .room-threads, .room-cards, .room-threads > *, .room-cards > * { transition:none; } .room-threads.collapsed.peek, .room-cards.collapsed.peek { animation:none; } }
 /* One tab row instead of five headings. Wraps to a second line rather than
    scrolling sideways — a column this narrow can spare 18px of height far more
    easily than it can spare a hidden tab. */
@@ -13605,7 +13620,15 @@ function initRoom() {
   };
   applySavedZones();
   const stopPeekTimer = (z) => { clearTimeout(z.timer); z.timer = null; };
-  const dropPeek = (z) => { stopPeekTimer(z); z.panel.classList.remove('peek'); };
+  const dropPeek = (z) => { stopPeekTimer(z); clearTimeout(z.fade); z.panel.classList.remove('peek', 'peek-out'); };
+  // A peek lets go by fading where it stands, not by shrinking back to nothing:
+  // a width animating to zero drags the content through a thin clipped strip.
+  const fadePeek = (z) => {
+    if (!z.panel.classList.contains('peek')) return;
+    z.panel.classList.add('peek-out');
+    clearTimeout(z.fade);
+    z.fade = setTimeout(() => { z.panel.classList.remove('peek', 'peek-out'); }, 170);
+  };
   const dropAllPeeks = () => zones.forEach(dropPeek);
   const peekZone = (z) => {
     stopPeekTimer(z);
@@ -13622,6 +13645,8 @@ function initRoom() {
       dropPeek(o);
       if (isRoomNarrow()) o.panel.classList.remove('open');
     });
+    clearTimeout(z.fade);
+    z.panel.classList.remove('peek-out');
     z.panel.classList.add('peek');
     syncZoneBtns();
   };
@@ -13641,7 +13666,18 @@ function initRoom() {
     const el = ev && ev.clientX != null ? document.elementFromPoint(ev.clientX, ev.clientY) : null;
     // A menu opened from a row is drawn on the body, not inside the panel, so it has
     // to be named here or reaching for "Delete" would close the list under it.
-    if (el) return z.panel.contains(el) || z.btn.contains(el) || !!el.closest('.umenu');
+    if (el && (z.panel.contains(el) || z.btn.contains(el) || el.closest('.umenu'))) return true;
+    // The panel's own box, with a little margin, counts as on it. The hit test
+    // alone lost the pointer in the gap between the button and the panel, or at
+    // an edge, and the panel shut under the mouse (the flicker he reported).
+    if (ev && ev.clientX != null && z.panel.classList.contains('peek')) {
+      const r = z.panel.getBoundingClientRect(), m = 14;
+      if (ev.clientX >= r.left - m && ev.clientX <= r.right + m && ev.clientY >= r.top - m && ev.clientY <= r.bottom + m) return true;
+      const b = z.btn.getBoundingClientRect();
+      // The corridor from the button down to the panel.
+      if (ev.clientX >= Math.min(b.left, r.left) - m && ev.clientX <= Math.max(b.right, r.right) + m && ev.clientY >= b.top - m && ev.clientY <= r.top + m) return true;
+    }
+    if (el) return false;
     return z.panel.matches(':hover') || z.btn.matches(':hover');
   };
   const peekHeld = (z) => peekHeldByTyping(z)
@@ -13652,7 +13688,7 @@ function initRoom() {
     z.timer = setTimeout(() => {
       z.timer = null;
       if (pointerIsOn(z, ev) || peekHeld(z)) { unpeekSoon(z); return; }
-      z.panel.classList.remove('peek');
+      fadePeek(z);
     }, ROOM_PEEK_MS);
   };
   // The decisive close. A mouse can leave a panel without ever firing mouseleave on
