@@ -1,5 +1,7 @@
 # Plan Backlog
 
+- [Room connections](room-connections.md) — **PLANNED**, 2026-09-24. Outside sources the Room can reach (Kindle, YouTube, Zotero, Drive…), suggested once from the conversation itself via the Mind harvest; a Connections list in Settings and rows in the ＋ menu. Ships with every connection off — Antoine picks which to wire.
+
 - [Living orbs, Dictate, Talk](living-orbs-dictate-talk.md) — **DONE**, 2026-09-24. Animated orbs everywhere the app makes him wait, dictation in the Room composer, and a spoken Talk mode; all free, open-source parts inlined.
 
 - [Room sidebar and composer studies](room-sidebar-and-composer-studies.md) — **PARTIAL / SELECTED LAYOUT SHIPPED**, 2026-09-18. Three visible Room places plus More; Attachment drawer selected and shipped. Cover/poster metadata remains.
