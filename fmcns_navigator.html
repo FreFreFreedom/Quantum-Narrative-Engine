@@ -29150,14 +29150,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           saveMark(e, msgId, passage, repaint);
         });
         // Keep the line itself, not the place and not the context: it goes on the
-        // Passages shelf and is read there. Like a Kindle, a selection of five words
-        // or more, made by hand, is kept the moment it is let go — the button then
-        // becomes its Undo. One word is for the dictionary, a few are for quoting.
-        var auto = gesture && passage.split(' ').length >= 5;
-        if(auto){
-          var kept = autoKeep(e, msgId, passage, repaint);
-          mk('seed', 'Undo', 'Un-keep this line', function(){ kept.then(function(out){ unkeepPassage(e, out, repaint); }); });
-        } else mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
+        // Passages shelf and is read there. Never automatic: a selection is as often
+        // a quote for the message box, and keeping it unasked got in the way.
+        mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
           keepPassage(e, msgId, passage, repaint);
         });
         // Aside and Remember only make sense against the Room's own main thread
@@ -29685,24 +29680,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         return out;
       })
       .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); return null; });
-  }
-  // The selection a hand makes grows in steps (a drag, then a handle nudged on a
-  // phone). The same selection is never kept twice, and a longer one that swallows
-  // the line kept a moment ago replaces it rather than stacking beside it.
-  var lastAutoKeep = null;
-  function autoKeep(e, msgId, text, repaint){
-    var prev = lastAutoKeep;
-    if(prev && prev.msgId === msgId && prev.text === text) return prev.done;
-    var done = keepPassage(e, msgId, text, repaint);
-    lastAutoKeep = { msgId: msgId, text: text, done: done, at: Date.now() };
-    if(prev && prev.msgId === msgId && Date.now() - prev.at < 20000
-      && (text.indexOf(prev.text) !== -1 || prev.text.indexOf(text) !== -1)){
-      Promise.all([prev.done, done]).then(function(r){
-        var old = r[0], now = r[1];
-        if(old && !old.already && old.passage && now && now.passage && now.passage.id !== old.passage.id) unkeepPassage(e, old, null, true);
-      });
-    }
-    return done;
   }
   function unkeepPassage(e, out, repaint, quiet){
     var id = out && out.passage && out.passage.id;
