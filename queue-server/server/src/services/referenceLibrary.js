@@ -82,7 +82,16 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
   const importedKeys=new Set(media.map(mediaKey).filter(Boolean));
   const items=[...saved.filter(r=>!mediaKey(r)||!importedKeys.has(mediaKey(r))),...media,...passages].filter(r=>(!kind||r.kind===kind)&&words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w)));
   const start=Math.max(0,Number(offset)||0), cap=Math.max(1,Math.min(100,Number(limit)||40));
-  return {items:items.slice(start,start+cap).map(({text,...r})=>({...r,excerpt:text?.slice(0,300)})),total:items.length};
+  // How many of each kind the library holds (the search still applies, the kind
+  // filter does not), for the kind menu. Book titles travel too so the page can
+  // leave out the ones its own shelf already counts.
+  const counts={}, bookTitles=[];
+  for(const r of [...saved.filter(r=>!mediaKey(r)||!importedKeys.has(mediaKey(r))),...media,...passages]) {
+    if(!words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w))) continue;
+    counts[r.kind]=(counts[r.kind]||0)+1;
+    if(r.kind==='book') bookTitles.push(r.title);
+  }
+  return {items:items.slice(start,start+cap).map(({text,...r})=>({...r,excerpt:text?.slice(0,300)})),total:items.length,counts,bookTitles};
 }
 // ─── Analogies found in conversation ────────────────────────────────────────
 // The mind harvest reads each Room conversation every few messages; when it meets a

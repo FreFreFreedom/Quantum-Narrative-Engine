@@ -2605,13 +2605,22 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    2026-09-24): tabs in the Room's engraved capitals, a search icon, and ✦ for the
    suggestions of the one type open. */
 .lib-top { display:flex; align-items:center; gap:10px; padding:10px 0 12px; margin:0; }
-.lib-tabs { flex:1; min-width:0; display:flex; gap:16px; overflow-x:auto; scrollbar-width:none; }
-.lib-tabs::-webkit-scrollbar { display:none; }
-.lib-tabs button { flex:none; padding:4px 0; border:0; background:none; box-shadow:none; min-width:0; height:auto; cursor:pointer;
-  font-family:'Cinzel',var(--font-read); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-4);
-  border-bottom:1px solid transparent; transition:color .2s ease, border-color .2s ease; }
-.lib-tabs button:hover { color:var(--c-ink-2); }
-.lib-tabs button.on { color:var(--c-kept-echo, var(--c-accent)); border-bottom-color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, transparent); }
+.lib-top { position:relative; }
+.lib-gap { flex:1; }
+.lib-kindbtn { display:inline-flex; align-items:center; gap:8px; padding:4px 0; border:0; background:none; box-shadow:none; min-width:0; height:auto; cursor:pointer;
+  font-family:'Cinzel',var(--font-read); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+.lib-kindbtn em { font-style:normal; letter-spacing:0; }
+.lib-kindbtn b, .lib-kindpop b { font-family:var(--font-ui); font-weight:400; font-size:11px; letter-spacing:0; color:var(--c-ink-5); }
+.lib-kindbtn svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; transition:transform .2s ease; }
+.lib-kindbtn.open svg { transform:rotate(180deg); }
+.lib-kindpop { position:absolute; left:0; right:0; top:calc(100% - 4px); z-index:6; display:grid; grid-template-columns:1fr 1fr; gap:2px 18px; padding:12px 14px;
+  background:var(--c-surface); border:1px solid var(--c-border-2); border-radius:12px; box-shadow:var(--sh-md); animation:fmcnsFade .18s ease both; }
+.lib-kindpop button { display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:7px 2px; border:0; background:none; box-shadow:none; min-width:0; height:auto; cursor:pointer;
+  font-family:'Cinzel',var(--font-read); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-3); }
+.lib-kindpop button:hover { color:var(--c-ink); }
+.lib-kindpop button.on { color:var(--c-kept-echo, var(--c-accent)); }
+.lib-kindpop .lib-kindpop-suggest { grid-column:1 / -1; justify-content:center; margin-top:6px; padding-top:10px; border-top:1px solid var(--c-border);
+  color:var(--c-kept-echo, var(--c-accent)); }
 .lib-tools { flex:none; display:flex; gap:4px; }
 .lib-tools button { width:28px; height:28px; min-width:0; padding:0; border:0; border-radius:50%; background:none; box-shadow:none; cursor:pointer;
   display:grid; place-items:center; color:var(--c-ink-4); font-size:13px; transition:color .2s ease, background .2s ease; }
@@ -16762,6 +16771,14 @@ const LIB_KINDS = [['', 'All'], ['book', 'Books'], ['film', 'Films'], ['series',
 const LIB_SUGGEST = { book: 'media', film: 'media', series: 'media', paper: 'papers', project: 'apps', analogy: 'analogies' };
 let libSuggesting = false;
 let libFinding = false;
+let libKindOpen = false;
+let libCloseWired = false;
+let libCounts = null;   // { book: 24, film: 19, … } from the last fetch
+function libCountFor(k) {
+  if (!libCounts) return '';
+  if (!k) return String(Object.values(libCounts).reduce((a, b) => a + b, 0) || '');
+  return libCounts[k] ? String(libCounts[k]) : '';
+}
 try { interestLibraryKind = localStorage.getItem('qne-interest-kind') || ''; interestLibraryQuery = localStorage.getItem('qne-interest-query') || ''; } catch (_) {}
 function interestEditForm(host, item, save) {
   host.innerHTML = '<form class="interest-edit">'
@@ -17241,29 +17258,47 @@ async function renderInterestLibrary(opts) {
   if (!LIB_KINDS.some((k) => k[0] === interestLibraryKind)) interestLibraryKind = '';
   const suggestKind = LIB_SUGGEST[interestLibraryKind] || '';
   const finding = libFinding || !!interestLibraryQuery;
-  const top = '<div class="lib-top"><div class="lib-tabs" role="tablist">'
-    + LIB_KINDS.map(([k, label]) => '<button type="button" role="tab" data-lib-tab="' + k + '" class="' + (k === interestLibraryKind ? 'on' : '') + '">' + label + '</button>').join('')
-    + '</div><div class="lib-tools">'
-    + (suggestKind ? '<button type="button" class="lib-suggest' + (libSuggesting ? ' on' : '') + '" data-lib-suggest title="Suggestions">✦</button>' : '')
+  // One line (his pick D, 2026-09-24): the kind you are in, with its count, opens a
+  // small grid of every kind; suggestions for that kind sit at the grid's foot.
+  const kindLabel = (LIB_KINDS.find((k) => k[0] === interestLibraryKind) || LIB_KINDS[0])[1];
+  const top = '<div class="lib-top"><button type="button" class="lib-kindbtn' + (libKindOpen ? ' open' : '') + '" data-lib-kindbtn aria-haspopup="menu" aria-expanded="' + libKindOpen + '">'
+    + '<span>' + kindLabel + (libSuggesting ? ' <em>✦</em>' : '') + '</span><b data-lib-count="' + interestLibraryKind + '">' + libCountFor(interestLibraryKind) + '</b>'
+    + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 7l3 3 3-3"/></svg></button>'
+    + '<span class="lib-gap"></span><div class="lib-tools">'
     + '<button type="button" class="lib-findbtn' + (finding ? ' on' : '') + '" data-lib-find title="Search" aria-label="Search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg></button>'
-    + '</div></div>'
+    + '</div>'
+    + (libKindOpen ? '<div class="lib-kindpop" role="menu">'
+      + LIB_KINDS.map(([k, label]) => '<button type="button" role="menuitem" data-lib-tab="' + k + '" class="' + (k === interestLibraryKind && !libSuggesting ? 'on' : '') + '"><span>' + label + '</span><b data-lib-count="' + k + '">' + libCountFor(k) + '</b></button>').join('')
+      + (suggestKind ? '<button type="button" role="menuitem" class="lib-kindpop-suggest' + (libSuggesting ? ' on' : '') + '" data-lib-suggest>✦ ' + (libSuggesting ? 'Back to yours' : 'Suggestions') + '</button>' : '')
+      + '</div>' : '')
+    + '</div>'
     + (finding && !libSuggesting ? '<div class="lib-find"><input class="lib-search" type="search" aria-label="Search library" placeholder="Search"></div>' : '');
   const wireTop = () => {
+    const kb = host.querySelector('[data-lib-kindbtn]');
+    if (kb) kb.onclick = (ev) => { ev.stopPropagation(); libKindOpen = !libKindOpen; renderInterestLibrary({ quiet: true }); };
     host.querySelectorAll('[data-lib-tab]').forEach((b) => { b.onclick = () => {
-      interestLibraryKind = b.dataset.libTab; interestLibraryOffset = 0; libSuggesting = false;
+      interestLibraryKind = b.dataset.libTab; interestLibraryOffset = 0; libSuggesting = false; libKindOpen = false;
       try { localStorage.setItem('qne-interest-kind', interestLibraryKind); } catch (_) {}
       renderInterestLibrary();
     }; });
     const sg = host.querySelector('[data-lib-suggest]');
-    if (sg) sg.onclick = () => { libSuggesting = !libSuggesting; renderInterestLibrary(); };
+    if (sg) sg.onclick = () => { libSuggesting = !libSuggesting; libKindOpen = false; renderInterestLibrary(); };
     const fb = host.querySelector('[data-lib-find]');
     if (fb) fb.onclick = () => {
       if (finding && !libSuggesting) { libFinding = false; interestLibraryQuery = ''; try { localStorage.setItem('qne-interest-query', ''); } catch (_) {} }
       else { libFinding = true; libSuggesting = false; }
+      libKindOpen = false;
       renderInterestLibrary();
       const f = host.querySelector('.lib-search'); if (f) f.focus();
     };
   };
+  if (!libCloseWired) {
+    libCloseWired = true;
+    document.addEventListener('mousedown', (ev) => {
+      if (!libKindOpen || (ev.target.closest && ev.target.closest('.lib-kindpop, [data-lib-kindbtn]'))) return;
+      libKindOpen = false; renderInterestLibrary({ quiet: true });
+    }, true);
+  }
   if (libSuggesting && suggestKind) {
     host.innerHTML = top + (suggestKind === 'analogies' ? '<div data-lib-ana></div>'
       : '<div class="room-rec-host"' + (suggestKind === 'media' ? ' id="roomMediaHost"' : '') + ' data-lib-rec="' + suggestKind + '"></div>');
@@ -17312,6 +17347,11 @@ async function renderInterestLibrary(opts) {
       libData = { key: libKey(), out, review, shelf };
     }
     if (request !== interestLibraryRequest) return;
+    if (out.counts) {
+      const onShelf = new Set((shelf.books || []).map((b) => libNorm(b.title)));
+      libCounts = { ...out.counts, book: (shelf.books || []).length + (out.bookTitles || []).filter((t) => !onShelf.has(libNorm(t))).length };
+      host.querySelectorAll('[data-lib-count]').forEach((el) => { el.textContent = libCountFor(el.dataset.libCount); });
+    }
 
     // One wall. A saved interest that is also a book on the shelf appears once,
     // as the shelf copy — the same thing, not two.
