@@ -2972,20 +2972,20 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    the reading face at a size you can read from a chair, the plain sense under it one
    step smaller and lighter, and the actions as a quiet row of gold capitals at the
    foot. The same card serves a passage with no word: then it is the row alone. */
-.se-quote-pop { flex-wrap:wrap; max-width:min(460px, calc(100vw - 12px)); padding:0; gap:0; border-radius:12px;
+.se-quote-pop { flex-wrap:wrap; width:max-content; max-width:min(620px, calc(100vw - 12px)); padding:0; gap:0; border-radius:12px;
   background:var(--c-ink-solid); color:var(--c-on-solid); border-color:color-mix(in srgb, var(--c-on-solid) 18%, transparent);
   --pop-gold:var(--c-kept-echo, var(--c-accent)); }
 :root[data-look="creamnavy"] .se-quote-pop { --pop-gold:#e2bf76; background:#2c3e5c; color:#f1e8d4; border-color:#44526a; }
 /* The actions (his pick 3, 2026-09-24): bolder Cinzel capitals in the card's own cream,
    a small gold symbol before each, thin dividers between — the thin gold capitals were
    hard to read on the navy. */
-.se-quote-pop button { order:2; flex:1 1 auto; justify-content:center; gap:7px; padding:11px 12px; border-radius:0;
+.se-quote-pop button { order:2; flex:1 1 0; min-width:0; justify-content:center; gap:7px; padding:11px 12px; border-radius:0; white-space:nowrap;
   font:500 11px/1 'Cinzel', var(--font-read); letter-spacing:.14em; text-transform:uppercase; color:inherit; }
 .se-quote-pop button + button { border-left:1px solid color-mix(in srgb, var(--c-on-solid) 12%, transparent); }
 :root[data-look="creamnavy"] .se-quote-pop button + button { border-left-color:rgba(241,232,212,.12); }
 .se-quote-pop button:hover { background:color-mix(in srgb, var(--pop-gold) 12%, transparent); color:inherit; }
 .se-quote-pop button .ic { display:block; width:13px; height:13px; color:var(--pop-gold); fill:none; stroke:currentColor; stroke-width:1.4; }
-.se-quote-pop .se-define { order:1; flex:1 1 100%; margin:0; padding:13px 18px 14px; border-top:0;
+.se-quote-pop .se-define { order:1; flex:1 1 100%; width:0; min-width:100%; margin:0; padding:13px 18px 14px; border-top:0;
   border-bottom:1px solid color-mix(in srgb, var(--c-on-solid) 16%, transparent);
   font-family:var(--font-read); font-size:20px; line-height:1.35; color:inherit; white-space:normal; }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
