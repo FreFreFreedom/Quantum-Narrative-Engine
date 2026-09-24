@@ -3381,6 +3381,29 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
   background:var(--c-surface-2); color:var(--c-ink-3); font:inherit; line-height:1; cursor:pointer; }
 .img-view-shut:hover { color:var(--c-ink); }
 .se-filechip button { border:0; background:transparent; color:var(--c-ink-4); cursor:pointer; padding:0 1px; font:inherit; }
+/* The Room's box carries what goes with the message as small matching cards in one row
+   (his pick 4, 2026-09-24): a quote card, an image card, the same height and the same
+   quiet grammar — a small gold capital for what it is, the thing itself under it. */
+#roomConvo .se-attachment-drawer:not([hidden]) { display:flex; flex-wrap:wrap; gap:10px; align-items:stretch; padding:2px 2px 10px; }
+#roomConvo .se-attachment-drawer .se-quotebar, #roomConvo .se-attachment-drawer .se-filebar { display:contents; }
+#roomConvo .se-quoted { position:relative; flex:1 1 260px; max-width:440px; flex-direction:column; gap:3px; margin:0;
+  padding:8px 30px 9px 12px; border:1px solid var(--c-border); border-radius:12px; background:var(--c-bg); color:var(--c-ink-3); }
+#roomConvo .se-quoted::before { content:'Quote'; font:500 9px/1.2 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+#roomConvo .se-quoted-n { display:none; }
+#roomConvo .se-quoted-text { font-family:var(--font-read); font-style:italic; font-size:15px; line-height:1.4; }
+#roomConvo .se-quoted button { position:absolute; top:6px; right:8px; margin:0; font-size:13px; }
+#roomConvo .se-quotes-clear { align-self:center; padding:0 4px; font:500 9px 'Cinzel', var(--font-read); letter-spacing:.16em; text-transform:uppercase; }
+#roomConvo .se-filechip { position:relative; flex:0 0 auto; max-width:220px; gap:10px; padding:8px 28px 8px 8px; border:1px solid var(--c-border);
+  border-radius:12px; background:var(--c-bg); color:var(--c-ink-4); font-size:12px; }
+#roomConvo .se-filechip img { width:36px; height:36px; border-radius:6px; }
+#roomConvo .se-filechip::after { content:attr(data-kind); position:absolute; left:54px; top:9px; font:500 9px/1.2 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+#roomConvo .se-filechip > span { padding-top:14px; }
+#roomConvo .se-filechip button { position:absolute; top:6px; right:8px; font-size:13px; }
+#roomConvo .se-interestbar { flex:1 1 180px; align-self:center; text-align:right; }
+#roomConvo .se-interestbar:empty { display:none; }
+#roomConvo .interest-import { justify-content:flex-end; padding:0; font-size:12px; color:var(--c-ink-5); }
+#roomConvo .interest-import span { flex:0 1 auto; min-width:0; }
+#roomConvo .interest-import button { background:none; border:0; padding:0 0 0 8px; font:500 9px 'Cinzel', var(--font-read); letter-spacing:.16em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
 .se-message-files { display:flex; flex-wrap:wrap; gap:5px; margin:0 0 5px; }
 /* What the last answer cost, on the paid lane only. It sits INSIDE the composer
    rather than on a line of its own: a horizontal band is the scarcest thing on
@@ -29779,7 +29802,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     };
     // Library reading is optional background work. A failed read must never put
     // an error under an image that is already attached and ready for chat.
-    const batches = (e.interestBatches || []).filter(b => !['undone','ordinary','failed','dismissed'].includes(b.status));
+    const batches = (e.interestBatches || []).filter(b => !['undone','ordinary','failed','dismissed'].includes(b.status))
+      // Nothing new from the picture: nothing to say, and nothing to undo (his ask, 2026-09-24).
+      .filter(b => !(b.status === 'done' && !['book','film','series'].some(k => (b.result || {})[k]) && !(b.entries || []).length));
     bar.innerHTML = batches.map(b => {
       const r = b.result || {};
       const added = [['book','books'],['film','films'],['series','series']].filter(([k]) => r[k]).map(([k,label]) => r[k] + ' ' + label).join(', ');
@@ -29882,9 +29907,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var filebar = host.querySelector('.se-filebar');
     if(filebar){
       filebar.innerHTML = (e.pendingAttachments || []).map(function(a, i){
-        return '<span class="se-filechip">'
+        var kindWord = a.kind === 'image' ? 'Image' : /\.pdf$/i.test(a.name || '') ? 'PDF' : 'File';
+        var shortName = String(a.name || 'file').replace(/^Screenshot \d{4}-\d\d-\d\d at /, '');
+        return '<span class="se-filechip" data-kind="' + qEscAttr(kindWord) + '">'
           + (a.kind === 'image' ? '<img src="' + qEscAttr(a.dataUrl) + '" alt="" data-se-file-view="' + i + '" title="Open it bigger">' : '')
-          + '<span>' + qEsc(a.name || 'file') + '</span>'
+          + '<span title="' + qEscAttr(a.name || 'file') + '">' + qEsc(shortName) + '</span>'
           + '<button type="button" data-se-file-remove="' + i + '" aria-label="Remove ' + qEscAttr(a.name || 'file') + '">×</button></span>';
       }).join('');
       filebar.querySelectorAll('[data-se-file-view]').forEach(function(img){
