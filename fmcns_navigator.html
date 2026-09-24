@@ -1009,8 +1009,7 @@ body::after {
 /* The dusk-glow Room (Antoine, 2026-09-24: "everything about these mockups… I WANT THEM"),
    in every look. The three columns float as rounded panels on a darker frame; the
    conversation sits under a warm light falling from its top-left corner (each look gives
-   --glow-1/--glow-2); his messages, the answers and the composer are glass cards; each
-   answer carries a small Q. Above 820px only — below it the side panels are overlays. */
+   --glow-1/--glow-2); his messages, the answers and the composer are glass cards. Above 820px only — below it the side panels are overlays. */
 :root { --glass: rgba(0,0,0,.34); --glass-2: color-mix(in srgb, var(--c-bg-2) 78%, transparent);
   --q-av: color-mix(in srgb, var(--c-bg) 45%, #000); --q-avink: var(--c-kept-echo, var(--c-accent)); }
 .room-main { background:radial-gradient(120% 90% at 8% 0%, var(--glow-1, var(--c-bg)) 0%, var(--glow-2, var(--c-bg)) 32%, var(--c-bg) 72%), var(--c-bg); }
@@ -1022,9 +1021,7 @@ body::after {
   background:color-mix(in srgb, var(--c-ink) 3.5%, transparent); border:none; border-radius:16px; padding:14px 18px; }
 .room-convo .se-draftbox {
   background:var(--glass-2); border-color:color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:16px; }
-#roomConvo .se-turn:not(.you):not(.plan) { position:relative; padding-left:44px; }
-#roomConvo .se-turn:not(.you):not(.plan)::before { content:'Q'; position:absolute; left:6px; top:14px; width:26px; height:26px; border-radius:50%;
-  background:var(--q-av); color:var(--q-avink); font:600 11px/26px 'Cinzel', serif; text-align:center; }
+/* No mark beside an answer for now (Antoine, 2026-09-24, after three rounds of options). */
 @media (min-width: 821px) {
   #wsRoom.open { padding:10px; background:color-mix(in srgb, var(--c-bg-2) 55%, #000); }
   #wsRoom .room-threads, #wsRoom .room-cards { border:none; border-radius:16px; background:color-mix(in srgb, var(--c-bg) 93%, var(--c-ink)); }
