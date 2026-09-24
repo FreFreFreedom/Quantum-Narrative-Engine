@@ -2103,6 +2103,13 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
   cursor:pointer;
 }
 .room-cards--over { outline:2px dashed var(--c-ink); outline-offset:-2px; background:var(--c-bg-2); }
+/* A file dragged anywhere over the Room (his ask, 2026-09-24): one quiet veil over the
+   whole window, a gold hairline frame and one word; dropped, it joins the message box. */
+#wsRoom.is-file-over::after { content:'Drop to attach'; position:absolute; inset:8px; z-index:60; pointer-events:none;
+  display:flex; align-items:center; justify-content:center; border:1px dashed var(--c-kept-rule, var(--c-accent)); border-radius:18px;
+  background:color-mix(in srgb, var(--c-bg) 72%, transparent); font:500 13px 'Cinzel', var(--font-read); letter-spacing:.3em; text-transform:uppercase;
+  color:var(--c-kept-echo, var(--c-accent)); }
+#wsRoom { position:relative; }
 .room-cap { font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--c-ink-5); letter-spacing:0; flex:none; }
 .room-collapse-btn { opacity:.65; }
 .room-collapse-btn:hover { opacity:1; }
@@ -18017,6 +18024,28 @@ if (roomDropZone && roomFileInput) {
 // bubble from every child the pointer crosses, so a plain enter/leave pair would
 // flicker the highlight on and off as it moves over the rows inside the panel —
 // a depth counter keeps it lit until the pointer has actually left the panel.
+// Files dropped anywhere in the Room go to the message box — the thread, the list, the
+// panels, all of it. Only real files: a dragged conversation or card keeps its own drop.
+(function roomDropAnywhere(){
+  const ws = document.getElementById('wsRoom');
+  if (!ws || ws.dataset.dropWired) return;
+  ws.dataset.dropWired = '1';
+  let depth = 0;
+  const hasFiles = (ev) => !!(ev.dataTransfer && Array.from(ev.dataTransfer.types || []).includes('Files'));
+  const clear = () => { depth = 0; ws.classList.remove('is-file-over'); };
+  ws.addEventListener('dragenter', (ev) => { if (!hasFiles(ev)) return; ev.preventDefault(); depth++; ws.classList.add('is-file-over'); }, true);
+  ws.addEventListener('dragover', (ev) => { if (!hasFiles(ev)) return; ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'copy'; }, true);
+  ws.addEventListener('dragleave', (ev) => { if (!hasFiles(ev)) return; depth = Math.max(0, depth - 1); if (!depth) ws.classList.remove('is-file-over'); }, true);
+  ws.addEventListener('drop', (ev) => {
+    if (!hasFiles(ev)) return;
+    ev.preventDefault(); ev.stopPropagation(); clear();
+    const host = document.getElementById('roomConvo');
+    const files = ev.dataTransfer.files;
+    if (host && typeof host._addFiles === 'function' && files && files.length) host._addFiles(files);
+  }, true);
+  window.addEventListener('dragend', clear);
+})();
+
 if (roomCardsPanel && roomFileInput) {
   let roomCardsDragDepth = 0;
   roomCardsPanel.addEventListener('dragenter', (e) => {
@@ -28676,6 +28705,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var compose = host.querySelector('.se-compose');
       compose.ondragover = function(ev){ ev.preventDefault(); };
       compose.ondrop = function(ev){ ev.preventDefault(); addFiles(ev.dataTransfer && ev.dataTransfer.files); };
+      // The Room lets a file land anywhere in its window; this is where it goes.
+      host._addFiles = addFiles;
       input.addEventListener('paste', function(ev){
         const files = Array.from(ev.clipboardData?.files || []);
         if(files.length){ ev.preventDefault(); addFiles(files); }
