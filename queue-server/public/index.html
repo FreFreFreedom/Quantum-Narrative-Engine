@@ -2962,7 +2962,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-quote-pop button:hover { background:var(--c-border); color:var(--c-ink); }
 .se-quote-pop .ic { width:11px; height:11px; flex:none; }
 /* The dictionary, Kindle-style: select one word and its meaning opens under the bar on
-   its own, no click. English only for now (the free dictionary at dictionaryapi.dev). */
+   its own, no click. English only for now (Wiktionary's definition service). */
 .se-quote-pop { flex-wrap:wrap; max-width:min(440px, calc(100vw - 12px)); }
 .se-quote-pop .se-define { flex:1 1 100%; margin:2px 0 0; padding:8px 10px 7px; border-top:1px solid var(--c-border);
   font-family:var(--font-read); font-size:var(--fs-sm); line-height:1.45; color:var(--c-ink-2); white-space:normal; }
@@ -28809,7 +28809,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   // Reading a long answer means scrolling, so scrolling must not throw the offer
   // away — it follows the passage instead, and only leaves when the selection does.
-  // The dictionary (his ask, 2026-09-24): a free English dictionary, read straight from
+  // The dictionary (his ask, 2026-09-24): Wiktionary's English definitions, read straight from
   // the browser, one word at a time, answers cached for the session. Nothing is shown
   // when the word is not in it — a bar that says "no entry" is noise.
   var defineCache = {};
@@ -28830,19 +28830,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(key in defineCache){ paint(defineCache[key]); return; }
     var ctl = typeof AbortController === 'function' ? new AbortController() : null;
     var timer = setTimeout(function(){ if(ctl) ctl.abort(); }, 4000);
-    fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(key), ctl ? { signal: ctl.signal } : undefined)
+    // Wiktionary's definition service: reachable, open to any page, no key. The
+    // definitions come as HTML with wiki links; only the words are kept.
+    var strip = function(html){ var d = document.createElement('div'); d.innerHTML = String(html || ''); return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
+    fetch('https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(key), ctl ? { signal: ctl.signal } : undefined)
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(data){
         clearTimeout(timer);
-        var first = Array.isArray(data) && data[0];
-        if(!first){ defineCache[key] = null; return; }
-        var phon = first.phonetic || ((first.phonetics || []).map(function(x){ return x.text; }).filter(Boolean)[0]) || '';
+        var en = data && Array.isArray(data.en) ? data.en : null;
+        if(!en){ defineCache[key] = null; return; }
         var meanings = [];
-        (first.meanings || []).forEach(function(m){
-          var d = (m.definitions || [])[0];
-          if(d && d.definition) meanings.push({ pos: m.partOfSpeech || '', def: d.definition });
+        en.forEach(function(m){
+          var d = (m.definitions || []).map(function(x){ return strip(x.definition); }).filter(Boolean)[0];
+          if(d) meanings.push({ pos: String(m.partOfSpeech || '').toLowerCase(), def: d });
         });
-        var entry = meanings.length ? { word: first.word || key, phonetic: phon, meanings: meanings } : null;
+        var entry = meanings.length ? { word: key, phonetic: '', meanings: meanings } : null;
         defineCache[key] = entry;
         paint(entry);
       })
