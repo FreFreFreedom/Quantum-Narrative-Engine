@@ -1109,8 +1109,8 @@ body::after {
    (his pick 2·A, 2026-09-24). Everywhere else keeps the quiet dots. */
 .se-quill { display:none; }
 .room-convo .se-input::placeholder { color:transparent; }
-.room-convo .se-compose:has(.se-input:placeholder-shown) .se-quill { display:block; position:absolute; left:2px;
-  top:calc(6px + var(--room-size) * .75); height:1px; width:0; pointer-events:none;
+.room-convo .se-compose:has(.se-input:placeholder-shown) .se-quill { display:block; position:absolute; left:42px;
+  top:calc(7px + var(--room-size) * .7); height:1px; width:0; pointer-events:none;
   background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, transparent), transparent);
   animation:seQuill 7s ease-in-out infinite; }
 @keyframes seQuill { 0% { width:0; opacity:0; } 45% { width:90px; opacity:1; } 75% { width:90px; opacity:0; } 100% { opacity:0; } }
@@ -2398,6 +2398,23 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); }
 .room-convo .se-send:hover:not(:disabled) { background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); opacity:.88; }
 .room-convo .se-send:disabled { background:var(--c-surface-3); border-color:transparent; color:var(--c-ink-4); opacity:1; }
+/* Layout D (his pick, 2026-09-24): one slim row — ＋, the line you write on, the model,
+   the microphone, send — inside a pill. The pill only grows taller when the text wraps;
+   nothing else moves. The old two-storey box put the line above a toolbar. */
+.room-convo .se-draftbox { padding:6px 8px 6px 10px; border-radius:26px; }
+.room-convo .se-draftbox:has(.se-attachment-summary:not([hidden])), .room-convo .se-draftbox:has(.se-attachment-drawer:not([hidden])) { border-radius:16px; }
+.room-convo .se-compose { flex-wrap:nowrap; align-items:flex-end; gap:6px; }
+.room-convo .se-input { order:0; flex:1 1 auto; width:auto; padding:7px 4px; line-height:1.4; }
+.room-convo .se-more, .room-convo .se-mic, .room-convo .se-talk { width:30px; height:30px; border-color:transparent; margin-bottom:2px; }
+.room-convo .se-more:hover, .room-convo .se-mic:hover, .room-convo .se-talk:hover { border-color:var(--c-border-2); }
+.room-convo .se-send { width:32px; height:32px; margin-bottom:1px; }
+.room-convo .se-lanewrap { display:flex; align-items:center; gap:2px; flex:0 0 auto; max-width:140px; margin:0 2px 6px; }
+.room-convo .se-lanepick, .room-convo .se-lanemodel, .room-convo .se-laneeffort { font-family:'Cinzel',var(--font-read); font-size:var(--fs-2xs); letter-spacing:.16em; text-transform:uppercase;
+  color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 70%, var(--c-ink-5)); background:transparent; max-width:64px; }
+.room-convo .se-lanepick.is-set, .room-convo .se-lanepick:hover, .room-convo .se-lanemodel:hover, .room-convo .se-laneeffort:hover { color:var(--c-kept-echo, var(--c-accent)); }
+.room-convo .se-lane-clear { font-size:var(--fs-2xs); color:var(--c-ink-5); }
+.room-convo .se-spend { margin:0 4px 8px; }
+.room-convo .se-compose.se-dictating .se-micwave { margin-bottom:4px; }
 .room-convo .se-cmds { max-width:var(--room-reading-width); margin:6px auto 0; padding:0 6px; }
 /* One Room, three automatic states. The same panel and tab strip are reused. */
 .ws-room { container-type:inline-size; }
