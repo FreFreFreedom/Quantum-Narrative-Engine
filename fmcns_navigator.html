@@ -2945,8 +2945,11 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    it when there is room (Antoine's pick "G1", 2026-09-23). */
 .se-kept { background:none; color:var(--c-ink); border-bottom:1px solid var(--c-kept-line, rgba(47,125,99,.45));
   border-radius:0; cursor:default; }
-.se-turn.has-echo { padding-right:232px !important; }
-.se-kept-echo { position:absolute; top:0; right:6px; width:196px; padding-left:13px; border-left:1.5px solid var(--c-kept-rule, #2f7d63);
+/* The echo lives in the free margin OUTSIDE the reading column, never inside it: a kept
+   line used to take a 232px strip off its answer, and the whole thread shifted left the
+   moment he pressed Keep (2026-09-24). No margin wide enough: the underline alone. */
+.se-turn.has-echo { position:relative; }
+.se-kept-echo { position:absolute; top:0; left:calc(100% + 18px); width:196px; padding-left:13px; border-left:1.5px solid var(--c-kept-rule, #2f7d63);
   font-family:var(--font-read); font-style:italic; font-size:14px; line-height:1.5; color:var(--c-kept-echo, #2f7d63);
   pointer-events:none; }
 .dark .se-kept, :root[data-look="darkroom"] .se-kept { border-bottom-color:var(--c-kept-line, rgba(111,207,160,.45)); }
@@ -29546,10 +29549,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function keptEcho(log, turn, mark, text){
     // An answer with a kept line gives up a strip on its right for the echo — only
     // where the column is wide enough to lose it; narrow, the underline alone says it.
-    if(log.clientWidth < 720 || turn.classList.contains('you')) return;
-    turn.classList.add('has-echo');
-    var tr = turn.getBoundingClientRect(), mr = mark.getBoundingClientRect();
+    if(turn.classList.contains('you')) return;
+    var tr = turn.getBoundingClientRect(), mr = mark.getBoundingClientRect(), lr = log.getBoundingClientRect();
     if(!tr.width) return;
+    // Room to the right of the column, inside the log, for the 196px echo and its gap.
+    if(lr.right - tr.right < 230) return;
+    turn.classList.add('has-echo');
     var n = document.createElement('div');
     n.className = 'se-kept-echo';
     var words = text.replace(/\s+/g, ' ').trim().split(' ');
