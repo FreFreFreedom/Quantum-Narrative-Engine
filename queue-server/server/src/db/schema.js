@@ -1783,6 +1783,10 @@ export function initConversationsSchema(db) {
   // plus messages newer than this to the model, instead of the whole transcript
   // it still shows on screen. NULL means never compacted.
   try { db.exec(`ALTER TABLE convos ADD COLUMN compacted_at TEXT`); } catch {}
+  // The fold before the last one, so ⟳ can be undone (2026-09-24).
+  try { db.exec(`ALTER TABLE convos ADD COLUMN recap_prev TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE convos ADD COLUMN compacted_prev TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE convos ADD COLUMN unfoldable INTEGER NOT NULL DEFAULT 0`); } catch {}
 
   // Side talks (plan "side talks in the Room, and remember this"): a side talk is
   // a convo with subject_type='side', subject_id='<parentConvoId>:<uuid>' (the

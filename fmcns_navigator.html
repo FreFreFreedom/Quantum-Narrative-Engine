@@ -2427,7 +2427,8 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 /* The model, as one word in the Room's small gold capitals; the list (his pick A) opens
    above it, grouped by who makes the model, with the thinking dial under the chosen one. */
 .room-convo .se-lanepick, .room-convo .se-lanemodel, .room-convo .se-laneeffort, .room-convo .se-lane-clear { display:none !important; }
-.room-convo .se-lanewrap { max-width:200px; overflow:visible; }
+.room-convo .se-lanewrap { max-width:200px; overflow:visible; align-self:flex-end; margin-bottom:9px; }
+.room-convo .se-input { padding:5px 4px; }
 .se-lanebtn { display:none; }
 .room-convo .se-lanebtn { display:inline-flex; align-items:center; gap:6px; max-width:200px; padding:4px 2px; border:0; background:none; cursor:pointer;
   font-family:'Cinzel',var(--font-read); font-size:var(--fs-2xs); letter-spacing:.18em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -2676,6 +2677,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-before div { font-size:var(--fs-sm); color:var(--c-ink-3); margin-top:4px; }
 .se-note { font-size:var(--fs-sm); color:var(--c-ink-4); padding:7px 0; }
 .se-note.err { color:var(--c-danger); }
+.se-undo { margin-left:10px; border:0; background:none; padding:0; cursor:pointer; font-family:'Cinzel',var(--font-read); font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
 .se-interestbar { max-width:48rem; width:100%; margin:0 auto; font-size:var(--fs-sm); max-height:130px; overflow:auto; }
 .interest-import { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:4px 10px; color:var(--c-ink-4); }
 .interest-import span { flex:1; min-width:120px; }
@@ -27886,10 +27888,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           e.note = (out && out.written === false)
             ? 'Folded, but the summary could not be written \u2014 the rough version is in place.'
             : 'Folded. The last few exchanges are kept word for word.';
+          e.noteUndo = 'unfold';
         });
       })
       .catch(function(){ e.note = 'Could not fold this one just now.'; })
       .then(function(){ e.folding = false; if(repaint) repaint(); });
+  }
+  // An accidental ⟳ is put back with one click (his ask, 2026-09-24).
+  function unfoldConvo(e, repaint){
+    if(!e.convoId) return Promise.resolve();
+    e.note = 'Putting it back\u2026'; e.noteUndo = null;
+    if(repaint) repaint();
+    return apiWrite('/api/convos/' + e.convoId + '/unfold', 'POST', {})
+      .then(function(){ e.loaded = false; return fetchConvo(e, repaint).then(function(){ e.note = 'Unfolded.'; }); })
+      .catch(function(){ e.note = 'Could not put it back.'; })
+      .then(function(){ if(repaint) repaint(); });
   }
 
   // ---------- Shared reading of an entry ----------
@@ -28420,7 +28433,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         ev.stopPropagation();
         var act = b.getAttribute('data-se-act');
         if(act === 'shut'){ e.open = false; paintEmbed(host, e, opts); }
-        else if(act === 'reset'){ resetConvo(e, repaint); }
+        else if(act === 'reset'){ e.noteUndo = null; resetConvo(e, repaint); }
+        else if(act === 'unfold'){ unfoldConvo(e, repaint); }
         // The seven slash-command chips used to sit under the composer all the
         // time, wrapping to two lines of small text nobody was reading. They are
         // the same chips; the ＋ is what asks for them.
@@ -30443,7 +30457,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         : 'Nothing said yet.') + '</div>';
     }
     // Something to say that is not part of the conversation — "still opening", say.
-    if(e.note) html += '<div class="se-note">' + qEsc(e.note) + '</div>';
+    if(e.note) html += '<div class="se-note">' + qEsc(e.note)
+      + (e.noteUndo === 'unfold' ? ' <button type="button" class="se-undo" data-se-act="unfold">Undo</button>' : '') + '</div>';
     return html;
   }
 

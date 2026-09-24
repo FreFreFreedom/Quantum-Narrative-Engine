@@ -815,6 +815,12 @@ export function conversationsRoutes() {
     res.json(out);
   });
 
+  // POST /api/convos/:id/unfold — put the last fold back.
+  router.post('/:id/unfold', asyncHandler(async (req, res) => {
+    const out = convos.unfoldConvoContext(req.params.id);
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
   // POST /api/convos/:id/reset — fold conversation into a recap.
   router.post('/:id/reset', asyncHandler(async (req, res) => {
     const out = await convos.resetConvoContext(req.params.id);

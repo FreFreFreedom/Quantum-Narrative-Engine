@@ -1100,10 +1100,25 @@ export async function resetConvoContext(id) {
   const written = recap.length >= 80;
   if (!written) recap = crude;
 
-  db.prepare(`UPDATE convos SET recap=?, compacted_at=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
+  // What the fold replaced is kept beside it, so an accidental ⟳ can be undone (his
+  // ask, 2026-09-24). One level: the next fold overwrites it.
+  db.prepare(`UPDATE convos SET recap_prev=recap, compacted_prev=compacted_at, recap=?, compacted_at=?, unfoldable=1,
+    updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
     .run(recap || null, cutAt, id);
   broadcastAll('convos:updated', { convoId: id });
   return { ok: true, recap, written, folded: fold.length, kept: chat.length - fold.length };
+}
+
+// Put the last fold back: the recap and the cut return to what they were.
+export function unfoldConvoContext(id) {
+  if (!db) return { error: 'no_db' };
+  const row = db.prepare('SELECT unfoldable, recap_prev, compacted_prev FROM convos WHERE id=? AND deleted_at IS NULL').get(id);
+  if (!row) return { error: 'not_found' };
+  if (!row.unfoldable) return { error: 'nothing_to_unfold' };
+  db.prepare(`UPDATE convos SET recap=?, compacted_at=?, unfoldable=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
+    .run(row.recap_prev, row.compacted_prev, id);
+  broadcastAll('convos:updated', { convoId: id });
+  return { ok: true };
 }
 
 export function deleteConvo(id) {
