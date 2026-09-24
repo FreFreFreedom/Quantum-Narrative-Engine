@@ -2961,20 +2961,29 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .se-quote-pop button:hover { background:var(--c-border); color:var(--c-ink); }
 .se-quote-pop .ic { width:11px; height:11px; flex:none; }
-/* The dictionary, Kindle-style: select one word and its meaning opens under the bar on
-   its own, no click. English only for now (Wiktionary's definition service). */
-.se-quote-pop { flex-wrap:wrap; max-width:min(440px, calc(100vw - 12px)); }
-.se-quote-pop .se-define { flex:1 1 100%; margin:2px 0 0; padding:8px 10px 7px; border-top:1px solid var(--c-border);
-  font-family:var(--font-read); font-size:var(--fs-sm); line-height:1.45; color:var(--c-ink-2); white-space:normal; }
-.se-define .w { font-family:'Cinzel', var(--font-read); font-size:var(--fs-xs); letter-spacing:.14em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
-.se-define .here p { margin-top:3px; color:var(--c-ink); }
-.se-define .plain { font-size:var(--fs-xs); color:var(--c-ink-4); }
-.se-define .here:not([hidden]) + .plain:not([hidden]) { margin-top:6px; padding-top:5px; border-top:1px dashed var(--c-border); }
-.se-define .ph { margin-left:8px; font-size:var(--fs-xs); color:var(--c-ink-5); }
-.se-define .pos { font-style:italic; color:var(--c-ink-4); margin-right:5px; }
+/* The dictionary card (his pick 4, 2026-09-24): the page's solid ink as the card, its
+   own ink reversed, the word in gold Cinzel with the title's hairline, the reading in
+   the reading face at a size you can read from a chair, the plain sense under it one
+   step smaller and lighter, and the actions as a quiet row of gold capitals at the
+   foot. The same card serves a passage with no word: then it is the row alone. */
+.se-quote-pop { flex-wrap:wrap; max-width:min(460px, calc(100vw - 12px)); padding:0; gap:0; border-radius:12px;
+  background:var(--c-ink-solid); color:var(--c-on-solid); border-color:color-mix(in srgb, var(--c-on-solid) 18%, transparent);
+  --pop-gold:var(--c-kept-echo, var(--c-accent)); }
+:root[data-look="creamnavy"] .se-quote-pop { --pop-gold:#e2bf76; background:#2c3e5c; color:#f1e8d4; border-color:#44526a; }
+.se-quote-pop button { order:2; flex:1 1 auto; justify-content:center; gap:0; padding:9px 6px 10px; border-radius:0;
+  font:400 9px/1 'Cinzel', var(--font-read); letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
+.se-quote-pop button:hover { background:color-mix(in srgb, var(--pop-gold) 10%, transparent); color:var(--pop-gold); }
+.se-quote-pop button .ic { display:none; }
+.se-quote-pop .se-define { order:1; flex:1 1 100%; margin:0; padding:13px 18px 14px; border-top:0;
+  border-bottom:1px solid color-mix(in srgb, var(--c-on-solid) 16%, transparent);
+  font-family:var(--font-read); font-size:20px; line-height:1.35; color:inherit; white-space:normal; }
+.se-define .w { display:block; font-family:'Cinzel', var(--font-read); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
+.se-define .w::after { content:''; display:block; width:26px; height:1px; margin:6px 0 9px; background:var(--pop-gold); }
+.se-define .here p { margin:0; color:inherit; }
+.se-define .plain { margin-top:10px; font-size:19px; font-style:italic; color:color-mix(in srgb, var(--c-on-solid) 78%, transparent); }
+.se-define .pos { font-style:normal; font-family:'Cinzel', var(--font-read); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--pop-gold); margin-right:7px; }
 .se-define p { margin:4px 0 0; }
-.se-define p + p { margin-top:2px; }
-.se-define .more { font-size:var(--fs-xs); color:var(--c-ink-5); }
+.se-define p + p { margin-top:3px; }
 /* "Remember this" (plan "side talks in the Room, and remember this"): the
    proposal card — what the model understood a selected passage as, and the
    shelf it wants. Fixed near the bottom so it never depends on a selection
