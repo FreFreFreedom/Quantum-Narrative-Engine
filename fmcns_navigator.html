@@ -29198,14 +29198,20 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var sel = window.getSelection && window.getSelection();
       if(!mark || (sel && String(sel).trim())) return;
       killQuotePop();
-      var pid = mark.getAttribute('data-pid');
+      // Every kept line covering the spot tapped, not only the innermost: two keeps
+      // that overlap nest one mark inside the other, and undoing just one left the
+      // wash in place, so Undo looked broken.
+      var pids = [];
+      for(var m = mark; m && log.contains(m); m = m.parentElement && m.parentElement.closest('mark.se-kept[data-pid]')){
+        var id = m.getAttribute('data-pid'); if(pids.indexOf(id) === -1) pids.push(id);
+      }
       quotePop = document.createElement('div');
       quotePop.className = 'se-quote-pop se-kept-pop';
       quotePop.onmousedown = function(x){ x.preventDefault(); x.stopPropagation(); };
       var b = document.createElement('button');
       b.type = 'button'; b.title = 'Un-keep this line';
       b.innerHTML = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-seed"/></svg>Undo';
-      b.onclick = function(x){ x.stopPropagation(); killQuotePop(); unkeepPassage(e, { passage: { id: pid } }, repaint); };
+      b.onclick = function(x){ x.stopPropagation(); killQuotePop(); unkeepPassages(e, pids, repaint); };
       quotePop.appendChild(b);
       document.body.appendChild(quotePop);
       var r = mark.getBoundingClientRect(), h = quotePop.offsetHeight || 30;
@@ -29681,16 +29687,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       })
       .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); return null; });
   }
-  function unkeepPassage(e, out, repaint, quiet){
-    var id = out && out.passage && out.passage.id;
-    if(!id) return;
-    apiWrite('/api/passages/' + encodeURIComponent(id), 'DELETE')
+  function unkeepPassages(e, ids, repaint){
+    Promise.all(ids.map(function(id){ return apiWrite('/api/passages/' + encodeURIComponent(id), 'DELETE').catch(function(){}); }))
       .then(function(){
-        if(!quiet){ e.note = 'Un-kept.'; if(repaint) repaint(); }
+        e.note = 'Un-kept.'; if(repaint) repaint();
         if(window.loadRoomPassages) window.loadRoomPassages();
-      })
-      .catch(function(){});
+      });
   }
+
 
   // A kept line stays visible in the answer it came out of, the way a highlight
   // stays in a book. Re-drawn after every repaint, because the log is rewritten
