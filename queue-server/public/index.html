@@ -1106,15 +1106,16 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .room-convo .se-send.is-stop:hover:not(:disabled) { background:color-mix(in srgb, var(--c-ink) 12%, var(--c-bg)); color:var(--c-ink); opacity:1; }
 .room-convo .se-send.is-stop .se-send-glyph { display:block; width:10px; height:10px; border-radius:2.5px; background:currentColor; font-size:0; }
 .se-wrap { position:relative; }
-.qne-talk { position:absolute; inset:0; z-index:6; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:22px;
-  padding:16px 16px 26px; background:var(--c-bg); border-radius:18px; overflow:hidden; transition:opacity .35s var(--ease); }
-.qne-talk.is-closing { opacity:0; }
-.qne-talk-words { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; cursor:pointer; max-width:560px; position:relative; z-index:2; }
-.qne-talk-heard { text-align:center; font-family:var(--font-read); font-size:19px; line-height:1.5; color:var(--c-ink); min-height:1.5em; }
-.qne-talk-state { font-family:var(--font-read); font-style:italic; font-size:var(--fs-sm, 13px); }
-.qne-talk-bar { display:flex; align-items:center; justify-content:flex-end; gap:10px; width:min(460px, 100%); position:relative; z-index:2; }
+.qne-talk { position:absolute; inset:0; z-index:6; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+  padding:16px; background:var(--c-bg); }
+.qne-talk-orb { width:min(240px, 52vw); height:min(240px, 52vw); cursor:pointer; }
+.qne-talk-state { font-family:var(--font-read); font-style:italic; font-size:var(--fs-md, 14px); }
+.qne-talk-heard { min-height:1.6em; max-width:560px; text-align:center; font-family:var(--font-read); color:var(--c-ink-3); }
+.qne-talk-bar { display:flex; align-items:center; gap:10px; width:min(460px, 100%); background:var(--c-surface); border:1px solid var(--c-border);
+  border-radius:var(--r-pill); padding:6px 8px; box-shadow:var(--sh-xs); }
 .qne-talk-bar button { display:flex; align-items:center; justify-content:center; flex:none; width:28px; height:28px; padding:0; border-radius:var(--r-pill);
   border:1px solid var(--c-border-2); background:none; color:var(--c-ink-4); cursor:pointer; font:inherit; }
+.qne-talk-wave { flex:1; min-width:0; height:28px; color:var(--c-accent); }
 .qne-talk-bar .qne-talk-end { background:var(--c-danger); border-color:var(--c-danger); color:var(--c-on-danger); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 .wrap { display:flex; height:100vh; min-height:640px; position:relative; overflow:hidden; }
@@ -7004,37 +7005,41 @@ window.qneVoice = (function () {
 
   function wireTalk(host, e, input, say) {
     var btn = host.querySelector('.se-talk');
-    if (!btn || !SR || !window.speechSynthesis || !window.QneFx || !host.closest('.room-convo')) return;
+    if (!btn || !SR || !window.speechSynthesis || !window.QneElevenOrb || !host.closest('.room-convo')) return;
     btn.hidden = false;
     btn.onclick = function (ev) { ev.stopPropagation(); openTalk(host, e, input, say); };
   }
 
-  // Talk (plan living-orbs-dictate-talk; redrawn 2026-09-24 on the voice-glow "mobile" screen he
-  // picked): the words in the middle — what he is saying, then what is being said back — and the
-  // glow rising from the bottom of the panel with his voice, a beam sweeping while it thinks, and
-  // a softer rise while it speaks. Tap the words to interrupt.
+  // Talk keeps the living ElevenLabs orb and its waveform bar (Antoine, 2026-09-24: the
+  // phone-style glow screen was tried and he chose this back).
   function openTalk(host, e, input, say) {
     var wrap = host.querySelector('.se-wrap') || host;
     if (wrap.querySelector('.qne-talk')) return;
     var ov = document.createElement('div');
     ov.className = 'qne-talk';
-    ov.innerHTML = '<div class="qne-talk-words" title="Tap to interrupt"><div class="qne-talk-heard"></div><div class="qne-talk-state qne-shimmer"></div></div>'
+    ov.innerHTML = '<div class="qne-talk-orb" title="Tap to interrupt"></div>'
+      + '<div class="qne-talk-state qne-shimmer"></div>'
+      + '<div class="qne-talk-heard"></div>'
       + '<div class="qne-talk-bar">'
       +   '<button type="button" class="qne-talk-type" title="Back to typing" aria-label="Back to typing"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="8.5" rx="1.6"/><path d="M4 7h.01M6.5 7h.01M9 7h.01M11.5 7h.01M5 9.7h6"/></svg></button>'
+      +   '<canvas class="qne-talk-wave"></canvas>'
       +   '<button type="button" class="qne-talk-end" title="End (Esc)" aria-label="End">✕</button>'
       + '</div>';
     wrap.appendChild(ov);
+    var c = colorsFor();
+    var orbEl = ov.querySelector('.qne-talk-orb');
+    var orb = window.QneElevenOrb.mount(orbEl, { colors: c.colors, inverted: c.inverted, state: null });
     var stateEl = ov.querySelector('.qne-talk-state'), heard = ov.querySelector('.qne-talk-heard');
-    var mode = '', rec = null, meter = null, level = 0, speakLevel = 0, closed = false, waitTimer = 0, speakingToken = 0;
+    var mode = '', rec = null, meter = null, level = 0, closed = false, waitTimer = 0, speakingToken = 0;
     openLevel().then(function (m) { if (closed) { if (m) m.close(); return; } meter = m; });
-    var sampler = setInterval(function () {
-      speakLevel *= 0.86;
-      level = mode === 'listening' ? (meter ? meter.level() : 0) : mode === 'talking' ? Math.max(0.25, speakLevel) : 0;
-    }, 40);
-    var glow = voiceGlow(ov, { type: 'mobile', level: function () { return level; } });
+    var stopWave = waveLoop(ov.querySelector('.qne-talk-wave'), function () {
+      level = meter ? meter.level() : 0;
+      if (orb && mode === 'listening') orb.setLevel(level);
+      return mode === 'listening' ? level : 0.04;
+    });
     function setMode(m) {
       mode = m;
-      if (glow) glow.update({ processing: m === 'thinking' });
+      if (orb) orb.setState(m === 'listening' ? 'listening' : m === 'talking' ? 'talking' : 'thinking');
       stateEl.textContent = m === 'listening' ? 'Listening' : m === 'talking' ? 'Speaking' : 'Thinking';
     }
     function listen() {
@@ -7082,17 +7087,14 @@ window.qneVoice = (function () {
     function speak(md) {
       var parts = chunks(speakable(md)), token = ++speakingToken;
       if (!parts.length) return listen();
-      setMode('talking');
+      setMode('talking'); heard.textContent = '';
       var voice = pickVoice(md), i = 0;
       function next() {
         if (closed || token !== speakingToken) return;
         if (i >= parts.length) return listen();
-        heard.textContent = parts[i];
         var u = new SpeechSynthesisUtterance(parts[i++]);
         if (voice) { u.voice = voice; u.lang = voice.lang; }
         u.rate = 1.02;
-        // Each spoken word lifts the glow a little, so it breathes with the voice.
-        u.onboundary = function () { speakLevel = 0.55 + Math.random() * 0.35; };
         u.onend = next; u.onerror = next;
         speechSynthesis.speak(u);
       }
@@ -7106,18 +7108,17 @@ window.qneVoice = (function () {
     function close() {
       if (closed && !ov.isConnected) return;
       closed = true; speakingToken++;
-      clearInterval(waitTimer); clearInterval(sampler);
+      clearInterval(waitTimer);
       try { speechSynthesis.cancel(); } catch (err) {}
       if (rec) { try { rec.abort(); } catch (err) {} rec = null; }
-      if (meter) meter.close();
-      if (glow) glow.close();
-      ov.classList.add('is-closing');
-      setTimeout(function () { ov.remove(); }, 400);
+      stopWave(); if (meter) meter.close();
+      if (orb) orb.destroy();
+      ov.remove();
       document.removeEventListener('keydown', onKey, true);
     }
     function onKey(ev) { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(); } }
     document.addEventListener('keydown', onKey, true);
-    ov.querySelector('.qne-talk-words').onclick = interrupt;
+    orbEl.onclick = interrupt;
     ov.querySelector('.qne-talk-end').onclick = close;
     ov.querySelector('.qne-talk-type').onclick = function () { close(); input.focus(); };
     // Voices load late in Chrome; asking once wakes the list up.
