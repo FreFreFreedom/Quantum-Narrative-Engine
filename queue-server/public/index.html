@@ -2008,7 +2008,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-tabs button.active .room-tabcount { color:var(--c-ink-4); }
 .room-secondary-tabs { position:absolute; z-index:var(--z-popover-top); right:8px; top:calc(100% + 4px); min-width:170px; padding:4px; background:var(--c-surface); border:1px solid var(--c-border-2); border-radius:var(--r-md); box-shadow:var(--sh-md); }
 .room-tabs { position:relative; }
-.room-tabs { overflow:visible; }
+.room-tabs { overflow:visible; flex-wrap:wrap; row-gap:4px; }
 .room-secondary-tabs[hidden] { display:none; }
 .room-secondary-tabs button { display:flex; width:100%; justify-content:space-between; text-align:left; border:0; }
 .room-pane { display:none; }
@@ -4783,13 +4783,10 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-tabs" id="roomTabs" role="tablist">
           <button type="button" data-room-primary="library" role="tab">Library</button>
           <button type="button" data-room-primary="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
-          <button type="button" data-room-more aria-haspopup="menu" aria-expanded="false" role="button">More…</button>
-          <div class="room-secondary-tabs" id="roomSecondaryTabs" role="menu" hidden>
-            <button type="button" data-room-pane="attached" role="menuitem">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
-            <button type="button" data-room-pane="ideas" role="menuitem">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
-            <button type="button" data-room-pane="mind" role="menuitem">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
-            <button type="button" data-room-pane="extract" role="menuitem">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
-          </div>
+          <button type="button" data-room-pane="attached" role="tab">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
+          <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
+          <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
+          <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
         </div>
         <div class="room-pane room-attached is-active" id="roomAttached">
           <div class="room-pane-acts">
