@@ -150,8 +150,10 @@ window.FMCNS_LOOK_NIGHT = 'bean';   // his night pick since 2026-09-23 (Darkroom
   --font-ui: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --font-read: 'Literata', Georgia, 'Iowan Old Style', 'Times New Roman', serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-  --fs-2xs: 9.5px; --fs-xs: 10.5px; --fs-sm: 11.5px; --fs-base: 13px;
-  --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px;
+  /* One scale for the whole app, sized for ordinary eyes (his ask, 2026-09-24): the
+     smallest step is a label, never body text, and nothing reads below 11.5px. */
+  --fs-2xs: 11.5px; --fs-xs: 12.5px; --fs-sm: 13.5px; --fs-base: 15px;
+  --fs-md: 16px; --fs-lg: 18px; --fs-xl: 22px;
   --fw-normal: 400; --fw-medium: 600;
   /* The one text size every conversation embed reads — Room, Side Talks, a
      card's own studio. His own A-/A+ control (applyRoomType()) overrides this
@@ -1599,7 +1601,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    a short gold hairline. Settings and Look are symbols only. */
 .rail-item, .rail-brand { border-radius:0; }
 .rail-item:hover, .rail-brand:hover { background:none; color:var(--c-ink); }
-.rail-nav .rail-item .rail-label { font-family:'Cinzel',var(--font-read); font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; }
+.rail-nav .rail-item .rail-label { font-family:'Cinzel',var(--font-read); font-size:var(--fs-xs); letter-spacing:.18em; text-transform:uppercase; }
 .rail-item.active { background:none; color:var(--c-kept-echo, var(--c-accent)); font-weight:400; }
 .rail-item.active::before { left:-6px; top:50%; bottom:auto; width:5px; height:1px; border-radius:0; background:var(--c-kept-echo, var(--c-accent)); }
 .railbar:hover .rail-item.active::before, .railbar:focus-within .rail-item.active::before, .railbar.pinned .rail-item.active::before { width:12px; }
@@ -1621,7 +1623,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    height moves Settings and Look out from under the cursor the moment the rail opens.
    Shut, the grid is replaced by two short bars — the five-hour window of each
    account — with the month's spend underneath. */
-.rail-foot #usageStripHost { flex:0 0 auto; height:144px; overflow:hidden; padding:0 3px; }
+.rail-foot #usageStripHost { flex:0 0 auto; height:168px; overflow:hidden; padding:0 3px; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot #usageStripHost { padding:0 2px; }
 .uq-grid { display:flex; flex-direction:column; }
 .uq-grid .uq-line { padding:2px 4px; }
@@ -1651,7 +1653,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    says the one thing worth knowing from across the room. */
 .uq-shut { display:flex; flex-direction:column; gap:8px; padding:4px 2px 2px; }
 .uq-shut .uq-b { display:flex; flex-direction:column; gap:3px; }
-.uq-shut .uq-b span { font-size:7.5px; letter-spacing:.08em; text-transform:uppercase;
+.uq-shut .uq-b span { font-size:var(--fs-2xs); letter-spacing:.08em; text-transform:uppercase;
   color:var(--c-ink-5); text-align:center; line-height:1; }
 .uq-shut .uq-b i { display:block; height:4px; border-radius:3px; background:var(--c-surface-3);
   overflow:hidden; position:relative; }
@@ -2084,7 +2086,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-row[draggable="true"] { cursor:grab; }
 .room-row.is-dragging { opacity:.45; }
 .room-row .rt { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
-.room-row .rstar { flex:none; color:var(--c-accent); font-size:10px; line-height:1; }
+.room-row .rstar { flex:none; color:var(--c-accent); font-size:var(--fs-2xs); line-height:1; }
 /* The ⋯ acts on THIS row. Rename and delete used to reach only the thread already
    open, so acting on any other one meant opening it first. Hidden until the row is
    in play — hover, keyboard focus, its own menu open, or selected — so the list
@@ -2142,7 +2144,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    toggle against the right edge. The count does it — no spacer element for a job a
    margin already does. */
 .room-toolbar .room-turns { margin-right:auto; padding-left:2px; }
-.room-titlechev { flex:none; font-size:9px; color:var(--c-ink-5); }
+.room-titlechev { flex:none; font-size:var(--fs-2xs); color:var(--c-ink-5); }
 .room-titlebtn:hover .room-titlechev { color:var(--c-ink-3); }
 .room-toolbar .room-turns { white-space:nowrap; }
 .room-toolbar .arch-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2198,14 +2200,14 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-card-rate em { font-style:normal; font-weight:600; color:var(--c-ink); font-size:19px; }
 .se-card-note { margin:18px 0 0; font-family:var(--font-read); font-size:20px; line-height:1.6; color:var(--c-ink-2); }
 .se-card-wait { margin:18px 0 0; font-size:16px; color:var(--c-ink-5); }
-.se-card h6 { margin:22px 0 8px; font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); }
+.se-card h6 { margin:22px 0 8px; font-size:var(--fs-sm); font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); }
 .se-card-toc { list-style:none; margin:0; padding:0; }
 .se-card-toc li { display:flex; gap:10px; align-items:baseline; padding:7px 0; border-bottom:1px dotted var(--c-border); font-size:16px; }
 .se-card-toc li span { flex:1; min-width:0; }
-.se-card-toc li em { font-style:normal; font-size:13px; font-variant-numeric:tabular-nums; color:var(--c-ink-5); }
+.se-card-toc li em { font-style:normal; font-size:var(--fs-base); font-variant-numeric:tabular-nums; color:var(--c-ink-5); }
 .se-card-toc li.part { font-weight:600; padding-top:8px; }
 .se-card-toc li.sub { padding-left:14px; color:var(--c-ink-3); }
-.se-card-src { display:block; margin-top:8px; font-size:12px; color:var(--c-ink-5); }
+.se-card-src { display:block; margin-top:8px; font-size:var(--fs-sm); color:var(--c-ink-5); }
 .se-card-out { display:inline-flex; align-items:center; gap:6px; margin-top:22px; padding:9px 18px; border:1px solid var(--c-border-2); border-radius:999px;
   font-size:15px; font-weight:500; letter-spacing:.02em; color:var(--c-ink); text-decoration:none; }
 .se-card-outs { display:flex; flex-wrap:wrap; gap:8px; }
@@ -2545,9 +2547,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   background:var(--c-surface-2) center/cover no-repeat; box-shadow:0 8px 20px rgba(0,0,0,.28);
   display:flex; align-items:center; justify-content:center; font-size:var(--fs-2xs); color:var(--c-ink-5); }
 .src-cov.has-art { color:transparent; }
-.src-nm { font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:11.5px; line-height:1.35;
+.src-nm { font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:var(--fs-xs); line-height:1.35;
   color:var(--c-ink-2); margin-top:8px; }
-.src-au { font-size:10px; color:var(--c-ink-5); margin-top:2px; }
+.src-au { font-size:var(--fs-2xs); color:var(--c-ink-5); margin-top:2px; }
 /* A drafted plan is the moment the conversation becomes something you can build,
    so it is the one turn allowed to break the pattern. Amber is already this app's
    "buildable" colour over in the tech tree, which is exactly what it means here. */
@@ -2586,14 +2588,14 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-size input::-moz-range-thumb { width:6px; height:6px; border:0; border-radius:50%; background:var(--c-ink-5); }
 .shelf-card { position:relative; min-width:0; }
 .shelf-cover { aspect-ratio:2/3; border-radius:5px; border:1px solid var(--c-border-2); background:var(--c-surface-2) center/cover no-repeat;
-  display:flex; align-items:flex-end; padding:6px; font-size:9px; line-height:1.3; color:var(--c-ink-5); overflow:hidden; }
-.shelf-card b { display:block; margin-top:5px; font-size:11px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
-.shelf-card small { display:block; color:var(--c-ink-4); font-size:10px; }
+  display:flex; align-items:flex-end; padding:6px; font-size:var(--fs-2xs); line-height:1.3; color:var(--c-ink-5); overflow:hidden; }
+.shelf-card b { display:block; margin-top:5px; font-size:var(--fs-xs); font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
+.shelf-card small { display:block; color:var(--c-ink-4); font-size:var(--fs-2xs); }
 .shelf-open { display:block; position:relative; width:100%; padding:0; border:0; background:none; cursor:pointer; }
 .lib-ana { display:flex; flex-direction:column; gap:5px; padding:12px 0; }
-.lib-ana-sides { font-family:'Cinzel',var(--font-read); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+.lib-ana-sides { font-family:'Cinzel',var(--font-read); font-size:var(--fs-xs); letter-spacing:.16em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
 .lib-ana-pattern { font-family:var(--room-font, var(--font-read)); font-size:16px; line-height:1.5; color:var(--c-read, var(--c-ink-2)); }
-.lib-ana-foot { display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--c-ink-5); }
+.lib-ana-foot { display:flex; align-items:center; gap:12px; font-size:var(--fs-sm); color:var(--c-ink-5); }
 .lib-ana-foot button { border:0; background:none; box-shadow:none; padding:0; min-width:0; height:auto; font:inherit; color:var(--c-ink-4); cursor:pointer; }
 .lib-ana-foot button:hover { color:var(--c-kept-echo, var(--c-accent)); }
 .lib-ana-acts { margin-left:auto; display:flex; gap:12px; }
@@ -2608,22 +2610,22 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-top { position:relative; }
 .lib-gap { flex:1; }
 .lib-kindbtn { display:inline-flex; align-items:center; gap:8px; padding:4px 0; border:0; background:none; box-shadow:none; min-width:0; height:auto; cursor:pointer;
-  font-family:'Cinzel',var(--font-read); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+  font-family:'Cinzel',var(--font-read); font-size:var(--fs-sm); letter-spacing:.2em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
 .lib-kindbtn em { font-style:normal; letter-spacing:0; }
-.lib-kindbtn b, .lib-kindpop b { font-family:var(--font-ui); font-weight:400; font-size:11px; letter-spacing:0; color:var(--c-ink-5); }
+.lib-kindbtn b, .lib-kindpop b { font-family:var(--font-ui); font-weight:400; font-size:var(--fs-xs); letter-spacing:0; color:var(--c-ink-5); }
 .lib-kindbtn svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; transition:transform .2s ease; }
 .lib-kindbtn.open svg { transform:rotate(180deg); }
 .lib-kindpop { position:absolute; left:0; right:0; top:calc(100% - 4px); z-index:6; display:grid; grid-template-columns:1fr 1fr; gap:2px 18px; padding:12px 14px;
   background:var(--c-surface); border:1px solid var(--c-border-2); border-radius:12px; box-shadow:var(--sh-md); animation:fmcnsFade .18s ease both; }
 .lib-kindpop button { display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:7px 2px; border:0; background:none; box-shadow:none; min-width:0; height:auto; cursor:pointer;
-  font-family:'Cinzel',var(--font-read); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-3); }
+  font-family:'Cinzel',var(--font-read); font-size:var(--fs-xs); letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-3); }
 .lib-kindpop button:hover { color:var(--c-ink); }
 .lib-kindpop button.on { color:var(--c-kept-echo, var(--c-accent)); }
 .lib-kindpop .lib-kindpop-suggest { grid-column:1 / -1; justify-content:center; margin-top:6px; padding-top:10px; border-top:1px solid var(--c-border);
   color:var(--c-kept-echo, var(--c-accent)); }
 .lib-tools { flex:none; display:flex; gap:4px; }
 .lib-tools button { width:28px; height:28px; min-width:0; padding:0; border:0; border-radius:50%; background:none; box-shadow:none; cursor:pointer;
-  display:grid; place-items:center; color:var(--c-ink-4); font-size:13px; transition:color .2s ease, background .2s ease; }
+  display:grid; place-items:center; color:var(--c-ink-4); font-size:var(--fs-base); transition:color .2s ease, background .2s ease; }
 .lib-tools button:hover { color:var(--c-ink); background:var(--c-hover-wash); }
 .lib-tools button.on { color:var(--c-kept-echo, var(--c-accent)); }
 .lib-tools svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; }
@@ -2632,17 +2634,17 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   font-family:var(--font-ui); font-size:15px; color:var(--c-ink); }
 .lib-find .lib-search::placeholder { color:var(--c-ink-5); }
 .lib-bar { display:flex; justify-content:flex-end; margin:0 0 8px; }
-.shelf-name { position:absolute; inset:auto 0 0; padding:18px 7px 7px; font-size:10px; line-height:1.3; text-align:left;
+.shelf-name { position:absolute; inset:auto 0 0; padding:18px 7px 7px; font-size:var(--fs-2xs); line-height:1.3; text-align:left;
   color:var(--c-ink); background:linear-gradient(transparent,rgba(0,0,0,.86)); border-radius:0 0 6px 6px;
   opacity:0; transition:opacity .14s; overflow:hidden; max-height:60%; }
 .shelf-card:hover .shelf-name, .shelf-card.is-open .shelf-name { opacity:1; }
 .shelf-dot { position:absolute; top:6px; left:6px; width:5px; height:5px; border-radius:50%; background:var(--c-ink); opacity:.75; }
 .lib-badge { position:absolute; top:5px; right:5px; background:rgba(8,12,13,.82); border-radius:999px;
-  font-size:10px; padding:1px 6px; color:var(--c-accent,#c8a56a); }
-span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:10px; color:#e6eef0; opacity:.85; text-shadow:0 1px 3px #000; }
-.lib-rate { display:flex; align-items:center; gap:6px; margin-top:7px; font-size:11px; color:var(--c-ink-4); }
+  font-size:var(--fs-2xs); padding:1px 6px; color:var(--c-accent,#c8a56a); }
+span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:var(--fs-2xs); color:#e6eef0; opacity:.85; text-shadow:0 1px 3px #000; }
+.lib-rate { display:flex; align-items:center; gap:6px; margin-top:7px; font-size:var(--fs-xs); color:var(--c-ink-4); }
 .lib-rate em { font-style:normal; font-size:15px; font-weight:600; color:var(--c-ink); }
-.stars { position:relative; display:inline-block; font-family:var(--font-ui); font-size:12px;
+.stars { position:relative; display:inline-block; font-family:var(--font-ui); font-size:var(--fs-sm);
   letter-spacing:1px; line-height:1; white-space:nowrap; }
 .stars i, .stars b { font:inherit; font-style:normal; font-weight:400; letter-spacing:inherit; margin:0; }
 .stars i { display:block; color:var(--c-ink-5); }
@@ -2650,9 +2652,9 @@ span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:10px; color:#
   color:var(--c-accent,#c8a56a); }
 .lib-based { display:flex; gap:10px; align-items:center; margin:11px 0 0; padding:8px 9px;
   border:1px solid var(--c-border-2); border-radius:10px; }
-.lib-based small { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
+.lib-based small { display:block; font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
 .lib-based b { font-size:15px; font-weight:600; }
-.lib-based-by { display:block; font-size:13px; color:var(--c-ink-4); margin-top:1px; }
+.lib-based-by { display:block; font-size:var(--fs-base); color:var(--c-ink-4); margin-top:1px; }
 .lib-bchip { width:22px; height:32px; border-radius:2px; background:var(--c-surface-3,var(--c-surface-2)); border:1px solid var(--c-border-2); flex:none; }
 /* An opened item reads like a page about that book, not like a row that grew:
    jacket and title together at the top, then two headed passages of prose. The
@@ -2668,13 +2670,13 @@ span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:10px; color:#
 .lib-toc ol { list-style:none; margin:6px 0 0; padding:0; counter-reset:toc; }
 .lib-toc li { display:flex; gap:12px; align-items:baseline; padding:6px 0; border-bottom:1px dotted var(--c-border); font-size:15px; line-height:1.4; }
 .lib-toc li span { flex:1; min-width:0; }
-.lib-toc li em { font-style:normal; font-family:var(--font-ui); font-size:12px; color:var(--c-ink-5); }
+.lib-toc li em { font-style:normal; font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink-5); }
 .lib-toc li.part { font-weight:600; padding-top:8px; }
 .lib-toc li.sub { padding-left:16px; color:var(--c-ink-2); }
-.lib-toc small { display:block; margin-top:8px; font-family:var(--font-ui); font-size:12px; color:var(--c-ink-5); }
+.lib-toc small { display:block; margin-top:8px; font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink-5); }
 .shelf-out { font-family:var(--font-ui); font-size:14px; letter-spacing:.02em; color:var(--c-ink-5);
   text-decoration:none; margin-right:auto; }
-.shelf-out span { font-size:12px; }
+.shelf-out span { font-size:var(--fs-sm); }
 .shelf-cover.sm { width:74px; flex:none; }
 .shelf-card.is-open .shelf-cover { outline:1px solid var(--c-ink-4); outline-offset:2px; }
 .shelf-panel { position:relative; grid-column:1/-1; background:var(--c-surface); border:1px solid var(--c-border-2);
@@ -2689,14 +2691,14 @@ span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:10px; color:#
 /* Pinned to the panel, not laid out in the head: a title long enough to wrap
    five times used to push it off the row and leave it floating mid-wall. */
 .shelf-panel-head [data-close] { position:absolute; top:14px; right:14px; z-index:2;
-  width:24px; height:24px; min-width:0; padding:0; border-radius:50%; font-size:11px; line-height:1; flex:none; }
+  width:24px; height:24px; min-width:0; padding:0; border-radius:50%; font-size:var(--fs-xs); line-height:1; flex:none; }
 .shelf-facts { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-.shelf-facts span { font-size:13px; color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:999px; padding:2px 9px; }
+.shelf-facts span { font-size:var(--fs-base); color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:999px; padding:2px 9px; }
 .shelf-note { margin-top:22px; }
-.shelf-note h6 { display:flex; align-items:center; gap:7px; margin:0 0 10px; font-size:12px; font-weight:600;
+.shelf-note h6 { display:flex; align-items:center; gap:7px; margin:0 0 10px; font-size:var(--fs-sm); font-weight:600;
   letter-spacing:.13em; text-transform:uppercase; color:var(--c-ink-5); }
 .shelf-note h6 [data-renote], .shelf-note h6 [data-rescreen] { width:18px; height:18px; min-width:0; padding:0; border:0; background:none;
-  color:var(--c-ink-5); font-size:11px; line-height:1; cursor:pointer; }
+  color:var(--c-ink-5); font-size:var(--fs-xs); line-height:1; cursor:pointer; }
 .shelf-note h6 [data-renote]:hover, .shelf-note h6 [data-rescreen]:hover { color:var(--c-ink); }
 .shelf-note p { margin:0; font-family:var(--font-read); font-size:17px; line-height:1.66; color:var(--c-ink-2); max-width:70ch; }
 .shelf-note.is-ours p { color:var(--c-ink); border-left:2px solid var(--c-cast,var(--c-accent)); padding-left:14px; }
@@ -2706,16 +2708,16 @@ span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:10px; color:#
   border-radius:0 8px 8px 0; padding:12px 15px; font-family:var(--room-font); font-size:var(--fs-md); line-height:1.6; color:var(--c-ink-2); }
 .shelf-opening { margin:16px 0 0; font-family:var(--font-read); font-size:17px; line-height:1.66; color:var(--c-ink-3); }
 .shelf-card [data-drop] { position:absolute; top:4px; right:4px; width:22px; height:22px; min-width:0; padding:0; border-radius:50%;
-  display:flex; align-items:center; justify-content:center; font-size:11px; line-height:1; white-space:nowrap; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; font-size:var(--fs-xs); line-height:1; white-space:nowrap; overflow:hidden;
   opacity:0; transition:opacity .12s; background:rgba(var(--c-surface-rgb),.85); }
 .shelf-card:hover [data-drop], .shelf-card [data-drop]:focus-visible { opacity:1; }
-.shelf-working { display:flex; align-items:center; gap:7px; padding:5px 0; font-size:12px; overflow-wrap:anywhere; }
+.shelf-working { display:flex; align-items:center; gap:7px; padding:5px 0; font-size:var(--fs-sm); overflow-wrap:anywhere; }
 .shelf-working span:nth-of-type(2) { flex:1; min-width:0; }
 .shelf-working small { color:var(--c-ink-4); white-space:nowrap; }
 .shelf-spin { width:11px; height:11px; border-radius:50%; border:2px solid var(--c-border-2); border-top-color:var(--c-ink-4);
   animation:shelfSpin .8s linear infinite; flex:none; }
 @keyframes shelfSpin { to { transform:rotate(360deg); } }
-.shelf-slot:not(:empty) { margin-top:8px; font-size:12px; color:var(--c-ink-4); }
+.shelf-slot:not(:empty) { margin-top:8px; font-size:var(--fs-sm); color:var(--c-ink-4); }
 .room-shelf.is-dropping { outline:1px dashed var(--c-ink-4); outline-offset:4px; border-radius:6px; }
 .shelf-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
 .shelf-head strong { flex:1; }
@@ -2898,7 +2900,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-rail-item.is-here .se-rail-num { color:var(--c-ink); }
 .se-rail-item.is-here::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:2px; border-radius:2px; background:var(--c-accent); }
 .se-rail-name { flex:1; min-width:0; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
-  font-family:var(--font-read); font-size:13.5px; line-height:1.35; color:var(--c-ink-3); opacity:0;
+  font-family:var(--font-read); font-size:var(--fs-base); line-height:1.35; color:var(--c-ink-3); opacity:0;
   transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .se-rail:not(:hover):not(:focus-within) .se-rail-name { max-height:1.35em; }
 .se-rail:hover .se-rail-name, .se-rail:focus-within .se-rail-name { opacity:1; }
@@ -2906,7 +2908,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-rail-item.is-here .se-rail-name { color:var(--c-ink); font-weight:500; }
 .se-rail-item.is-saved .se-rail-name { font-style:normal; }
 .se-rail-item.is-saved .se-rail-num { color:var(--c-kept-echo, var(--c-accent)); }
-.se-rail-drop { display:none; flex:none; font-weight:400; font-size:11px; line-height:1; padding:3px; color:var(--c-ink-5); border-radius:4px; }
+.se-rail-drop { display:none; flex:none; font-weight:400; font-size:var(--fs-xs); line-height:1; padding:3px; color:var(--c-ink-5); border-radius:4px; }
 .se-rail:hover .se-rail-item:hover .se-rail-drop { display:block; }
 .se-rail-drop:hover { color:var(--c-ink); background:var(--c-surface-2); }
 /* Small and tight (his pick A, 2026-09-24): a narrow list, one line per kept
@@ -2951,7 +2953,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-rail-subname { flex:1; min-width:0; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
   font:12.5px/1.4 var(--font-ui); color:var(--c-ink-5); }
 .se-rail-sub:hover .se-rail-subname { color:var(--c-ink); }
-.se-rail-sub.is-kept .se-rail-subname { font-family:var(--font-read); font-style:italic; font-size:13px; color:var(--c-brand); }
+.se-rail-sub.is-kept .se-rail-subname { font-family:var(--font-read); font-style:italic; font-size:var(--fs-base); color:var(--c-brand); }
 .se-rail-sub.is-kept .se-rail-subname::before { content:'\201C'; margin-right:2px; }
 /* A gutter for the dashes, so a closed rail never sits on top of the words. */
 .se-wrap.has-rail .se-log { padding-left:30px; }
@@ -3011,27 +3013,27 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    their words collapse into a narrow strip despite the pane having room. */
 .room-rec-item { position:relative; min-width:0; width:100%; padding:10px 24px 10px 0; border-bottom:1px solid var(--c-border-2); }
 .room-rec-item--media { display:grid; grid-template-columns:64px minmax(0,1fr); gap:11px; padding-top:12px; padding-bottom:12px; }
-.room-rec-art { width:64px; height:92px; border-radius:6px; background:var(--c-surface-2); border:1px solid var(--c-border-2); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; color:var(--c-ink-5); font-size:9px; text-transform:uppercase; letter-spacing:.04em; text-align:center; }
+.room-rec-art { width:64px; height:92px; border-radius:6px; background:var(--c-surface-2); border:1px solid var(--c-border-2); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; color:var(--c-ink-5); font-size:var(--fs-2xs); text-transform:uppercase; letter-spacing:.04em; text-align:center; }
 .room-rec-info { min-width:0; width:100%; }
 .room-rec-title { display:block; width:100%; font:inherit; text-align:left; color:var(--c-ink); line-height:1.5; background:none; border:0; padding:0; cursor:pointer; text-decoration:none; }
 .room-rec-title:hover { text-decoration:underline; }
 .room-rec-item--media .room-rec-title { font-weight:600; line-height:1.3; }
 .room-rec-meta { margin-top:2px; color:var(--c-ink-5); font-size:var(--fs-2xs); text-transform:capitalize; }
-.room-rec-item p { margin:5px 0 0; font-size:12px; line-height:1.45; color:var(--c-ink-3); }
+.room-rec-item p { margin:5px 0 0; font-size:var(--fs-sm); line-height:1.45; color:var(--c-ink-3); }
 .room-rec-menu { position:absolute; right:2px; top:10px; }
 .room-rec-menu summary { list-style:none; cursor:pointer; padding:0 4px; }
 .room-rec-menu button { position:absolute; right:0; z-index:2; background:var(--c-surface-2); color:var(--c-ink); border:1px solid var(--c-border-2); padding:5px 10px; }
 /* The ⋯ belongs to its own row: without a positioned row it pinned itself to the top
    corner of the whole panel, and its menu, squeezed to nothing, spelled Remove downwards. */
 .interest-item, .room-rec-host article { position:relative; }
-.room-rec-menu button { top:calc(100% + 4px); white-space:nowrap; width:auto; border-radius:var(--r-md); box-shadow:var(--sh-md); font-size:13px; }
-.room-rec-status { font-size:11px; color:var(--c-ink-3); margin:5px 0; }
-.room-rec-requests { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; }
+.room-rec-menu button { top:calc(100% + 4px); white-space:nowrap; width:auto; border-radius:var(--r-md); box-shadow:var(--sh-md); font-size:var(--fs-base); }
+.room-rec-status { font-size:var(--fs-xs); color:var(--c-ink-3); margin:5px 0; }
+.room-rec-requests { display:flex; flex-wrap:wrap; gap:8px; font-size:var(--fs-xs); }
 .room-rec-requests button,.room-rec-steering button { font:inherit; background:none; color:var(--c-ink); border:1px solid var(--c-border-2); border-radius:4px; cursor:pointer; }
 .room-rec-ask { display:flex; gap:5px; margin-top:8px; }
 .room-rec-ask input,.room-rec-steering textarea { min-width:0; width:100%; font:inherit; color:var(--c-ink); background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:5px; padding:6px; }
 .room-rec-ask button { border:0; border-radius:5px; background:var(--c-surface-2); color:var(--c-ink); padding:4px 9px; cursor:pointer; }
-.room-rec-steering { font-size:11px; margin-top:6px; }
+.room-rec-steering { font-size:var(--fs-xs); margin-top:6px; }
 .room-rec-steering summary { cursor:pointer; color:var(--c-ink-3); }
 .room-rec-steering textarea { box-sizing:border-box; margin:6px 0; }
 #roomDropZone { display:none !important; }
