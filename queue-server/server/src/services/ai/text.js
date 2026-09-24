@@ -55,6 +55,22 @@ const MAX_CONTINUATIONS = 2;
 const CONTINUE_INSTRUCTION = 'Your previous message was cut off by a length limit before you finished — it ends mid-sentence. Carry straight on from the exact word you stopped at, as if you had never paused. Do not repeat anything you already wrote, do not start again, do not summarise what came before, and do not apologise or mention the cut.';
 const TOOL_RESULT_CAP = 8000;
 
+// A thinking model (Gemini Flash) reports "length" when its hidden reasoning ate
+// the budget, even though the visible answer ended cleanly. Told "you stopped
+// mid-sentence", it then invents a tail for a sentence that was already whole —
+// an orphan lowercase fragment after the last paragraph. So when the cut falls on
+// a sentence end, it is asked whether there is more, and its reply is held back
+// until it proves to be a real next sentence rather than an invented tail.
+const CONTINUE_AFTER_SENTENCE = 'Your previous message stopped at a length limit. If your answer was already complete, reply with exactly END and nothing else. Otherwise, continue with the next sentence or paragraph, as if you had never paused. Do not repeat anything, do not summarise, do not mention the pause.';
+const endsSentence = (t) => /[.!?\u2026]["\u201d\u2019)\]*_]*\s*$/.test(t || '');
+// True when a continuation adds nothing real: END, empty, or a lowercase fragment
+// pretending to finish a sentence that was already finished.
+const isFakeResume = (t) => {
+  const s = String(t || '').trim().replace(/^[\s"\u201c*_]+/, '');
+  return !s || /^\[?END\]?\.?$/i.test(s) || /^[a-z]/.test(s);
+};
+
+
 // What a toolless backend gets told when the caller DID ask for tools. Same
 // wording shape as anthropicLoop.js's OpenCode fallback: the prompt claims the
 // model can look things up, and a lane that cannot must be told so rather than
@@ -715,13 +731,16 @@ export async function runCatalogueToolLoop({ mod, providerId, model, prompt, max
       const text = out.text || (out.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
       // Concatenated with no separator on purpose: the cut can fall inside a
       // word, and the continuation picks up from that exact letter.
-      const whole = carried + (text || '');
+      // A continuation after a clean sentence end that adds nothing real is
+      // dropped, and the answer ends where it had already ended.
+      if (continuations && endsSentence(carried) && isFakeResume(text)) return { text: carried.trim(), via: providerId };
+      const whole = carried + (continuations && endsSentence(carried) && !/^\s/.test(text || '') ? '\n\n' : '') + (text || '');
       if (out.truncated && text && continuations < MAX_CONTINUATIONS) {
         continuations += 1;
         carried = whole;
         console.warn(`[${label}] ${providerId}/${model} hit the ${maxTokens}-token ceiling at ${whole.length} chars — asking it to carry on (${continuations}/${MAX_CONTINUATIONS})`);
         messages.push({ role: 'assistant', content: text });
-        messages.push({ role: 'user', content: CONTINUE_INSTRUCTION });
+        messages.push({ role: 'user', content: endsSentence(whole) ? CONTINUE_AFTER_SENTENCE : CONTINUE_INSTRUCTION });
         continue;
       }
       if (whole.trim()) return { text: whole.trim(), via: providerId };
@@ -1504,11 +1523,14 @@ export async function generateTextStream({
     let usage = null;
     let cutOff = false;
     const calls = [];
+    // After a cut on a clean sentence end, this round's words are held back until
+    // they prove to be a real next sentence (see CONTINUE_AFTER_SENTENCE).
+    const holding = continuations > 0 && endsSentence(text);
     try {
       for await (const ev of stream) {
         if (ev.type === 'content' && ev.text) {
           roundText += ev.text;
-          if (onToken) onToken(ev.text);
+          if (onToken && !holding) onToken(ev.text);
         } else if (ev.type === 'truncated') {
           cutOff = true;
         } else if (ev.type === 'usage') {
@@ -1536,6 +1558,15 @@ export async function generateTextStream({
       console.warn(`[${label}] ${providerId}/${model} round ${round} returned no usage block — this call is NOT counted against the monthly cap`);
     }
 
+    if (holding) {
+      if (isFakeResume(roundText)) {
+        console.warn(`[${label}] ${providerId}/${model} had already finished — dropped a ${roundText.length}-char invented tail`);
+        break;
+      }
+      if (!/^\s/.test(roundText)) roundText = '\n\n' + roundText;
+      if (onToken) onToken(roundText);
+    }
+
     text += roundText;
 
     // Stopped by the ceiling, not by having finished. Ask it to carry straight
@@ -1546,7 +1577,7 @@ export async function generateTextStream({
       console.warn(`[${label}] ${providerId}/${model} hit the ${maxTokens}-token ceiling at ${text.length} chars — asking it to carry on (${continuations}/${MAX_CONTINUATIONS})`);
       if (onStatus) { try { onStatus('That ran to the length limit — asking it to carry on…'); } catch {} }
       messages.push({ role: 'assistant', content: roundText });
-      messages.push({ role: 'user', content: CONTINUE_INSTRUCTION });
+      messages.push({ role: 'user', content: endsSentence(text) ? CONTINUE_AFTER_SENTENCE : CONTINUE_INSTRUCTION });
       continue;
     }
 
