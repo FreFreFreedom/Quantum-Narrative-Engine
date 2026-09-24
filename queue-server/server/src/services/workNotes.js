@@ -28,8 +28,11 @@ const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-
 const MAX_WORDS = 75;
 const NOTE_V = 3;
 
+// The card shows plain text, so a title wrapped in *stars* by the model loses them.
+const plain = (t) => String(t || '').replace(/\*\*?([^*]+)\*\*?/g, '$1').replace(/(^|\s)_([^_]+)_(?=[\s.,;:!?]|$)/g, '$1$2');
+
 function forty(text) {
-  const t = String(text || '').replace(/\s+/g, ' ').trim().replace(/^["“]|["”]$/g, '');
+  const t = plain(text).replace(/\s+/g, ' ').trim().replace(/^["“]|["”]$/g, '');
   const words = t.split(' ');
   // A cheap model sometimes stops mid-sentence; half a sentence is worse than none.
   if (words.length <= MAX_WORDS + 10) {   // "about 75": a finished line a little long beats a cut one
@@ -46,7 +49,7 @@ export async function workNote(convoId, { kind = 'film', title = '', creator = '
   if (!db || !convoId || !norm(title)) return { text: '' };
   const key = `${kind}|${norm(title)}`;
   const row = db.prepare('SELECT text FROM work_notes WHERE convo_id=? AND key=? AND v>=?').get(convoId, key, NOTE_V);
-  if (row && !refresh) return { text: row.text };
+  if (row && !refresh) return { text: plain(row.text) };
   const msgs = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' ORDER BY created_at DESC, rowid DESC LIMIT 6`)
     .all(convoId).reverse().map((m) => (m.role === 'user' ? 'HIM: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1200)).join('\n\n');
   const what = kind === 'book' ? 'book' : kind === 'series' ? 'TV series' : 'film';
