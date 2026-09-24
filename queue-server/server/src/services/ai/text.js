@@ -1298,10 +1298,31 @@ const TOOL_PHRASES = {
   recall_memory: 'Remembering what you said before',
 };
 // A backend, named the way Antoine names them rather than by provider id.
+// A model id read as a name (his ask, 2026-09-24): "gemini-flash-lite-latest" is
+// "Gemini Flash Lite", "groq/llama-3.1-8b-instant" is "Llama 3.1 8B Instant" — no
+// dashes, no slashes, no "latest". The same rule the Room's model menu uses.
+const WORD_CASE = { gpt: 'GPT', oss: 'OSS', ai: 'AI', gemma: 'Gemma', llama: 'Llama', qwen: 'Qwen', glm: 'GLM', kimi: 'Kimi', deepseek: 'DeepSeek', mini: 'Mini', pro: 'Pro', flash: 'Flash', lite: 'Lite', sonnet: 'Sonnet', opus: 'Opus', haiku: 'Haiku' };
+export function prettyModel(model) {
+  const tail = String(model || '').split('/').pop().replace(/[-_]latest$/i, '').replace(/[-_]preview(?:[-_]\d+)?$/i, '');
+  // "claude-opus-5-5" → "Opus 5.5": the maker is already said, and two version digits are one version.
+  const t2 = tail.replace(/^claude[-_]/i, '').replace(/(\d)[-_](\d)(?![\d.])/g, '$1.$2');
+  return t2.split(/[-_ ]+/).filter(Boolean).map((w) => {
+    const lw = w.toLowerCase();
+    if (WORD_CASE[lw]) return WORD_CASE[lw];
+    if (/^\d+(?:\.\d+)?[bkm]$/i.test(w)) return w.toUpperCase();
+    return /^[a-z]/.test(w) ? w[0].toUpperCase() + w.slice(1) : w;
+  }).join(' ');
+}
 function laneName(providerId, model = null) {
   const base = { 'claude-side': 'your second Claude', 'claude-code': 'Claude', openai: 'GPT', opencode: 'the free lane', 'google-ai-studio': 'Gemini' }[providerId] || providerId;
-  const m = model && !/^opencode\//.test(model) ? ` (${model})` : '';
-  return `${base}${m}`;
+  if (!model || /^opencode\//.test(model)) return base;
+  const pretty = prettyModel(model);
+  if (!pretty) return base;
+  // "Gemini Flash Lite", not "Gemini (Gemini Flash Lite)".
+  const baseWord = base.replace(/^your second /, '');
+  if (pretty.toLowerCase().startsWith(baseWord.toLowerCase())) return base.startsWith('your') ? `your second ${pretty}` : pretty;
+  if (providerId === 'claude-code' || providerId === 'claude-side') return `${base} ${pretty}`;
+  return pretty;
 }
 
 function describeToolCall(name, input) {
