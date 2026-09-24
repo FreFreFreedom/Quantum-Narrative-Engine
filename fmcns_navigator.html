@@ -1017,6 +1017,13 @@ body::after {
 /* "No card" (Antoine's pick B, 2026-09-24, after trying C): an answer's words sit straight
    on the glow; only his own message keeps a faint bubble. */
 #roomConvo .se-turn.you .se-body { background:color-mix(in srgb, var(--c-ink) 6%, transparent); border:none; }
+/* The title floats over the conversation and the text melts away under it (his pick B,
+   2026-09-24), so a line is never sliced by a hard edge. */
+#wsRoom .room-main { position:relative; }
+#wsRoom .room-main > .room-toolbar { position:absolute; top:0; left:0; right:0; z-index:8; }
+#roomConvo .se-log { --log-top-inset:44px; padding-top:72px; scroll-padding-top:72px;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, transparent 24px, #000 88px);
+          mask-image:linear-gradient(to bottom, transparent 0, transparent 24px, #000 88px); }
 .room-convo .se-draftbox {
   background:var(--glass-2); border-color:color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:16px; }
 @media (min-width: 821px) {
@@ -28292,8 +28299,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // not part of what the rail points into. The gutter class goes on the wrap so
     // the transcript makes room for the closed rail instead of sitting under it.
     if(log && log.offsetParent){
-      rail.style.top = (log.offsetTop + 4) + 'px';
-      rail.style.maxHeight = Math.max(0, log.clientHeight - 8) + 'px';
+      var inset = parseFloat(getComputedStyle(log).getPropertyValue('--log-top-inset')) || 0;
+      rail.style.top = (log.offsetTop + 4 + inset) + 'px';
+      rail.style.maxHeight = Math.max(0, log.clientHeight - 8 - inset) + 'px';
     }
     var wrap = rail.closest('.se-wrap');
     if(wrap) wrap.classList.add('has-rail');
