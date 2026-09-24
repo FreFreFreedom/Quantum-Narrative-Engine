@@ -3195,7 +3195,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-rail.is-finding:hover .se-rail-list, .se-rail.is-finding:focus-within .se-rail-list { display:none; }
 .se-rail-hit { display:block; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--c-border); cursor:pointer;
   padding:9px 12px; font:13.5px/1.5 var(--font-read); color:var(--c-ink-3); border-radius:0; }
-.se-rail-hit:hover { background:var(--c-hover-wash); color:var(--c-ink); }
+.se-rail-hit:hover, .se-rail-hit.is-active { background:var(--c-hover-wash); color:var(--c-ink); }
 .se-rail-hit mark { background:rgba(233,185,73,.4); color:var(--c-ink); border-radius:2px; padding:0 1px; }
 .se-rail-none { padding:10px 12px; font:italic 13.5px var(--font-read); color:var(--c-ink-5); }
 .se-rail-sub { pointer-events:auto; align-items:center; width:100%; background:none; border:0; cursor:pointer; text-align:left;
@@ -29560,6 +29560,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var runFind = function(){
       e.railQuery = input.value;
       var found = railFind(log, input.value);
+      runFind.found = found;
       rail.classList.toggle('is-finding', !!input.value.trim());
       hits.innerHTML = !input.value.trim() ? '' : found.length ? found.map(function(h, hi){
           return '<button type="button" class="se-rail-hit" data-hit="' + hi + '">' + qEsc(h.before) + '<mark>' + qEsc(h.match) + '</mark>' + qEsc(h.after) + '</button>';
@@ -29568,9 +29569,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         b.onclick = function(ev){ ev.stopPropagation(); var h = found[+b.getAttribute('data-hit')]; if(h) jumpToPassage(log, h.messageId, h.match); b.blur(); };
       });
     };
-    input.oninput = runFind;
+    input.oninput = function(){ hitAt = -1; runFind(); };
+    // Up and down walk the results without leaving the box, and the thread follows
+    // along to each one, the way find does in a book reader.
+    var hitAt = -1;
     input.onkeydown = function(ev){
-      if(ev.key === 'Enter'){ var first = hits.querySelector('[data-hit]'); if(first) first.click(); }
+      var all = hits.querySelectorAll('[data-hit]');
+      if((ev.key === 'ArrowDown' || ev.key === 'ArrowUp') && all.length){
+        ev.preventDefault();
+        hitAt = ev.key === 'ArrowDown' ? (hitAt + 1) % all.length : (hitAt <= 0 ? all.length - 1 : hitAt - 1);
+        all.forEach(function(b, i){ b.classList.toggle('is-active', i === hitAt); });
+        var cur = all[hitAt];
+        var hr = hits.getBoundingClientRect(), br = cur.getBoundingClientRect();
+        if(br.top < hr.top) hits.scrollTop -= hr.top - br.top;
+        else if(br.bottom > hr.bottom) hits.scrollTop += br.bottom - hr.bottom;
+        var h = runFind.found && runFind.found[hitAt];
+        if(h) jumpToPassage(log, h.messageId, h.match);
+        return;
+      }
+      if(ev.key === 'Enter'){ var pick = all[hitAt] || all[0]; if(pick){ pick.click(); input.blur(); } }
       if(ev.key === 'Escape'){ input.value = ''; runFind(); input.blur(); }
     };
     if(q) runFind();
