@@ -2415,6 +2415,38 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-convo .se-lane-clear { font-size:var(--fs-2xs); color:var(--c-ink-5); }
 .room-convo .se-spend { margin:0 4px 8px; }
 .room-convo .se-compose.se-dictating .se-micwave { margin-bottom:4px; }
+/* No send button (his ask, 2026-09-24): Enter sends. The round button only appears
+   as the stop while an answer is being written. */
+.room-convo .se-send:not(.is-stop) { display:none; }
+/* The model, as one word in the Room's small gold capitals; the list (his pick A) opens
+   above it, grouped by who makes the model, with the thinking dial under the chosen one. */
+.room-convo .se-lanepick, .room-convo .se-lanemodel, .room-convo .se-laneeffort, .room-convo .se-lane-clear { display:none !important; }
+.room-convo .se-lanewrap { max-width:200px; overflow:visible; }
+.se-lanebtn { display:none; }
+.room-convo .se-lanebtn { display:inline-flex; align-items:center; gap:6px; max-width:200px; padding:4px 2px; border:0; background:none; cursor:pointer;
+  font-family:'Cinzel',var(--font-read); font-size:var(--fs-2xs); letter-spacing:.18em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 70%, var(--c-ink-5)); }
+.room-convo .se-lanebtn:hover, .room-convo .se-lanebtn[aria-expanded="true"], .room-convo .se-lanebtn.is-set { color:var(--c-kept-echo, var(--c-accent)); }
+.room-convo .se-lanebtn .dot { color:var(--c-ink-5); }
+.room-convo .se-lanebtn .chev { font-size:8px; opacity:.7; }
+.se-lanepop { position:fixed; z-index:var(--z-rail); width:280px; max-height:min(70vh, 560px); overflow-y:auto; padding:8px 0;
+  background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:12px; box-shadow:var(--sh-md); }
+.se-lanepop[hidden] { display:none; }
+.se-lanepop .h { font-family:'Cinzel',var(--font-read); font-size:9.5px; letter-spacing:.28em; text-transform:uppercase; color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 60%, var(--c-ink-5)); padding:10px 18px 4px; }
+.se-lanepop .h.off { opacity:.45; }
+.se-lanepop .it { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:7px 18px; border:0; background:none; text-align:left; cursor:pointer;
+  font-family:var(--font-read); font-size:17px; line-height:1.2; color:var(--c-ink-3); }
+.se-lanepop .it:hover { color:var(--c-ink); background:color-mix(in srgb, var(--c-ink) 5%, transparent); }
+.se-lanepop .it.on { color:var(--c-kept-echo, var(--c-accent)); }
+.se-lanepop .it.on::after { content:'✓'; font-size:12px; }
+.se-lanepop .it:disabled { opacity:.4; cursor:default; }
+.se-lanepop .it small { font-family:'Cinzel',var(--font-read); font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); }
+.se-lanepop hr { border:0; height:1px; margin:6px 0; background:linear-gradient(90deg, transparent, var(--c-border-2), transparent); }
+.se-lanepop .eff { display:flex; flex-wrap:wrap; gap:4px 12px; padding:6px 18px 8px; }
+.se-lanepop .eff button { border:0; background:none; padding:2px 0; cursor:pointer; font-family:'Cinzel',var(--font-read); font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--c-ink-5); position:relative; }
+.se-lanepop .eff button:hover { color:var(--c-ink-2); }
+.se-lanepop .eff button.on { color:var(--c-kept-echo, var(--c-accent)); }
+.se-lanepop .eff button.on::after { content:''; position:absolute; left:50%; bottom:-3px; width:14px; height:1px; transform:translateX(-50%); background:var(--c-kept-echo, var(--c-accent)); }
 .room-convo .se-cmds { max-width:var(--room-reading-width); margin:6px auto 0; padding:0 6px; }
 /* One Room, three automatic states. The same panel and tab strip are reused. */
 .ws-room { container-type:inline-size; }
@@ -27045,6 +27077,65 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var label = LANE_LABELS[providerKey] || providerKey;
     return model ? label + ' · ' + model : label;
   }
+  // The Room's model list (his pick A, 2026-09-24): one word on the line, and a list
+  // above it grouped by maker, with the thinking dial under the model in use.
+  var LANE_POP_GROUPS = [
+    ['Anthropic', ['claude-code', 'claude-side']],
+    ['Google', ['google-ai-studio']],
+    ['OpenAI', ['codex-pro', 'codex', 'openai']],
+    ['OpenCode', ['opencode']]
+  ];
+  var LANE_SHORT = { 'claude-code': 'Claude', 'claude-side': 'Claude · 2nd', 'google-ai-studio': 'Gemini', 'codex-pro': 'Pro account', codex: 'Plus account', openai: 'Billed per use', opencode: 'OpenCode' };
+  function laneModelShort(m){
+    return String(m || '').replace(/^gemini-/, '').replace(/-latest$/, '').replace(/^gpt-/, 'GPT ').replace(/^claude-/, '').replace(/-/g, ' ');
+  }
+  function laneBtnHtml(e){
+    if(!e.lane) return '<span>Auto</span><span class="chev">▾</span>';
+    var key = laneKeyOf(e.lane);
+    var name = seLaneName(e.lane.tag || LANE_LABELS[key] || key);
+    var m = e.lane.model ? laneModelShort(e.lane.model) : '';
+    var eff = e.lane.effort ? String(LANE_EFFORT_LABELS[e.lane.effort] || e.lane.effort).split(' ')[0] : '';
+    return '<span>' + qEsc(name) + '</span>' + (m ? '<span class="dot">·</span><span>' + qEsc(m) + '</span>' : '')
+      + (eff ? '<span class="dot">·</span><span>' + qEsc(eff) + '</span>' : '') + '<span class="chev">▾</span>';
+  }
+  function lanePopHtml(e){
+    var cur = laneKeyOf(e.lane);
+    var html = '<button type="button" class="it' + (e.lane ? '' : ' on') + '" data-lane="">Auto <small>the app chooses</small></button><hr>';
+    var groups = LANE_POP_GROUPS.slice();
+    freeApiLanes(laneCatalog).forEach(function(p){ groups.push([p.label || p.id, [p.id]]); });
+    groups.forEach(function(g, gi){
+      var rows = '';
+      g[1].forEach(function(key){
+        var off = laneCatalog ? !laneAvailable(key, laneCatalog) : false;
+        var models = laneModelsFor(key, laneCatalog);
+        var sub = g[1].length > 1 || !models.length ? (LANE_SHORT[key] || LANE_LABELS[key] || key) : '';
+        if(!models.length){
+          rows += '<button type="button" class="it' + (cur === key ? ' on' : '') + '" data-lane="' + qEscAttr(key) + '"' + (off ? ' disabled title="' + qEscAttr(laneOffReason(key) || '') + '"' : '') + '>' + qEsc(sub) + '</button>';
+          return;
+        }
+        models.forEach(function(m){
+          var on = cur === key && (e.lane.model || models[0]) === m;
+          rows += '<button type="button" class="it' + (on ? ' on' : '') + '" data-lane="' + qEscAttr(key) + '" data-model="' + qEscAttr(m) + '"' + (off ? ' disabled title="' + qEscAttr(laneOffReason(key) || '') + '"' : '') + '>'
+            + qEsc(laneModelShort(m)) + (sub ? '<small>' + qEsc(sub) + '</small>' : '') + '</button>';
+        });
+        if(cur === key && laneHasEffort(key)){
+          var levels = laneEffortLevels(key, e.lane.model);
+          rows += '<div class="eff"><button type="button" data-effort="" class="' + (e.lane.effort ? '' : 'on') + '">Auto</button>'
+            + levels.map(function(v){ return '<button type="button" data-effort="' + qEscAttr(v) + '" class="' + (e.lane.effort === v ? 'on' : '') + '" title="' + qEscAttr(LANE_EFFORT_LABELS[v] || v) + '">' + qEsc(String(LANE_EFFORT_LABELS[v] || v).split(' ')[0]) + '</button>'; }).join('')
+            + '</div>';
+        }
+      });
+      if(!rows) return;
+      html += (gi ? '<hr>' : '') + '<div class="h">' + qEsc(g[0]) + '</div>' + rows;
+    });
+    return html;
+  }
+  function lanePopPlace(btn, pop){
+    var r = btn.getBoundingClientRect();
+    pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 292)) + 'px';
+    pop.style.bottom = Math.max(8, window.innerHeight - r.top + 8) + 'px';
+    pop.style.top = 'auto';
+  }
   // What you had in hand when you walked away: the half-written question, and the
   // passages you had lined up to ask about (his ask, 2026-09-09 — "the prompt i
   // started to write stays there so when i come back its all still there").
@@ -27955,6 +28046,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +       '<select class="se-lanemodel" style="display:none"></select>'
         +       '<select class="se-laneeffort" style="display:none" title="How hard it may think"></select>'
         +       '<button type="button" class="se-lane-clear" style="display:none" title="Back to Auto">✕</button>'
+        +       '<button type="button" class="se-lanebtn" aria-haspopup="listbox" aria-expanded="false" title="Which model answers"></button>'
+        +       '<div class="se-lanepop" hidden role="listbox"></div>'
         +     '</span>'
         +     '<button type="button" class="se-interview" title="Ask me questions before you answer">Interview</button>'
         +     '<button type="button" class="se-answer-now" style="display:none">Answer now</button>'
@@ -27963,7 +28056,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
               : '')
         +     '<textarea class="se-input" rows="1" placeholder="…"></textarea><span class="se-quill" aria-hidden="true"></span>'
         +     '<span class="se-spend" hidden></span>'
-        +     '<canvas class="se-micwave" aria-hidden="true"></canvas><button type="button" class="se-mic" hidden title="Dictate" aria-label="Dictate"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"/><path d="M3.4 7.6a4.6 4.6 0 0 0 9.2 0M8 12.2v2"/></svg></button><button type="button" class="se-talk" hidden title="Talk" aria-label="Talk"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M3.2 4.6a6 6 0 0 0 0 6.8M12.8 4.6a6 6 0 0 1 0 6.8"/></svg></button>'
+        +     '<canvas class="se-micwave" aria-hidden="true"></canvas><button type="button" class="se-mic" hidden title="Dictate" aria-label="Dictate"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"/><path d="M3.4 7.6a4.6 4.6 0 0 0 9.2 0M8 12.2v2"/></svg></button><button type="button" class="se-talk" hidden title="Talk" aria-label="Talk"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.8v2.4M5.25 4.8v6.4M8 2.5v11M10.75 4.8v6.4M13.5 6.8v2.4"/></svg></button>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
         +   '</div>'
         +   '</div>'
@@ -28257,6 +28350,42 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         persistLane(e, null);
         fillEmbed(host, e, opts);
       };
+      var laneBtn = host.querySelector('.se-lanebtn'), lanePop = host.querySelector('.se-lanepop');
+      if(laneBtn && lanePop){
+        var closePop = function(){ lanePop.hidden = true; laneBtn.setAttribute('aria-expanded', 'false'); document.removeEventListener('mousedown', outside, true); document.removeEventListener('keydown', esc, true); };
+        var outside = function(ev){ if(!lanePop.contains(ev.target) && ev.target !== laneBtn) closePop(); };
+        var esc = function(ev){ if(ev.key === 'Escape') closePop(); };
+        laneBtn.onclick = function(ev){
+          ev.stopPropagation();
+          if(!lanePop.hidden){ closePop(); return; }
+          ensureLaneCatalog().then(function(){ lanePop.innerHTML = lanePopHtml(e); });
+          lanePop.innerHTML = lanePopHtml(e);
+          lanePop.hidden = false; laneBtn.setAttribute('aria-expanded', 'true');
+          lanePopPlace(laneBtn, lanePop);
+          document.addEventListener('mousedown', outside, true); document.addEventListener('keydown', esc, true);
+        };
+        lanePop.onclick = function(ev){
+          var b = ev.target.closest('button'); if(!b || b.disabled) return;
+          ev.stopPropagation();
+          if(b.hasAttribute('data-effort')){
+            if(e.lane) e.lane = { provider: e.lane.provider, account: e.lane.account || null, model: e.lane.model || null, effort: b.getAttribute('data-effort') || null, tag: e.lane.tag };
+          } else {
+            var key = b.getAttribute('data-lane');
+            if(!key) e.lane = null;
+            else {
+              var picked = laneFromKey(key), model = b.getAttribute('data-model') || null;
+              var keep = e.lane && laneKeyOf(e.lane) === key && e.lane.effort && laneEffortLevels(key, model).indexOf(e.lane.effort) >= 0 ? e.lane.effort : null;
+              e.lane = { provider: picked.provider, account: picked.account, model: model, effort: keep, tag: laneTagFor(key, model) };
+            }
+          }
+          persistLane(e, e.lane);
+          // The list stays open after a pick so the dial can be set; the effort pick
+          // and Auto close it.
+          if(b.hasAttribute('data-effort') || !e.lane) closePop();
+          else { lanePop.innerHTML = lanePopHtml(e); lanePopPlace(laneBtn, lanePop); }
+          fillEmbed(host, e, opts);
+        };
+      }
     }
     // Interview mode toggle + its Answer now sibling. Independently reachable
     // from the lane picker beside it — switching lane mid-interview must not
@@ -29665,6 +29794,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
       }
       laneClear.style.display = e.lane ? '' : 'none';
+      var laneBtnEl = host.querySelector('.se-lanebtn');
+      if(laneBtnEl){ laneBtnEl.innerHTML = laneBtnHtml(e); laneBtnEl.classList.toggle('is-set', !!e.lane); }
     }
 
     // Interview mode's own reflection — independent of the lane picker above it.
