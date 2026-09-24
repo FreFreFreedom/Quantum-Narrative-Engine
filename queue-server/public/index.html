@@ -29143,11 +29143,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!log || !chapters.length) return;
     var mid = log.scrollTop + (log.clientHeight * 0.35);
     var at = 0;
+    // At the very end of the log a late chapter can never reach the reading line
+    // (the log cannot scroll that far), so there the line belongs to the last
+    // chapter that is on screen at all. And for a moment after a click the line
+    // sits on the chapter clicked, whatever the scroll says — he clicked 5 and saw
+    // the line on 4 (2026-09-24).
+    var atEnd = log.scrollTop + log.clientHeight >= log.scrollHeight - 4;
+    var pinned = rail.dataset.pinHere !== undefined && rail.dataset.pinHere !== '' ? +rail.dataset.pinHere : -1;
     for(var i = 0; i < chapters.length; i++){
       var el = log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(chapters[i].messageId) : chapters[i].messageId) + '"]');
       if(!el) continue;
-      if(el.offsetTop <= mid) at = i;
+      if(el.offsetTop <= mid || (atEnd && el.offsetTop < log.scrollTop + log.clientHeight)) at = i;
     }
+    if(pinned >= 0 && pinned < chapters.length) at = pinned;
     rail.querySelectorAll('.se-rail-item').forEach(function(b, i){
       b.classList.toggle('is-here', i === at);
     });
@@ -29285,6 +29293,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(ev.target && ev.target.closest && ev.target.closest('[data-rail-drop]')){ dropMark(e, c.markId, repaint); return; }
         // A hand-saved chapter knows the exact passage; a found one only knows the
         // message it starts on, and landing on the message is the right answer there.
+        rail.dataset.pinHere = String(i);
+        clearTimeout(rail._pinTimer);
+        rail._pinTimer = setTimeout(function(){ rail.dataset.pinHere = ''; railHere(rail, log, chapters); }, 900);
+        railHere(rail, log, chapters);
         jumpToPassage(log, c.messageId, c.kind === 'saved' ? c.snippet : '');
       };
     });
