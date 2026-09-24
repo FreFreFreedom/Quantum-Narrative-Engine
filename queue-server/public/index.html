@@ -1594,6 +1594,22 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
   flex:0 0 auto; width:100%; justify-content:flex-start; padding:0 7px; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow .rail-label { display:none; }
 
+/* The rail in the Room's grammar (his pick A, 2026-09-24): engraved capitals, no filled
+   pills, and the place you are in marked the way the Room marks things — gold ink and
+   a short gold hairline. Settings and Look are symbols only. */
+.rail-item, .rail-brand { border-radius:0; }
+.rail-item:hover, .rail-brand:hover { background:none; color:var(--c-ink); }
+.rail-nav .rail-item .rail-label { font-family:'Cinzel',var(--font-read); font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; }
+.rail-item.active { background:none; color:var(--c-kept-echo, var(--c-accent)); font-weight:400; }
+.rail-item.active::before { left:-6px; top:50%; bottom:auto; width:5px; height:1px; border-radius:0; background:var(--c-kept-echo, var(--c-accent)); }
+.railbar:hover .rail-item.active::before, .railbar:focus-within .rail-item.active::before, .railbar.pinned .rail-item.active::before { width:12px; }
+.rail-item.active::before { transition:width var(--t-med) var(--ease); }
+.rail-brand { color:var(--c-kept-echo, var(--c-accent)); }
+.rail-wordmark { font-family:'Cinzel',var(--font-read); font-size:14px; font-weight:500; letter-spacing:.32em; color:var(--c-kept-echo, var(--c-accent)); }
+.rail-sep { margin:10px 14px; background:linear-gradient(90deg, transparent, var(--c-border), transparent); }
+.rail-btnrow .rail-label { display:none; }
+.rail-btnrow .rail-item { color:var(--c-ink-4); }
+.rail-btnrow .rail-item:hover { color:var(--c-kept-echo, var(--c-accent)); }
 /* ---------- The quota read-out in the rail ---------- */
 /* Two accounts down, two windows across, the money on a last line. The figure is what
    is LEFT of that window; the hairline under it fills with what has been USED, so the
