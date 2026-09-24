@@ -2138,6 +2138,25 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-row:hover .room-rowmore, .room-row.is-sel .room-rowmore { opacity:1; }
 .room-rowmore:focus-visible, .room-rowmore[aria-expanded="true"] { opacity:1; }
 .room-rowmore:hover { background:var(--c-surface-3); color:var(--c-ink); }
+/* The thread list in the brand's own letters (his pick 3, 2026-09-24): everything
+   in Genos capitals — the group words a size smaller and dimmer, no hairline under
+   them, the open thread in the look's gold and nothing behind it. The New button
+   stops being a pill: a gold plus and the word, in the same letters. */
+#wsRoom .room-grp { font:300 9px/1.4 'Genos', var(--font-read); letter-spacing:.3em; text-transform:uppercase;
+  color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, var(--c-ink-5)); padding:16px 6px 5px; }
+#wsRoom .room-grp:first-child { padding-top:6px; }
+#wsRoom .room-row { height:28px; gap:6px; font:300 12.5px/1 'Genos', var(--font-read); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--c-ink-2); border-radius:0; }
+#wsRoom .room-row:hover { background:none; color:var(--c-kept-echo, var(--c-accent)); }
+#wsRoom .room-row.is-sel { background:none; font-weight:400; color:var(--c-kept-echo, var(--c-accent)); }
+#wsRoom .room-row .rstar { color:var(--c-kept-echo, var(--c-accent)); font-size:7px; }
+#wsRoom .room-newrow { margin-bottom:6px; }
+#wsRoom .room-newbtn { flex:none; background:none; border:none; box-shadow:none; padding:4px 6px; border-radius:0;
+  font:300 11px/1 'Genos', var(--font-read); letter-spacing:.3em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+#wsRoom .room-newbtn:hover { background:none; color:var(--c-ink); }
+#wsRoom .room-search { margin:0 0 2px; padding:2px 6px 8px; border-bottom-color:transparent; }
+#wsRoom .room-search input { font:300 12px/1.2 'Genos', var(--font-read); letter-spacing:.14em; text-transform:uppercase; }
+#wsRoom .room-search input::placeholder { color:color-mix(in srgb, var(--c-ink-5) 55%, transparent); }
 /* .room-row-acts went with the hover-delete it revealed: the ⋯ menu on the open
    thread holds that action now, behind a rule. */
 .room-main { flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; }
