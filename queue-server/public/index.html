@@ -2671,6 +2671,9 @@ span.lib-kind { position:absolute; bottom:5px; left:6px; font-size:var(--fs-2xs)
   border:1px solid var(--c-border-2); border-radius:10px; }
 .lib-based small { display:block; font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
 .lib-based b { font-size:15px; font-weight:600; }
+.lib-based { text-decoration:none; color:inherit; transition:border-color .2s ease, background .2s ease; }
+a.lib-based:hover { border-color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 50%, transparent); }
+a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .lib-based-by { display:block; font-size:var(--fs-base); color:var(--c-ink-4); margin-top:1px; }
 .lib-bchip { width:22px; height:32px; border-radius:2px; background:var(--c-surface-3,var(--c-surface-2)); border:1px solid var(--c-border-2); flex:none; }
 /* An opened item reads like a page about that book, not like a row that grew:
@@ -17238,9 +17241,11 @@ function libScreenPanel(w) {
   // The book it was made from, named, whether or not it is on the shelf; nothing
   // at all when it was not made from one (his rule, 2026-09-24).
   const book = f.book && f.book.title
-    ? '<div class="lib-based"><span class="lib-bchip"></span><div><small>From a book' + (f.book.where === 'shelf' ? ' · on your shelf' : f.book.where === 'library' ? ' · in your library' : '') + '</small><b>'
-      + qEsc(f.book.title) + '</b>' + (f.book.author ? '<span class="lib-based-by">' + qEsc(f.book.author) + '</span>' : '')
-      + '</div></div>' : '';
+    // The whole box is the book's Amazon page (his ask, 2026-09-24).
+    ? '<a class="lib-based" href="' + qEscAttr(libOutLink({ kind: 'book', title: f.book.title, creator: f.book.author || '' }, null).url) + '" target="_blank" rel="noopener noreferrer" title="Open on Amazon">'
+      + '<span class="lib-bchip"></span><div><small>From a book' + (f.book.where === 'shelf' ? ' · on your shelf' : f.book.where === 'library' ? ' · in your library' : '') + '</small><b>'
+      + qEsc(f.book.title) + ' <span aria-hidden="true">↗</span></b>' + (f.book.author ? '<span class="lib-based-by">' + qEsc(f.book.author) + '</span>' : '')
+      + '</div></a>' : '';
   return '<div class="shelf-panel">'
     + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
     + '<div><b title="' + qEscAttr(w.title) + '">' + (w.url && /^https:\/\//.test(w.url)
@@ -17262,7 +17267,7 @@ function libScreenPanel(w) {
     + [libOutLink(w, f), libGoogleLink(w, f)].filter(Boolean).map(out =>
         '<a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
           + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>').join('')
-    + libBtn('attach', 'Attach to the conversation') + libBtn('edit', 'Edit') + libBtn('remove', 'Remove') + '</div></div>';
+    + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</div></div>';
 }
 
 async function libLoadScreenNotes(id, refresh) {
@@ -17287,7 +17292,6 @@ function libMediaPanel(w) {
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
     + (w.excerpt ? '<p class="shelf-opening">' + qEsc(w.excerpt) + '</p>' : '')
     + '<div class="shelf-acts">' + libBtn('attach', 'Attach to the conversation')
-    + (w.type === 'media' ? libBtn('edit', 'Edit') : '')
     + libBtn('remove', 'Remove') + '</div></div>';
 }
 
