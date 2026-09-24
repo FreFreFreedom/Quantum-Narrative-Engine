@@ -2961,6 +2961,17 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .se-quote-pop button:hover { background:var(--c-border); color:var(--c-ink); }
 .se-quote-pop .ic { width:11px; height:11px; flex:none; }
+/* The dictionary, Kindle-style: select one word and its meaning opens under the bar on
+   its own, no click. English only for now (the free dictionary at dictionaryapi.dev). */
+.se-quote-pop { flex-wrap:wrap; max-width:min(440px, calc(100vw - 12px)); }
+.se-quote-pop .se-define { flex:1 1 100%; margin:2px 0 0; padding:8px 10px 7px; border-top:1px solid var(--c-border);
+  font-family:var(--font-read); font-size:var(--fs-sm); line-height:1.45; color:var(--c-ink-2); white-space:normal; }
+.se-define .w { font-family:'Cinzel', var(--font-read); font-size:var(--fs-xs); letter-spacing:.14em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+.se-define .ph { margin-left:8px; font-size:var(--fs-xs); color:var(--c-ink-5); }
+.se-define .pos { font-style:italic; color:var(--c-ink-4); margin-right:5px; }
+.se-define p { margin:4px 0 0; }
+.se-define p + p { margin-top:2px; }
+.se-define .more { font-size:var(--fs-xs); color:var(--c-ink-5); }
 /* "Remember this" (plan "side talks in the Room, and remember this"): the
    proposal card — what the model understood a selected passage as, and the
    shelf it wants. Fixed near the bottom so it never depends on a selection
@@ -28798,6 +28809,45 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   // Reading a long answer means scrolling, so scrolling must not throw the offer
   // away — it follows the passage instead, and only leaves when the selection does.
+  // The dictionary (his ask, 2026-09-24): a free English dictionary, read straight from
+  // the browser, one word at a time, answers cached for the session. Nothing is shown
+  // when the word is not in it — a bar that says "no entry" is noise.
+  var defineCache = {};
+  function defineWord(word, pop){
+    var key = word.toLowerCase().replace(/[’']s$/, '');
+    var paint = function(entry){
+      if(!entry || !pop || !pop.isConnected) return;
+      var box = document.createElement('div');
+      box.className = 'se-define';
+      var head = '<span class="w">' + qEsc(entry.word) + '</span>' + (entry.phonetic ? '<span class="ph">' + qEsc(entry.phonetic) + '</span>' : '');
+      var lines = entry.meanings.slice(0, 3).map(function(m){
+        return '<p><span class="pos">' + qEsc(m.pos) + '</span>' + qEsc(m.def) + '</p>';
+      }).join('');
+      box.innerHTML = head + lines;
+      pop.appendChild(box);
+      placeQuotePop();
+    };
+    if(key in defineCache){ paint(defineCache[key]); return; }
+    var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = setTimeout(function(){ if(ctl) ctl.abort(); }, 4000);
+    fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(key), ctl ? { signal: ctl.signal } : undefined)
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(data){
+        clearTimeout(timer);
+        var first = Array.isArray(data) && data[0];
+        if(!first){ defineCache[key] = null; return; }
+        var phon = first.phonetic || ((first.phonetics || []).map(function(x){ return x.text; }).filter(Boolean)[0]) || '';
+        var meanings = [];
+        (first.meanings || []).forEach(function(m){
+          var d = (m.definitions || [])[0];
+          if(d && d.definition) meanings.push({ pos: m.partOfSpeech || '', def: d.definition });
+        });
+        var entry = meanings.length ? { word: first.word || key, phonetic: phon, meanings: meanings } : null;
+        defineCache[key] = entry;
+        paint(entry);
+      })
+      .catch(function(){ clearTimeout(timer); });
+  }
   function placeQuotePop(){
     if(!quotePop) return;
     var sel = window.getSelection && window.getSelection();
@@ -28805,7 +28855,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var r = sel.getRangeAt(0).getBoundingClientRect();
     if(!r || (!r.width && !r.height)) return killQuotePop();
     quotePop.style.left = Math.max(6, Math.min(window.innerWidth - quotePop.offsetWidth - 6, r.left)) + 'px';
-    quotePop.style.top = (r.top > 44 ? r.top - 34 : r.bottom + 8) + 'px';
+    var h = quotePop.offsetHeight || 30;
+    quotePop.style.top = (r.top > h + 12 ? r.top - h - 6 : r.bottom + 8) + 'px';
   }
   function wireQuotePick(log, e, repaint){
     if(log.dataset.quoteWired) return;
@@ -28914,6 +28965,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
         document.body.appendChild(quotePop);
         placeQuotePop();
+        // One word selected: its meaning opens under the bar by itself.
+        if(/^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage)) defineWord(passage, quotePop);
       }, settleMs);
     };
     log.quoteOffer=offer;
