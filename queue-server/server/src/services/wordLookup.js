@@ -26,8 +26,8 @@ export function bindWordLookup(database) {
 // sentence (a "e.g." or "U.S." does not), and stripped of numbering and quotes.
 export function firstSentence(raw) {
   const t = String(raw || '').trim().replace(/^["“]|["”]$/g, '').replace(/^\s*(?:\d+[.:)]|[-*•])\s*/, '').replace(/\s+/g, ' ');
-  const m = t.match(/^.*?[.!?](?=\s+[A-Z“"]|$)/);
-  return (m ? m[0] : t).trim();
+  const m = t.match(/^.*?[.!?]["”]?(?=\s+[A-Z“"]|$)/);
+  return (m ? m[0] : t).replace(/["”]$/, '').trim();
 }
 const MAX_ANSWER = 7000;
 function messageText(convoId, messageId) {
