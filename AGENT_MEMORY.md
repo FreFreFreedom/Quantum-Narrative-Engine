@@ -28,6 +28,8 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-09-24 — The Room is the dusk-glow design, in every look.** Floating rounded panels on a darker frame, a warm radial glow over the conversation, glass cards for messages and the composer, a small Q beside each answer, paper grain over the whole app. A new look must give `--glow-1`/`--glow-2` (and `--glass`/`--q-av` if it is a day look), or its Room falls back to a flat page. Looks now: atlas, darkroom, bean, navy, plum, ember. The 59 palette mockups behind it were a local throwaway page.
+
 **2026-09-24 — Waiting is drawn with orbs; never add dots or a spinner.** Every place the app works on something uses `orbHtml(state, size)` (Thinking Orbs, nine named motions) or `waitHtml(state, text)` for an orb plus a shimmering line; the Queue's moving stage uses `matrixHtml()`. One rAF loop draws them all in the look's accent, so plain markup is enough. The Room composer has Dictate (browser speech, free) and a Talk overlay (ElevenLabs orb + `speechSynthesis`, free). See `plans/living-orbs-dictate-talk.md`.
 
 **2026-09-19 — Amazon book tabs mean book-title YouTube searches.** When Antoine
