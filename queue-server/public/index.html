@@ -1095,8 +1095,9 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .se-mic:hover, .se-talk:hover { color:var(--c-ink); border-color:var(--c-ink-4); }
 .se-mic .ic, .se-talk .ic, .qne-talk-bar .ic { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; }
 .se-mic.is-rec { background:var(--c-danger); border-color:var(--c-danger); color:var(--c-on-danger); }
-.se-micwave { display:none; }
-.se-compose.se-dictating .se-talk { display:none; }
+.se-micwave { display:none; flex:1 1 60px; min-width:40px; height:26px; color:var(--c-accent); }
+.se-compose.se-dictating .se-micwave { display:block; }
+.se-compose.se-dictating .se-lanewrap, .se-compose.se-dictating .se-talk { display:none; }
 /* The voice glow and the stop button's beam sit over their host, never taking a click. */
 .qne-fx { position:absolute; inset:0; pointer-events:none; border-radius:inherit; z-index:1; }
 .qne-fx > div, .qne-fx-fill { width:100%; height:100%; border-radius:inherit; }
@@ -6925,18 +6926,19 @@ window.qneVoice = (function () {
       close: function () { h.update({ active: false }); setTimeout(function () { h.unmount(); el.remove(); }, 900); },
     };
   }
+  // Dictate keeps the live waveform in the composer (Antoine, 2026-09-24: the rising glow
+  // was tried here and he chose the waveform back; the glow stays on Talk).
   function wireDictate(host, e, input) {
-    var mic = host.querySelector('.se-mic'), compose = host.querySelector('.se-compose');
+    var mic = host.querySelector('.se-mic'), compose = host.querySelector('.se-compose'), wave = host.querySelector('.se-micwave');
     if (!mic || !SR) return;
     mic.hidden = false;
-    var rec = null, meter = null, glow = null, level = 0, sampler = 0;
+    var rec = null, meter = null, stopWave = null;
     function setBox(v) { input.value = v; input.dispatchEvent(new Event('input')); }
     function cleanup() {
       rec = null;
       mic.classList.remove('is-rec'); mic.title = 'Dictate';
       compose.classList.remove('se-dictating');
-      clearInterval(sampler); level = 0;
-      if (glow) glow.close(); glow = null;
+      if (stopWave) stopWave(); stopWave = null;
       if (meter) meter.close(); meter = null;
     }
     function start() {
@@ -6954,10 +6956,7 @@ window.qneVoice = (function () {
       mic.classList.add('is-rec'); mic.title = 'Stop dictating';
       compose.classList.add('se-dictating');
       openLevel().then(function (m) { if (!rec) { if (m) m.close(); return; } meter = m; });
-      sampler = setInterval(function () { level = meter ? meter.level() : 0; }, 40);
-      // The Room's composer is its own card; a studio's is not, so the glow sits on the row.
-      var box = host.querySelector('.room-convo .se-draftbox') || compose;
-      glow = voiceGlow(box, { level: function () { return level; } });
+      stopWave = waveLoop(wave, function () { return meter ? meter.level() : 0.05; });
     }
     mic.onclick = function (ev) { ev.stopPropagation(); if (rec) rec.stop(); else start(); input.focus(); };
     // Enter sends what was heard; the late final result must not land in the emptied box.
