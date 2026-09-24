@@ -2943,8 +2943,12 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    is removed the moment the selection is dropped. */
 /* A kept line: underlined in the look's own colour, and echoed in the margin beside
    it when there is room (Antoine's pick "G1", 2026-09-23). */
-.se-kept { background:none; color:var(--c-ink); border-bottom:1px solid var(--c-kept-line, rgba(47,125,99,.45));
-  border-radius:0; cursor:default; }
+/* A kept line is washed in parchment (his pick D3, 2026-09-24): no underline, no echo in
+   the margin, nothing that moves the text. Darker looks get the same wash in their own gold. */
+.se-kept { background:rgba(214,190,140,.45); color:inherit; border-bottom:0; border-radius:2px; cursor:default;
+  -webkit-box-decoration-break:clone; box-decoration-break:clone; }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"],[data-look="darkroom"]) .se-kept { background:color-mix(in srgb, var(--c-kept-rule, #cfa966) 22%, transparent); }
+.dark .se-kept { background:color-mix(in srgb, var(--c-kept-rule, #cfa966) 22%, transparent); }
 /* The echo lives in the free margin OUTSIDE the reading column, never inside it: a kept
    line used to take a 232px strip off its answer, and the whole thread shifted left the
    moment he pressed Keep (2026-09-24). No margin wide enough: the underline alone. */
@@ -2952,7 +2956,6 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-kept-echo { position:absolute; top:0; left:calc(100% + 18px); width:196px; padding-left:13px; border-left:1.5px solid var(--c-kept-rule, #2f7d63);
   font-family:var(--font-read); font-style:italic; font-size:14px; line-height:1.5; color:var(--c-kept-echo, #2f7d63);
   pointer-events:none; }
-.dark .se-kept, :root[data-look="darkroom"] .se-kept { border-bottom-color:var(--c-kept-line, rgba(111,207,160,.45)); }
 :root[data-look="darkroom"] .se-kept-echo { border-left-color:#6fcfa0; color:#6fcfa0; }
 :root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
 .se-quote-pop { position:fixed; z-index:var(--z-popover); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
@@ -29546,7 +29549,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(!body) return;
       var el = highlightIn(body, text, 'se-kept');
       if(el) el.title = 'Kept — it is in Passages';
-      if(el && turn) keptEcho(log, turn, el, text);
+      // No margin echo any more (his pick D3): the wash alone marks it.
     });
   }
   // The kept line again, in the margin beside where it starts — only where the
