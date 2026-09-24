@@ -1132,9 +1132,9 @@ body::after {
 #wsRoom .room-toolbar .room-titlebtn { position:relative; margin:0 auto; padding:6px 14px 11px; background:none; border-color:transparent; }
 #wsRoom .room-toolbar .room-titlebtn:hover:not(:disabled), #wsRoom .room-toolbar .room-titlebtn[aria-expanded="true"] {
   background:color-mix(in srgb, var(--c-ink) 6%, transparent); border-color:transparent; }
-#wsRoom .room-toolbar .room-titlebtn::after { content:''; position:absolute; left:50%; bottom:3px; width:56px; height:1px; transform:translateX(-50%);
+#wsRoom .room-toolbar .room-titlebtn::after { content:''; position:absolute; left:50%; bottom:3px; width:52px; height:1px; transform:translateX(-50%);
   background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, transparent); }
-#wsRoom .room-toolbar .arch-title { font:500 12px/1.3 'Cinzel', var(--font-read); letter-spacing:.22em; text-transform:uppercase;
+#wsRoom .room-toolbar .arch-title { font:400 16px/1.3 'Cinzel', var(--font-read); letter-spacing:.2em; text-transform:uppercase;
   color:var(--c-kept-echo, var(--c-accent)); }
 #wsRoom .room-toolbar .room-turns { display:none; }
 #wsRoom.is-arriving .room-toolbar .arch-title { animation:roomTitleSettle .9s cubic-bezier(.22,.61,.36,1) both; }
@@ -1621,7 +1621,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rail-brand { height:64px; gap:12px; align-items:center; }
 .rail-brand-bar { width:1px; height:44px; flex:none; background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 60%, transparent); opacity:0; transition:opacity var(--t-fast) var(--ease); }
 .railbar:hover .rail-brand-bar, .railbar:focus-within .rail-brand-bar, .railbar.pinned .rail-brand-bar { opacity:1; }
-.rail-wordmark { display:flex; flex-direction:column; gap:1px; font-family:'Genos',var(--font-read); font-size:12.5px; font-weight:300; letter-spacing:.3em; line-height:1.35; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); white-space:nowrap; }
+.rail-wordmark { display:flex; flex-direction:column; gap:1px; font-family:'Genos',var(--font-read); font-size:13px; font-weight:300; letter-spacing:.3em; line-height:1.35; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); white-space:nowrap; }
 .rail-sep { margin:10px 14px; background:linear-gradient(90deg, transparent, var(--c-border), transparent); }
 .rail-btnrow .rail-label { display:none; }
 .rail-btnrow .rail-item { color:var(--c-ink-4); }
@@ -1638,7 +1638,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 :root[data-look="creamnavy"] .rail-item, :root[data-look="creamnavy"] .rail-btnrow .rail-item { color:color-mix(in srgb, var(--c-kept-echo) 75%, var(--c-ink-5)); }
 .rail-item:hover, .rail-btnrow .rail-item:hover { color:var(--c-kept-echo, var(--c-accent)); }
 .rail-btnrow .rail-item { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
-.rail-nav .rail-item .rail-label { font-weight:500; font-size:var(--fs-2xs); letter-spacing:.2em; }
+.rail-nav .rail-item .rail-label { font-weight:400; font-size:12px; letter-spacing:.2em; }
 .rail-item.active::before { left:7px; top:auto; bottom:3px; width:18px; height:1px;
   transition:left .3s cubic-bezier(.22,.61,.36,1), width .3s cubic-bezier(.22,.61,.36,1); }
 .railbar:hover .rail-item.active::before, .railbar:focus-within .rail-item.active::before, .railbar.pinned .rail-item.active::before { left:35px; width:28px; }
@@ -1702,8 +1702,8 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rail-foot .uq-head, .rail-foot .uq-who, .rail-foot .uq-money, .rail-foot .uq-shut .uq-b span, .rail-foot .uq-shut .uq-spend, .rail-foot .uq-none {
   font-family:'Genos', var(--font-read); font-weight:300; text-transform:uppercase; letter-spacing:.18em; }
 .rail-foot .uq-head { font-size:9px; letter-spacing:.3em; color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, var(--c-ink-5)); }
-.rail-foot .uq-who { font-size:12.5px; letter-spacing:.14em; color:var(--c-ink-2); }
-.rail-foot .uq-cell .uq-pct { font-family:'Genos', var(--font-read); font-weight:400; font-size:13px; letter-spacing:.06em; }
+.rail-foot .uq-who { font-size:11.5px; letter-spacing:.14em; color:var(--c-ink-2); }
+.rail-foot .uq-cell .uq-pct { font-family:'Genos', var(--font-read); font-weight:400; font-size:12.5px; letter-spacing:.06em; }
 .rail-foot .uq-money { font-size:11px; letter-spacing:.14em; }
 .rail-foot .uq-money b { font-family:'Genos', var(--font-read); font-weight:400; font-size:13px; letter-spacing:.06em; }
 .rail-foot .uq-shut .uq-b span { font-size:8px; letter-spacing:.2em; }
