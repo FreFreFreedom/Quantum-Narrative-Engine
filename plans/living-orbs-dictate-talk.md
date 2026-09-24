@@ -62,7 +62,7 @@ Login. He did not pick two: **New chat** (a big orb in an empty Room) and **Read
 - **Recording state:** the button turns the danger colour, and a live waveform replaces
   the lane picker. The level comes from `getUserMedia` plus an `AnalyserNode`.
 - **Stopping:** click again or press Enter. Enter also sends.
-- **Language:** follows `navigator.language`. Talk picks an English or French voice by counting common words in the answer.
+- **Language:** always English (`en-US`), for both hearing and the Talk voice — Antoine's call 2026-09-24.
 
 ## Talk (Room only)
 
@@ -80,5 +80,4 @@ Login. He did not pick two: **New chat** (a big orb in an empty Room) and **Read
 
 ## Open questions for Antoine
 
-- Should dictation default to English or French?
 - If the Mac's free voices are too flat, is a paid voice worth it for Talk? (Default: no.)

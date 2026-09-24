@@ -4835,7 +4835,8 @@ function qneMarkBusy(subjectId, busy) {
    spoken turn is exactly a typed one. */
 window.qneVoice = (function () {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  function lang() { return navigator.language || 'en-US'; }
+  // English, always (Antoine, 2026-09-24) — not the browser's own language.
+  function lang() { return 'en-US'; }
   function openLevel() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.resolve(null);
     return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }).then(function (stream) {
@@ -4934,9 +4935,7 @@ window.qneVoice = (function () {
   }
   function pickVoice(text) {
     var voices = speechSynthesis.getVoices();
-    var fr = (String(text).match(/\b(le|la|les|des|une|est|et|pas|que|qui|dans)\b/gi) || []).length;
-    var en = (String(text).match(/\b(the|is|and|of|to|that|it|in|what)\b/gi) || []).length;
-    var want = fr > en ? 'fr' : 'en';
+    var want = 'en';
     var pool = voices.filter(function (v) { return v.lang && v.lang.toLowerCase().indexOf(want) === 0; });
     if (!pool.length) pool = voices;
     var rank = function (v) { return (/premium/i.test(v.name) ? 4 : 0) + (/enhanced|siri/i.test(v.name) ? 3 : 0) + (v.localService ? 1 : 0); };
