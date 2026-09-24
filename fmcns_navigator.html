@@ -1687,6 +1687,18 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .railbar:not(.pinned):not(:hover):not(:focus-within) .uq-shut { display:flex; }
 .uq-none { padding:6px 4px; font-size:var(--fs-xs); color:var(--c-ink-5); line-height:1.35; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .uq-none { display:none; }
+/* The read-out in the brand's letters (2026-09-24): same grid, same bars, same figures;
+   only the words change face — Genos capitals, spaced like the wordmark. The figures
+   keep their tabular digits so the columns still line up. */
+.rail-foot .uq-head, .rail-foot .uq-who, .rail-foot .uq-money, .rail-foot .uq-shut .uq-b span, .rail-foot .uq-shut .uq-spend, .rail-foot .uq-none {
+  font-family:'Genos', var(--font-read); font-weight:300; text-transform:uppercase; letter-spacing:.18em; }
+.rail-foot .uq-head { font-size:9px; letter-spacing:.3em; color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, var(--c-ink-5)); }
+.rail-foot .uq-who { font-size:12.5px; letter-spacing:.14em; color:var(--c-ink-2); }
+.rail-foot .uq-cell .uq-pct { font-family:'Genos', var(--font-read); font-weight:400; font-size:13px; letter-spacing:.06em; }
+.rail-foot .uq-money { font-size:11px; letter-spacing:.14em; }
+.rail-foot .uq-money b { font-family:'Genos', var(--font-read); font-weight:400; font-size:13px; letter-spacing:.06em; }
+.rail-foot .uq-shut .uq-b span { font-size:8px; letter-spacing:.2em; }
+.rail-foot .uq-shut .uq-spend { font-size:10px; }
 
 /* ---------- The full quota breakdown (Settings) ---------- */
 /* All three lanes, named for what they do rather than which account they are. */
