@@ -3049,6 +3049,12 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
   font-family:var(--font-ui); font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5); }
 .interest-item--passage [data-attach]:hover { color:var(--c-cast); background:none; border:0; }
 .interest-item--passage .room-rec-menu { margin-left:12px; }
+:is(.shelf-acts, .interest-item, .lib-pass-acts, .lib-ana-acts) .lib-icbtn, .lib-icbtn { width:26px; height:26px; min-width:0; padding:0; border:0; border-radius:50%; background:none; box-shadow:none; cursor:pointer;
+  display:inline-grid; place-items:center; color:var(--c-ink-4); transition:color .2s ease, background .2s ease; }
+:is(.shelf-acts, .interest-item) .lib-icbtn:hover, .lib-icbtn:hover { color:var(--c-kept-echo, var(--c-accent)); background:var(--c-hover-wash); }
+:is(.shelf-acts, .interest-item) .lib-icbtn.is-done, .lib-icbtn.is-done { color:var(--c-kept-echo, var(--c-accent)); }
+:is(.shelf-acts, .interest-item) .lib-icbtn[data-remove]:hover, .lib-icbtn[data-remove]:hover { color:var(--c-danger, #d0705e); }
+.lib-ic { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
 .lib-pass { padding:12px 0; border-bottom:1px solid var(--c-border); }
 .lib-pass-text { margin:0; cursor:pointer; font-family:var(--room-font, var(--font-read)); font-size:var(--fs-md); line-height:1.55; color:var(--c-read, var(--c-ink-2));
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
@@ -16783,6 +16789,20 @@ let interestLibraryOffset = 0;
 const LIB_KINDS = [['', 'All'], ['book', 'Books'], ['film', 'Films'], ['series', 'Series'], ['paper', 'Papers'],
   ['project', 'Projects'], ['analogy', 'Analogies'], ['passage', 'Passages']];
 const LIB_SUGGEST = { book: 'media', film: 'media', series: 'media', paper: 'papers', project: 'apps', analogy: 'analogies' };
+// The library's three actions as symbols (his picks, 2026-09-24): A's paperclip to
+// attach, E's bin to remove, and A's pen to edit to match the paperclip.
+const LIB_IC = {
+  attach: '<svg class="lib-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 4.5l-5 5a1.8 1.8 0 0 0 2.5 2.5l5.5-5.5a3 3 0 0 0-4.2-4.2L3.8 7.8"/></svg>',
+  edit: '<svg class="lib-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3l2.5 2.5L6 12.5l-3 .5.5-3z"/></svg>',
+  remove: '<svg class="lib-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg>',
+};
+const libBtn = (act, title) => '<button type="button" class="lib-icbtn" data-' + act + ' title="' + title + '" aria-label="' + title + '">' + LIB_IC[act] + '</button>';
+// A symbol button reports in its tooltip and a gold tint, never by turning into words.
+function libSay(btn, msg, done) {
+  if (!btn) return;
+  if (btn.querySelector('svg')) { btn.title = msg; btn.classList.toggle('is-done', !!done); }
+  else btn.textContent = msg;
+}
 let libSuggesting = false;
 let libFinding = false;
 let libKindOpen = false;
@@ -17225,8 +17245,7 @@ function libScreenPanel(w) {
     + [libOutLink(w, f), libGoogleLink(w, f)].filter(Boolean).map(out =>
         '<a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
           + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>').join('')
-    + '<button type="button" data-attach>Attach</button>'
-    + '<button type="button" data-edit>Edit</button><button type="button" data-remove>Remove</button></div></div>';
+    + libBtn('attach', 'Attach to the conversation') + libBtn('edit', 'Edit') + libBtn('remove', 'Remove') + '</div></div>';
 }
 
 async function libLoadScreenNotes(id, refresh) {
@@ -17250,9 +17269,9 @@ function libMediaPanel(w) {
     + (meta ? '<small>' + qEsc(meta) + '</small>' : '') + '</div>'
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
     + (w.excerpt ? '<p class="shelf-opening">' + qEsc(w.excerpt) + '</p>' : '')
-    + '<div class="shelf-acts"><button type="button" data-attach>Attach</button>'
-    + (w.type === 'media' ? '<button type="button" data-edit>Edit</button>' : '')
-    + '<button type="button" data-remove>Remove</button></div></div>';
+    + '<div class="shelf-acts">' + libBtn('attach', 'Attach to the conversation')
+    + (w.type === 'media' ? libBtn('edit', 'Edit') : '')
+    + libBtn('remove', 'Remove') + '</div></div>';
 }
 
 function libWall(items, cols) {
@@ -17391,14 +17410,13 @@ async function renderInterestLibrary(opts) {
           + '<div class="lib-ana-foot">' + (w.saidBy ? '<span>' + (w.saidBy === 'you' ? 'You' : 'The answer') + '</span>' : '')
           + (w.convoId ? '<button type="button" data-ana-src>' + qEsc(w.sourceTitle || 'Source') + ' ↗</button>' : '')
           + '<span class="lib-ana-acts">' + (w.found ? '<button type="button" data-ana-keep-lib>Keep</button>' : '')
-          + '<button type="button" data-attach>Attach</button><button type="button" data-remove title="' + (w.found ? 'Not an analogy' : 'Remove') + '" aria-label="Remove">✕</button></span></div></div>';
+          + libBtn('attach', 'Attach to the conversation') + libBtn('remove', w.found ? 'Not an analogy' : 'Remove') + '</span></div></div>';
         // A kept passage (his pick 3, 2026-09-24): two lines, the rest on a click; a
         // source only when it came from a book, and symbols, not words, for acting on it.
         if (w.kind === 'passage' || w.type === 'passage') return '<div class="interest-item lib-pass" data-interest="' + qEscAttr(w.id) + '">'
           + '<p class="lib-pass-text" data-pass-open>' + qEsc(w.excerpt || w.title || '') + '</p>'
           + '<div class="lib-pass-foot">' + (w.sourceTitle ? '<span class="lib-pass-src">' + qEsc(w.sourceTitle) + '</span>' : '')
-          + '<span class="lib-pass-acts"><button type="button" data-attach title="Attach to the conversation" aria-label="Attach"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 4.5l-5 5a1.8 1.8 0 0 0 2.5 2.5l5.5-5.5a3 3 0 0 0-4.2-4.2L3.8 7.8"/></svg></button>'
-          + '<button type="button" data-remove title="Remove" aria-label="Remove"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></span></div></div>';
+          + '<span class="lib-pass-acts">' + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</span></div></div>';
         const passage = w.kind === 'passage' || w.type === 'passage';
         const title = w.url && /^https:\/\//.test(w.url) ? '<a href="' + qEscAttr(w.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(w.title) + '</a>' : qEsc(w.title);
         const text = passage ? (w.excerpt || w.title || '') : (w.excerpt ? '<p>' + qEsc(w.excerpt) + '</p>' : '');
@@ -17406,8 +17424,7 @@ async function renderInterestLibrary(opts) {
           + '<div>' + (passage ? '' : '<div>' + title + '</div>')
           + (w.kind === 'paper' || passage ? '' : '<small>' + qEsc([w.kind, w.creator, w.year, w.state, w.origin].filter(Boolean).join(' · ')) + '</small>')
           + (passage ? '<div class="interest-passage">' + qEsc(text) + '</div>' : text)
-          + '<button data-attach>Attach</button> '
-          + '<details class="room-rec-menu"><summary title="Actions">⋯</summary><button data-remove>Remove</button></details></div></div>';
+          + '<span class="lib-pass-acts">' + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</span></div></div>';
       }).join('')
       + (!wall.length && !rest.length && !review.entries.length ? '<div class="room-empty">Nothing saved yet.</div>' : '')
       + ((interestLibraryOffset || out.items.length === 40) ? '<div class="interest-item">' + (interestLibraryOffset ? '<button data-prev>Previous</button> ' : '') + (out.items.length === 40 ? '<button data-next>More</button>' : '') + '</div>' : '');
@@ -17449,12 +17466,12 @@ async function renderInterestLibrary(opts) {
           await apiWrite('/api/recommendations/library/remove', 'POST', { type: libMedia.type, id: libMedia.id });
           libOpen = null; renderInterestLibrary();
           if (libMedia.type === 'passage' && window.loadRoomPassages) window.loadRoomPassages();
-        } catch (err) { drop.textContent = err.message; }
+        } catch (err) { libSay(drop, err.message); }
       };
       const attach = panel.querySelector('[data-attach]');
       if (attach && libMedia) attach.onclick = async () => {
-        try { const r = await window.studioReferenceAttach({ type: libMedia.type, id: libMedia.id }); attach.textContent = 'Attached to ' + r.destination; }
-        catch (err) { attach.textContent = err.message; }
+        try { const r = await window.studioReferenceAttach({ type: libMedia.type, id: libMedia.id }); libSay(attach, 'Attached to ' + r.destination, true); }
+        catch (err) { libSay(attach, err.message); }
       };
       const edit = panel.querySelector('[data-edit]');
       if (edit && libMedia) edit.onclick = () => interestEditForm(panel, libMedia, values => apiWrite('/api/convos/interests/' + libMedia.id, 'PATCH', values));
@@ -17492,9 +17509,9 @@ async function renderInterestLibrary(opts) {
         find();
       };
       el.querySelector('[data-attach]').onclick = async () => {
-        const btn = el.querySelector('[data-attach]'), icon = !!btn.querySelector('svg');
-        try { const r = await window.studioReferenceAttach({ type: w.type, id: w.id }); if (icon) { btn.classList.add('is-done'); btn.title = 'Attached to ' + r.destination; } else btn.textContent = 'Attached to ' + r.destination; }
-        catch (err) { if (icon) btn.title = err.message; else btn.textContent = err.message; }
+        const btn = el.querySelector('[data-attach]');
+        try { const r = await window.studioReferenceAttach({ type: w.type, id: w.id }); libSay(btn, 'Attached to ' + r.destination, true); }
+        catch (err) { libSay(btn, err.message); }
       };
       el.querySelector('[data-remove]').onclick = async () => { try { await apiWrite('/api/recommendations/library/remove', 'POST', { type: w.type, id: w.id }); renderInterestLibrary(); if (w.type === 'passage' && window.loadRoomPassages) window.loadRoomPassages(); } catch (err) { el.textContent = err.message; } };
     });
