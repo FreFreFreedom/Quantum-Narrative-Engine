@@ -2967,6 +2967,9 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-quote-pop .se-define { flex:1 1 100%; margin:2px 0 0; padding:8px 10px 7px; border-top:1px solid var(--c-border);
   font-family:var(--font-read); font-size:var(--fs-sm); line-height:1.45; color:var(--c-ink-2); white-space:normal; }
 .se-define .w { font-family:'Cinzel', var(--font-read); font-size:var(--fs-xs); letter-spacing:.14em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+.se-define .here p { margin-top:3px; color:var(--c-ink); }
+.se-define .plain { font-size:var(--fs-xs); color:var(--c-ink-4); }
+.se-define .here:not([hidden]) + .plain:not([hidden]) { margin-top:6px; padding-top:5px; border-top:1px dashed var(--c-border); }
 .se-define .ph { margin-left:8px; font-size:var(--fs-xs); color:var(--c-ink-5); }
 .se-define .pos { font-style:italic; color:var(--c-ink-4); margin-right:5px; }
 .se-define p { margin:4px 0 0; }
@@ -28813,18 +28816,28 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // the browser, one word at a time, answers cached for the session. Nothing is shown
   // when the word is not in it — a bar that says "no entry" is noise.
   var defineCache = {};
+  // One box under the bar, two slots: the reading of the word here (the model, for
+  // him) above, the plain dictionary senses below. Either may arrive first.
+  function defineBox(pop){
+    if(!pop || !pop.isConnected) return null;
+    var box = pop.querySelector('.se-define');
+    if(!box){
+      box = document.createElement('div'); box.className = 'se-define';
+      box.innerHTML = '<div class="here" hidden></div><div class="plain" hidden></div>';
+      pop.appendChild(box);
+    }
+    return box;
+  }
   function defineWord(word, pop){
     var key = word.toLowerCase().replace(/[’']s$/, '');
     var paint = function(entry){
-      if(!entry || !pop || !pop.isConnected) return;
-      var box = document.createElement('div');
-      box.className = 'se-define';
-      var head = '<span class="w">' + qEsc(entry.word) + '</span>' + (entry.phonetic ? '<span class="ph">' + qEsc(entry.phonetic) + '</span>' : '');
-      var lines = entry.meanings.slice(0, 3).map(function(m){
+      if(!entry) return;
+      var box = defineBox(pop); if(!box) return;
+      var slot = box.querySelector('.plain');
+      slot.innerHTML = entry.meanings.slice(0, 3).map(function(m){
         return '<p><span class="pos">' + qEsc(m.pos) + '</span>' + qEsc(m.def) + '</p>';
       }).join('');
-      box.innerHTML = head + lines;
-      pop.appendChild(box);
+      slot.hidden = false;
       placeQuotePop();
     };
     if(key in defineCache){ paint(defineCache[key]); return; }
@@ -28849,6 +28862,39 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         paint(entry);
       })
       .catch(function(){ clearTimeout(timer); });
+  }
+  // The word read where it stands (his ask, 2026-09-24): the sentence around the
+  // selection goes to the server, which answers with two plain sentences written for
+  // him — what the word means here, and the shade it carries in this conversation.
+  var defineHereCache = {};
+  function sentenceAround(range, word){
+    try {
+      var node = range.startContainer, el = node.nodeType === 1 ? node : node.parentElement;
+      var block = (el && el.closest && el.closest('p, li, blockquote, h1, h2, h3, h4, td')) || (el && el.closest && el.closest('.se-body')) || el;
+      var text = (block ? block.textContent : '').replace(/\s+/g, ' ');
+      var at = text.indexOf(word);
+      if(at < 0) return text.slice(0, 400);
+      var from = at, to = at + word.length;
+      while(from > 0 && !/[.!?…]/.test(text[from - 1])) from--;
+      while(to < text.length && !/[.!?…]/.test(text[to])) to++;
+      return text.slice(from, Math.min(to + 1, text.length)).trim().slice(0, 600);
+    } catch(_) { return ''; }
+  }
+  function defineHere(e, word, sentence, pop){
+    if(!e || !e.convoId) return;
+    var key = e.convoId + '|' + word.toLowerCase();
+    var paint = function(text){
+      if(!text) return;
+      var box = defineBox(pop); if(!box) return;
+      var slot = box.querySelector('.here');
+      slot.innerHTML = '<span class="w">' + qEsc(word) + '</span><p>' + qEsc(text) + '</p>';
+      slot.hidden = false;
+      placeQuotePop();
+    };
+    if(key in defineHereCache){ paint(defineHereCache[key]); return; }
+    apiWrite('/api/convos/' + e.convoId + '/define', 'POST', { word: word, sentence: sentence })
+      .then(function(d){ var t = d && d.text ? d.text : ''; defineHereCache[key] = t; paint(t); })
+      .catch(function(){});
   }
   function placeQuotePop(){
     if(!quotePop) return;
@@ -28968,7 +29014,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         document.body.appendChild(quotePop);
         placeQuotePop();
         // One word selected: its meaning opens under the bar by itself.
-        if(/^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage)) defineWord(passage, quotePop);
+        if(/^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage)){
+          defineHere(e, passage, sentenceAround(range, passage), quotePop);
+          defineWord(passage, quotePop);
+        }
       }, settleMs);
     };
     log.quoteOffer=offer;
