@@ -244,7 +244,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
   background-size:250% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:qneShim 2.4s linear infinite; }
 @keyframes qneShim { from { background-position:100% 0; } to { background-position:-50% 0; } }
 .qne-wait { display:flex; align-items:center; gap:8px; }
-.se-waiting { display:flex; align-items:center; gap:8px; min-height:22px; }
+.se-waiting { display:flex; align-items:center; gap:12px; min-height:44px; }
 .se-waiting .se-phase { margin:0; }
 .se-cursor-orb { margin:2px 0 0; }
 .room-row .room-row-orb { margin-left:-2px; }
@@ -27546,8 +27546,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // before the first token, and for lanes that don't stream at all.
       html += '<div class="se-turn">'
            +  (e.stream
-                ? '<div class="se-body md">' + fmtBody(e.stream, true) + orbHtml('composing', 20, 'se-cursor-orb') + '</div>'
-                : '<div class="se-waiting">' + orbHtml(orbForPhase(e.phase), 20) + '<span class="se-phase qne-shimmer">' + qEsc(e.phase || 'Thinking') + '</span></div>'
+                ? '<div class="se-body md">' + fmtBody(e.stream, true) + orbHtml('composing', 30, 'se-cursor-orb') + '</div>'
+                : '<div class="se-waiting">' + orbHtml(orbForPhase(e.phase), 40) + '<span class="se-phase qne-shimmer">' + qEsc(e.phase || 'Thinking') + '</span></div>'
                   // What it is doing while there is nothing to show yet — a lookup,
                   // or a lane that is not answering. Silence for a minute reads as
                   // broken; the same minute with a phase on it reads as work.
