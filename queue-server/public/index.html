@@ -30083,30 +30083,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var cmds = host.querySelector('.se-cmds');
     cmds.innerHTML = '';
     if(!e.convoId) return;
-    if(host.closest('.room-convo')){
-      var interviewTool = document.createElement('button');
-      interviewTool.type = 'button';
-      interviewTool.className = 'se-cmd';
-      interviewTool.textContent = e.clarify === 'interview' ? 'Interview on' : 'Interview';
-      interviewTool.title = e.clarify === 'interview' ? 'Turn Interview mode off' : 'Ask questions before answering';
-      interviewTool.onclick = function(ev){
-        ev.stopPropagation();
-        var hiddenInterview = host.querySelector('.se-interview');
-        if(hiddenInterview) hiddenInterview.click();
-      };
-      cmds.appendChild(interviewTool);
+    var inRoom = !!host.closest('.room-convo');
+    if(inRoom){
       // Connected outside sources (plans/room-connections.md). Nothing answers a click
       // yet: the row says so, and stays until the source is wired.
       ((connData && connData.catalogue) || []).filter(function(c){ return c.on; }).forEach(function(c){
-        cmds.appendChild(dot());
+        if(cmds.children.length) cmds.appendChild(dot());
         var row = document.createElement('button');
         row.type = 'button'; row.className = 'se-cmd'; row.disabled = true;
         row.textContent = c.name; row.title = 'Connected — not wired yet';
         cmds.appendChild(row);
       });
-      if(commandRows(e).length) cmds.appendChild(dot());
+      if(cmds.children.length) cmds.appendChild(dot());
     }
     var rows = commandRows(e);
+    // The Room's menu, cut to what a conversation there actually needs (his call,
+    // 2026-09-24): Interview (the grill-me command), Save idea, Keep note. The Interview
+    // mode switch, More ideas, Compare, Make brief and Queue belong to a card or a
+    // brief, not to a thread; the ones that were doubled are gone.
+    if(inRoom) rows = rows.filter(function(r){ return r[0] === '/grill-me' || r[0] === '/seed' || r[0] === '/note'; });
     var cta = ctaOf(e);
     // The one command the conversation is actually ready for is named plainly;
     // the rest stay as the quiet list. /plan and /handoff are already in the list,
