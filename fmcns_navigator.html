@@ -1127,9 +1127,10 @@ body::after {
 #wsRoom.is-arriving #roomConvo { animation:fmcnsFade .6s cubic-bezier(.22,.61,.36,1) .4s both; }
 @keyframes roomTitleSettle { from { opacity:0; letter-spacing:.42em; } }
 @keyframes roomLineDraw { from { width:0; } }
-#roomConvo .se-log { --log-top-inset:52px; padding-top:112px; scroll-padding-top:112px;
-  -webkit-mask-image:linear-gradient(to bottom, transparent 0, transparent 56px, rgba(0,0,0,.35) 80px, #000 120px);
-          mask-image:linear-gradient(to bottom, transparent 0, transparent 56px, rgba(0,0,0,.35) 80px, #000 120px); }
+/* ...and melts away the same way above the message box, so no line is ever cut by it. */
+#roomConvo .se-log { --log-top-inset:52px; padding-top:112px; scroll-padding-top:112px; padding-bottom:72px;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, transparent 56px, rgba(0,0,0,.35) 80px, #000 120px, #000 calc(100% - 64px), transparent 100%);
+          mask-image:linear-gradient(to bottom, transparent 0, transparent 56px, rgba(0,0,0,.35) 80px, #000 120px, #000 calc(100% - 64px), transparent 100%); }
 .room-convo .se-draftbox {
   background:var(--glass-2); border-color:color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:16px; }
 @media (min-width: 821px) {
