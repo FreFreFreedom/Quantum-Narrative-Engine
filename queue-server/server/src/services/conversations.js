@@ -722,6 +722,18 @@ export function rewindConvo(convoId, messageId) {
   return { ok: true, text: msgs[cut].text, removed: gone.length };
 }
 
+// Remove one message — his or an answer — and nothing else. Unlike rewind, what
+// came after stays; this is for taking a single turn out of the record.
+export function deleteMessage(convoId, messageId) {
+  if (!db) return { error: 'no_db' };
+  if (!getConvo(convoId)) return { error: 'not_found' };
+  const row = db.prepare(`SELECT id FROM convo_messages WHERE id=? AND convo_id=?`).get(messageId, convoId);
+  if (!row) return { error: 'no_such_message' };
+  db.prepare(`DELETE FROM convo_marks WHERE convo_id=? AND message_id=?`).run(convoId, messageId);
+  db.prepare(`DELETE FROM convo_messages WHERE convo_id=? AND id=?`).run(convoId, messageId);
+  return { ok: true, removed: 1 };
+}
+
 export function listConvosForSubjects(subjectType, ids) {
   if (!db || !ids.length) return {};
   const placeholders = ids.map(() => '?').join(',');

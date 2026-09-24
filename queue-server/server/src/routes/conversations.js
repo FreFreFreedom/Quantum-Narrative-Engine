@@ -886,6 +886,13 @@ export function conversationsRoutes() {
     res.json(out);
   });
 
+  // DELETE /api/convos/:id/messages/:messageId — remove one message, keep the rest.
+  router.delete('/:id/messages/:messageId', (req, res) => {
+    const out = convos.deleteMessage(req.params.id, req.params.messageId);
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
   // DELETE /api/convos/:id — soft-delete the conversation.
   router.delete('/:id', (req, res) => {
     const out = convos.deleteConvo(req.params.id);

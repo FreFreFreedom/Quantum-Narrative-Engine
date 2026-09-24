@@ -2389,11 +2389,13 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-turnacts { display:flex; justify-content:flex-end; gap:1px; margin-top:3px;
   opacity:.4; transition:opacity var(--t-fast) var(--ease); }
 .se-turn:hover .se-turnacts, .se-turnacts:focus-within { opacity:1; }
-.se-turnfork, .se-turnredo, .se-turnrewind, .se-turncopy { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
+.se-turndel svg { width:13px; height:13px; display:block; }
+.se-turndel.is-armed { color:var(--c-danger) !important; background:color-mix(in srgb, var(--c-danger) 12%, transparent) !important; }
+.se-turnfork, .se-turnredo, .se-turnrewind, .se-turncopy, .se-turndel { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
   font-family:var(--font-ui); font-size:var(--fs-sm); line-height:1; width:24px; height:24px;
   display:inline-flex; align-items:center; justify-content:center; border-radius:var(--r-sm);
   transition:color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
-.se-turnfork:hover, .se-turnredo:hover, .se-turnrewind:hover, .se-turncopy:hover { color:var(--c-ink); background:var(--c-surface-2); }
+.se-turnfork:hover, .se-turnredo:hover, .se-turnrewind:hover, .se-turncopy:hover, .se-turndel:hover { color:var(--c-ink); background:var(--c-surface-2); }
 /* Which model should answer it again. Same fixed-position treatment as the quote
    popover, and closed by the same page-level mousedown. */
 /* The lane picker and the ⋯ menu are on the shared .umenu now; these four rules were
@@ -28913,6 +28915,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
       };
     });
+    log.querySelectorAll('[data-se-del]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        if(e.busy) return;
+        if(!b.classList.contains('is-armed')){
+          b.classList.add('is-armed'); b.title = 'Click again to remove';
+          setTimeout(function(){ b.classList.remove('is-armed'); b.title = 'Remove this message'; }, 3000);
+          return;
+        }
+        var id = b.getAttribute('data-se-del');
+        e.msgs = e.msgs.filter(function(m){ return m.id !== id; });
+        e.marks = (e.marks || []).filter(function(mk){ return mk.message_id !== id; });
+        fillEmbed(host, e, opts);
+        apiWrite('/api/convos/' + e.convoId + '/messages/' + encodeURIComponent(id), 'DELETE')
+          .catch(function(){ e.loaded = false; e.note = 'Could not remove it — reloaded the thread as it is.'; return fetchConvo(e, function(){ if(host.isConnected) fillEmbed(host, e, opts); }); });
+      };
+    });
     log.querySelectorAll('[data-se-rewind]').forEach(function(b){
       b.onclick = function(ev){
         ev.stopPropagation();
@@ -29593,6 +29612,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
                  + (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
                  + (you && m.id ? '<button type="button" class="se-turnrewind" data-se-rewind="' + qEsc(m.id) + '" title="Rewind to here — this and everything after is removed, and the words come back to the box to change and ask again">↶</button>' : '')
                  + (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
+                 // Remove just this one (his ask, 2026-09-24). Two clicks: the first
+                 // arms it, so a stray click never costs a message.
+                 + (m.id ? '<button type="button" class="se-turndel" data-se-del="' + qEsc(m.id) + '" title="Remove this message">'
+                   + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' : '')
                  + '</div>';
       }
       // A carried passage is its own thing above the message, never inside it:
