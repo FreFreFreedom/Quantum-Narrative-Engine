@@ -2744,7 +2744,11 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-rail:hover .se-rail-name, .se-rail:focus-within .se-rail-name { opacity:1; }
 .se-rail-item:hover .se-rail-name { color:var(--c-ink); }
 .se-rail-item.is-here .se-rail-name { color:var(--c-ink); font-weight:500; }
-.se-rail-item.is-saved .se-rail-name { font-style:italic; }
+.se-rail-item.is-saved .se-rail-name { font-style:normal; }
+.se-rail-item.is-saved .se-rail-num { color:var(--c-kept-echo, var(--c-accent)); }
+.se-rail-drop { display:none; flex:none; font-weight:400; font-size:11px; line-height:1; padding:3px; color:var(--c-ink-5); border-radius:4px; }
+.se-rail:hover .se-rail-item:hover .se-rail-drop { display:block; }
+.se-rail-drop:hover { color:var(--c-ink); background:var(--c-surface-2); }
 .se-rail-mark { display:none; flex:none; width:10px; height:12px; color:var(--c-brand); }
 .se-rail:hover .se-rail-item.is-saved .se-rail-mark, .se-rail:focus-within .se-rail-item.is-saved .se-rail-mark { display:block; }
 /* Sections inside a chapter — an answer's headings, and the lines he kept — and the
@@ -28274,45 +28278,39 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
 
   function paintRail(rail, log, e, repaint){
-    loadChapters(e, repaint);
-    var chapters = (e.chapters || []).filter(function(c){
-      return log && log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(c.messageId) : c.messageId) + '"]');
-    });
-    // One dash is not a rail — it says nothing you could not see by looking.
-    if(chapters.length < 2){
+    // Only the chapters he kept, by name, in the order they come in the
+    // conversation (his pick "Names only", 2026-09-24). The found chapters, the
+    // answers' own section headings and the kept lines under each made it read
+    // like a dictionary.
+    var order = {};
+    (e.msgs || []).forEach(function(m, i){ if(m.id) order[m.id] = i; });
+    var chapters = (e.marks || []).filter(function(m){
+      return log && m.message_id && log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(m.message_id) : m.message_id) + '"]');
+    }).map(function(m){
+      return { messageId: m.message_id, snippet: m.snippet, kind: 'saved', label: m.label || '', markId: m.id };
+    }).sort(function(a, b){ return (order[a.messageId] || 0) - (order[b.messageId] || 0); });
+    if(!chapters.length){
       rail.hidden = true; rail.innerHTML = ''; log.onscroll = null;
       var w0 = rail.closest('.se-wrap'); if(w0) w0.classList.remove('has-rail');
       return;
     }
     rail.hidden = false;
-    // Inside each chapter, the places worth finding again: the headings the answers
-    // gave their own sections, and every line he kept. Read from the transcript and
-    // the kept list, so they cost nothing and are there the moment they exist —
-    // a talk about "due process versus crime control" inside a chapter named for
-    // something else is still one click away.
-    var subs = railSections(log, e, chapters);
+    var subs = [];
     var had = rail.querySelector('.se-rail-find input');
     var q = e.railQuery || '', typing = had && document.activeElement === had;
-    rail.innerHTML = '<div class="se-rail-head">Chapters<b>' + chapters.length + '</b></div>'
+    rail.innerHTML = '<div class="se-rail-head">Kept<b>' + chapters.length + '</b></div>'
       + '<label class="se-rail-find"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3.2 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
       + '<input type="search" placeholder="Find in this conversation" aria-label="Find in this conversation" value="' + qEscAttr(q) + '"></label>'
       + '<div class="se-rail-hits"></div>'
       + '<div class="se-rail-list">' + chapters.map(function(c, ci){
-      var name = railName(c, log);
-      return '<button type="button" class="se-rail-item' + (c.kind === 'saved' ? ' is-saved' : '') + '"'
-        // aria-label, never title: the browser draws its own tooltip from title, and
-        // that arrived on top of the rail's own name — two copies of the same words,
-        // in two different boxes, at two different offsets.
+      var name = c.label || railName(c, log);
+      return '<button type="button" class="se-rail-item is-saved"'
         + ' data-chapter="' + qEscAttr(c.messageId) + '" aria-label="' + qEscAttr(name) + '">'
         + '<span class="se-rail-dash"></span>'
         + '<span class="se-rail-num">' + (ci + 1 < 10 ? '0' : '') + (ci + 1) + '</span>'
         + '<span class="se-rail-name">' + qEsc(name) + '</span>'
-        + (c.kind === 'saved' ? '<svg class="se-rail-mark" viewBox="0 0 10 12" aria-hidden="true"><path d="M1 1h8v10L5 8 1 11z" fill="currentColor"/></svg>' : '')
-        + '</button>'
-        + (subs[ci] || []).map(function(x, xi){
-            return '<button type="button" class="se-rail-sub' + (x.kind === 'kept' ? ' is-kept' : '') + '" data-sub="' + ci + ':' + xi + '" aria-label="' + qEscAttr(x.text) + '">'
-              + '<span class="se-rail-subname">' + qEsc(x.text) + '</span></button>';
-          }).join('');
+        + '<b class="se-rail-drop" data-rail-drop="' + qEscAttr(c.markId) + '" aria-label="Forget this chapter">\u2715</b>'
+        + '</button>';
     }).join('') + '</div>';
 
     // Sit beside the log, not beside the whole panel: the head and the composer are
@@ -28331,6 +28329,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         ev.stopPropagation();
         var c = chapters[i];
         if(!c) return;
+        if(ev.target && ev.target.closest && ev.target.closest('[data-rail-drop]')){ dropMark(e, c.markId, repaint); return; }
         // A hand-saved chapter knows the exact passage; a found one only knows the
         // message it starts on, and landing on the message is the right answer there.
         jumpToPassage(log, c.messageId, c.kind === 'saved' ? c.snippet : '');
@@ -29048,6 +29047,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var mbar = host.querySelector('.se-markbar');
     if(mbar){
       var marks = e.marks || [];
+      // Kept chapters live in the side list only, not as chips in the box (2026-09-24).
+      marks = [];
       mbar.innerHTML = marks.length
         ? '<div class="se-marks">' + marks.map(function(m, i){
             return '<button type="button" class="se-mark" data-mark="' + qEsc(m.id) + '" title="Go back to this place">'
