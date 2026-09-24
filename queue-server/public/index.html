@@ -2452,6 +2452,8 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-lanepop .h.g { display:flex; justify-content:space-between; align-items:center; width:100%; border:0; background:none; cursor:pointer; text-align:left; padding:9px 18px; }
 .se-lanepop .h.g:hover, .se-lanepop .h.g.is-open { color:var(--c-kept-echo, var(--c-accent)); }
 .se-lanepop .h.g small { font-family:var(--font-ui); font-size:10px; letter-spacing:0; color:var(--c-ink-5); }
+.se-lanepop .sh { font-family:'Cinzel',var(--font-read); font-size:8.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--c-ink-5); padding:9px 18px 2px; }
+.se-lanepop .it.in { padding-left:28px; font-size:16px; }
 .se-lanepop .it { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:7px 18px; border:0; background:none; text-align:left; cursor:pointer;
   font-family:var(--font-read); font-size:17px; line-height:1.2; color:var(--c-ink-3); }
 .se-lanepop .it:hover { color:var(--c-ink); background:color-mix(in srgb, var(--c-ink) 5%, transparent); }
@@ -27240,8 +27242,26 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     ['OpenCode', ['opencode']]
   ];
   var LANE_SHORT = { 'claude-code': 'Claude', 'claude-side': 'Claude · 2nd', 'google-ai-studio': 'Gemini', 'codex-pro': 'Pro account', codex: 'Plus account', openai: 'Billed per use', opencode: 'OpenCode' };
+  // "groq/llama-3.1-8b-instant" → "Llama 3.1 8B Instant": the maker's prefix goes to
+  // its own sub-heading, and what is left reads as a name, not an id.
+  var LANE_WORD_CASE = { gpt: 'GPT', oss: 'OSS', ai: 'AI', exp: 'exp', preview: 'preview', instant: 'Instant', versatile: 'Versatile', lite: 'Lite', flash: 'Flash', pro: 'Pro', mini: 'Mini', nano: 'Nano', turbo: 'Turbo', vision: 'Vision', latest: '' };
   function laneModelShort(m){
-    return String(m || '').replace(/^gemini-/, '').replace(/-latest$/, '').replace(/^gpt-/, 'GPT ').replace(/^claude-/, '').replace(/-/g, ' ');
+    var id = String(m || '');
+    var name = id.slice(id.lastIndexOf('/') + 1).replace(/^gemini-(?=flash|pro)/, 'gemini-').replace(/^claude-/, '');
+    return name.split(/[-_]+/).filter(Boolean).map(function(w){
+      var l = w.toLowerCase();
+      if(LANE_WORD_CASE.hasOwnProperty(l)) return LANE_WORD_CASE[l];
+      if(/^\d+(\.\d+)?b$/.test(l)) return l.toUpperCase();
+      if(/^\d/.test(l)) return l;
+      return l.charAt(0).toUpperCase() + l.slice(1);
+    }).filter(Boolean).join(' ');
+  }
+  function laneModelMaker(m){
+    var id = String(m || ''), i = id.lastIndexOf('/');
+    if(i < 0) return '';
+    return id.slice(0, i).split('/').map(function(seg){
+      return seg.split(/[-_]+/).map(function(w){ var l = w.toLowerCase(); return l === 'ai' ? 'AI' : l === 'opencode' ? 'OpenCode' : l === 'openai' ? 'OpenAI' : l === 'go' ? 'Go' : l.charAt(0).toUpperCase() + l.slice(1); }).join(' ');
+    }).join(' · ');
   }
   function laneBtnHtml(e){
     if(!e.lane) return '<span>Auto</span><span class="chev">▾</span>';
@@ -27281,10 +27301,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           rows += '<button type="button" class="it' + (cur === key ? ' on' : '') + '" data-lane="' + qEscAttr(key) + '"' + (off ? ' disabled title="' + qEscAttr(laneOffReason(key) || '') + '"' : '') + '>' + qEsc(sub) + '</button>';
           return;
         }
+        var lastMaker = null;
         models.forEach(function(m){
           var on = cur === key && (e.lane.model || models[0]) === m;
-          rows += '<button type="button" class="it' + (on ? ' on' : '') + '" data-lane="' + qEscAttr(key) + '" data-model="' + qEscAttr(m) + '"' + (off ? ' disabled title="' + qEscAttr(laneOffReason(key) || '') + '"' : '') + '>'
-            + qEsc(laneModelShort(m)) + (sub ? '<small>' + qEsc(sub) + '</small>' : '') + '</button>';
+          var maker = laneModelMaker(m);
+          if(maker && maker !== lastMaker){ rows += '<div class="sh">' + qEsc(maker) + '</div>'; lastMaker = maker; }
+          rows += '<button type="button" class="it' + (on ? ' on' : '') + (maker ? ' in' : '') + '" data-lane="' + qEscAttr(key) + '" data-model="' + qEscAttr(m) + '" title="' + qEscAttr(m) + '"' + (off ? ' disabled title="' + qEscAttr(laneOffReason(key) || '') + '"' : '') + '>'
+            + qEsc(laneModelShort(m)) + (sub && !maker ? '<small>' + qEsc(sub) + '</small>' : '') + '</button>';
         });
         if(cur === key && laneHasEffort(key)){
           var levels = laneEffortLevels(key, e.lane.model);
