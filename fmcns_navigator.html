@@ -2900,10 +2900,8 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-ana-progress .room-ana-acts { margin:0; }
 .room-ana-progress .room-ana-acts button { color:var(--c-accent); }
 .room-ana-ask .searchbox { flex:1; min-width:0; }
-/* The line an unasked arrival is pinned to. A dot in the gutter, not a band. */
+/* The line an unasked arrival is pinned to. No mark in the gutter: he asked for the dots gone. */
 .se-turn.has-analogy { position:relative; }
-.se-turn.has-analogy::before { content:''; position:absolute; left:-13px; top:7px; width:7px; height:7px;
-  border-radius:50%; background:var(--c-accent); opacity:.7; }
 .se-compose { display:flex; align-items:flex-end; gap:8px; border-top:1px solid var(--c-border); margin-top:2px; padding-top:8px; }
 .se-attach { display:none !important; flex:none; align-self:center; width:28px; height:28px; padding:0; align-items:center; justify-content:center;
   border:0; background:transparent; color:var(--c-ink-4); border-radius:var(--r-sm); cursor:pointer; }
