@@ -25938,6 +25938,31 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Clicking a cover opens its card, not a website: a book's contents, a film's
   // rating and a line written for this conversation, and a small button out to
   // Amazon or IMDb.
+  // An answer is meant to be prose; bullets only for a true short list of parallel
+  // things (three films, four steps). Cheap models still sometimes chop a thought
+  // into one sentence per bullet, whatever the prompt says. A run of three or more
+  // bullets that are all whole sentences is read back as the paragraph it was —
+  // a list of titles or short items is left alone.
+  function seProseFromList(text){
+    var lines = String(text || '').split('\n'), out = [], run = [];
+    var item = /^\s*(?:[-*\u2022]|\d+[.)])\s+(.+)$/;
+    var sentence = function(t){ return /[.!?\u2026]["\u201d\u2019)]?$/.test(t.trim()) && t.trim().split(/\s+/).length >= 6 && !/^\*\*[^*]+\*\*:?/.test(t.trim()); };
+    var flush = function(){
+      if(run.length >= 3 && run.every(function(l){ return sentence(l.match(item)[1]); })){
+        var ss = run.map(function(l){ return l.match(item)[1].trim(); });
+        var per = ss.length <= 5 ? ss.length : 3;
+        for(var i = 0; i < ss.length; i += per){ out.push(ss.slice(i, i + per).join(" ")); out.push(""); }
+      } else out.push.apply(out, run);
+      run = [];
+    };
+    lines.forEach(function(l){
+      if(item.test(l) && !/^\s{2,}/.test(l)) run.push(l);
+      else if(run.length && !l.trim()){ /* a blank between items keeps the run going */ }
+      else { flush(); out.push(l); }
+    });
+    flush();
+    return out.join('\n');
+  }
   function seCoverNorm(t){ return String(t || '').toLowerCase().replace(/[‘’']/g, "'").replace(/\s+/g, ' '); }
   function seHangCovers(html, works, convoId){
     var box = document.createElement('div'); box.innerHTML = html;
@@ -26198,7 +26223,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }).join('') + '</div>';
       }
       var shown = (you && m.body) ? m.body : m.text;
-      var renderedBody = plan ? qEsc(m.text) : fmtBody(shown, !you, m.id || null);
+      var renderedBody = plan ? qEsc(m.text) : fmtBody(you ? shown : seProseFromList(shown), !you, m.id || null);
       if(!you && !plan) renderedBody = srcStripHtml(renderedBody);
       if(!you && !plan && m.works && m.works.length) renderedBody = seHangCovers(renderedBody, m.works, e.convoId);
       var showWordCount = !you && !plan && (e.type === 'open' || e.type === 'side');
