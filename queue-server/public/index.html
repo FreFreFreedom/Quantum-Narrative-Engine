@@ -1019,16 +1019,6 @@ body::after {
 #roomConvo .se-turn.you .se-body { background:color-mix(in srgb, var(--c-ink) 6%, transparent); border:none; }
 .room-convo .se-draftbox {
   background:var(--glass-2); border-color:color-mix(in srgb, var(--c-ink) 10%, transparent); border-radius:16px; }
-/* The Q is the letter alone, in Cinzel (Antoine's pick, 2026-09-24): still beside older
-   answers, with light passing over it beside the newest one only, so a long conversation
-   has one thing moving, not twenty. */
-#roomConvo .se-turn:not(.you):not(.plan) { position:relative; padding-left:44px; }
-#roomConvo .se-turn:not(.you):not(.plan)::before { content:'Q'; position:absolute; left:6px; top:10px; width:28px;
-  font:600 22px/28px 'Cinzel', serif; text-align:center; color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 70%, transparent); }
-#roomConvo .se-turn:not(.you):not(.plan):not(:has(~ .se-turn:not(.you):not(.plan)))::before {
-  background:linear-gradient(115deg, var(--c-kept-echo, var(--c-accent)) 35%, var(--c-ink) 50%, var(--c-kept-echo, var(--c-accent)) 65%);
-  background-size:300% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:qneQLight 4.5s linear infinite; }
-@keyframes qneQLight { from { background-position:100% 0; } to { background-position:-100% 0; } }
 @media (min-width: 821px) {
   #wsRoom.open { padding:10px; background:color-mix(in srgb, var(--c-bg-2) 55%, #000); }
   #wsRoom .room-threads, #wsRoom .room-cards { border:none; border-radius:16px; background:color-mix(in srgb, var(--c-bg) 93%, var(--c-ink)); }
