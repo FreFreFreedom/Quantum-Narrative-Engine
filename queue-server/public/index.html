@@ -2457,6 +2457,10 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-convo .se-lane-clear { font-size:var(--fs-2xs); color:var(--c-ink-5); }
 .room-convo .se-spend { margin:0 4px 8px; }
 .room-convo .se-compose.se-dictating .se-micwave { margin-bottom:4px; }
+/* While dictating the wave has the line: the words box keeps a small share so what is
+   heard still shows, and the rest of the width is the wave's. */
+.room-convo .se-compose.se-dictating .se-micwave { flex:4 1 160px; }
+.room-convo .se-compose.se-dictating .se-input { flex:1 1 90px; }
 /* No send button (his ask, 2026-09-24): Enter sends. The round button only appears
    as the stop while an answer is being written. */
 .room-convo .se-send:not(.is-stop) { display:none; }
@@ -7285,16 +7289,18 @@ window.qneVoice = (function () {
       var ctx = cv.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       hist.push(Math.max(0.06, getLevel() || 0));
-      var n = Math.floor(W / 4); while (hist.length > n) hist.shift();
+      // A bar every 3px, a new one every 28ms: the wave runs about twice as fast as it
+      // did and fills whatever width the box gives it (Antoine, 2026-09-24).
+      var n = Math.floor(W / 3); while (hist.length > n) hist.shift();
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = getComputedStyle(cv).color;
       hist.forEach(function (v, i) {
-        var h = Math.max(2, v * H), x = W - (hist.length - i) * 4;
+        var h = Math.max(2, v * H), x = W - (hist.length - i) * 3;
         ctx.globalAlpha = 0.3 + 0.7 * i / hist.length;
         ctx.fillRect(x, (H - h) / 2, 2, h);
       });
       ctx.globalAlpha = 1;
-      setTimeout(tick, 50);
+      setTimeout(tick, 28);
     }
     tick();
     return function () { alive = false; };
