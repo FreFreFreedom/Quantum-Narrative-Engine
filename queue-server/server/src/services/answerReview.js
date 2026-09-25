@@ -24,7 +24,7 @@ const WORD_RULES = [
   [/\bgrammar\b/i, 'grammar'],
   [/\btopolog\w*/i, 'topology'],
   [/\bhologra\w*/i, 'hologram'],
-  [/\b(?:this is |it is )?the exact (?:same )?shape\b/i, '"the exact shape" as a way to bring in a parallel'],
+  [/\bthe exact (?:same )?(?:shape|panic|dynamic|pattern|structure|logic)\b/i, '"the exact shape" as a way to bring in a parallel'],
   [/\bthe same (?:shape|dynamic|structure) (?:appears|governs|lives)\b/i, '"the same shape appears…" as a way to bring in a parallel'],
 ];
 
