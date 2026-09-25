@@ -2834,9 +2834,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-ana-foot button { border:0; background:none; box-shadow:none; padding:0; min-width:0; height:auto; font:inherit; color:var(--c-ink-4); cursor:pointer; }
 .lib-ana-foot button:hover { color:var(--c-kept-echo, var(--c-accent)); }
 .lib-ana-acts { margin-left:auto; display:flex; gap:12px; }
-.lib-ana.is-found { opacity:.55; transition:opacity .2s ease; }
-.lib-ana.is-found:hover { opacity:.9; }
-.lib-ana.is-found .lib-ana-sides { color:var(--c-ink-4); }
+/* A found analogy, not yet kept: told apart by its quieter heading only. Dimming the
+   whole card at .55 made it unreadable on the navy panel (2026-09-25). */
+.lib-ana.is-found .lib-ana-sides { color:var(--c-ink-3); }
 .lib-ana [data-ana-keep-lib] { color:var(--c-kept-echo, var(--c-accent)); }
 /* The library's head scrolls away with the wall rather than floating over it (his ask,
    2026-09-24): tabs in the Room's engraved capitals, a search icon, and ✦ for the
@@ -18153,7 +18153,95 @@ function libWireDrop(shelfHost, slot) {
   };
   shelfHost.ondragover = (ev) => { ev.preventDefault(); shelfHost.classList.add('is-dropping'); };
   shelfHost.ondragleave = () => shelfHost.classList.remove('is-dropping');
-  shelfHost.ondrop = (ev) => { ev.preventDefault(); shelfHost.classList.remove('is-dropping'); take(ev.dataTransfer?.files?.[0]); };
+  // Every file dropped, not only the first: screenshots are read into the Library
+  // (books, films, series found in them), PDFs and text go on the shelf.
+  shelfHost.ondrop = (ev) => {
+    ev.preventDefault(); shelfHost.classList.remove('is-dropping');
+    const files = Array.from(ev.dataTransfer?.files || []);
+    const shots = files.filter((f) => roomFileKind(f) === 'image');
+    if (shots.length) libReadShots(shots, slot);
+    files.filter((f) => roomFileKind(f) !== 'image').forEach((f) => take(f));
+  };
+  libWirePaste();
+}
+
+// Screenshots straight into the Library (his ask, 2026-09-25): never attached to a
+// message. All go up at once and the server reads three at a time; each shows its
+// own row while it is read, and the wall refreshes as they land.
+async function libShotDataUrl(file) {
+  // A retina screenshot can be several MB; the reader needs the words, not the
+  // pixels. Scaled to at most 2400px on its long side, as a JPEG.
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(bmp, 0, 0, c.width, c.height); bmp.close();
+  return c.toDataURL('image/jpeg', 0.9);
+}
+const libShotWatch = new Map();   // batch id → shelf row key
+let libShotTimer = null;
+let libShotTally = { book: 0, film: 0, series: 0, duplicates: 0 };
+async function libReadShots(files, slot) {
+  if (slot) slot.textContent = '';
+  await Promise.all(files.map(async (file, i) => {
+    const key = 'shot-' + Date.now() + '-' + i;
+    const name = file.name && !/^image\.(png|jpe?g)$/i.test(file.name) ? file.name : 'Screenshot ' + (i + 1);
+    shelfStage(key, name, 'Reading');
+    try {
+      const image = await libShotDataUrl(file);
+      const b = await apiWrite('/api/convos/library/interest-imports', 'POST', { image, filename: name });
+      if (b && (b.status === 'done' || b.status === 'ordinary')) { libShotLanded(b); shelfDone(key); return; }
+      libShotWatch.set(b.id, key);
+    } catch (err) { shelfDone(key); if (slot) slot.textContent = err.message || 'Could not read that screenshot'; }
+  }));
+  libShotPoll(slot);
+}
+function libShotLanded(b) {
+  const r = b.result || {};
+  ['book', 'film', 'series', 'duplicates'].forEach((k) => { libShotTally[k] += Number(r[k] || 0); });
+}
+function libShotPoll(slot) {
+  clearTimeout(libShotTimer);
+  if (!libShotWatch.size) return libShotSay(slot);
+  libShotTimer = setTimeout(async () => {
+    let list = [];
+    try { list = await api('/api/convos/library/interest-imports'); } catch (_) { return libShotPoll(slot); }
+    let landed = false;
+    (Array.isArray(list) ? list : []).forEach((b) => {
+      const key = libShotWatch.get(b.id); if (!key) return;
+      if (b.status === 'done' || b.status === 'ordinary') { libShotLanded(b); libShotWatch.delete(b.id); shelfDone(key); landed = true; }
+      else if (b.status === 'failed' || b.status === 'undone') { libShotWatch.delete(b.id); shelfDone(key); }
+    });
+    if (landed) renderInterestLibrary();
+    libShotPoll(slot);
+  }, 2000);
+}
+function libShotSay(slot) {
+  const t = libShotTally; const parts = [];
+  if (t.book) parts.push(t.book + (t.book > 1 ? ' books' : ' book'));
+  if (t.film) parts.push(t.film + (t.film > 1 ? ' films' : ' film'));
+  if (t.series) parts.push(t.series + ' series');
+  const s = parts.length ? '+ ' + parts.join(' · ') : (t.duplicates ? 'Already in the Library' : 'Nothing found');
+  libShotTally = { book: 0, film: 0, series: 0, duplicates: 0 };
+  const host = slot && slot.isConnected ? slot : document.querySelector('#roomShelf .shelf-slot');
+  if (host) { host.textContent = s; setTimeout(() => { if (host.textContent === s) host.textContent = ''; }, 6000); }
+  renderInterestLibrary();
+}
+// Pasting a screenshot while the Library is on screen reads it the same way.
+function libWirePaste() {
+  if (window.__libPasteWired) return;
+  window.__libPasteWired = true;
+  document.addEventListener('paste', (ev) => {
+    const shelf = document.getElementById('roomShelf');
+    if (!shelf || !shelf.offsetParent) return;
+    const t = ev.target;
+    if (t && (t.closest?.('textarea, input, [contenteditable="true"]'))) return;
+    const shots = Array.from(ev.clipboardData?.files || []).filter((f) => roomFileKind(f) === 'image');
+    if (!shots.length) return;
+    ev.preventDefault();
+    libReadShots(shots, shelf.querySelector('.shelf-slot'));
+  });
 }
 function libWireSizer(shelfHost) {
   const sizer = shelfHost?.querySelector('.shelf-size input');

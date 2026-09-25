@@ -2,7 +2,6 @@ import { createHash, randomUUID } from 'node:crypto';
 import { readInterestScreenshot } from './interestScreenshot.js';
 
 let db;
-let working = false;
 const requestTimes = new Map();
 const kinds = new Set(['book', 'film', 'series']);
 const clean = (s, n = 300) => typeof s === 'string' ? s.trim().slice(0, n) : '';
@@ -10,7 +9,7 @@ const norm = s => s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().repla
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 function throttle(owner) {
   const times = (requestTimes.get(owner) || []).filter(t => t > Date.now() - 60000);
-  if (times.length >= 12) fail('Too many screenshots at once. Wait a minute and try again.', 429);
+  if (times.length >= 30) fail('Too many screenshots at once. Wait a minute and try again.', 429);
   times.push(Date.now()); requestTimes.set(owner, times);
 }
 function dimensions(bytes, mime) {
@@ -101,8 +100,12 @@ function purge() {
     error=CASE WHEN status IN ('queued','reading','failed') THEN 'Please drop the screenshot again.' ELSE error END
     WHERE image IS NOT NULL AND created_at < datetime('now','-1 hour')`).run();
 }
+// 'library' is the Library wall itself: screenshots dropped there are read into it
+// without belonging to any conversation or riding the next message (2026-09-25).
+export const LIBRARY_DROP = 'library';
 function checkConvo(owner, id) {
   if (!owner) fail('Sign in first.', 401);
+  if (id === LIBRARY_DROP) return;
   const row = db.prepare('SELECT created_by,subject_type FROM convos WHERE id=? AND deleted_at IS NULL').get(id);
   if (!row || row.created_by !== owner || !['open','side'].includes(row.subject_type)) fail('Conversation not found.', 404);
 }
@@ -184,16 +187,27 @@ function saveWork(owner, c, explicit = false) {
     .run(id, owner, c.kind, c.title, c.creator, c.year, identity);
   return { id, added: true };
 }
+// Up to three screenshots are read at once — several dropped together used to wait
+// for each other one by one (his ask, 2026-09-25: "extracting simultaneously").
+const READERS = 3;
+let active = 0;
 async function drain() {
-  if (!db || working) return;
-  working = true;
-  try {
-    let b;
-    while ((b = db.prepare("SELECT * FROM interest_imports WHERE status='queued' AND image IS NOT NULL AND (retry_at IS NULL OR retry_at<=CURRENT_TIMESTAMP) ORDER BY created_at LIMIT 1").get())) {
-      db.prepare("UPDATE interest_imports SET status='reading',attempts=attempts+1,retry_at=NULL WHERE id=?").run(b.id);
+  if (!db) return;
+  while (active < READERS) {
+    const b = db.prepare("SELECT * FROM interest_imports WHERE status='queued' AND image IS NOT NULL AND (retry_at IS NULL OR retry_at<=CURRENT_TIMESTAMP) ORDER BY created_at LIMIT 1").get();
+    if (!b) return;
+    // Claimed before the await, so a second reader never takes the same one.
+    db.prepare("UPDATE interest_imports SET status='reading',attempts=attempts+1,retry_at=NULL WHERE id=?").run(b.id);
+    active++;
+    readOne(b).finally(() => { active--; void drain(); });
+  }
+}
+async function readOne(b) {
+  {
+    {
       try {
         const result = await readInterestScreenshot(b.image);
-        if (batchFor(b.owner, b.id).status !== 'reading') continue;
+        if (batchFor(b.owner, b.id).status !== 'reading') return;
         transaction(() => {
           const counts = { book: 0, film: 0, series: 0, duplicates: 0, review: 0 };
           if (result.recognised) for (const raw of result.rows) {
@@ -223,7 +237,7 @@ async function drain() {
         }
       }
     }
-  } finally { working = false; }
+  }
 }
 export function changeImport(owner, id, action) {
   const b = batchFor(owner, id);
