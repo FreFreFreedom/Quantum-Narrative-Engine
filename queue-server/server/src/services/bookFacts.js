@@ -299,7 +299,7 @@ function rowOf(title, creator) {
 function save(title, creator, facts) {
   db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by, isbn)
               VALUES (?,?,?,?,?,?,?,?)
-              ON CONFLICT(key) DO UPDATE SET cover=excluded.cover,
+              ON CONFLICT(key) DO UPDATE SET cover=COALESCE(NULLIF(excluded.cover,''), book_facts.cover),
                 blurb=COALESCE(NULLIF(excluded.blurb,''), book_facts.blurb),
                 year=COALESCE(NULLIF(excluded.year,''), book_facts.year),
                 isbn=COALESCE(NULLIF(excluded.isbn,''), book_facts.isbn),
@@ -319,6 +319,12 @@ function shape(row, item) {
 }
 
 const FETCH_CAP = 8;
+const COVER_RETRY_HOURS = 6;
+// fetched_at is SQLite's CURRENT_TIMESTAMP: UTC, with a space and no zone.
+function ageHours(stamp) {
+  const t = Date.parse(String(stamp || '').replace(' ', 'T') + (String(stamp || '').endsWith('Z') ? '' : 'Z'));
+  return Number.isNaN(t) ? Infinity : (Date.now() - t) / 3600000;
+}
 export async function bookFactsFor(owner, items = []) {
   if (!db) return {};
   const out = {};
@@ -328,11 +334,16 @@ export async function bookFactsFor(owner, items = []) {
     let row = rowOf(it.title, it.creator);
     // A row with neither cover nor blurb — or one an older matcher answered — is
     // worth one more try later, not on every call.
-    const stale = !row || (!row.cover && !row.blurb) || Number(row.found_by || 0) < MATCHER;
+    // A row with a blurb but no cover is stale too, every few hours: the cover is
+    // what shows, and a catalogue that timed out once (Open Library slow, Google's
+    // anonymous quota spent) left "Shattered Bonds" blank for good (2026-09-25).
+    const stale = !row || (!row.cover && !row.blurb) || Number(row.found_by || 0) < MATCHER
+      || (!row.cover && ageHours(row.fetched_at) >= COVER_RETRY_HOURS);
     if (stale && fetched < FETCH_CAP) {
       fetched += 1;
       const facts = await lookupBook(it.title, it.creator);
       if (facts.cover || facts.blurb || facts.year) { save(it.title, it.creator, facts); row = rowOf(it.title, it.creator); }
+      else if (row) { try { db.prepare('UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP WHERE key=?').run(keyOf(it.title, it.creator)); } catch (err) { /* next time */ } }
     }
     out[it.id] = shape(row, it);
   }
