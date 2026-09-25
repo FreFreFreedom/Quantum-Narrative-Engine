@@ -3206,6 +3206,21 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-rail-sub:hover .se-rail-subname { color:var(--c-ink); }
 .se-rail-sub.is-kept .se-rail-subname { font-family:var(--font-read); font-style:italic; font-size:var(--fs-base); color:var(--c-brand); }
 .se-rail-sub.is-kept .se-rail-subname::before { content:'\201C'; margin-right:2px; }
+/* A chapter at a gap: the + on hover, then the name drawn in the gap. */
+.se-gap { position:absolute; z-index:5; display:flex; align-items:center; gap:10px; height:0; pointer-events:none; }
+.se-gap[hidden] { display:none; }
+.se-gap-line { flex:1; height:1px; background:var(--c-kept-rule, var(--c-brand)); opacity:.5; }
+.se-gap-plus { pointer-events:auto; width:20px; height:20px; margin-top:0; border-radius:50%; border:1px solid var(--c-kept-rule, var(--c-brand)); background:var(--c-bg, var(--c-surface)); color:var(--c-kept-echo, var(--c-brand)); font:400 14px/1 var(--font-ui); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+.se-gap-plus:hover { background:var(--c-kept-rule, var(--c-brand)); color:var(--c-bg, #fff); }
+.se-gap.is-naming { pointer-events:auto; }
+.se-gap-name { pointer-events:auto; flex:0 1 260px; min-width:120px; border:none; border-bottom:1px solid var(--c-kept-rule, var(--c-brand)); background:transparent; outline:none; padding:2px 2px; font:italic var(--fw-medium, 500) 1.05em var(--font-read); color:var(--c-ink); }
+.se-chap-rib { display:inline-block; flex:none; width:10px; height:14px; background:var(--c-kept-rule, var(--c-brand)); clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%); }
+.se-chap { position:relative; display:flex; align-items:center; gap:10px; margin:1.1em 0 .9em; }
+.se-chap::after { content:attr(data-name); order:1; font:italic var(--fw-medium, 500) 1.05em var(--font-read); color:var(--c-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%; }
+.se-chap::before { content:''; order:2; flex:1; height:1px; background:var(--c-kept-rule, var(--c-brand)); opacity:.35; }
+.se-chap-rib { order:0; }
+.se-chap-drop { order:3; font-weight:400; font-size:11px; color:var(--c-ink-5); cursor:pointer; opacity:0; transition:opacity var(--t-fast) var(--ease); }
+.se-chap:hover .se-chap-drop { opacity:1; }
 /* A gutter for the dashes, so a closed rail never sits on top of the words. */
 .se-wrap.has-rail .se-log { padding-left:30px; }
 @media (max-width: 720px) { .se-rail { display:none; } .se-wrap.has-rail .se-log { padding-left:0; } }
@@ -29602,6 +29617,155 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     log.onscroll = function(){ railHere(rail, log, chapters); };
   }
 
+  // ─── A chapter at a gap ────────────────────────────────────────────────────
+  // His ask 2026-09-25: a chapter where he is, not only on a selected passage —
+  // before an answer he has not started, or between two paragraphs. Hovering a
+  // gap shows a hairline with a +; clicking it asks for a name in place. The mark
+  // is an ordinary one whose snippet is the opening of the paragraph after the
+  // gap, so the rail, the jump and the fork all treat it like any other.
+  function gapBlocks(body){
+    return Array.prototype.filter.call(body.children, function(el){
+      return /^(P|H[1-6]|UL|OL|BLOCKQUOTE|PRE|TABLE|HR)$/.test(el.tagName) && el.textContent.trim();
+    });
+  }
+  function gapSnippet(block){
+    return block.textContent.replace(/\s+/g, ' ').trim().slice(0, 160);
+  }
+  function gapName(m){
+    var t = String(m.label || '').replace(/\s+/g, ' ').trim();
+    var w = t.split(' ');
+    return w.length > 7 ? w.slice(0, 7).join(' ') + '…' : t;
+  }
+  // The names of his chapters, drawn in the transcript at their gap. The name is
+  // a data attribute shown by CSS, never a text node: text in the answer would be
+  // read by find, by the rail's names and by the jump as if the model had said it.
+  function paintGapChapters(log, e){
+    if(!log) return;
+    log.querySelectorAll('.se-chap').forEach(function(c){ c.remove(); });
+    (e.marks || []).forEach(function(m){
+      var turn = m.message_id && log.querySelector('.se-turn:not(.you)[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(m.message_id) : m.message_id) + '"]');
+      var body = turn && turn.querySelector('.se-body');
+      var snip = String(m.snippet || '').replace(/\s+/g, ' ').trim();
+      if(!body || snip.length < 2) return;
+      var blocks = gapBlocks(body), at = -1;
+      for(var i = 0; i < blocks.length; i++){ if(gapSnippet(blocks[i]).indexOf(snip) === 0){ at = i; break; } }
+      if(at < 0) return;
+      var d = document.createElement('div');
+      d.className = 'se-chap';
+      d.setAttribute('data-name', gapName(m));
+      d.setAttribute('data-mark-id', m.id);
+      d.innerHTML = '<i class="se-chap-rib"></i><b class="se-chap-drop" aria-label="Forget this chapter">✕</b>';
+      if(at === 0) turn.parentNode.insertBefore(d, turn); else body.insertBefore(d, blocks[at]);
+    });
+  }
+  function wireGapChapters(log, e, repaint){
+    var wrap = log && log.closest('.se-wrap');
+    if(!wrap) return;
+    log._gapE = e; log._gapRepaint = repaint;
+    log.querySelectorAll('.se-chap-drop').forEach(function(x){
+      x.onclick = function(ev){
+        ev.stopPropagation();
+        var c = x.closest('.se-chap');
+        if(c) dropMark(log._gapE, c.getAttribute('data-mark-id'), log._gapRepaint);
+      };
+    });
+    if(log._gapWired) return;
+    log._gapWired = true;
+    var fl = document.createElement('div');
+    fl.className = 'se-gap';
+    fl.hidden = true;
+    fl.innerHTML = '<span class="se-gap-line"></span><button type="button" class="se-gap-plus" aria-label="A chapter here">+</button><span class="se-gap-line"></span>';
+    wrap.appendChild(fl);
+    var cur = null, editing = false, raf = 0;
+    function place(g){
+      var wr = wrap.getBoundingClientRect(), br = g.body.getBoundingClientRect();
+      fl.style.left = (br.left - wr.left) + 'px';
+      fl.style.width = br.width + 'px';
+      fl.style.top = (g.y - wr.top) + 'px';
+    }
+    function find(x, y){
+      var lr = log.getBoundingClientRect();
+      if(y < lr.top || y > lr.bottom) return null;
+      var best = null;
+      log.querySelectorAll('.se-turn:not(.you):not(.plan)[data-msg-id]').forEach(function(turn){
+        if(best) return;
+        var body = turn.querySelector('.se-body');
+        if(!body) return;
+        var br = body.getBoundingClientRect();
+        if(x < br.left - 40 || x > br.right + 20) return;
+        var tr = turn.getBoundingClientRect();
+        if(y < tr.top - 40 || y > tr.bottom) return;
+        var blocks = gapBlocks(body);
+        for(var i = 0; i < blocks.length; i++){
+          var r = blocks[i].getBoundingClientRect();
+          var above = i === 0
+            ? (turn.previousElementSibling ? turn.previousElementSibling.getBoundingClientRect().bottom : tr.top - 16)
+            : blocks[i - 1].getBoundingClientRect().bottom;
+          var top = i === 0 ? Math.min(tr.top, r.top) : r.top;
+          var gy = (above + top) / 2;
+          if(Math.abs(y - gy) <= Math.max(9, (top - above) / 2 + 2)){
+            best = { turn: turn, body: body, block: blocks[i], y: gy, id: turn.getAttribute('data-msg-id') };
+            return;
+          }
+        }
+      });
+      return best;
+    }
+    log.addEventListener('mousemove', function(ev){
+      if(editing) return;
+      var x = ev.clientX, y = ev.clientY;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function(){
+        if(editing) return;
+        if(getSelection && String(getSelection()).trim()){ fl.hidden = true; cur = null; return; }
+        var g = find(x, y);
+        if(!g){ fl.hidden = true; cur = null; return; }
+        cur = g; place(g); fl.hidden = false;
+      });
+    });
+    wrap.addEventListener('mouseleave', function(){ if(!editing){ fl.hidden = true; cur = null; } });
+    log.addEventListener('scroll', function(){
+      if(editing && cur && cur.block.isConnected){
+        var r = cur.block.getBoundingClientRect();
+        cur.y = r.top - 8; place(cur);
+      } else if(!editing){ fl.hidden = true; cur = null; }
+    });
+    function close(){
+      editing = false; fl.classList.remove('is-naming'); fl.hidden = true; cur = null;
+      fl.innerHTML = '<span class="se-gap-line"></span><button type="button" class="se-gap-plus" aria-label="A chapter here">+</button><span class="se-gap-line"></span>';
+    }
+    fl.addEventListener('mousedown', function(ev){ if(ev.target.closest('.se-gap-plus')) ev.preventDefault(); });
+    fl.addEventListener('click', function(ev){
+      if(!ev.target.closest('.se-gap-plus') || !cur) return;
+      ev.stopPropagation();
+      editing = true;
+      fl.classList.add('is-naming');
+      fl.innerHTML = '<span class="se-gap-line"></span><i class="se-chap-rib"></i><input class="se-gap-name" type="text" maxlength="80" aria-label="Chapter name"><span class="se-gap-line"></span>';
+      var inp = fl.querySelector('input');
+      var g = cur;
+      inp.focus();
+      var done = false;
+      function save(){
+        if(done) return; done = true;
+        var name = inp.value.replace(/\s+/g, ' ').trim();
+        var ee = log._gapE, rp = log._gapRepaint;
+        close();
+        if(!ee || !ee.convoId || !g.block.isConnected) return;
+        apiWrite('/api/convos/' + ee.convoId + '/marks', 'POST', { messageId: g.id, snippet: gapSnippet(g.block), label: name })
+          .then(function(out){
+            if(out && out.mark){ if(!ee.marks) ee.marks = []; ee.marks.push(out.mark); }
+            if(rp) rp();
+          })
+          .catch(function(){ ee.note = 'Could not save that chapter.'; if(rp) rp(); });
+      }
+      inp.addEventListener('keydown', function(k){
+        if(k.key === 'Enter'){ k.preventDefault(); save(); }
+        else if(k.key === 'Escape'){ k.preventDefault(); done = true; close(); }
+      });
+      inp.addEventListener('blur', function(){ if(!done){ done = true; close(); } });
+    });
+  }
+
   // Go and read a passage where it was said — the one move behind both a chapter
   // chip and a carried quote, so they cannot drift apart.
   function jumpToPassage(log, messageId, snippet){
@@ -30376,6 +30540,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // Painted here, next to the strip, because they are the same thing seen twice.
     var rail = host.querySelector('.se-rail');
     if(rail) paintRail(rail, log, e, repaintHere);
+    paintGapChapters(log, e);
+    wireGapChapters(log, e, repaintHere);
     // Every answer's words are read ahead of time, so a click on one is instant.
     warmGlossary(e, log);
 
