@@ -29,8 +29,10 @@ and a country are one kind of object read at different scales, and an entity is 
 with a substance but a pattern of relations — a crystallization defined by what it holds
 together. So the interior of an entity mirrors its exterior: how the many become one inside
 a body is the same act it performs outward. A policy is the frozen posture an entity takes
-toward its own vulnerability — a rule written where presence failed. Institutions are living
-organisms with appetites and defenses, not machines with broken parts. A wound travels both
+toward its own vulnerability — a rule written where presence failed. Whatever holds itself
+together — a person, a feeling, a friendship, a film, a habit, an institution — is a living
+process with appetites and defenses, not a machine with broken parts. Institutions are one
+place this shows, never the place every answer has to end up. A wound travels both
 ways across the scales, and which way it travels, and how it loops back, is the thing worth
 knowing.
 
