@@ -1174,11 +1174,19 @@ export async function addNamedMark(convoId, { messageId, snippet = '' } = {}) {
     const snip = String(snippet || '').replace(/[#*_>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
     const at = snip ? flat.indexOf(snip) : -1;
     const passage = (at >= 0 ? flat.slice(at) : flat).slice(0, 3000);
-    // Asked twice: the free lane sometimes answers empty, and once is not enough.
+    // Gemini Flash Lite first, twice (it sometimes answers empty); then the Claude
+    // subscription, then the ChatGPT one — his order, 2026-09-25. Both of those
+    // go through the Mac runner, so with it off only Gemini can name.
+    const lanes = [
+      { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', strictModel: true },
+      { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', strictModel: true },
+      { provider: 'claude-side', account: 'side', model: 'haiku', strictModel: true },
+      { provider: 'codex', strictModel: true },
+    ];
     let name = null;
-    for (let i = 0; i < 2 && !name; i++) {
+    for (let i = 0; i < lanes.length && !name; i++) {
       const out = await generateText({
-        feature: 'summary', label: 'conversations:chapter-name', maxTokens: 30, timeoutMs: 15_000, maxAttempts: 2,
+        ...lanes[i], feature: 'summary', label: 'conversations:chapter-name', maxTokens: 30, timeoutMs: i < 2 ? 15_000 : 40_000, maxAttempts: 1,
         prompt: 'Below is a passage from a long answer. Give it a chapter name: three to six words naming what this part is about, the way a book names a chapter. Concrete, not generic ("Rent as a trauma engine", not "Analysis"). Reply with the name alone, no quotes.\n\n' + passage,
       }).catch(() => null);
       name = cleanTitle(out?.text);
