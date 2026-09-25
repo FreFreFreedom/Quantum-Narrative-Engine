@@ -925,7 +925,16 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     // next one is tried, and from outside that is indistinguishable from a model
     // thinking hard — so say which one is being asked, and say when one gives up.
     if (onStatus) { try { onStatus(failures.length ? `That lane did not answer — trying ${laneName(p, m)}…` : `Asking ${laneName(p, m)}…`); } catch {} }
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, onUsage, account: p === providerId ? explicitAccount : null, images, effort });
+    let result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, onUsage, account: p === providerId ? explicitAccount : null, images, effort });
+    // "High demand" is the provider's busy signal, not a verdict on this request or
+    // this lane: it usually clears in seconds. A hand-picked model has no next rung,
+    // so without this one busy second failed the whole turn (2026-09-25).
+    for (const wait of [3000, 8000]) {
+      if (result?.text || !BUSY_RE.test(String(result?.message || result?.error || ''))) break;
+      if (onStatus) { try { onStatus(`${laneName(p, m)} is busy — trying again…`); } catch {} }
+      await new Promise((r) => setTimeout(r, wait));
+      result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, onUsage, account: p === providerId ? explicitAccount : null, images, effort });
+    }
     attempted += 1;
     recordLaneCall(p, m, !!result?.text);
 
@@ -982,6 +991,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
 // a 500-character JSON blob, and in the Room it is shown to Antoine verbatim as the
 // assistant's reply. Every earlier use of `failures` inside the chain loop stays
 // untouched: getFallbackChain's stall guard matches on the raw text.
+const BUSY_RE = /high demand|overloaded|UNAVAILABLE|\b503\b/i;
 function plainFailure(text, timeoutMs) {
   let out = String(text || '');
   // undici's AbortError message, which says nothing about what happened.
@@ -997,6 +1007,9 @@ function plainFailure(text, timeoutMs) {
   // attached" as the assistant's reply.
   if (/no runner attached|not answering right now|runner is not attached/i.test(out)) {
     return 'The Mac that runs this model is not answering right now. Send it again in a moment, or pick another model in the dropdown.';
+  }
+  if (BUSY_RE.test(out)) {
+    return "That model is overloaded right now (Google's side, not ours). Send it again in a minute, or pick another model in the dropdown.";
   }
   if (/exceeded your current quota|RESOURCE_EXHAUSTED/i.test(out)) {
     return "That model is rate-limited right now — wait a moment, or pick another one in the model dropdown.";
