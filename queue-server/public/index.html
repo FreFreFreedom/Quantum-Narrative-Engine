@@ -3018,6 +3018,30 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    step smaller and lighter, and the actions as a quiet row of gold capitals at the
    foot. The same card serves a passage with no word: then it is the row alone. */
 .se-like-pop { padding:4px 6px !important; }
+.se-teach { position:fixed; z-index:var(--z-popover); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border); border-radius:14px; box-shadow:0 12px 34px rgba(0,0,0,.16); display:flex; flex-direction:column; overflow:hidden; animation:seToastIn .2s ease both; }
+.se-teach-log { max-height:180px; overflow-y:auto; padding:10px 14px 0; display:flex; flex-direction:column; gap:6px; }
+.se-teach-log:empty { display:none; }
+.se-teach-t { font-size:var(--fs-sm); line-height:1.45; }
+.se-teach-t.is-me { color:var(--c-ink-3); align-self:flex-end; text-align:right; max-width:85%; }
+.se-teach-t.is-ai { color:var(--c-ink); max-width:92%; }
+.se-teach-items { display:flex; flex-direction:column; gap:4px; padding:8px 14px 0; }
+.se-teach-items:empty { display:none; }
+.se-teach-item { display:flex; gap:8px; align-items:baseline; font-family:var(--font-read); font-size:var(--fs-sm); line-height:1.45; color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 7%, transparent); border-radius:8px; padding:6px 10px; }
+.se-teach-item .k { flex:none; font-family:var(--font-ui); }
+.se-teach-q { display:flex; flex-direction:column; padding:6px 8px 0; }
+.se-teach-q:empty { display:none; }
+.se-teach-qt { font-size:var(--fs-sm); color:var(--c-ink); padding:4px 6px 6px; }
+.se-teach-opt { display:flex; gap:10px; align-items:baseline; text-align:left; background:none; border:none; border-radius:8px; padding:6px 8px; font:inherit; font-size:var(--fs-sm); color:var(--c-ink-3); cursor:pointer; }
+.se-teach-opt:hover { background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 8%, transparent); color:var(--c-kept-echo, var(--c-accent)); }
+.se-teach-opt .n { color:var(--c-ink-5); width:10px; }
+.se-teach-row { display:flex; align-items:center; gap:6px; padding:10px 10px 10px 14px; }
+.se-teach-in { flex:1; min-width:0; border:none; outline:none; background:transparent; color:var(--c-ink); font:inherit; font-size:var(--fs-sm); padding:4px 0; }
+.se-teach-save { border:1px solid var(--c-kept-echo, var(--c-accent)); color:var(--c-kept-echo, var(--c-accent)); background:none; border-radius:var(--r-pill); padding:3px 12px; font:inherit; font-size:var(--fs-xs); cursor:pointer; }
+.se-teach-save:disabled { opacity:.35; cursor:default; }
+.se-teach-save:not(:disabled):hover { background:var(--c-kept-echo, var(--c-accent)); color:var(--c-bg, #fff); }
+.se-teach-x { border:none; background:none; color:var(--c-ink-5); cursor:pointer; font-size:11px; padding:2px 4px; }
+.se-fly-dot { position:fixed; z-index:var(--z-popover); width:9px; height:9px; border-radius:50%; background:var(--c-kept-echo, var(--c-accent)); transition:transform .7s cubic-bezier(.5,0,.3,1), opacity .7s; pointer-events:none; }
+.is-pulse { color:var(--c-kept-echo, var(--c-accent)) !important; transition:color .3s; }
 .se-mind-toast { position:fixed; z-index:var(--z-popover); display:flex; align-items:center; gap:8px; max-width:270px; padding:6px 14px 6px 10px; border-radius:var(--r-pill); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border); box-shadow:0 8px 24px rgba(0,0,0,.12); font-size:var(--fs-sm); color:var(--c-kept-echo, var(--c-accent)); animation:seToastIn .25s var(--ease, ease) both; transition:opacity .4s, transform .4s; pointer-events:none; }
 .se-mind-toast span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .se-mind-toast.is-miss { color:var(--c-ink-4); padding-left:14px; }
@@ -29470,25 +29494,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
           keepPassage(e, msgId, passage, repaint);
         });
-        // Like: answered the way he loves. Teaches the Mind how to answer him; a
-        // quick note on what he liked is offered right after, and can be left empty.
-        if(msgId) mk('spark', 'Like', 'Answered the way I like — teach the Mind', function(){
-          likePassage(e, msgId, passage, r, repaint);
-        });
-        // Interested: the subject behind this goes into his library of subjects,
-        // which the analogy engines reach toward now and then.
-        mk('target', 'Interested', 'This subject interests me', function(){
-          // Feedback sits by the selection and fades — never a line at the end of
-          // the thread, where it read as the model's own words (2026-09-25).
-          var t = seMindToast(r, '…', 'wait');
-          apiWrite('/api/mind/subjects', 'POST', { passage: passage, convoId: e.convoId || null, messageId: msgId || null })
-            .then(function(out){
-              var n = out && out.subject && out.subject.name;
-              seMindToast(r, n || 'Not sure which subject', n ? 'ok' : 'miss', t);
-              if(typeof loadRoomMind === 'function') loadRoomMind();
-            })
-            .catch(function(){ seMindToast(r, 'Not sure which subject', 'miss', t); });
-        });
         // Aside and Remember only make sense against the Room's own main thread
         // (plan "side talks in the Room, and remember this") — a side talk of a
         // task card or a seed has nothing to step out of.
@@ -29507,10 +29512,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             saveDraft(e);
             repaint();
           });
-          mk('bulb', 'Remember', 'Understand what this points at, and choose where it goes', function(){
-            roomRememberOffer(e.convoId, msgId, passage);
-          });
         }
+        // Teach: a small conversation over this passage — say what to keep, see
+        // what it understood, Save when it is right. Replaces Like, Interested and
+        // Remember, which were three doors into the same room (his pick, 2026-09-25).
+        mk('target', 'Teach', 'Teach the Mind something from this', function(){
+          openTeach(e, msgId, passage, r);
+        });
         document.body.appendChild(quotePop);
         placeQuotePop();
         // Whatever is selected, its meaning here opens under the bar by itself: one
@@ -30231,6 +30239,84 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       })
       .catch(function(){ seMindToast(rect, 'Not saved', 'miss'); });
   }
+  // ---------- Teach ----------
+  var teachBox = null;
+  function closeTeach(){ if(teachBox){ teachBox.remove(); teachBox = null; document.removeEventListener('keydown', teachKeys, true); } }
+  function teachKeys(ev){ if(ev.key === 'Escape' && teachBox){ ev.preventDefault(); closeTeach(); } }
+  var TEACH_ICON = { how: '♡', subject: '◎', idea: '✦', about: '·' };
+  function openTeach(e, msgId, passage, rect){
+    closeTeach();
+    var st = { turns: [], items: [], question: null, busy: false };
+    var box = teachBox = document.createElement('div');
+    box.className = 'se-teach';
+    box.innerHTML = '<div class="se-teach-log"></div><div class="se-teach-items"></div><div class="se-teach-q"></div>'
+      + '<div class="se-teach-row"><input class="se-teach-in" maxlength="600" placeholder="…" aria-label="What to keep">'
+      + '<button type="button" class="se-teach-save" disabled>Save</button><button type="button" class="se-teach-x" aria-label="Close">✕</button></div>';
+    document.body.appendChild(box);
+    var w = Math.min(440, window.innerWidth - 16);
+    box.style.width = w + 'px';
+    box.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, rect ? rect.left : 20)) + 'px';
+    var below = rect ? rect.bottom + 10 : 80;
+    box.style.top = (below + 260 < window.innerHeight ? below : Math.max(8, (rect ? rect.top : 80) - 270)) + 'px';
+    var logEl = box.querySelector('.se-teach-log'), itemsEl = box.querySelector('.se-teach-items'), qEl = box.querySelector('.se-teach-q');
+    var inp = box.querySelector('.se-teach-in'), saveBtn = box.querySelector('.se-teach-save');
+    var paint = function(){
+      logEl.innerHTML = st.turns.map(function(t){ return '<div class="se-teach-t ' + (t.role === 'ai' ? 'is-ai' : 'is-me') + '">' + qEsc(t.text) + '</div>'; }).join('')
+        + (st.busy ? '<div class="se-teach-t is-ai is-wait">' + orbHtml('working', 14) + '</div>' : '');
+      itemsEl.innerHTML = st.items.map(function(it){ return '<div class="se-teach-item"><span class="k">' + (TEACH_ICON[it.kind] || '·') + '</span><span>' + qEsc(it.text) + '</span></div>'; }).join('');
+      qEl.innerHTML = st.question ? '<div class="se-teach-qt">' + qEsc(st.question.text) + '</div>' + st.question.options.map(function(o, i){ return '<button type="button" class="se-teach-opt" data-opt="' + i + '"><span class="n">' + (i + 1) + '</span>' + qEsc(o) + '</button>'; }).join('') : '';
+      qEl.querySelectorAll('[data-opt]').forEach(function(b){ b.onclick = function(){ send(st.question.options[Number(b.getAttribute('data-opt'))]); }; });
+      saveBtn.disabled = st.busy || !st.items.length;
+      logEl.scrollTop = logEl.scrollHeight;
+    };
+    var send = function(text){
+      text = String(text || '').trim(); if(!text || st.busy) return;
+      st.turns.push({ role: 'me', text: text }); st.question = null; st.busy = true; inp.value = ''; paint();
+      apiWrite('/api/mind/teach', 'POST', { passage: passage, turns: st.turns.map(function(t){ return { role: t.role === 'ai' ? 'ai' : 'user', text: t.text }; }) })
+        .then(function(out){
+          st.busy = false;
+          if(!out || out.error){ st.turns.push({ role: 'ai', text: '…' }); paint(); return; }
+          var say = out.question ? (out.reply ? out.reply + ' ' : '') : (out.reply || '');
+          if(say) st.turns.push({ role: 'ai', text: say.trim() });
+          st.items = out.items || []; st.question = out.question || null;
+          paint(); inp.focus();
+        })
+        .catch(function(){ st.busy = false; st.turns.push({ role: 'ai', text: '…' }); paint(); });
+    };
+    inp.onkeydown = function(ev){ if(ev.key === 'Enter'){ ev.preventDefault(); send(inp.value); } };
+    box.querySelector('.se-teach-x').onclick = closeTeach;
+    box.onmousedown = function(ev){ ev.stopPropagation(); };
+    saveBtn.onclick = function(){
+      if(!st.items.length) return;
+      var from = box.getBoundingClientRect();
+      apiWrite('/api/mind/teach/save', 'POST', { items: st.items, passage: passage, convoId: e.convoId || null, messageId: msgId || null })
+        .then(function(out){
+          var n = (out && out.saved || []).length;
+          closeTeach();
+          seMindToast(from, n ? 'Saved to the Mind' : 'Already in the Mind', n ? 'ok' : 'miss');
+          if(n) seFlyToMind(from);
+          if(typeof loadRoomMind === 'function') loadRoomMind();
+        })
+        .catch(function(){ seMindToast(from, 'Not saved', 'miss'); });
+    };
+    document.addEventListener('keydown', teachKeys, true);
+    paint(); inp.focus();
+  }
+  // A dot flies from where it was saved to the Mind tab, when that tab is on screen.
+  function seFlyToMind(from){
+    var tab = document.querySelector('[data-room-pane="mind"]');
+    if(!tab || !tab.offsetParent) return;
+    var to = tab.getBoundingClientRect();
+    var dot = document.createElement('div'); dot.className = 'se-fly-dot';
+    dot.style.left = (from.left + 30) + 'px'; dot.style.top = (from.top + 20) + 'px';
+    document.body.appendChild(dot);
+    requestAnimationFrame(function(){
+      dot.style.transform = 'translate(' + (to.left + to.width / 2 - from.left - 30) + 'px,' + (to.top + to.height / 2 - from.top - 20) + 'px) scale(.4)';
+      dot.style.opacity = '.2';
+    });
+    setTimeout(function(){ dot.remove(); tab.classList.add('is-pulse'); setTimeout(function(){ tab.classList.remove('is-pulse'); }, 700); }, 750);
+  }
+
   // A small pill by the selection: a ring that closes into a tick when saved, then
   // it fades. Reused in place (pass the one returned) so waiting turns into done.
   function seMindToast(rect, text, state, reuse){

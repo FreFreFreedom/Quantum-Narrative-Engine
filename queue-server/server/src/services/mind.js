@@ -937,6 +937,97 @@ export function subjectsBlock(n = 3) {
   return line ? `\n=== WHERE HE LIKES TO LOOK ===\n${line}` : '';
 }
 
+// ---------------------------------------------------------------------------
+// Teach — a small conversation over a selected passage (his design, 2026-09-25):
+// he writes anything ("remember this about the nature of policing"), the Mind says
+// in one line what it understood, asks with choices when it is unsure, he corrects
+// it, and only his Save writes it down — ready for the very next prompt.
+//
+// Moon, not finger, at the one place it matters most: what is saved is the
+// understanding, never his sentence and never the passage's images. A proposal that
+// lifts a phrase or a name from the passage is asked for again in other words.
+const TEACH_KINDS = ['how', 'subject', 'idea', 'about'];
+
+function teachPrompt({ passage, turns, avoid }) {
+  const convo = turns.map((t) => `${t.role === 'ai' ? 'YOU' : 'HIM'}: ${String(t.text || '').slice(0, 800)}`).join('\n');
+  return `You are the memory of a personal thinking app with one user. He selected a passage in an answer and is telling you, in his own words, what to keep from it. English is his second language: read what he MEANS.
+
+Work out what he wants kept. It is one or more of:
+- "how": how he likes an answer to think or be written (a move, a stance, a reach, a rhythm) — something to do in future answers about ANY subject.
+- "subject": a subject he is drawn to — a person, an institution, an idea, a place, a work, a field. Its text is just its usual short name.
+- "idea": an understanding about the world or about the paradigm (what something really is, how it works, what it does) — the thing itself, as a claim.
+- "about": a fact about him.
+
+THE MOST IMPORTANT RULE — point at the moon, not at the finger. Future answers will read what you save and copy any concrete thing in it. So save the UNDERSTANDING in your own plain words: never quote him, never quote or paraphrase the passage, never carry over its images, metaphors, names or distinctive words (a "subject" item's name is the only exception).${avoid.length ? `\nYour last attempt lifted these from the passage — say it without them: ${avoid.join(', ')}.` : ''}
+
+If you understand him, propose the items and say in "reply" one short plain line of what you will keep. If something real is unclear — which of two things he means, or how wide it should go — ask ONE question with 2 to 4 short choices instead (items may then hold your best guess, or be empty). Never ask when it is clear.
+
+Return ONLY JSON, no fence:
+{"reply": "<one short line to him>", "items": [{"kind": "how|subject|idea|about", "text": "<at most 200 characters>", "detail": "<optional, at most 500 characters, the reasoning in your own words>"}], "question": null or {"text": "<the question>", "options": ["<short choice>", "<short choice>"]}}
+
+THE PASSAGE HE SELECTED:
+${passage || '(none — he is writing without a passage)'}
+
+THE CONVERSATION SO FAR:
+${convo}`;
+}
+
+function parseTeach(text) {
+  const m = String(text || '').match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  let o; try { o = JSON.parse(m[0]); } catch { return null; }
+  const items = (Array.isArray(o.items) ? o.items : [])
+    .filter((it) => it && TEACH_KINDS.includes(it.kind) && String(it.text || '').trim())
+    .slice(0, 4)
+    .map((it) => ({ kind: it.kind, text: String(it.text).trim().slice(0, 200), detail: String(it.detail || '').trim().slice(0, 500) || null }));
+  const q = o.question && String(o.question.text || '').trim()
+    ? { text: String(o.question.text).trim().slice(0, 200), options: (Array.isArray(o.question.options) ? o.question.options : []).map((x) => String(x || '').trim().slice(0, 90)).filter(Boolean).slice(0, 4) }
+    : null;
+  return { reply: String(o.reply || '').trim().slice(0, 300), items, question: q && q.options.length >= 2 ? q : null };
+}
+
+export async function teachTurn({ passage = '', turns = [] } = {}) {
+  const p = String(passage || '').replace(/\s+/g, ' ').trim().slice(0, 3000);
+  const t = (Array.isArray(turns) ? turns : []).slice(-12).filter((x) => x && String(x.text || '').trim());
+  if (!t.length) return { error: 'empty' };
+  let avoid = [];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await generateText({ feature: 'summary', maxTokens: 1500, label: 'mind:teach', prompt: teachPrompt({ passage: p, turns: t, avoid }) });
+    if (res.error) return { error: res.error };
+    const out = parseTeach(res.text);
+    if (!out) continue;
+    const leaks = p ? tasteLeaks(out.items.filter((i) => i.kind !== 'subject').map((i) => `${i.text} ${i.detail || ''}`).join(' '), [p]) : [];
+    if (leaks.length && attempt < 2) { avoid = leaks.slice(0, 12); continue; }
+    return { ok: true, ...out };
+  }
+  return { error: 'unreadable' };
+}
+
+// His Save. Each item goes where it lives: a subject to the subjects library; a
+// "how" to a Central style fact (so it rides the very next prompt) and to the Like
+// store too, so the evolving taste reading learns from it; an idea or a fact about
+// him to the Mind's facts.
+export function teachSave({ items = [], passage = '', convoId = null, messageId = null } = {}) {
+  const saved = [];
+  for (const it of (Array.isArray(items) ? items : []).slice(0, 4)) {
+    const text = String(it?.text || '').trim().slice(0, 240);
+    if (!text || !TEACH_KINDS.includes(it.kind)) continue;
+    if (it.kind === 'subject') {
+      const r = saveSubject({ name: text, kind: 'other', convoId, messageId });
+      if (!r.error) saved.push({ kind: 'subject', text: r.subject.name });
+      continue;
+    }
+    const kind = it.kind === 'how' ? 'style' : it.kind === 'idea' ? 'vision' : 'about';
+    const r = saveFact({ kind, text, detail: it.detail || null, sourceConvoId: convoId, sourceNote: 'teach', central: it.kind === 'how' });
+    if (r && !r.error) saved.push({ kind: it.kind, text, id: r.id });
+    if (it.kind === 'how' && passage) {
+      try { likeLine({ text: passage, convoId, messageId, note: text }); } catch {}
+    }
+  }
+  if (saved.length) { broadcastAll('mind:updated', {}); mirrorOut(); }
+  return { ok: true, saved };
+}
+
 // After a mark is taken back, the reading must forget it too.
 export function refreshAnswerTasteSoon() {
   setImmediate(() => { runAnswerTaste(false).catch((e) => console.error('[mind] answer taste failed:', e?.message || e)); });

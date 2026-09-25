@@ -93,6 +93,17 @@ export function mindRoutes() {
     res.json(out);
   });
 
+  // Teach — the small conversation over a passage, and his Save.
+  router.post('/teach', asyncHandler(async (req, res) => {
+    const out = await mind.teachTurn({ passage: req.body?.passage, turns: req.body?.turns });
+    if (out.error) return res.status(out.error === 'empty' ? 400 : 502).json(out);
+    res.json(out);
+  }));
+  router.post('/teach/save', (req, res) => {
+    const b = req.body || {};
+    res.json(mind.teachSave({ items: b.items, passage: b.passage, convoId: b.convoId, messageId: b.messageId }));
+  });
+
   // Subjects he is drawn to — the analogy engines reach toward a few of them.
   router.get('/subjects', (req, res) => { res.json({ subjects: mind.listSubjects() }); });
   router.post('/subjects', asyncHandler(async (req, res) => {
