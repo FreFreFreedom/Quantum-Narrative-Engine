@@ -779,7 +779,11 @@ async function runAnswerTaste(force = false) {
   const seen = new Set(String(markGet(MARK_TASTE) || '').split(',').filter(Boolean));
   const added = ids.filter((id) => !seen.has(id)).length;
   const removed = [...seen].some((id) => !ids.includes(id));
-  if (rows.length < TASTE_MIN) return;
+  // Likes lead. Kept lines alone are mostly chosen for their SUBJECT, and a reading
+  // made from them alone described the subject as if it were a style — "treat every
+  // system as an engineered apparatus", the machine-and-institution pull the lens
+  // forbids (2026-09-25). Keeps only join once there are Likes to lead them.
+  if (liked.length < TASTE_MIN) return;
   if (!force && added < TASTE_NEW && !removed) return;
 
   const lines = rows.map((r) => r.text);
