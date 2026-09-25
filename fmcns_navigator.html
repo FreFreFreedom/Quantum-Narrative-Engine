@@ -2713,6 +2713,20 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-turnfoot .se-wordcount, .se-turnfoot .se-turnacts { margin-top:0; }
 .se-turnfoot .se-turnacts { justify-content:flex-start; }
 .se-turndel svg { width:13px; height:13px; display:block; }
+/* A timeline inside an answer: between two hairlines, in the look's own ink. */
+.se-tl { margin:20px 0 16px; padding:20px 4px 12px; border-top:1px solid var(--c-border); border-bottom:1px solid var(--c-border); }
+.se-tl svg { width:100%; height:auto; display:block; overflow:visible; }
+.se-tl text { font-family:var(--font-read); fill:var(--c-ink); }
+.se-tl .tl-i { font-style:italic; fill:var(--c-ink-3); }
+.se-tl .tl-d { font-family:var(--font-ui); font-size:12px; fill:var(--c-ink-5); letter-spacing:.06em; }
+.se-tl .tl-ln { stroke:var(--c-border-3); stroke-width:1.2; fill:none; }
+.se-tl .tl-as { stroke:var(--c-kept-echo, var(--c-accent)); stroke-width:1.5; fill:none; }
+.se-tl .tl-a { fill:var(--c-kept-echo, var(--c-accent)); }
+.se-tl .tl-ao { fill:var(--c-bg); stroke:var(--c-kept-echo, var(--c-accent)); stroke-width:2; }
+.se-tl .tl-dash { stroke-dasharray:4 5; }
+.se-tl .tl-dot { stroke-dasharray:2 4; stroke-width:1; }
+.se-tl .tl-b1 { fill:var(--c-surface-2); } .se-tl .tl-b2 { fill:var(--c-surface-3); }
+.se-tl-pending { height:0; padding:0; border-bottom:none; }
 .se-turndel.is-armed { color:var(--c-danger) !important; background:color-mix(in srgb, var(--c-danger) 12%, transparent) !important; }
 .se-turnfork, .se-turnredo, .se-turnrewind, .se-turncopy, .se-turndel { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
   font-family:var(--font-ui); font-size:var(--fs-sm); line-height:1; width:24px; height:24px;
@@ -28247,6 +28261,153 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
      is the only thing parsed on a frame. The cache is keyed on the text as well, so an
      edited or re-asked message is never served a stale rendering. */
   var mdCache = new Map();
+  // TIMELINES INSIDE AN ANSWER (his ask, 2026-09-25, all seven kinds from the
+  // timelines mockup, the model choosing). The model writes a fenced block with
+  // language "timeline" holding one JSON object; this draws it as SVG in the look's
+  // own colours. A block that does not parse — including one still being streamed —
+  // is drawn as a faint line, never shown as raw JSON.
+  var TL_W = 800;
+  function tlE(s){ return qEsc(String(s == null ? '' : s)); }
+  function tlT(x, y, s, cls, extra){ return '<text x="' + Math.round(x) + '" y="' + Math.round(y) + '"' + (cls ? ' class="' + cls + '"' : '') + (extra || '') + '>' + tlE(s) + '</text>'; }
+  function tlDot(x, y, r, hollow){ return '<circle cx="' + Math.round(x) + '" cy="' + Math.round(y) + '" r="' + r + '" class="' + (hollow ? 'tl-ao' : 'tl-a') + '"/>'; }
+  function tlLine(x1, y1, x2, y2, cls){ return '<line x1="' + Math.round(x1) + '" y1="' + Math.round(y1) + '" x2="' + Math.round(x2) + '" y2="' + Math.round(y2) + '" class="' + (cls || 'tl-ln') + '"/>'; }
+  function tlNum(v){ var n = Number(v); return isFinite(n) ? n : null; }
+  function tlSvg(h, body){ return '<svg viewBox="0 0 ' + TL_W + ' ' + Math.round(h) + '" role="img">' + body + '</svg>'; }
+  // Labels on one row that would collide step up to a second row.
+  function tlRows(xs, gap){ var rows = [], last = [-1e9, -1e9]; xs.forEach(function(x){ var r = (x - last[0] >= gap) ? 0 : 1; if(r === 1 && x - last[1] < gap) r = 0; rows.push(r); last[r] = x; }); return rows; }
+
+  var TL_KINDS = {
+    scale: function(s){
+      var ev = (s.events || []).filter(function(e){ return tlNum(e.at) !== null; }).slice(0, 9);
+      var eras = (s.eras || []).filter(function(e){ return tlNum(e.from) !== null && tlNum(e.to) !== null; }).slice(0, 6);
+      if(ev.length < 2 && !eras.length) return '';
+      var vals = []; ev.forEach(function(e){ vals.push(+e.at); }); eras.forEach(function(e){ vals.push(+e.from, +e.to); });
+      var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals); if(hi === lo) hi = lo + 1;
+      var x = function(v){ return 40 + (v - lo) / (hi - lo) * 720; };
+      var o = tlLine(20, 75, 780, 75);
+      eras.forEach(function(e, i){ var a = x(+e.from), b = x(+e.to); o += '<rect x="' + Math.round(a) + '" y="62" width="' + Math.max(2, Math.round(b - a)) + '" height="26" class="tl-b' + (i % 2 + 1) + '"/>'; if(b - a > 70) o += tlT(a + 8, 80, e.label, 'tl-i', ' font-size="14"'); });
+      ev.sort(function(a, b){ return a.at - b.at; });
+      var xs = ev.map(function(e){ return x(+e.at); }), rows = tlRows(xs, 110);
+      ev.forEach(function(e, i){
+        var up = rows[i] ? 26 : 44;
+        if(rows[i]) o += tlLine(xs[i], 34, xs[i], 56);
+        o += tlDot(xs[i], 62, 5) + tlT(xs[i], up, e.label, '', ' text-anchor="middle" font-size="15"');
+        o += tlT(xs[i], rows[i] ? 124 : 108, e.date != null ? e.date : e.at, 'tl-d', ' text-anchor="middle"');
+      });
+      return tlSvg(136, o);
+    },
+    spine: function(s){
+      var ev = (s.events || []).slice(0, 9); if(ev.length < 2) return '';
+      var o = '', y = 30, ys = [];
+      ev.forEach(function(e){ ys.push(y); y += e.note ? 84 : 64; });
+      o += tlLine(200, 16, 200, ys[ys.length - 1] + 14);
+      ev.forEach(function(e, i){
+        var edge = i === 0 || i === ev.length - 1;
+        o += tlT(178, ys[i] + 4, e.date || '', 'tl-d', ' text-anchor="end"') + tlDot(200, ys[i], 6, !edge);
+        o += tlT(226, ys[i] + 6, e.label, '', ' font-size="19"');
+        if(e.note) o += tlT(226, ys[i] + 28, e.note, 'tl-i', ' font-size="14"');
+      });
+      return tlSvg(ys[ys.length - 1] + 40, o);
+    },
+    tracks: function(s){
+      var tr = (s.tracks || []).slice(0, 5); if(!tr.length) return '';
+      var vals = []; tr.forEach(function(t){ (t.events || []).forEach(function(e){ if(tlNum(e.at) !== null) vals.push(+e.at); }); });
+      if(s.turn && tlNum(s.turn.at) !== null) vals.push(+s.turn.at);
+      if(vals.length < 2) return '';
+      var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals); if(hi === lo) hi = lo + 1;
+      var x = function(v){ return 170 + (v - lo) / (hi - lo) * 590; };
+      var o = '', bottom = 46 + (tr.length - 1) * 62;
+      if(s.turn && tlNum(s.turn.at) !== null){
+        var tx = x(+s.turn.at);
+        o += tlLine(tx, 20, tx, bottom + 22, 'tl-as tl-dash');
+        if(s.turn.label) o += tlT(tx, bottom + 42, s.turn.label, 'tl-i', ' text-anchor="middle" font-size="14"');
+      }
+      tr.forEach(function(t, i){
+        var y = 46 + i * 62;
+        o += tlT(20, y + 4, String(t.label || '').toUpperCase(), 'tl-d') + tlLine(150, y, 780, y);
+        (t.events || []).forEach(function(e){ if(tlNum(e.at) === null) return; var ex = x(+e.at);
+          o += tlDot(ex, y, 4, true); if(e.label) o += tlT(ex, y - 12, e.label, 'tl-i', ' text-anchor="middle" font-size="13"'); });
+        if(s.turn && tlNum(s.turn.at) !== null) o += tlDot(x(+s.turn.at), y, 7);
+      });
+      return tlSvg(bottom + (s.turn && s.turn.label ? 56 : 30), o);
+    },
+    stages: function(s){
+      var st = (s.stages || []).slice(0, 6); if(st.length < 2) return '';
+      var step = 640 / (st.length - 1), o = '';
+      st.forEach(function(g, i){
+        var cx = 80 + i * step, rings = Math.min(i, 3);
+        o += tlDot(cx, 70, 6);
+        for(var k = 1; k <= rings; k++) o += '<circle cx="' + Math.round(cx) + '" cy="70" r="' + (6 + 15 * k) + '" class="tl-as' + (k === 3 && i === st.length - 1 ? ' tl-dash' : '') + '"/>';
+        if(i < st.length - 1){ var r1 = 6 + 15 * rings + 10, r2 = 6 + 15 * Math.min(i + 1, 3) + 10; if(step - r1 - r2 > 12) o += tlLine(cx + r1, 70, cx + step - r2, 70); }
+        o += tlT(cx, 150, g.label, '', ' text-anchor="middle" font-size="16"');
+      });
+      return tlSvg(164, o);
+    },
+    spiral: function(s){
+      var tn = (s.turns || []).slice(0, 5); if(tn.length < 2) return '';
+      var n = tn.length, cx = 360, cy = 165, k = 130 / (n * 2 * Math.PI), d = '';
+      for(var t = 0; t <= n * 2 * Math.PI + 0.001; t += 0.08){
+        var r = 6 + k * t, px = cx + r * Math.sin(t), py = cy - r * Math.cos(t);
+        d += (d ? ' L' : 'M') + px.toFixed(1) + ' ' + py.toFixed(1);
+      }
+      var o = '<path d="' + d + '" class="tl-ln"/>', ys = [];
+      tn.forEach(function(g, i){ var r = 6 + k * (i + 1) * 2 * Math.PI; ys.push(cy - r); });
+      o += tlLine(cx, ys[0], cx, ys[n - 1], 'tl-as tl-dot');
+      tn.forEach(function(g, i){ o += tlDot(cx, ys[i], i === n - 1 ? 6 : 5) + tlT(cx + 16, ys[i] + 5, g.label, '', ' font-size="16"'); });
+      return tlSvg(310, o);
+    },
+    branch: function(s){
+      var root = s.root; if(!root || !root.label) return '';
+      var leaves = 0, depth = 0;
+      (function walk(n, d){ n._d = d; depth = Math.max(depth, d); var c = (n.children || []).slice(0, 5); n._c = c; if(!c.length){ n._leaf = leaves++; } c.forEach(function(ch){ walk(ch, d + 1); }); })(root, 0);
+      if(!depth || leaves > 10) return '';
+      var col = 520 / depth, rowH = 46;
+      (function place(n){ n._x = 40 + n._d * col; if(!n._c.length){ n._y = 22 + n._leaf * rowH; } else { n._c.forEach(place); n._y = (n._c[0]._y + n._c[n._c.length - 1]._y) / 2; } })(root);
+      var o = '';
+      (function draw(n){ n._c.forEach(function(ch){ var mx = (n._x + ch._x) / 2;
+          o += '<path d="M' + Math.round(n._x) + ' ' + Math.round(n._y) + ' C ' + Math.round(mx) + ' ' + Math.round(n._y) + ', ' + Math.round(mx) + ' ' + Math.round(ch._y) + ', ' + Math.round(ch._x) + ' ' + Math.round(ch._y) + '" class="' + (ch.dead ? 'tl-ln tl-dash' : 'tl-as') + '"/>';
+          draw(ch); }); })(root);
+      (function lab(n){
+        if(!n._c.length) o += tlDot(n._x, n._y, 4, !!n.dead) + tlT(n._x + 12, n._y + 5, n.label, n.dead ? 'tl-i' : '', ' font-size="15"');
+        else { o += tlDot(n._x, n._y, n === root ? 7 : 5); o += tlT(n._x, n._y - 14, n.label, n === root ? '' : 'tl-i', ' text-anchor="middle" font-size="' + (n === root ? 15 : 13) + '"'); }
+        n._c.forEach(lab); })(root);
+      return tlSvg(22 + (leaves - 1) * rowH + 24, o);
+    },
+    deep: function(s){
+      var ev = (s.events || []).filter(function(e){ return tlNum(e.ago) !== null && +e.ago >= 0; }).slice(0, 8);
+      if(ev.length < 2) return '';
+      ev.sort(function(a, b){ return b.ago - a.ago; });
+      var top = Math.log10(+ev[0].ago + 1) || 1;
+      var x = function(a){ return 40 + (1 - Math.log10(+a + 1) / top) * 730; };
+      var xs = ev.map(function(e){ return x(e.ago); }), o = '', from = 20;
+      for(var i = 0; i < ev.length - 1; i++){
+        if(+ev[i].ago > 50 * (+ev[i + 1].ago + 1) && xs[i + 1] - xs[i] > 60){
+          var m = (xs[i] + xs[i + 1]) / 2;
+          o += tlLine(from, 60, m - 16, 60) + '<path d="M' + Math.round(m - 12) + ' 48 l10 24 M' + Math.round(m + 2) + ' 48 l10 24" class="tl-ln"/>';
+          from = m + 16;
+        }
+      }
+      o += tlLine(from, 60, 780, 60, 'tl-as');
+      var rows = tlRows(xs, 100);
+      ev.forEach(function(e, i){
+        o += tlDot(xs[i], 60, 5) + tlT(xs[i], rows[i] ? 22 : 40, e.label, '', ' text-anchor="middle" font-size="15"');
+        if(e.date) o += tlT(xs[i], rows[i] ? 106 : 90, e.date, 'tl-d', ' text-anchor="middle"');
+      });
+      return tlSvg(116, o);
+    }
+  };
+  function tlDecode(s){ var t = document.createElement('textarea'); t.innerHTML = s; return t.value.replace(/&lt;/g, '<').replace(/&amp;/g, '&'); }
+  function seTimelines(html){
+    if(html.indexOf('language-timeline') === -1) return html;
+    return html.replace(/<pre><code class="language-timeline">([\s\S]*?)(?:<\/code><\/pre>|$)/g, function(all, body){
+      var svg = '';
+      try { var spec = JSON.parse(tlDecode(body)); var fn = spec && TL_KINDS[spec.kind]; svg = fn ? fn(spec) : ''; } catch (e) { svg = ''; }
+      return svg ? '<figure class="se-tl">' + svg + '</figure>' : '<figure class="se-tl se-tl-pending"></figure>';
+    });
+  }
+  // Copy gives the words, not the drawing's data.
+  function seStripTimelines(text){ return String(text || '').replace(/\n?```timeline[\s\S]*?(?:```|$)\n?/g, '\n').replace(/\n{3,}/g, '\n\n').trim(); }
+
   function fmtBody(text, asMarkdown, cacheKey){
     var raw = String(text == null ? '' : text);
     if (asMarkdown && typeof marked !== 'undefined' && marked.parse) {
@@ -28270,7 +28431,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // the sentence carrying on. Narrow on purpose — an ordinary numbered list item
         // has no dash run after it and is left alone.
         safe = safe.replace(/^((?:[IVXLCM]{1,7}|\d{1,2})\.[ \t]+\S[^\n]{0,90}?)[ \t]*[\u2013\u2014-]{3,}[ \t]*/gm, '## $1\n\n');
-        var out = marked.parse(safe, { breaks: false, gfm: true });
+        var out = seTimelines(marked.parse(safe, { breaks: false, gfm: true }));
         if (cacheKey) {
           if (mdCache.size > 300) mdCache.clear();   // a whole conversation fits; a year of them does not
           mdCache.set(cacheKey, { src: raw, html: out });
@@ -30394,7 +30555,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       b.onclick = function(ev){
         ev.stopPropagation();
         var m = e.msgs[Number(b.getAttribute('data-se-copy'))];
-        var text = m ? String((m.role === 'user' && m.body) ? m.body : (m.text || '')) : '';
+        var text = m ? String((m.role === 'user' && m.body) ? m.body : seStripTimelines(m.text || '')) : '';
         if(!text) return;
         var said = function(ok){
           b.textContent = ok ? '\u2713' : '\u2717';
@@ -30834,6 +30995,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function visibleWordCount(renderedHtml){
     var box = document.createElement('div');
     box.innerHTML = renderedHtml || '';
+    // A timeline's labels are a drawing, not words of the answer.
+    Array.prototype.forEach.call(box.querySelectorAll('svg'), function(n){ n.remove(); });
     var text = (box.textContent || '').trim();
     if(!text) return 0;
     if(typeof Intl !== 'undefined' && Intl.Segmenter){

@@ -1607,6 +1607,21 @@ function lensBlock() {
 // voice's own "never judge what is real or possible".
 // Deliberately NOT a checklist of moves: the first version listed them and the model
 // performed the list, down to borrowing the essay's own scenes. It names the idea only.
+// A timeline drawn inside the answer (his ask, 2026-09-25, all seven kinds of the
+// timelines mockup, the model choosing). The Room draws the fenced block; see
+// seTimelines in fmcns_navigator.html, which must accept exactly these shapes.
+const TIMELINE_BLOCK = `
+=== A TIMELINE, ONLY WHEN THE IDEA HAS ONE ===
+When the answer truly traces something through time — a history, how a thing or a pattern evolved, a sequence of stages, a cycle that comes back — you may add ONE timeline inside the answer, right after the paragraph it supports. Most answers need none; never add one for decoration. Write it as a fenced code block whose language is timeline, holding one JSON object and nothing else. Labels are short (one to four words), in your own words; three to seven items. Choose the kind whose shape matches the idea:
+- "scale" — real history, spaced to real time, with optional eras: {"kind":"scale","events":[{"label":"…","at":1791,"date":"1791"}],"eras":[{"label":"…","from":1700,"to":1850}]} (years as numbers, negative before the common era)
+- "spine" — steps that each deserve a phrase: {"kind":"spine","events":[{"date":"1850","label":"…","note":"a few words, optional"}]}
+- "tracks" — the same turn arriving in several domains: {"kind":"tracks","tracks":[{"label":"…","events":[{"at":1900,"label":"optional"}]}],"turn":{"at":1945,"label":"…"}}
+- "stages" — one form growing, no dates: {"kind":"stages","stages":[{"label":"…"}]}
+- "spiral" — a pattern returning at a larger size each time, smallest first: {"kind":"spiral","turns":[{"label":"…"}]}
+- "branch" — one origin splitting into descendants; mark a line that died out: {"kind":"branch","root":{"label":"…","children":[{"label":"…","dead":false,"children":[]}]}}
+- "deep" — vast time folded so the recent part has room, oldest first, years ago (0 for now): {"kind":"deep","events":[{"label":"…","date":"4 bn years","ago":4000000000}]}
+The prose must stand on its own without it: the timeline shows what the words already said, it never carries a thought the words left out.`;
+
 const LENS_TAIL = `Understand the thing through THE LENS above — see past the language it uses about itself to what it actually is and does, in your own words and comparisons drawn from this subject. Hold the idea of the lens, not its wording; never perform it as a list of steps.`;
 
 function studioPersona() {
@@ -1831,6 +1846,7 @@ export function turnMaxTokens(convoId, base = 4000) {
 // the rendered words for the small receipt Antoine sees under the answer.
 export function answerWordCount(text) {
   const visible = String(text || '')
+    .replace(/```timeline[\s\S]*?(?:```|$)/g, ' ')
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .replace(/<[^>]+>/g, ' ')
@@ -1897,10 +1913,25 @@ async function secondRead(convoId, text, { clarifyMode, result, turn, onStatus =
   if (clarifyMode !== 'normal' || !lensText()) return text;
   const provider = result.provider || turn?.lane?.provider;
   const model = result.model || turn?.lane?.model;
+  // A timeline block is data, not prose: the reader must not judge it and the
+  // rewrite must not lose it. Held out, and put back after the same paragraph.
+  const held = [];
+  const prose = String(text || '').split(/\n{2,}/).reduce((acc, para) => {
+    if (/^```timeline/.test(para.trim())) held.push({ at: acc.length, block: para.trim() });
+    else acc.push(para);
+    return acc;
+  }, []).join('\n\n');
+  const putBack = (t) => {
+    if (!held.length) return t;
+    const paras = String(t).split(/\n{2,}/);
+    held.slice().reverse().forEach((h) => paras.splice(Math.min(h.at, paras.length), 0, h.block));
+    return paras.join('\n\n');
+  };
+  if (held.length && !/```\s*$/.test(held[held.length - 1].block)) return text; // a block cut mid-way: leave the answer alone
   try {
     const out = await reviewAnswer({
       question: lastUserText(convoId) || '',
-      answer: text,
+      answer: prose,
       lens: lensText(),
       countWords: answerWordCount,
       onStatus,
@@ -1910,7 +1941,7 @@ async function secondRead(convoId, text, { clarifyMode, result, turn, onStatus =
         : null,
     });
     if (out.changed) console.log(`[second-reader] rewrote an answer in ${convoId}: ${String(out.faults || '').replace(/\s+/g, ' ').slice(0, 200)}`);
-    return out.text;
+    return out.changed ? putBack(out.text) : text;
   } catch (e) {
     console.error('[second-reader] skipped:', e?.message || e);
     return text;
@@ -2015,6 +2046,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // setting (Antoine, 2026-09-25: "this is kind of foundational"). Placed with the
     // voice, at the end, where a model weights instructions most.
     depth ? lensBlock() : '',
+    depth ? TIMELINE_BLOCK : '',
     depth && studioPersona() ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     // Explicit memories sit AFTER the general voice so every provider receives
     // them as higher-priority instructions, but BEFORE the current task because
