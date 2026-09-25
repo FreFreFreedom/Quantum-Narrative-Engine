@@ -556,9 +556,11 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   const toollessPrompt = wantsTools
     ? `${prompt}${NO_TOOLS_NOTE}${tailReminder ? `\n\n${tailReminder}` : ''}`
     : prompt;
-  if (p === 'claude-code') {
-    return legacyGenerateText({ prompt: toollessPrompt, maxTokens, label, cliModel: m, effort });
-  }
+  // The main account answers through the Mac too. The container's own CLI has no
+  // working login, so this lane used to fail on every Room turn and then hit the
+  // blocked metered API (2026-09-25, "cli_failed … metered_billing_blocked"). The
+  // Mac runner holds both logins; the main one is simply the other account there.
+  if (p === 'claude-code') { p = 'claude-side'; account = 'main'; }
   // The second subscription. The server cannot call it — the token is on the Mac —
   // so the request is parked for the runner, which spawns the CLI with that token
   // and nothing else changed. Same waiting machinery as the last-resort path.
@@ -1333,7 +1335,7 @@ const TOOL_PHRASES = {
 // A model id read as a name (his ask, 2026-09-24): "gemini-flash-lite-latest" is
 // "Gemini Flash Lite", "groq/llama-3.1-8b-instant" is "Llama 3.1 8B Instant" — no
 // dashes, no slashes, no "latest". The same rule the Room's model menu uses.
-const WORD_CASE = { gpt: 'GPT', oss: 'OSS', ai: 'AI', gemma: 'Gemma', llama: 'Llama', qwen: 'Qwen', glm: 'GLM', kimi: 'Kimi', deepseek: 'DeepSeek', mini: 'Mini', pro: 'Pro', flash: 'Flash', lite: 'Lite', sonnet: 'Sonnet', opus: 'Opus', haiku: 'Haiku' };
+const WORD_CASE = { gpt: 'GPT', oss: 'OSS', ai: 'AI', gemma: 'Gemma', llama: 'Llama', qwen: 'Qwen', glm: 'GLM', kimi: 'Kimi', deepseek: 'DeepSeek', mini: 'Mini', pro: 'Pro', flash: 'Flash', lite: 'Lite', sonnet: 'Sonnet', opus: 'Opus', haiku: 'Haiku', fable: 'Fable' };
 export function prettyModel(model) {
   const tail = String(model || '').split('/').pop().replace(/[-_]latest$/i, '').replace(/[-_]preview(?:[-_]\d+)?$/i, '');
   // "claude-opus-5-5" → "Opus 5.5": the maker is already said, and two version digits are one version.

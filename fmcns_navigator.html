@@ -28929,7 +28929,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var cx = (catalog && catalog.codex && catalog.codex.models) || [];
       return cx.length ? cx.map(function(m){ return m.id; }) : CODEX_LANE_MODELS.slice();
     }
-    if(provider === 'claude-code' || provider === 'claude-side') return CLAUDE_LANE_MODELS.slice();
+    // Fable is offered on the main account only (his call, 2026-09-25).
+    if(provider === 'claude-code') return CLAUDE_LANE_MODELS.concat(['fable']);
+    if(provider === 'claude-side') return CLAUDE_LANE_MODELS.slice();
     var f = freeApiLane(provider, catalog);
     if(f) return f.models.map(function(m){ return m.id; });
     return [];

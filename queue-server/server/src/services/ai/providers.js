@@ -12,7 +12,8 @@ export const PROVIDER_CAPABILITIES = {
     label: 'Claude Code',
     // CLI path for text generation (subscription quota)
     hasCliText: true,
-    cliModels: ['sonnet', 'haiku', 'opus'],
+    // Fable on the main account only — his call, 2026-09-25.
+    cliModels: ['sonnet', 'haiku', 'opus', 'fable'],
     // API path (pay-per-token)
     hasApiText: true,
     apiModels: ['claude-sonnet-4-5', 'claude-3-5-haiku', 'claude-3-opus'],
