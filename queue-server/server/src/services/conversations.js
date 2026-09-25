@@ -1186,7 +1186,7 @@ export async function addNamedMark(convoId, { messageId, snippet = '' } = {}) {
     let name = null;
     for (let i = 0; i < lanes.length && !name; i++) {
       const out = await generateText({
-        ...lanes[i], feature: 'summary', label: 'conversations:chapter-name', maxTokens: 30, timeoutMs: i < 2 ? 15_000 : 40_000, maxAttempts: 1,
+        ...lanes[i], feature: 'summary', label: 'conversations:chapter-name', maxTokens: 400, timeoutMs: i < 2 ? 15_000 : 40_000, maxAttempts: 1,
         prompt: 'Below is a passage from a long answer. Give it a chapter name: three to six words naming what this part is about, the way a book names a chapter. Concrete, not generic ("Rent as a trauma engine", not "Analysis"). Reply with the name alone, no quotes.\n\n' + passage,
       }).catch(() => null);
       name = cleanTitle(out?.text);

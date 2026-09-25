@@ -30276,9 +30276,41 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         log.selectionPaintTimer=setTimeout(function(){if(log.isConnected && host.getAttribute('data-se')===ownerKey)fillEmbed(host,e,opts);},200);
       }else{
         clearTimeout(log.selectionPaintTimer);
+        // Hold the place by the answers on screen, not by pixels: a removed message
+        // or a cover loading late changes the height above, and a pixel count then
+        // lands somewhere else (his complaint 2026-09-25: deleting a message threw
+        // him to another part of the thread). The first turn on screen and those
+        // after it are remembered, so if that one was just removed the next one
+        // takes its place on the screen.
+        var anchors = [];
+        if(!atBottom){
+          var lr0 = log.getBoundingClientRect(), tl = log.querySelectorAll('.se-turn[data-msg-id]');
+          for(var ti = 0; ti < tl.length && anchors.length < 4; ti++){
+            var r0 = tl[ti].getBoundingClientRect();
+            if(anchors.length || r0.bottom > lr0.top + 4) anchors.push({ id: tl[ti].getAttribute('data-msg-id'), top: r0.top - lr0.top });
+          }
+        }
         log.innerHTML=nextLog;log.renderedHtml=nextLog;
         seLoadCovers(log);
         log.scrollTop=atBottom?log.scrollHeight:was;
+        if(anchors.length){
+          var holdAt = anchors[0].top;
+          var hold = function(){
+            for(var ai = 0; ai < anchors.length; ai++){
+              var el = log.querySelector('.se-turn[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(anchors[ai].id) : anchors[ai].id) + '"]');
+              if(!el) continue;
+              var want = ai === 0 ? anchors[0].top : holdAt;
+              log.scrollTop = Math.max(0, log.scrollTop + (el.getBoundingClientRect().top - log.getBoundingClientRect().top) - want);
+              return log.scrollTop;
+            }
+            return log.scrollTop;
+          };
+          var held = hold();
+          // Covers arrive after the text; settle again, unless he has moved since.
+          [250, 800].forEach(function(ms){
+            setTimeout(function(){ if(log.isConnected && Math.abs(log.scrollTop - held) < 4) held = hold(); }, ms);
+          });
+        }
       }
       srcLoadArt(log);
       markKeptIn(log, e.convoId);
