@@ -3118,7 +3118,9 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus, signal, imageList.map((x) => x.dataUrl))
     : await runChatTurn(convoId, userId, turn, imageList.map((x) => x.dataUrl));
   if (out.error === 'cancelled') db.prepare(`DELETE FROM convo_messages WHERE id=?`).run(mid);
-  if (out.error) return out;
+  // The question stays stored after a failed answer, so its id goes back too —
+  // otherwise it shows without delete, branch or rewind until a reload.
+  if (out.error) return out.error === 'cancelled' ? out : { ...out, userMessageId: mid };
   // The browser paints the user's turn before the answer arrives. Give that
   // optimistic row its real id immediately so actions that address a stored
   // message (especially Rewind in Side Talks, which does not reload after every

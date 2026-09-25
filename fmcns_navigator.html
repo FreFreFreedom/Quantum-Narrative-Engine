@@ -2707,6 +2707,11 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-turnacts { display:flex; justify-content:flex-end; gap:1px; margin-top:3px;
   opacity:.4; transition:opacity var(--t-fast) var(--ease); }
 .se-turn:hover .se-turnacts, .se-turnacts:focus-within { opacity:1; }
+/* Under an answer the row sits beside the word count, at the start of the line
+   where the answer's own text starts — not across the page at the far edge. */
+.se-turnfoot { display:flex; align-items:center; gap:10px; margin-top:7px; }
+.se-turnfoot .se-wordcount, .se-turnfoot .se-turnacts { margin-top:0; }
+.se-turnfoot .se-turnacts { justify-content:flex-start; }
 .se-turndel svg { width:13px; height:13px; display:block; }
 .se-turndel.is-armed { color:var(--c-danger) !important; background:color-mix(in srgb, var(--c-danger) 12%, transparent) !important; }
 .se-turnfork, .se-turnredo, .se-turnrewind, .se-turncopy, .se-turndel { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
@@ -30415,6 +30420,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           .catch(function(){ e.loaded = false; e.note = 'Could not remove it — reloaded the thread as it is.'; return fetchConvo(e, function(){ if(host.isConnected) fillEmbed(host, e, opts); }); });
       };
     });
+    log.querySelectorAll('[data-se-del-local]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        if(e.busy) return;
+        var i = +b.getAttribute('data-se-del-local');
+        if(e.msgs[i] && !e.msgs[i].id) e.msgs.splice(i, 1);
+        fillEmbed(host, e, opts);
+      };
+    });
     log.querySelectorAll('[data-se-rewind]').forEach(function(b){
       b.onclick = function(ev){
         ev.stopPropagation();
@@ -31099,7 +31113,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // floating over its top-right corner: a right-aligned bubble reaches the
       // same corner, so the old placement put them on top of his own words.
       var actsHtml = '';
-      if (m.id || (you && m.text)) {
+      // A reply that was never stored (a failed turn's note) still gets copy and
+      // remove — remove just drops it from the screen, there is nothing to delete.
+      if (m.id || m.text) {
         actsHtml = '<div class="se-turnacts">'
                  // Copy the words themselves — his own question or the answer, as
                  // plain text (2026-09-21). First in the row because it is the one
@@ -31111,7 +31127,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
                  // Remove just this one (his ask, 2026-09-24). Two clicks: the first
                  // arms it, so a stray click never costs a message.
                  + (m.id ? '<button type="button" class="se-turndel" data-se-del="' + qEsc(m.id) + '" title="Remove this message">'
-                   + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' : '')
+                   + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
+                   : '<button type="button" class="se-turndel" data-se-del-local="' + qEsc(String(idx)) + '" title="Remove this message">'
+                   + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>')
                  + '</div>';
       }
       // A carried passage is its own thing above the message, never inside it:
@@ -31157,8 +31175,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
            +  filesHtml
            +  (plan ? '<pre class="se-plan">' + renderedBody + '</pre>'
                     : '<div class="se-body' + (you ? '' : ' md') + '">' + renderedBody + '</div>')
-           +  wordCountHtml
-           +  actsHtml
+           +  (you ? actsHtml : ((wordCountHtml || actsHtml) ? '<div class="se-turnfoot">' + wordCountHtml + actsHtml + '</div>' : ''))
            +  inlineAnswerNow
            +  '</div>';
       // An implement proposal shows three ways forward instead of free text.
