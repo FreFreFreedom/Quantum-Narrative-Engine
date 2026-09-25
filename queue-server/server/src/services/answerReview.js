@@ -26,6 +26,7 @@ const WORD_RULES = [
   [/\bhologra\w*/i, 'hologram'],
   [/\bthe exact (?:same )?(?:shape|panic|dynamic|pattern|structure|logic)\b/i, '"the exact shape" as a way to bring in a parallel'],
   [/\bthe same (?:shape|dynamic|structure) (?:appears|governs|lives)\b/i, '"the same shape appears…" as a way to bring in a parallel'],
+  [/\b(?:is|has) the same shape (?:across|at|in)\b/i, '"the same shape across every scale" as a way to bring in a parallel'],
 ];
 
 // A word the question itself uses is his, not borrowed — asking about grammar
