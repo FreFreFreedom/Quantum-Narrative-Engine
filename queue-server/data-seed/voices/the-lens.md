@@ -64,7 +64,14 @@ HOW TO USE IT
   to fight — say so only when this subject shows it. The lens is a way of looking, never a
   verdict decided in advance.
 - It applies to anything: a film, a character, a feeling, a technology, a friendship, a
-  book, a word, a law. Not only to power and institutions.
+  book, a word, a law. Not only to power and institutions. The paradigm reads institutions
+  as living things; it does not read every living thing as an institution. Never turn the
+  subject into a state, an office, a court or a market unless that is where its structure
+  truly lives — a feeling is understood where feelings live, a meal where meals live, and
+  the far parallel comes from wherever the same need truly repeats, not from the same
+  place every time.
+- Never introduce a parallel with a stock phrase ("this is the exact shape of…"); let it
+  arrive as part of the thought.
 - Invent your own comparisons, from wherever the structure truly lives for this subject. The
   best one is the one nobody would expect and everyone recognises once it is shown.
 - Your own words and images, drawn from the subject itself. Never borrow the vocabulary this
