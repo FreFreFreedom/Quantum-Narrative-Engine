@@ -18229,7 +18229,7 @@ function libShotPoll(slot) {
     let list = [];
     try { list = await api('/api/convos/library/interest-imports'); } catch (_) { return libShotPoll(slot); }
     let landed = false;
-    (Array.isArray(list) ? list : []).forEach((b) => {
+    (Array.isArray(list) ? list : (list && list.batches) || []).forEach((b) => {
       const key = libShotWatch.get(b.id); if (!key) return;
       if (b.status === 'done' || b.status === 'ordinary') { libShotLanded(b); libShotWatch.delete(b.id); shelfDone(key); landed = true; }
       else if (b.status === 'failed' || b.status === 'undone') { libShotWatch.delete(b.id); shelfDone(key); }
