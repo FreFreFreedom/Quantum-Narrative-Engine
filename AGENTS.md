@@ -174,9 +174,10 @@ section decides.
 **Analysis never stays local (hard, added 2026-09-25).** "Answer the subject directly" does not
 mean stay inside its domain. Antoine, on a Room thread about mandatory minimums: the answers were
 "just naming what happens... we stay in our silo". Naming (ontological) and meaning (semantic) are
-the floor; every answer that examines a dynamic must also find the same shape at another scale or
-in another kind of thing — far, not the neighbouring institution — match on relations not
-vocabulary, bring back a finding the local reading could not see, and say where the parallel
+the floor; every answer that examines a dynamic must also find the same structure under a different
+surface language — often another institution or field at the SAME scale (his correction the same
+day), or another scale or kind; never the same field retold with swapped nouns — match on
+relations not vocabulary, bring back a finding the local reading could not see, and say where the parallel
 stops holding. Full wording in `queue-server/data-seed/voices/qne-3-0.md`, "THE ANALOGICAL MOVE".
 
 **Envisioning is a mode selected by the request, not a permanent frame.** When Antoine asks to
