@@ -2010,6 +2010,33 @@ async function suggestedWorks(convoId, userId, answer) {
   return saved.map(({ kind, title, creator, year }) => ({ kind, title, creator, year }));
 }
 
+// Works he names himself go into the Library too — his rule (2026-09-25): a book or
+// film typed into the prompt should land there exactly as one in a dropped
+// screenshot does. Only his own words are read, never the passages he quoted
+// (those are the answer's words, and would file every title it ever named).
+// Fire-and-forget on the cheap lane after the turn is saved: a failure here just
+// means nothing was filed, never a lost or slower answer.
+const TITLE_HINT = /["“”«»*_]|\b(by|de|par)\s+[A-Z]|\s[A-Z][\w'’-]+/;
+async function mentionedWorks(convoId, userId) {
+  const raw = String(lastUserText(convoId) || '');
+  const i = raw.lastIndexOf('MY MESSAGE:');
+  const text = (i >= 0 ? raw.slice(i + 11) : raw).trim();
+  if (text.length < 4 || !(WORKS_ASK.test(text) || TITLE_HINT.test(text))) return;
+  try {
+    const result = await generateText({
+      feature: 'summary', maxTokens: 600, label: 'conversations:mentioned-works', timeoutMs: 20_000, maxAttempts: 2,
+      prompt: 'Below is a message someone typed. List every book, film and TV series they name by its title. Correct an obvious misspelling of a well-known title. Skip a work referred to only vaguely ("these two books", "that film") and skip a person named without a title. Only include a work when you are sure it is a real book, film or series and sure which of the three it is.\n'
+        + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series","title":"exact title, no subtitle","creator":"author for a book, director for a film, creator for a series","year":"year if known"}]}. {"works":[]} if there are none.\n\n'
+        + '=== MESSAGE ===\n' + text.slice(0, 6000),
+    });
+    if (result.error) return;
+    const list = firstJson(result.text)?.works;
+    if (!Array.isArray(list) || !list.length) return;
+    const saved = saveSuggestedWorks(userId || 'antoine', list);
+    if (saved.some(w => w.added)) broadcastAll('recommendations:updated', {});
+  } catch (err) { console.warn('[mentioned-works]', err?.message || err); }
+}
+
 function saveAssistantTurn(convoId, text, meta = null) {
   const mid = randomUUID();
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta) VALUES (?,?,?,?,?,?)`)
@@ -2165,6 +2192,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
+  void mentionedWorks(convoId, userId); // fire-and-forget: titles he typed go to the Library
   chapterize(convoId); // and re-read where the subject changed, same discipline
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
@@ -2224,6 +2252,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(works ? { works } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
+  void mentionedWorks(convoId, userId); // fire-and-forget: titles he typed go to the Library
   chapterize(convoId); // and re-read where the subject changed, same discipline
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
