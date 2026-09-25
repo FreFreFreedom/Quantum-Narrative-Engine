@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Structural anatomy of industrial complexes — conversations/structural-anatomy-of-industrial-complexes-cf34af05.md
+- Holistic Dissection of Conceptual Nature Across Scales — conversations/holistic-dissection-of-conceptual-nature-across-scales-cf34af05.md
 - Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
 - Kinetic workout media selection — conversations/kinetic-workout-media-selection-a7051bc8.md
 - Cook County Court as Fractal Injustice Anatomy — conversations/cook-county-court-as-fractal-injustice-anatomy-05863085.md
