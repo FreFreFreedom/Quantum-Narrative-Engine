@@ -3215,11 +3215,12 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-gap.is-naming { pointer-events:auto; }
 .se-gap-name { pointer-events:auto; flex:0 1 260px; min-width:120px; border:none; border-bottom:1px solid var(--c-kept-rule, var(--c-brand)); background:transparent; outline:none; padding:2px 2px; font:italic var(--fw-medium, 500) 1.05em var(--font-read); color:var(--c-ink); }
 .se-chap-rib { display:inline-block; flex:none; width:10px; height:14px; background:var(--c-kept-rule, var(--c-brand)); clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%); }
-.se-chap { position:relative; display:flex; align-items:center; gap:10px; margin:1.1em 0 .9em; }
-.se-chap::after { content:attr(data-name); order:1; font:italic 400 .82em var(--font-read); color:var(--c-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%; }
-.se-chap::before { content:''; order:2; flex:1; height:1px; background:var(--c-kept-rule, var(--c-brand)); opacity:.35; }
-.se-chap-rib { order:0; }
-.se-chap-drop { order:3; font-weight:400; font-size:11px; color:var(--c-ink-5); cursor:pointer; opacity:0; transition:opacity var(--t-fast) var(--ease); }
+/* His pick 1 (2026-09-25): small gold capitals, centred between two short hairlines. */
+.se-chap { position:relative; display:flex; align-items:center; gap:14px; margin:1.2em 12% 1em; }
+.se-chap::before { content:''; order:0; flex:1; height:1px; background:var(--c-kept-rule, var(--c-brand)); opacity:.45; }
+.se-chap::after { content:attr(data-name); order:1; font:500 9.5px/1.4 'Cinzel', var(--font-read); letter-spacing:.28em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-brand)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:72%; }
+.se-chap .se-chap-rib { order:2; flex:1; width:auto; height:1px; clip-path:none; opacity:.45; }
+.se-chap-drop { position:absolute; right:-22px; top:50%; transform:translateY(-50%); font-weight:400; font-size:10px; color:var(--c-ink-5); cursor:pointer; opacity:0; transition:opacity var(--t-fast) var(--ease); }
 .se-chap:hover .se-chap-drop { opacity:1; }
 /* A gutter for the dashes, so a closed rail never sits on top of the words. */
 .se-wrap.has-rail .se-log { padding-left:30px; }
@@ -29712,6 +29713,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             : blocks[i - 1].getBoundingClientRect().bottom;
           var top = i === 0 ? Math.min(tr.top, r.top) : r.top;
           var gy = (above + top) / 2;
+          var held = i === 0 ? turn.previousElementSibling : blocks[i].previousElementSibling;
+          if(held && held.classList && held.classList.contains('se-chap')) continue;
           if(Math.abs(y - gy) <= Math.max(9, (top - above) / 2 + 2)){
             best = { turn: turn, body: body, block: blocks[i], y: gy, id: turn.getAttribute('data-msg-id') };
             return;
@@ -29752,7 +29755,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var g = cur, ee = log._gapE, rp = log._gapRepaint;
       close();
       if(!ee || !ee.convoId || !g.block.isConnected) return;
-      var snip = gapSnippet(g.block), tmp = { id: 'pending-' + Date.now(), message_id: g.id, snippet: snip, label: '\u2026' };
+      var snip = gapSnippet(g.block), tmp = { id: 'pending-' + Date.now(), message_id: g.id, snippet: snip, label: '\u00b7 \u00b7 \u00b7' };
       if(!ee.marks) ee.marks = [];
       ee.marks.push(tmp);
       if(rp) rp();
