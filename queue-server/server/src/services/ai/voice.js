@@ -34,6 +34,30 @@ function stripHeaderComment(text) {
   return String(text || '').replace(/^\s*<!--[\s\S]*?-->\s*/, '').trim();
 }
 
+// THE LENS — the way of seeing under the voice (holistic, never allopathic), kept in its
+// own file because Antoine called it foundational: the AI Settings box can change or
+// clear the voice, but nothing in the app's settings removes the lens. Two parts, split
+// by an ARC marker: the lens goes to everything that interprets meaning, the arc (the
+// shape of a long answer) only to the Room's full answers.
+const LENS_FILE = resolve(HERE, '../../../..', 'data-seed/voices/the-lens.md');
+let lensCached = null;
+function loadLens() {
+  if (lensCached) return lensCached;
+  try {
+    const body = existsSync(LENS_FILE) ? stripHeaderComment(readFileSync(LENS_FILE, 'utf8')) : '';
+    const [lens = '', arc = ''] = body.split(/<!--\s*ARC\s*-->/);
+    lensCached = { lens: lens.trim(), arc: arc.trim() };
+    if (!lensCached.lens) console.warn('[voice] the-lens.md missing or empty — answers will run without the lens');
+    else console.log(`[voice] the lens loaded (${lensCached.lens.length} + ${lensCached.arc.length} chars)`);
+  } catch (e) {
+    console.error('[voice] could not read the-lens.md:', e.message);
+    lensCached = { lens: '', arc: '' };
+  }
+  return lensCached;
+}
+export function lensText() { return loadLens().lens; }
+export function answerArcText() { return loadLens().arc; }
+
 let cached = null;
 export function paradigmVoice() {
   if (cached !== null) return cached;
@@ -59,11 +83,12 @@ export function paradigmVoice() {
 // last words of the block, where it is weighted most.
 export function paradigmVoiceBlock({ lengthRuleWins = false } = {}) {
   const v = paradigmVoice();
-  if (!v) return '';
+  const lens = lensText();
+  if (!v && !lens) return '';
   const guard = lengthRuleWins
     ? '\n\nOne exception, absolute: the length limit given for THIS text overrides everything '
       + 'the voice says about length, density or having no ceiling. Keep the register — the way '
       + 'of seeing, the refusal to flatten an idea — and obey the limit.'
     : '';
-  return `\n\n=== HOW TO THINK AND WRITE ===\n${v}${guard}`;
+  return `${lens ? `\n\n=== THE LENS ===\n${lens}` : ''}${v ? `\n\n=== HOW TO THINK AND WRITE ===\n${v}` : ''}${guard}`;
 }

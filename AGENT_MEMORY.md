@@ -1176,3 +1176,10 @@ Publishing, 2026-09-18: an Antoine request to make a live-session change is also
 permission to publish it. Do not ask a second question about deployment or leave a
 completed change waiting locally; commit and push `develop` under the Ship directly
 rule. Unattended overnight work remains unshipped.
+
+The lens, 2026-09-25 (foundational): every answer the app writes that interprets meaning
+reads its subject holistically, never allopathically — step outside the field's own
+vocabulary, read the metabolic circuit, carry a far parallel deep, end on one local scene
+holding the whole. Prompt: `queue-server/data-seed/voices/the-lens.md` (not a setting —
+the AI Settings box cannot remove it). Authority: AGENTS.md "The lens". His essay,
+verbatim: `fractal_operational_core.md` §22.

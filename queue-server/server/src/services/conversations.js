@@ -25,6 +25,7 @@ import {
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
 import { generateText, generateTextDirect, generateTextStream, studioPersonaText, promptCharBudget } from './ai/text.js';
+import { lensText, answerArcText } from './ai/voice.js';
 import { costOf } from './openaiSpend.js';
 import { isMeteredProvider } from './ai/catalog.js';
 import { resolveTurn, computeLaneTag, tagFromVia } from './turnRouter.js';
@@ -639,7 +640,7 @@ async function writeMergeBridge(targetConvoId) {
   const material = origins.map((o, i) => `=== SOURCE ${i + 1}: ${o.source_title} ===\n${o.digest_text}`).join('\n\n');
   try {
     const out = await generateText({
-      prompt: `${MERGE_BRIDGE_PROMPT}\n\n${studioPersonaText() ? `Shared voice and style:\n${studioPersonaText()}\n\n` : ''}${material}`,
+      prompt: `${MERGE_BRIDGE_PROMPT}\n\n${lensText() ? `The lens:\n${lensText()}\n\n` : ''}${studioPersonaText() ? `Shared voice and style:\n${studioPersonaText()}\n\n` : ''}${material}`,
       feature: 'summary', label: 'conversations:merge-bridge', maxTokens: 1400,
       allowLongOutput: true, timeoutMs: 120_000, helperWaitMs: 120_000, claudeLastResort: true,
     });
@@ -1586,10 +1587,24 @@ function keepAwake(onStatus, lane) {
 }
 
 function voiceTailReminder() {
-  return studioPersona()
-    ? 'Answer in the voice and frame set out under HOW TO THINK above. That is the register for this reply, not a suggestion — it outranks the note directly above about the lookup tools, which is housekeeping only.'
-    : null;
+  const voice = studioPersona() ? 'Answer in the voice and frame set out under HOW TO THINK above. That is the register for this reply, not a suggestion — it outranks the note directly above about the lookup tools, which is housekeeping only.' : '';
+  const lens = lensText() ? LENS_TAIL : '';
+  return [voice, lens].filter(Boolean).join(' ') || null;
 }
+
+// The lens and the arc as one block for a full Room answer. See ai/voice.js.
+function lensBlock() {
+  const lens = lensText();
+  if (!lens) return '';
+  const arc = answerArcText();
+  return `\n=== THE LENS ===\n${lens}${arc ? `\n\n${arc}` : ''}`;
+}
+
+// One line at the very end of the prompt, because the end is weighted most and Gemini
+// read the shape rules near the top and ignored them (2026-09-20). It replaces an older
+// "judge the thing: is it real, is it worth his attention" line, which contradicted the
+// voice's own "never judge what is real or possible".
+const LENS_TAIL = `Read the thing through THE LENS above: step outside its own field's vocabulary, show the one grammar under the different names, carry a far parallel deep, follow the pattern across scales, read what the system consumes and who lives off it — and when the question is about the nature of something, end on one concrete local scene with the whole folded inside it.`;
 
 function studioPersona() {
   // An empty AI Settings box now means NO persona — a plain, neutral assistant.
@@ -1963,6 +1978,11 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // Digests ride here; the exact frozen snapshots stay behind the bounded tool.
     linkedConversationsBlock(convo.id),
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, historyWindow) || '(nothing yet)'}`,
+    // THE LENS rides with every full answer whatever the AI Settings box says — the box
+    // is the voice and can be cleared; the lens is the way of seeing and is not a
+    // setting (Antoine, 2026-09-25: "this is kind of foundational"). Placed with the
+    // voice, at the end, where a model weights instructions most.
+    depth ? lensBlock() : '',
     depth && studioPersona() ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     // Explicit memories sit AFTER the general voice so every provider receives
     // them as higher-priority instructions, but BEFORE the current task because
@@ -1972,7 +1992,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
       : `\n=== WHAT TO DO NOW ===\n${brevity
           ? `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`
-          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''} Judge the thing being discussed: is it real, what is it actually, is it worth his attention. Say so.\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.\n\n${SHAPE_TAIL}`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
+          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''}${depth && lensText() ? ` ${LENS_TAIL}` : ''}\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.\n\n${SHAPE_TAIL}`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
     // DEAD LAST, after the voice and after the task, because the end of a long
     // prompt is weighted most and this has to beat "density, not brevity".
     askedWords
