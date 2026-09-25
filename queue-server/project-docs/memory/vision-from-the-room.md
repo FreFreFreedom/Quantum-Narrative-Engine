@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The due-process versus crime-control tension is a universal architectural binary across scales, appearing wherever systems manage vulnerable populations.
+
+What looks like a narrow debate in criminal procedure is actually the fundamental tectonic plate of institutional design. Across domains like penal law, housing, and child welfare, the core struggle is always between protective friction (notice, counsel, context, judicial discretion) and frictionless throughput (automated formulas, mandatory minimums, rapid displacement, and extraction). Institutions harden their boundaries against human friction whenever speed and yield matter more than moral consideration.
+
 ## Zero-tolerance school discipline as a precursor to the carceral state
 
 Zero-tolerance policies replace human educational judgment with rigid, predetermined punishments, acting as an administrative conveyor belt that pushes children out of classrooms and directly into the juvenile justice system.
