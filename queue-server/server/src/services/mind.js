@@ -726,7 +726,14 @@ export function tasteLeaks(reading, lines = []) {
       if (w.slice(i, i + 3).some((x) => x.length > 3 && !STOPWORDS.has(x)) && (` ${rs} `).includes(` ${run} `)) out.add(`"${run}"`);
     }
   }
-  for (const x of new Set(r)) if (x.length >= 7 && lineWords.has(x) && !TASTE_COMMON.has(x) && !STOPWORDS.has(x)) out.add(x);
+  // Single words only when they are names — capitalised inside a sentence in the
+  // lines. A single ordinary word ("structural", "systems") is how anyone talks
+  // about style; refusing those left the reading impossible to write (2026-09-25).
+  const names = new Set();
+  for (const line of lines) {
+    for (const m of String(line || '').matchAll(/(?<=[a-z,;]\s)([A-Z][a-z\u00c0-\u024f']{2,})/g)) names.add(m[1].toLowerCase());
+  }
+  for (const x of new Set(r)) if (names.has(x) && lineWords.has(x)) out.add(x);
   return [...out];
 }
 
@@ -782,7 +789,7 @@ async function runAnswerTaste(force = false) {
   const current = fact ? `${fact.text}${fact.detail ? `\n${fact.detail}` : ''}` : '';
   let got = null;
   let avoid = [];
-  for (let attempt = 0; attempt < 2 && !got; attempt++) {
+  for (let attempt = 0; attempt < 3 && !got; attempt++) {
     const res = await generateText({ feature: 'summary', maxTokens: 700, label: 'mind:answer-taste', prompt: tastePrompt(likedLines, keptLines, current, avoid) });
     if (res.error) { console.error('[mind] answer taste model error:', res.error); return; }
     const t = parseTaste(res.text);
@@ -837,6 +844,85 @@ export function unlikeLine(id) {
   refreshAnswerTasteSoon();
   broadcastAll('likes:updated', {});
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Subjects he is drawn to (his ask, 2026-09-25: "a library of entities and subjects
+// and institutions I'm interested in, so the analogy engines run across those a bit
+// more, without being confined to those"). Only the NAME is kept, never the passage
+// it was marked in. A few are handed to each answer and to the analogy generator,
+// picked at random every time: a fixed list would pull every answer to the same
+// place, the very fault the lens had to be rewritten for ("everything becomes an
+// office"). They are an invitation to reach there, never a destination.
+export const SUBJECT_KINDS = ['person', 'institution', 'idea', 'place', 'work', 'field', 'thing', 'other'];
+
+export function listSubjects() {
+  try { return db.prepare(`SELECT id, name, kind, created_at FROM interest_subjects WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 1000`).all(); }
+  catch { return []; }
+}
+
+function saveSubject({ name, kind = 'other', convoId = null, messageId = null }) {
+  const n = String(name || '').replace(/\s+/g, ' ').trim().replace(/^["'“”]+|["'“”.]+$/g, '').slice(0, 80);
+  if (!n) return { error: 'empty' };
+  const k = SUBJECT_KINDS.includes(kind) ? kind : 'other';
+  const same = db.prepare(`SELECT id, name, kind FROM interest_subjects WHERE lower(name)=lower(?) AND deleted_at IS NULL`).get(n);
+  if (same) return { ok: true, subject: same, already: true };
+  const id = randomUUID();
+  db.prepare(`INSERT INTO interest_subjects (id, name, kind, convo_id, message_id) VALUES (?,?,?,?,?)`).run(id, n, k, convoId || null, messageId || null);
+  broadcastAll('subjects:updated', {});
+  return { ok: true, subject: { id, name: n, kind: k } };
+}
+
+// From a marked passage, the one subject it points at. A model names it; if the
+// model is down, a short selection stands as its own name and a long one fails
+// honestly rather than saving a sentence as a "subject".
+export async function markSubject({ text, convoId = null, messageId = null } = {}) {
+  const passage = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
+  if (!passage) return { error: 'empty' };
+  const res = await generateText({
+    feature: 'summary', maxTokens: 120, label: 'mind:subject',
+    prompt: `He selected this in an answer and marked it: "this subject interests me". Name the ONE subject he is pointing at — a person, an institution, an idea, a place, a work, a field or a thing. Use its usual short name, the way it would appear as a library entry (for example a named institution, a concept, a person's full name). Return ONLY JSON: {"name": "<at most 60 characters>", "kind": "${SUBJECT_KINDS.join('|')}"}
+
+WHAT HE SELECTED:
+${passage}`,
+  });
+  let got = null;
+  if (!res.error) {
+    const m = String(res.text || '').match(/\{[\s\S]*\}/);
+    try { got = m ? JSON.parse(m[0]) : null; } catch { got = null; }
+  }
+  if (!got?.name) {
+    if (passage.split(' ').length > 6) return { error: 'unreadable' };
+    got = { name: passage, kind: 'other' };
+  }
+  return saveSubject({ name: got.name, kind: got.kind, convoId, messageId });
+}
+
+export function addSubject({ name, kind } = {}) { return saveSubject({ name, kind }); }
+
+export function dropSubject(id) {
+  const r = db.prepare(`UPDATE interest_subjects SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND deleted_at IS NULL`).run(id);
+  if (!r.changes) return { error: 'not_found' };
+  broadcastAll('subjects:updated', {});
+  return { ok: true };
+}
+
+// A few, at random, every call. Pure over its input for the self-test.
+export function pickSubjects(all = [], n = 3, rand = Math.random) {
+  const pool = all.slice();
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  return pool.slice(0, n);
+}
+
+export function subjectsLine(n = 3) {
+  const picked = pickSubjects(listSubjects(), n);
+  if (!picked.length) return '';
+  return `Subjects he is drawn to, a few picked at random this time: ${picked.map((s) => s.name).join('; ')}. When you look for the far parallel, you may reach toward one of these — but only if the same structure truly repeats there. Most answers will use none of them, and that is right. Never force one in, never mention this list.`;
+}
+
+export function subjectsBlock(n = 3) {
+  const line = subjectsLine(n);
+  return line ? `\n=== WHERE HE LIKES TO LOOK ===\n${line}` : '';
 }
 
 // After a mark is taken back, the reading must forget it too.

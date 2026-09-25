@@ -29,6 +29,7 @@ import { generateText as _generateText } from './ai/text.js';
 import { getConvo, listMessages } from './conversations.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { paradigmVoiceBlock } from './ai/voice.js';
+import { subjectsLine } from './mind.js';
 
 let db = null;
 export function bindRoomAnalogiesDb(database) { db = database; }
@@ -302,6 +303,7 @@ Your one job: find where the RELATION being discussed is already living under ot
 ${SOCIAL_FIRST_RULES}
 
 ${transcript ? `The conversation so far:\n---\n${transcript}\n---\n` : ''}${contextLines(ctx)}
+${subjectsLine(4)}
 ${instruction ? `He directly asked: "${instruction}" — honor exactly what this names (domain, form, or count).` : 'No direct request was made this time — use the precedence above on your own.'}
 ${avoided ? `Do not repeat any of these, in any form:\n${avoided}\n` : ''}
 ${HARD_RULES}

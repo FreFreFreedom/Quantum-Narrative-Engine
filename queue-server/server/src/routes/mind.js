@@ -93,6 +93,22 @@ export function mindRoutes() {
     res.json(out);
   });
 
+  // Subjects he is drawn to — the analogy engines reach toward a few of them.
+  router.get('/subjects', (req, res) => { res.json({ subjects: mind.listSubjects() }); });
+  router.post('/subjects', asyncHandler(async (req, res) => {
+    const b = req.body || {};
+    const out = b.passage
+      ? await mind.markSubject({ text: b.passage, convoId: b.convoId, messageId: b.messageId })
+      : mind.addSubject({ name: b.name, kind: b.kind });
+    if (out.error) return res.status(400).json(out);
+    res.json(out);
+  }));
+  router.delete('/subjects/:id', (req, res) => {
+    const out = mind.dropSubject(req.params.id);
+    if (out.error) return res.status(404).json(out);
+    res.json(out);
+  });
+
   router.patch('/:id', (req, res) => {
     const b = req.body || {};
     if (b.kind && !KINDS.includes(b.kind)) return res.status(400).json({ error: 'bad_kind' });

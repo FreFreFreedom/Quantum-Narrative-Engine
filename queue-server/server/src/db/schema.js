@@ -1882,6 +1882,19 @@ export function initMindSchema(db) {
     )
   `);
   try { db.exec(`ALTER TABLE answer_likes ADD COLUMN note TEXT`); } catch {}
+  // Subjects he is drawn to — marked "Interested" in a Room answer, or typed in the
+  // Mind panel. The analogy engines reach toward a few of them, never only them.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS interest_subjects (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'other',
+      convo_id TEXT,
+      message_id TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
 }
 
 // ─── Film enrichment: TMDb metadata (synopsis, genres, keywords, cast) ────────

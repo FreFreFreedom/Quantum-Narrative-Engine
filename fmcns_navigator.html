@@ -2578,6 +2578,12 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-remember .searchbox { flex:1; min-width:0; }
 .room-mind-row { display:flex; align-items:flex-start; gap:6px; padding:5px 0; border-bottom:1px solid var(--c-border); }
 .room-mind-row:last-child { border-bottom:none; }
+.room-subjects { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:4px 0 2px; }
+.room-subject { display:inline-flex; align-items:center; gap:4px; padding:3px 4px 3px 10px; border:1px solid var(--c-border-2); border-radius:var(--r-pill); font-size:var(--fs-xs); color:var(--c-ink-2); }
+.room-subject button { border:none; background:none; color:var(--c-ink-5); cursor:pointer; font-size:10px; padding:0 3px; line-height:1; }
+.room-subject button:hover { color:var(--c-ink); }
+.room-subject-add { width:80px; border:1px dashed var(--c-border-2); border-radius:var(--r-pill); background:transparent; color:var(--c-ink); font:inherit; font-size:var(--fs-xs); padding:3px 10px; outline:none; }
+.room-subject-add:focus { width:160px; border-style:solid; }
 .room-likes-head { margin:18px 0 4px; font-size:var(--fs-2xs); letter-spacing:.14em; text-transform:uppercase; color:var(--c-ink-5); }
 .room-like { display:flex; align-items:flex-start; gap:6px; padding:6px 0; border-bottom:1px solid var(--c-border); }
 .room-like:last-child { border-bottom:none; }
@@ -5185,6 +5191,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <button type="button" class="ubtn ubtn--pill" id="roomMindAdd">Remember</button>
           </div>
           <div id="roomMindList"></div>
+          <div id="roomMindSubjects"></div>
           <div id="roomLikes"></div>
           <div id="roomMindNote" class="room-note"></div>
         </div>
@@ -15420,8 +15427,34 @@ async function loadRoomMind() {
     const l = await api('/api/mind/likes');
     roomLikes = (l && l.likes) || [];
   } catch (e) { roomLikes = []; }
+  try {
+    const sj = await api('/api/mind/subjects');
+    mindSubjects = (sj && sj.subjects) || [];
+  } catch (e) { mindSubjects = []; }
   renderRoomMind();
   renderRoomLikes();
+  renderRoomSubjects();
+}
+
+// Subjects he is drawn to, as chips; the analogy engines reach toward a few at a time.
+let mindSubjects = [];
+function renderRoomSubjects() {
+  const box = document.getElementById('roomMindSubjects');
+  if (!box) return;
+  box.innerHTML = '<div class="room-likes-head">Subjects</div><div class="room-subjects">'
+    + mindSubjects.map((sj) => `<span class="room-subject" title="${qEscAttr(sj.kind)}">${qEsc(sj.name)}<button type="button" data-subject-drop="${qEscAttr(sj.id)}" aria-label="Remove">✕</button></span>`).join('')
+    + '<input class="room-subject-add" maxlength="80" placeholder="＋" aria-label="Add a subject"></div>';
+  box.querySelectorAll('[data-subject-drop]').forEach((b) => {
+    b.onclick = () => apiWrite('/api/mind/subjects/' + encodeURIComponent(b.getAttribute('data-subject-drop')), 'DELETE').then(loadRoomMind).catch(() => {});
+  });
+  const add = box.querySelector('.room-subject-add');
+  if (add) add.onkeydown = (ev) => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault();
+    const name = add.value.trim(); if (!name) return;
+    add.value = '';
+    apiWrite('/api/mind/subjects', 'POST', { name }).then(loadRoomMind).catch(() => {});
+  };
 }
 
 // The passages he Liked in Room answers — what the Mind learns how to answer him
@@ -29427,6 +29460,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // quick note on what he liked is offered right after, and can be left empty.
         if(msgId) mk('spark', 'Like', 'Answered the way I like — teach the Mind', function(){
           likePassage(e, msgId, passage, r, repaint);
+        });
+        // Interested: the subject behind this goes into his library of subjects,
+        // which the analogy engines reach toward now and then.
+        mk('target', 'Interested', 'This subject interests me', function(){
+          e.note = 'Finding the subject…'; if(repaint) repaint();
+          apiWrite('/api/mind/subjects', 'POST', { passage: passage, convoId: e.convoId || null, messageId: msgId || null })
+            .then(function(out){
+              var n = out && out.subject && out.subject.name;
+              e.note = n ? (out.already ? n + ' — already in your subjects.' : n + ' — added to your subjects.') : 'Could not tell which subject that is.';
+              if(repaint) repaint();
+              if(typeof loadRoomMind === 'function') loadRoomMind();
+            })
+            .catch(function(){ e.note = 'Could not tell which subject that is.'; if(repaint) repaint(); });
         });
         // Aside and Remember only make sense against the Room's own main thread
         // (plan "side talks in the Room, and remember this") — a side talk of a
