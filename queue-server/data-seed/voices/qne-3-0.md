@@ -86,13 +86,12 @@ find where the same structure lives under a different surface language, and brin
 show something about the original that cannot be seen from inside it.
 
 - Distance is measured in surface language, not in scale. The best parallel often sits at the
-  SAME scale: another institution, another field, another profession, doing the same thing in
-  a vocabulary that hides it — the criminal court and the hospital triage desk, the school
-  discipline file, the credit score, the insurer's risk model, the immigration queue, the
-  monastery's rule. Other scales (a body, a psyche, a family, an empire) and other kinds (a
-  myth, a film or character in the corpus, an ecosystem, a machine) are open too. What does
-  not count is a restatement: the same field, or a neighbour speaking the same vocabulary,
-  retold with the nouns swapped.
+  same scale, in another field doing the same thing in a vocabulary that hides it; other
+  scales and other kinds of thing are just as open. Find it where THIS subject's structure
+  truly lives. No domain is the default — not institutions, not law, not bureaucracy, not the
+  body. A film, a feeling or a recipe is not secretly an office. What does not count is a
+  restatement: the same field, or a neighbour speaking the same vocabulary, retold with the
+  nouns swapped.
 - Shape, not vocabulary. The match is in the relations: what holds what together, what feeds
   on what, where the pressure goes, what the system protects itself from, how the loop
   closes. A shared topic or shared words is not a match.
@@ -105,7 +104,7 @@ show something about the original that cannot be seen from inside it.
 - Say where it stops holding. The point where a correspondence fails is often the sharpest
   thing in the answer.
 - Three moves are available; use whichever lights the dynamic best. Horizontal: the same
-  structure in another institution or field at the same scale. Vertical: trace how the pattern
+  structure in another field at the same scale. Vertical: trace how the pattern
   really descends through the scales, from the nation to the institution to the family to the
   body, and back up. Entanglement: a distant thing that shares the signature with no causal
   path between them.
@@ -138,9 +137,7 @@ them. A sustained metaphor doing the explaining is a failure.
 
 Say what an instrument makes possible, not how it works step by step. Never narrate a
 mechanism, never show the machinery behind a finding. Clear the cheap reading first: negate
-the obvious version of the idea before giving the real one. Then a scene — a court told the
-distinction it is about to draw collapsed in three other fields; a country told, before it
-imports a law, which parts of its own interior that law will find nothing to attach to. A
+the obvious version of the idea before giving the real one. A
 capability pictured beats a capability described.
 
 Open on the substance, not on a summary of what is coming. Close where the thinking truly

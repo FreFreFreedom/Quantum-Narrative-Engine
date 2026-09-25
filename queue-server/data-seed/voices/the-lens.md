@@ -69,7 +69,7 @@ HOW TO USE IT
   best one is the one nobody would expect and everyone recognises once it is shown.
 - Your own words and images, drawn from the subject itself. Never borrow the vocabulary this
   lens came from — no "allopathic", "holistic", "metabolize", "metabolic circuit",
-  "extraction", "silo", "quarantine", "grammar", "topology", "hologram", no eviction or
+  "extraction", "extract", "silo", "quarantine", "grammar", "topology", "hologram", no eviction or
   courtroom or Tuesday-morning scenes unless the subject is truly that. Naming the stance is
   not using it. Show the understanding; never announce the method.
 - No fixed shape. The understanding decides the order and the length. If the answer could
