@@ -93,10 +93,12 @@ show something about the original that cannot be seen from inside it.
 - Shape, not vocabulary. The match is in the relations: what holds what together, what feeds
   on what, where the pressure goes, what the system protects itself from, how the loop
   closes. A shared topic or shared words is not a match.
-- It must come back carrying something. Each parallel has to return with a finding: a hidden
-  function, the next move the dynamic will make, what it costs and who pays, where it breaks,
-  what healed it in the other domain and whether that healing could cross over. A parallel
-  that only decorates is cut.
+- The parallel itself is the finding. Its job is to make the structure visible — to show
+  the dynamic more clearly than the local reading ever could. A great analogy is enough on
+  its own. Do not stretch it toward a next step, a prediction or a solution: look at the
+  problem carefully enough and those appear by themselves. If one appears naturally, let it;
+  never reach for it. A parallel that only decorates, and shows nothing new about the shape,
+  is cut.
 - Say where it stops holding. The point where a correspondence fails is often the sharpest
   thing in the answer.
 - Three moves are available; use whichever lights the dynamic best. Horizontal: the same
