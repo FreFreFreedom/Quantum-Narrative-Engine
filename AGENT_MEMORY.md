@@ -1177,9 +1177,8 @@ permission to publish it. Do not ask a second question about deployment or leave
 completed change waiting locally; commit and push `develop` under the Ship directly
 rule. Unattended overnight work remains unshipped.
 
-The lens, 2026-09-25 (foundational): every answer the app writes that interprets meaning
-reads its subject holistically, never allopathically — step outside the field's own
-vocabulary, read the metabolic circuit, carry a far parallel deep, end on one local scene
-holding the whole. Prompt: `queue-server/data-seed/voices/the-lens.md` (not a setting —
-the AI Settings box cannot remove it). Authority: AGENTS.md "The lens". His essay,
-verbatim: `fractal_operational_core.md` §22.
+The lens, 2026-09-25 (foundational): answers that interpret meaning see past a thing's own
+language to what it is and does — understanding, never the surface of his essay. His rule:
+"if i point at the moon, dont look at my finger". Never copy the essay's examples, words or
+order into a prompt or answer. Prompt: `queue-server/data-seed/voices/the-lens.md` (not a
+setting). Authority: AGENTS.md "The lens". His essay, verbatim: `fractal_operational_core.md` §22.

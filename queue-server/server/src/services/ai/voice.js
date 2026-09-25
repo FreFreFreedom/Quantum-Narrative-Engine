@@ -34,7 +34,7 @@ function stripHeaderComment(text) {
   return String(text || '').replace(/^\s*<!--[\s\S]*?-->\s*/, '').trim();
 }
 
-// THE LENS — the way of seeing under the voice (holistic, never allopathic), kept in its
+// THE LENS — the way of seeing under the voice (seeing past a thing's own language to what it is), kept in its
 // own file because Antoine called it foundational: the AI Settings box can change or
 // clear the voice, but nothing in the app's settings removes the lens. Two parts, split
 // by an ARC marker: the lens goes to everything that interprets meaning, the arc (the

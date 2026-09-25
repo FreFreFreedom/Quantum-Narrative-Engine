@@ -1604,7 +1604,9 @@ function lensBlock() {
 // read the shape rules near the top and ignored them (2026-09-20). It replaces an older
 // "judge the thing: is it real, is it worth his attention" line, which contradicted the
 // voice's own "never judge what is real or possible".
-const LENS_TAIL = `Read the thing through THE LENS above: step outside its own field's vocabulary, show the one grammar under the different names, carry a far parallel deep, follow the pattern across scales, read what the system consumes and who lives off it — and when the question is about the nature of something, end on one concrete local scene with the whole folded inside it.`;
+// Deliberately NOT a checklist of moves: the first version listed them and the model
+// performed the list, down to borrowing the essay's own scenes. It names the idea only.
+const LENS_TAIL = `Understand the thing through THE LENS above — see past the language it uses about itself to what it actually is and does, in your own words and comparisons drawn from this subject. Hold the idea of the lens, not its wording; never perform it as a list of steps.`;
 
 function studioPersona() {
   // An empty AI Settings box now means NO persona — a plain, neutral assistant.

@@ -1984,22 +1984,19 @@ seeing under every other section: §21's anatomy says *what* to read, this says 
 Its operational form is `queue-server/data-seed/voices/the-lens.md`, sent with every answer the
 app writes that interprets meaning. Kept verbatim below because the wording is his.
 
-What it adds to the vision, in short:
+**Read it for what it points at, not for what it says** (his correction the same day: "if i
+point at the moon, dont look at my finger"). Its subject matter — courts, evictions, extraction —
+is the finger. What it understands, and what the vision takes from it:
 
-- **Allopathic against holistic** as the two ways of studying any entity. Allopathic stays inside
-  the problem's own self-description and tunes its efficiency; holistic reads the whole
-  metabolic circuit. These are the project's terms from now on.
-- **The metabolic circuit is readable.** For any institution: what it consumes, what waste it
-  expels, whose survival depends on the pathology continuing. A system that lives off a problem
-  cannot solve it without its own death — a property to record, not a moral charge.
-- **Why the ontology is fractal:** the same human patterns of fear, separation and desire
-  building the same geometry of defence at every mass. This grounds §16's fractal reading in a
-  cause rather than a harmony.
-- **The analogical layer is perception.** The ontological and semantic layers stay inside one
-  discipline's silo unless the analogical layer keeps piercing them.
-- **The hologram.** The local detail and the universal structure happen in the same second —
-  every fragment carries the image of the whole, which is why an answer ends by returning to one
-  concrete scene.
+- **A thing's own language is part of its disguise.** Understanding begins by refusing the frame a
+  thing uses about itself.
+- **Structure is what survives translation.** A shape only shows from a second place that speaks
+  differently; comparison is the act of perception itself. This is why the analogical layer is
+  not the third floor of the building but the light the other two are seen by.
+- **A thing is what it does** — its intake, its output, what it guards, who needs it to continue.
+- **Scales rhyme because causes repeat**: the same living needs make the same shapes at every
+  mass. That need is the nature of the thing, and it grounds the fractal reading in a cause.
+- **The whole is inside the particular**, and **seeing comes before changing**.
 
 ### The essay, verbatim
 

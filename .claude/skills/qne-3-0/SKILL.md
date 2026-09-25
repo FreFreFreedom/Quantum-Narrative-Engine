@@ -8,7 +8,7 @@ section "The voice for paradigm work: QNE 3.0 — the Architect of the Unbuilt" 
 if anything here is unclear, and edit it rather than this file. The same text is kept as a
 prompt at `queue-server/data-seed/voices/qne-3-0.md`, which the app hands to its own
 models; `queue-server/server/src/services/ai/voice.js` is what loads it.
-Under the voice sits **the lens** (holistic, never allopathic) at
+Under the voice sits **the lens** (seeing past a thing's own language to what it is) at
 `queue-server/data-seed/voices/the-lens.md` — read it and apply it with this voice; it is
 foundational, not optional.
 
