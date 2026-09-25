@@ -27819,6 +27819,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       retryAttachments: carriedAttachments || undefined });
     if(repaint) repaint();
     var sentAt = e.msgs.length;
+    // The question itself, held by reference: a past message can be removed while
+    // this answer is still being written, and every index after it moves.
+    var sentMsg = e.msgs[sentAt - 1];
     e.stream = '';
     // Changing one's mind right after Enter is ordinary. The stop button aborts
     // this request; the server drops the turn on its side, so the thread stays
@@ -27859,8 +27862,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // after every answer. Join the optimistic user turn to its stored row so
         // Rewind is enabled there immediately, just as it is after a main-Room
         // reload.
-        if(d.userMessageId && e.msgs[sentAt - 1] && e.msgs[sentAt - 1].role === 'user'){
-          e.msgs[sentAt - 1].id = d.userMessageId;
+        if(d.userMessageId && sentMsg && sentMsg.role === 'user' && e.msgs.indexOf(sentMsg) !== -1){
+          sentMsg.id = d.userMessageId;
         }
         if(d.report && window.refreshWorldPanels) window.refreshWorldPanels(d.report);
         if(d.error && !d.ok){
@@ -27913,7 +27916,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // conversation itself, exactly as a dropped connection already does.
         if(!d || (!d.error && !d.text && !d.prompt)){
           e.stream = '';
-          return awaitTurn(e, sentAt, repaint);
+          return awaitTurn(e, sentMsg, repaint);
         }
         // The answer is now a real message, so the in-flight buffer must go or the
         // same text paints twice.
@@ -27937,7 +27940,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(e.cancelled){
           // Stopped on purpose: take the question back out of the thread and
           // hand it back to the box, edited or not. Nothing to wait for.
-          if(e.msgs[sentAt - 1] && e.msgs[sentAt - 1].role === 'user') e.msgs.splice(sentAt - 1, 1);
+          var at = e.msgs.indexOf(sentMsg);
+          if(at !== -1 && sentMsg.role === 'user') e.msgs.splice(at, 1);
           e.draft = text; e.draftForce = true; saveDraft(e);
           if(carriedAttachments) e.pendingAttachments = carriedAttachments;
           return;
@@ -27947,7 +27951,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // about whether the turn failed. Watch the conversation itself instead.
         // Partial streamed text is dropped here on purpose: the poll below returns
         // the whole saved message, and keeping both would duplicate it.
-        return awaitTurn(e, sentAt, repaint);
+        return awaitTurn(e, sentMsg, repaint);
       })
       .then(function(){ e.busy = false; e.phase = ''; qneMarkBusy(e.subjectId, false); if(repaint) repaint(); });
     return true;
@@ -28084,7 +28088,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     } catch(err){ return false; }
   }
 
-  function awaitTurn(e, sentAt, repaint){
+  function awaitTurn(e, sentMsg, repaint){
     // Twenty minutes, not two and a half. A question asked at the deepest thinking
     // setting, or one that asks for two thousand words, is still being written long
     // after the old deadline — and this used to announce "no answer came back"
@@ -28107,7 +28111,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         .then(function(data){
           var msgs = (data && data.messages) || [];
           var arrived = msgs.filter(function(m){ return m.role === 'assistant'; }).length;
-          var had = e.msgs.slice(0, sentAt).filter(function(m){ return m.role === 'assistant'; }).length;
+          var at = e.msgs.indexOf(sentMsg);
+          var had = e.msgs.slice(0, at === -1 ? e.msgs.length : at + 1).filter(function(m){ return m.role === 'assistant'; }).length;
           if(arrived > had){
             e.msgs = normalizeMsgs(msgs);
             e.promptId = (data.convo && data.convo.work_prompt_id) || e.promptId;
@@ -30408,7 +30413,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     log.querySelectorAll('[data-se-del]').forEach(function(b){
       b.onclick = function(ev){
         ev.stopPropagation();
-        if(e.busy) return;
+        // Allowed while an answer is being written (his ask, 2026-09-25): the turn in
+        // flight holds its question by reference, so removing an earlier one is safe.
         if(!b.classList.contains('is-armed')){
           b.classList.add('is-armed'); b.title = 'Click again to remove';
           setTimeout(function(){ b.classList.remove('is-armed'); b.title = 'Remove this message'; }, 3000);
@@ -30425,7 +30431,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     log.querySelectorAll('[data-se-del-local]').forEach(function(b){
       b.onclick = function(ev){
         ev.stopPropagation();
-        if(e.busy) return;
         var i = +b.getAttribute('data-se-del-local');
         if(e.msgs[i] && !e.msgs[i].id) e.msgs.splice(i, 1);
         fillEmbed(host, e, opts);
@@ -31130,7 +31135,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
                  // arms it, so a stray click never costs a message.
                  + (m.id ? '<button type="button" class="se-turndel" data-se-del="' + qEsc(m.id) + '" title="Remove this message">'
                    + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
-                   : '<button type="button" class="se-turndel" data-se-del-local="' + qEsc(String(idx)) + '" title="Remove this message">'
+                   : you ? '' : '<button type="button" class="se-turndel" data-se-del-local="' + qEsc(String(idx)) + '" title="Remove this message">'
                    + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>')
                  + '</div>';
       }
