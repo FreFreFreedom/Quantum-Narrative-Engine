@@ -240,11 +240,12 @@ function maybeAutoTitleConvo(convo) {
     }
   }
 
-  // Then the real one. Twice: after the first exchange, and again at the fifth —
-  // a thread that opens on one question is often about something else by then,
-  // and "Find myself becoming more and more interested in…" is a transcript
-  // fragment rather than a name (his complaint, 2026-09-09).
-  if (turns === 0 || turns === 4) smartTitleSoon(convo.id);
+  // Then the real one: after the first exchange, and again every time the thread
+  // passes another five messages (his and the answers together), so the name
+  // keeps following where the talk went (his ask, 2026-09-25). An exchange adds
+  // two messages, so "passed a multiple of five" is read across the last two.
+  const n = db.prepare(`SELECT COUNT(*) AS n FROM convo_messages WHERE convo_id=? AND kind='chat'`).get(convo.id)?.n || 0;
+  if (turns === 0 || (n >= 5 && Math.floor(n / 5) > Math.floor((n - 2) / 5))) smartTitleSoon(convo.id);
 }
 
 // A title is a few words, so this is the cheapest call the app makes: the free
@@ -1204,6 +1205,8 @@ export function forkConvo(convoId, { throughMessageId = null, title = null, crea
 
   const base = String(title || convo.title || DEFAULT_OPEN_TITLE).replace(/\s*\(fork(?:\s+\d+)?\)\s*$/i, '');
   const made = createOpenConvo({ title: `${base} (fork)`.slice(0, 120), createdBy });
+  // A fork is named for its parent only until it has talk of its own to be named by.
+  if (made?.convo?.id) db.prepare(`UPDATE convos SET title_auto=1 WHERE id=?`).run(made.convo.id);
   if (made.error) return made;
   const forkId = made.convo.id;
 

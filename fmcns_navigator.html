@@ -29719,14 +29719,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     log.addEventListener('mousemove', function(ev){
       if(editing) return;
       var x = ev.clientX, y = ev.clientY;
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(function(){
+      clearTimeout(raf);
+      raf = setTimeout(function(){
         if(editing) return;
         if(getSelection && String(getSelection()).trim()){ fl.hidden = true; cur = null; return; }
         var g = find(x, y);
         if(!g){ fl.hidden = true; cur = null; return; }
         cur = g; place(g); fl.hidden = false;
-      });
+      }, 16);
     });
     wrap.addEventListener('mouseleave', function(){ if(!editing){ fl.hidden = true; cur = null; } });
     log.addEventListener('scroll', function(){
