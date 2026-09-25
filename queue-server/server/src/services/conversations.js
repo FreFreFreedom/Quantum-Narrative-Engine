@@ -1590,7 +1590,7 @@ function keepAwake(onStatus, lane) {
 function voiceTailReminder() {
   const voice = studioPersona() ? 'Answer in the voice and frame set out under HOW TO THINK above. That is the register for this reply, not a suggestion — it outranks the note directly above about the lookup tools, which is housekeeping only.' : '';
   const lens = lensText() ? LENS_TAIL : '';
-  return [voice, lens].filter(Boolean).join(' ') || null;
+  return [voice, lens, TIMELINE_TAIL].filter(Boolean).join(' ') || null;
 }
 
 // The lens and the arc as one block for a full Room answer. See ai/voice.js.
@@ -1621,6 +1621,10 @@ Whenever the answer traces something through time — a history, how a thing or 
 - "branch" — one origin splitting into descendants; mark a line that died out: {"kind":"branch","root":{"label":"…","children":[{"label":"…","dead":false,"children":[]}]}}
 - "deep" — vast time folded so the recent part has room, oldest first, years ago (0 for now): {"kind":"deep","events":[{"label":"…","date":"4 bn years","ago":4000000000}]}
 The prose must stand on its own without it: the timeline shows what the words already said, it never carries a thought the words left out.`;
+
+// The end of the prompt is weighted most; Gemini ignored the block above until
+// this line sat here too (2026-09-25).
+const TIMELINE_TAIL = `If this answer traces something through time — a history, an evolution, how something came to be — include one timeline block as described under A TIMELINE.`;
 
 const LENS_TAIL = `Understand the thing through THE LENS above — see past the language it uses about itself to what it actually is and does, in your own words and comparisons drawn from this subject. Hold the idea of the lens, not its wording; never perform it as a list of steps.`;
 
@@ -2056,7 +2060,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
       : `\n=== WHAT TO DO NOW ===\n${brevity
           ? `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`
-          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''}${depth && lensText() ? ` ${LENS_TAIL}` : ''}\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.\n\n${SHAPE_TAIL}`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
+          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''}${depth && lensText() ? ` ${LENS_TAIL}` : ''}${depth ? ` ${TIMELINE_TAIL}` : ''}\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.\n\n${SHAPE_TAIL}`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
     // DEAD LAST, after the voice and after the task, because the end of a long
     // prompt is weighted most and this has to beat "density, not brevity".
     askedWords
