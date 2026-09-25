@@ -26,6 +26,7 @@ import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './su
 import { createIdea } from './workIdeas.js';
 import { generateText, generateTextDirect, generateTextStream, studioPersonaText, promptCharBudget } from './ai/text.js';
 import { lensText, answerArcText } from './ai/voice.js';
+import { reviewAnswer } from './answerReview.js';
 import { costOf } from './openaiSpend.js';
 import { isMeteredProvider } from './ai/catalog.js';
 import { resolveTurn, computeLaneTag, tagFromVia } from './turnRouter.js';
@@ -1887,6 +1888,35 @@ export async function completeRequestedLength({ text, target, provider, model, a
   return { text: whole, wordCount: count, completed: count >= target, passes };
 }
 
+// The second reader (services/answerReview.js) on a full Room answer: a cheap
+// read for the faults the lens forbids, and a rewrite on the answer's own model
+// only when one is found. Returns the text to save — the original on any doubt.
+// The streamed draft is already on screen; the saved text replaces it when the
+// turn ends, the same way a length continuation does.
+async function secondRead(convoId, text, { clarifyMode, result, turn, onStatus = null, onUsage = null }) {
+  if (clarifyMode !== 'normal' || !lensText()) return text;
+  const provider = result.provider || turn?.lane?.provider;
+  const model = result.model || turn?.lane?.model;
+  try {
+    const out = await reviewAnswer({
+      question: lastUserText(convoId) || '',
+      answer: text,
+      lens: lensText(),
+      countWords: answerWordCount,
+      onStatus,
+      read: (prompt) => generateText({ prompt, feature: 'summary', maxTokens: 300, label: 'conversations:second-reader', timeoutMs: 45_000, maxAttempts: 2 }),
+      rewrite: (provider && model)
+        ? (prompt) => generateTextDirect({ prompt, provider, model, account: turn?.lane?.account || null, effort: turn?.lane?.effort || null, maxTokens: 32000, label: 'conversations:second-reader-rewrite', timeoutMs: 150_000, allowLongOutput: true, tailReminder: voiceTailReminder(), onUsage })
+        : null,
+    });
+    if (out.changed) console.log(`[second-reader] rewrote an answer in ${convoId}: ${String(out.faults || '').replace(/\s+/g, ' ').slice(0, 200)}`);
+    return out.text;
+  } catch (e) {
+    console.error('[second-reader] skipped:', e?.message || e);
+    return text;
+  }
+}
+
 // One turn against the routed lane (AI Settings decides which; the Claude
 // subscription when 'studio' points there). Returns { text, via } | { error }.
 // The prompt itself, factored out so the streaming turn below sends exactly the
@@ -2245,7 +2275,8 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     onStatus, onToken, onUsage: trackUsage,
   });
   if (signal?.aborted) return { error: 'cancelled' };
-  result.text = completed.text;
+  result.text = await secondRead(convoId, completed.text, { clarifyMode, result, turn, onStatus, onUsage: trackUsage });
+  if (signal?.aborted) return { error: 'cancelled' };
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
   // The id travels back with the answer. Without it the just-arrived turn has no
@@ -2305,7 +2336,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     account: turn?.lane?.account || null,
     effort: turn?.lane?.effort || null,
   });
-  result.text = completed.text;
+  result.text = await secondRead(convoId, completed.text, { clarifyMode, result, turn });
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
   // The id travels back with the answer. Without it the just-arrived turn has no

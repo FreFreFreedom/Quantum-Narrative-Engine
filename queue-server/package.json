@@ -18,6 +18,7 @@
     "review:selftest": "node scripts/review-selftest.js",
     "notify:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/notify-selftest.js",
     "group:selftest": "node scripts/group-selftest.js",
+    "answer-review:selftest": "node scripts/answer-review-selftest.js",
     "witness:selftest": "node scripts/witness-selftest.js",
     "analogy:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/analogy-selftest.js",
     "world:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/worldbrainstorm-selftest.js",
