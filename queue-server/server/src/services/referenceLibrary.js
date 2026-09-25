@@ -83,7 +83,7 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
   const words=String(query).toLowerCase().slice(0,250).split(/\s+/).filter(Boolean);
   const importedKeys=new Set(media.map(mediaKey).filter(Boolean));
   const items=[...saved.filter(r=>!mediaKey(r)||!importedKeys.has(mediaKey(r))),...media,...passages].filter(r=>(!kind||r.kind===kind)&&words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w)));
-  const start=Math.max(0,Number(offset)||0), cap=Math.max(1,Math.min(100,Number(limit)||40));
+  const start=Math.max(0,Number(offset)||0), cap=Math.max(1,Math.min(2000,Number(limit)||40));
   // How many of each kind the library holds (the search still applies, the kind
   // filter does not), for the kind menu. Book titles travel too so the page can
   // leave out the ones its own shelf already counts.

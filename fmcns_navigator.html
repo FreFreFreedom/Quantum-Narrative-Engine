@@ -3413,6 +3413,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 :is(.shelf-acts, .interest-item) .lib-icbtn[data-remove]:hover, .lib-icbtn[data-remove]:hover { color:var(--c-danger, #d0705e); }
 .lib-ic { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
 .lib-pass { padding:12px 0; border-bottom:1px solid var(--c-border); }
+.lib-more { height:1px; }
 .lib-pass-text { margin:0; cursor:pointer; font-family:var(--room-font, var(--font-read)); font-size:var(--fs-md); line-height:1.55; color:var(--c-read, var(--c-ink-2));
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .lib-pass.is-open .lib-pass-text { -webkit-line-clamp:unset; display:block; }
@@ -17359,7 +17360,10 @@ async function roomUploadFileToConvo(file, convoId, onProgress) {
 let interestLibraryRequest = 0;
 let interestLibraryQuery = '';
 let interestLibraryKind = '';
-let interestLibraryOffset = 0;
+let interestLibraryOffset = 0;   // how far the continuous scroll has grown past the first stretch
+const LIB_STEP = 60;
+function libLimit() { return LIB_STEP + interestLibraryOffset; }
+let libMoreObs = null;
 // The library's own tabs (his pick D, 2026-09-24). Suggestions live inside one type,
 // behind its button, where the Discover tab and three panes used to be.
 const LIB_KINDS = [['', 'All'], ['book', 'Books'], ['film', 'Films'], ['series', 'Series'], ['paper', 'Papers'],
@@ -17888,7 +17892,9 @@ async function renderInterestLibrary(opts) {
   const quiet = !!(opts && opts.quiet) && libData && libData.key === libKey();
   const scroller = libScroller(host);
   const wasAt = scroller ? scroller.scrollTop : 0;
-  const putBack = () => { if (scroller && quiet) scroller.scrollTop = wasAt; };
+  // Growing the continuous scroll holds the place too.
+  const grow = !!(opts && opts.grow);
+  const putBack = () => { if (scroller && (quiet || grow)) scroller.scrollTop = wasAt; };
   if (!LIB_KINDS.some((k) => k[0] === interestLibraryKind)) interestLibraryKind = '';
   const suggestKind = LIB_SUGGEST[interestLibraryKind] || '';
   const finding = libFinding || !!interestLibraryQuery;
@@ -17971,7 +17977,7 @@ async function renderInterestLibrary(opts) {
     if (quiet) { ({ out, review, shelf } = libData); }
     else {
       [out, review, shelf] = await Promise.all([
-        api('/api/recommendations/library?limit=40&offset=' + interestLibraryOffset + '&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)),
+        api('/api/recommendations/library?limit=' + libLimit() + '&offset=0&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)),
         api('/api/convos/interest-review'),
         api('/api/convos/books').catch(() => ({ books: [] })),
       ]);
@@ -18024,7 +18030,9 @@ async function renderInterestLibrary(opts) {
           + '<span class="lib-pass-acts">' + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</span></div></div>';
       }).join('')
       + (!wall.length && !rest.length && !review.entries.length ? '<div class="room-empty">Nothing saved yet.</div>' : '')
-      + ((interestLibraryOffset || out.items.length === 40) ? '<div class="interest-item">' + (interestLibraryOffset ? '<button data-prev>Previous</button> ' : '') + (out.items.length === 40 ? '<button data-next>More</button>' : '') + '</div>' : '');
+      // One continuous scroll, no pages (his ask, 2026-09-25): a marker at the foot
+      // loads the next stretch as it comes into view.
+      + (out.items.length >= libLimit() ? '<div class="lib-more" data-lib-more aria-hidden="true"></div>' : '');
 
     // ── the wall's own handlers ──
     host.querySelectorAll('[data-lib]').forEach((card) => {
@@ -18112,9 +18120,16 @@ async function renderInterestLibrary(opts) {
       };
       el.querySelector('[data-remove]').onclick = async () => { try { await apiWrite('/api/recommendations/library/remove', 'POST', { type: w.type, id: w.id }); renderInterestLibrary(); if (w.type === 'passage' && window.loadRoomPassages) window.loadRoomPassages(); } catch (err) { el.textContent = err.message; } };
     });
-    const prev = results.querySelector('[data-prev]'), next = results.querySelector('[data-next]');
-    if (prev) prev.onclick = () => { interestLibraryOffset = Math.max(0, interestLibraryOffset - 40); renderInterestLibrary(); };
-    if (next) next.onclick = () => { interestLibraryOffset += 40; renderInterestLibrary(); };
+    const more = results.querySelector('[data-lib-more]');
+    if (libMoreObs) { libMoreObs.disconnect(); libMoreObs = null; }
+    if (more && 'IntersectionObserver' in window) {
+      libMoreObs = new IntersectionObserver((ents) => {
+        if (!ents.some((x) => x.isIntersecting)) return;
+        libMoreObs.disconnect(); libMoreObs = null;
+        interestLibraryOffset += LIB_STEP; renderInterestLibrary({ grow: true });
+      }, { root: libScroller(host) || null, rootMargin: '600px 0px' });
+      libMoreObs.observe(more);
+    }
 
     putBack();
     // The source book's own cover in its box, found the way the wall finds covers.
