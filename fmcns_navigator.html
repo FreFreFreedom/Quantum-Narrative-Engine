@@ -2797,6 +2797,12 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-note.err { color:var(--c-danger); }
 .se-undo { margin-left:10px; border:0; background:none; padding:0; cursor:pointer; font-family:'Cinzel',var(--font-read); font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
 .se-interestbar { max-width:48rem; width:100%; margin:0 auto; font-size:var(--fs-sm); max-height:130px; overflow:auto; }
+.interest-pill { display:inline-flex; align-items:center; gap:6px; padding:3px 4px 3px 10px; border-radius:var(--r-pill); border:1px solid var(--c-border); color:var(--c-ink-4); font-size:var(--fs-xs); animation:seToastIn .25s ease both; }
+.interest-pill.is-done { color:var(--c-kept-echo, var(--c-accent)); }
+.interest-pill-go { display:inline-flex; align-items:center; gap:5px; border:none; background:none; color:inherit; font:inherit; cursor:pointer; padding:0; }
+.interest-pill-go svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-dasharray:12; stroke-dashoffset:12; animation:seTick .35s .1s ease-out forwards; }
+.interest-pill-undo { border:none; background:none; color:var(--c-ink-5); cursor:pointer; font-size:11px; padding:0 5px; line-height:1; opacity:.6; }
+.interest-pill:hover .interest-pill-undo { opacity:1; }
 .interest-import { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:4px 10px; color:var(--c-ink-4); }
 .interest-import span { flex:1; min-width:120px; }
 .interest-import button, .interest-item button { font:inherit; color:var(--c-ink); background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:6px; padding:3px 7px; cursor:pointer; }
@@ -30680,47 +30686,37 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     const batches = (e.interestBatches || []).filter(b => !['undone','ordinary','failed','dismissed'].includes(b.status))
       // Nothing new from the picture: nothing to say, and nothing to undo (his ask, 2026-09-24).
       .filter(b => !(b.status === 'done' && !['book','film','series'].some(k => (b.result || {})[k]) && !(b.entries || []).length));
-    bar.innerHTML = batches.map(b => {
-      const r = b.result || {};
-      const added = [['book','books'],['film','films'],['series','series']].filter(([k]) => r[k]).map(([k,label]) => r[k] + ' ' + label).join(', ');
-      const status = b.status === 'done' ? (added ? 'Added ' + added : 'No new titles') + (r.duplicates ? ' · ' + r.duplicates + ' already saved' : '') + (b.entries.length ? ' · ' + b.entries.length + ' to review' : '')
-        : b.status === 'failed' ? 'Library reading failed. '+(e.pendingAttachments?.includes(e.interestImages?.[b.id])?'Image ready for your message.':'You can still discuss the image.') : b.status === 'ordinary' ? 'Ready to attach' : 'Checking for Library titles…';
-      return '<div class="interest-import" data-import="' + qEscAttr(b.id) + '"><span title="' + qEscAttr(b.filename) + '">' + qEsc(status) + '</span>'
-        + (b.retryable ? '<button data-retry>Retry</button>' : '')
-        + (b.status === 'done' ? '<button data-library>' + (b.entries.length ? 'Review' : 'Library') + '</button>' : '')
-        + ((e.interestImages?.[b.id] || b.imageAvailable) && !e.pendingAttachments?.includes(e.interestImages?.[b.id]) ? '<button data-discuss title="Attach this image to your next message">Discuss image</button>' : '')
-        + '<button data-undo>' + (['queued','reading'].includes(b.status) ? 'Cancel' : 'Undo') + '</button></div>';
-    }).join('');
-    bar.querySelectorAll('[data-import]').forEach(row => {
-      const id = row.dataset.import;
-      const act = async action => {
-        try {
-          await apiWrite('/api/convos/interest-imports/' + id + '/' + action, 'POST', {});
-          if(action === 'undo' && e.interestImages) delete e.interestImages[id];
-          e.interestChecked = 0; await refresh();
-          if(document.getElementById('roomInterests')?.classList.contains('is-active')) renderInterestLibrary();
-        } catch(err){ row.textContent = err.message; }
-      };
-      row.querySelector('[data-undo]').onclick = () => act('undo');
-      const retry = row.querySelector('[data-retry]'); if(retry) retry.onclick = () => act('retry');
-      const library = row.querySelector('[data-library]'); if(library) library.onclick = () => {
-        const panel = document.getElementById('roomCards'), button = document.getElementById('roomCardsBtn');
-        if(panel && button && (isRoomNarrow() ? !panel.classList.contains('open') : panel.classList.contains('collapsed'))) button.click();
-        document.querySelector('[data-room-pane="interests"]')?.click();
-      };
-      const discuss = row.querySelector('[data-discuss]'); if(discuss) discuss.onclick = async () => {
-        let img=e.interestImages?.[id];
-        if(!img){
-          try{discuss.disabled=true;img=await api('/api/convos/interest-imports/'+encodeURIComponent(id)+'/image');if(!e.interestImages)e.interestImages={};e.interestImages[id]=img;}
-          catch(err){e.note=err.message;fillEmbed(host,e,opts);return;}
-          finally{discuss.disabled=false;}
-        }
-        if(e.pendingAttachments?.includes(img))return;
-        if(!e.pendingAttachments) e.pendingAttachments = [];
-        if(e.pendingAttachments.filter(a => a.kind === 'image').length >= 4 || e.pendingAttachments.reduce((n,a) => n + (a.dataUrl?.length || 0), 0) + img.dataUrl.length > 18000000){ e.note = 'Send or remove existing image attachments first.'; fillEmbed(host,e,opts); return; }
-        e.pendingAttachments.push(img);if(!e.interestChatReady)e.interestChatReady={};e.interestChatReady[id]=true;fillEmbed(host,e,opts);
-      };
-    });
+    // One quiet pill for every screenshot being read, not a row of words per image
+    // (his ask, 2026-09-25): an orb while reading, then what was added with a tick;
+    // click it for the Library, ↺ undoes them all. It fades out on its own.
+    const reading = batches.filter(b => ['queued','reading'].includes(b.status));
+    const done = batches.filter(b => b.status === 'done');
+    const sum = { book: 0, film: 0, series: 0 };
+    done.forEach(b => { const r = b.result || {}; ['book','film','series'].forEach(k => { sum[k] += Number(r[k] || 0); }); });
+    const words = [['book','book','books'],['film','film','films'],['series','series','series']].filter(([k]) => sum[k]).map(([k,one,many]) => sum[k] + ' ' + (sum[k] > 1 ? many : one)).join(' · ');
+    const pillHtml = !batches.length ? '' : '<div class="interest-pill' + (reading.length ? ' is-reading' : ' is-done') + '">'
+      + (reading.length ? orbHtml('searching', 14) + '<span>' + reading.length + '</span>'
+        : '<button type="button" class="interest-pill-go" data-library title="Open the Library"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 8.3l2.3 2.3 4.7-5"/></svg>' + qEsc(words || 'Added') + '</button>')
+      + '<button type="button" class="interest-pill-undo" data-undo title="' + (reading.length ? 'Stop' : 'Undo') + '" aria-label="' + (reading.length ? 'Stop' : 'Undo') + '">' + (reading.length ? '✕' : '↺') + '</button></div>';
+    // Redrawn only when it changes, so the tick is drawn once, not every poll.
+    if(bar.__pill !== pillHtml){ bar.innerHTML = pillHtml; bar.__pill = pillHtml; }
+    const act = async (ids, action) => {
+      try {
+        await Promise.all(ids.map(id => apiWrite('/api/convos/interest-imports/' + id + '/' + action, 'POST', {})));
+        if(action === 'undo' && e.interestImages) ids.forEach(id => { delete e.interestImages[id]; });
+        e.interestChecked = 0; await refresh();
+        if(document.getElementById('roomInterests')?.classList.contains('is-active')) renderInterestLibrary();
+      } catch(err){ /* the pill simply stays */ }
+    };
+    const undo = bar.querySelector('[data-undo]'); if(undo) undo.onclick = () => act(batches.map(b => b.id), 'undo');
+    const library = bar.querySelector('[data-library]'); if(library) library.onclick = () => {
+      const panel = document.getElementById('roomCards'), button = document.getElementById('roomCardsBtn');
+      if(panel && button && (isRoomNarrow() ? !panel.classList.contains('open') : panel.classList.contains('collapsed'))) button.click();
+      document.querySelector('[data-room-pane="interests"]')?.click();
+    };
+    if(done.length && !reading.length && !e.interestFade){
+      e.interestFade = setTimeout(() => { e.interestFade = null; act(done.map(b => b.id), 'dismiss'); }, 8000);
+    }
     if(!e.interestFetching && (!e.interestChecked || Date.now() - e.interestChecked > 5000)) void refresh();
     if(!e.interestTimer){
       e.interestTimer = setTimeout(() => { e.interestTimer = null; if(current()) fillInterestImports(host,e,opts); }, 6000);
