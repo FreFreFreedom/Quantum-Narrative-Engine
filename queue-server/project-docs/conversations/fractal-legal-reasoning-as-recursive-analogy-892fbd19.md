@@ -1,4 +1,4 @@
-# QNE
+# Fractal Legal Reasoning as Recursive Analogy
 
 Thread 892fbd19-c053-48c9-b2c7-937bc3f90581 · 48 turns · last said 2026-09-08T07:18:04.645Z
 

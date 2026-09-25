@@ -1,4 +1,4 @@
-# Kinetic media matching for cardio workouts
+# Kinetic workout media selection
 
 Thread a7051bc8-641f-4264-93be-df92ac409927 · 7 turns · last said 2026-09-16T03:15:51.331Z
 

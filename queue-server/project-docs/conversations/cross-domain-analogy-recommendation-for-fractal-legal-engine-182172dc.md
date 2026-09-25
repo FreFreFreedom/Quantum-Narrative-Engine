@@ -1,4 +1,4 @@
-# Have a conversation
+# Cross‑Domain Analogy Recommendation for Fractal Legal Engine
 
 Thread 182172dc-5a73-41b1-8313-239110227a19 · 10 turns · last said 2026-09-09T05:56:29.541Z
 

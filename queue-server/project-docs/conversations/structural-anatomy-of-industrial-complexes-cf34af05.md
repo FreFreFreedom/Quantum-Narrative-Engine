@@ -1,4 +1,4 @@
-# Mandatory Minimums and the Misdemeanor Engine of Mass Incarceration
+# Structural anatomy of industrial complexes
 
 Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 104 turns · last said 2026-09-25T07:54:57.387Z
 
