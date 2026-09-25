@@ -29623,10 +29623,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // gap shows a hairline with a +; clicking it asks for a name in place. The mark
   // is an ordinary one whose snippet is the opening of the paragraph after the
   // gap, so the rail, the jump and the fork all treat it like any other.
+  // Paragraphs can sit one level down (an answer with covers wraps its words in
+  // .se-covered), so wrappers are walked through; covers and cards are not words.
   function gapBlocks(body){
-    return Array.prototype.filter.call(body.children, function(el){
-      return /^(P|H[1-6]|UL|OL|BLOCKQUOTE|PRE|TABLE|HR)$/.test(el.tagName) && el.textContent.trim();
+    var out = [];
+    Array.prototype.forEach.call(body.children, function(el){
+      if(/^(P|H[1-6]|UL|OL|BLOCKQUOTE|PRE|TABLE)$/.test(el.tagName)){ if(el.textContent.trim()) out.push(el); }
+      else if(el.tagName === 'DIV' && !el.matches('.se-cover, .se-card, .se-chap')) out = out.concat(gapBlocks(el));
     });
+    return out;
   }
   function gapSnippet(block){
     return block.textContent.replace(/\s+/g, ' ').trim().slice(0, 160);
@@ -29655,7 +29660,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       d.setAttribute('data-name', gapName(m));
       d.setAttribute('data-mark-id', m.id);
       d.innerHTML = '<i class="se-chap-rib"></i><b class="se-chap-drop" aria-label="Forget this chapter">✕</b>';
-      if(at === 0) turn.parentNode.insertBefore(d, turn); else body.insertBefore(d, blocks[at]);
+      if(at === 0) turn.parentNode.insertBefore(d, turn); else blocks[at].parentNode.insertBefore(d, blocks[at]);
     });
   }
   function wireGapChapters(log, e, repaint){
