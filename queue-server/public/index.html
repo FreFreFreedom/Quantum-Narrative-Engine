@@ -28404,15 +28404,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   };
   function tlDecode(s){ var t = document.createElement('textarea'); t.innerHTML = s; return t.value.replace(/&lt;/g, '<').replace(/&amp;/g, '&'); }
   function seTimelines(html){
-    if(html.indexOf('language-timeline') === -1) return html;
-    return html.replace(/<pre><code class="language-timeline">([\s\S]*?)(?:<\/code><\/pre>|$)/g, function(all, body){
+    if(html.indexOf('<pre><code') === -1) return html;
+    // Models sometimes fence it as json or leave the language off: any code block
+    // holding a known timeline kind is drawn; any other code block is left alone.
+    return html.replace(/<pre><code(?: class="language-(timeline|json)")?>([\s\S]*?)(?:<\/code><\/pre>|$)/g, function(all, lang, body){
       var svg = '';
       try { var spec = JSON.parse(tlDecode(body)); var fn = spec && TL_KINDS[spec.kind]; svg = fn ? fn(spec) : ''; } catch (e) { svg = ''; }
-      return svg ? '<figure class="se-tl">' + svg + '</figure>' : '<figure class="se-tl se-tl-pending"></figure>';
+      if(svg) return '<figure class="se-tl">' + svg + '</figure>';
+      return lang === 'timeline' ? '<figure class="se-tl se-tl-pending"></figure>' : all;
     });
   }
   // Copy gives the words, not the drawing's data.
-  function seStripTimelines(text){ return String(text || '').replace(/\n?```timeline[\s\S]*?(?:```|$)\n?/g, '\n').replace(/\n{3,}/g, '\n\n').trim(); }
+  function seStripTimelines(text){ return String(text || '').replace(/\n?```(?:timeline|json)?\s*\n\s*\{\s*"kind"[\s\S]*?(?:```|$)\n?/g, '\n').replace(/\n{3,}/g, '\n\n').trim(); }
 
   function fmtBody(text, asMarkdown, cacheKey){
     var raw = String(text == null ? '' : text);

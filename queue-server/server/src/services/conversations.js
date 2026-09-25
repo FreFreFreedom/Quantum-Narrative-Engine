@@ -1625,7 +1625,7 @@ function lensBlock() {
 // seTimelines in fmcns_navigator.html, which must accept exactly these shapes.
 const TIMELINE_BLOCK = `
 === A TIMELINE, ONLY WHEN THE IDEA HAS ONE ===
-Whenever the answer traces something through time — a history, how a thing or a pattern evolved, a sequence of stages, a cycle that comes back — add ONE timeline inside the answer, right after the paragraph it supports. When the question asks how something evolved, developed or came to be, that is always such an answer. When nothing in the answer moves through time, add none; never add one for decoration. Write it as a fenced code block whose language is timeline, holding one JSON object and nothing else. Labels are short (one to four words), in your own words; three to seven items. Choose the kind whose shape matches the idea:
+Whenever the answer traces something through time — a history, how a thing or a pattern evolved, a sequence of stages, a cycle that comes back — add ONE timeline inside the answer, right after the paragraph it supports. When the question asks how something evolved, developed or came to be, that is always such an answer. When nothing in the answer moves through time, add none; never add one for decoration. Write it as a fenced code block that opens with three backticks and the word timeline (never json), holding one JSON object and nothing else. Labels are short (one to four words), in your own words; three to seven items. Choose the kind whose shape matches the idea:
 - "scale" — real history, spaced to real time, with optional eras: {"kind":"scale","events":[{"label":"…","at":1791,"date":"1791"}],"eras":[{"label":"…","from":1700,"to":1850}]} (years as numbers, negative before the common era)
 - "spine" — steps that each deserve a phrase: {"kind":"spine","events":[{"date":"1850","label":"…","note":"a few words, optional"}]}
 - "tracks" — the same turn arriving in several domains: {"kind":"tracks","tracks":[{"label":"…","events":[{"at":1900,"label":"optional"}]}],"turn":{"at":1945,"label":"…"}}
@@ -1871,7 +1871,7 @@ export function turnMaxTokens(convoId, base = 4000) {
 // the rendered words for the small receipt Antoine sees under the answer.
 export function answerWordCount(text) {
   const visible = String(text || '')
-    .replace(/```timeline[\s\S]*?(?:```|$)/g, ' ')
+    .replace(/```(?:timeline|json)?\s*\n\s*\{\s*"kind"[\s\S]*?(?:```|$)/g, ' ')
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .replace(/<[^>]+>/g, ' ')
@@ -1942,7 +1942,7 @@ async function secondRead(convoId, text, { clarifyMode, result, turn, onStatus =
   // rewrite must not lose it. Held out, and put back after the same paragraph.
   const held = [];
   const prose = String(text || '').split(/\n{2,}/).reduce((acc, para) => {
-    if (/^```timeline/.test(para.trim())) held.push({ at: acc.length, block: para.trim() });
+    if (/^```(?:timeline|json)?\s*\n\s*\{\s*"kind"/.test(para.trim())) held.push({ at: acc.length, block: para.trim() });
     else acc.push(para);
     return acc;
   }, []).join('\n\n');
