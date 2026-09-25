@@ -958,12 +958,14 @@ Work out what he wants kept. It is one or more of:
 - "idea": an understanding about the world or about the paradigm (what something really is, how it works, what it does) — the thing itself, as a claim.
 - "about": a fact about him.
 
-THE MOST IMPORTANT RULE — point at the moon, not at the finger. Future answers will read what you save and copy any concrete thing in it. So save the UNDERSTANDING in your own plain words: never quote him, never quote or paraphrase the passage, never carry over its images, metaphors, names or distinctive words (a "subject" item's name is the only exception).${avoid.length ? `\nYour last attempt lifted these from the passage — say it without them: ${avoid.join(', ')}.` : ''}
+THE MOST IMPORTANT RULE — point at the moon, not at the finger. Future answers will read what you save and copy any concrete thing in it. So save the UNDERSTANDING in your own plain words: never quote him, never quote or paraphrase the passage, never carry over its images, metaphors, names or distinctive words (a "subject" item's name is the only exception).
+- Keep the subject HE named. If he says "about the nature of policing", the idea is about policing — never widen it into "institutions" or "systems" in general. The moon rule is about the passage's images, not about his subject.
+- A "how" item names the MOVE, never a kind of imagery. Not "use biological metaphors" (that sends every answer to biology) but what the move does — e.g. finding a comparison in a far, unexpected place that makes the thing's hidden behaviour suddenly visible.${avoid.length ? `\nYour last attempt lifted these from the passage — say it without them: ${avoid.join(', ')}.` : ''}
 
-If you understand him, propose the items and say in "reply" one short plain line of what you will keep. If something real is unclear — which of two things he means, or how wide it should go — ask ONE question with 2 to 4 short choices instead (items may then hold your best guess, or be empty). Never ask when it is clear.
+If you understand him, propose the items and say in "reply" one short plain line of what you will keep. If something real is unclear — which of two things he means, or how wide it should go — ask ONE question with 2 to 4 short choices instead (items may then hold your best guess, or be empty). Never ask when it is clear. But when his words do not say WHAT to keep — "this", "keep it", "save", "yes", a single vague word — always ask, with choices built from what the passage actually offers (the idea in it, the way it is said, a subject it names, or all of them).
 
 Return ONLY JSON, no fence:
-{"reply": "<one short line to him>", "items": [{"kind": "how|subject|idea|about", "text": "<at most 200 characters>", "detail": "<optional, at most 500 characters, the reasoning in your own words>"}], "question": null or {"text": "<the question>", "options": ["<short choice>", "<short choice>"]}}
+{"reply": "<one short line to him>", "items": [{"kind": "how|subject|idea|about", "text": "<one complete sentence, at most 180 characters>", "detail": "<optional, at most 500 characters, the reasoning in your own words>"}], "question": null or {"text": "<the question>", "options": ["<short choice>", "<short choice>"]}}
 
 THE PASSAGE HE SELECTED:
 ${passage || '(none — he is writing without a passage)'}
@@ -979,7 +981,7 @@ function parseTeach(text) {
   const items = (Array.isArray(o.items) ? o.items : [])
     .filter((it) => it && TEACH_KINDS.includes(it.kind) && String(it.text || '').trim())
     .slice(0, 4)
-    .map((it) => ({ kind: it.kind, text: String(it.text).trim().slice(0, 200), detail: String(it.detail || '').trim().slice(0, 500) || null }));
+    .map((it) => ({ kind: it.kind, text: String(it.text).trim().slice(0, 240), detail: String(it.detail || '').trim().slice(0, 500) || null }));
   const q = o.question && String(o.question.text || '').trim()
     ? { text: String(o.question.text).trim().slice(0, 200), options: (Array.isArray(o.question.options) ? o.question.options : []).map((x) => String(x || '').trim().slice(0, 90)).filter(Boolean).slice(0, 4) }
     : null;
