@@ -206,7 +206,7 @@ async function readOne(b) {
   {
     {
       try {
-        const result = await readInterestScreenshot(b.image);
+        const result = await readInterestScreenshot(b.image, { broad: b.convo_id === LIBRARY_DROP });
         if (batchFor(b.owner, b.id).status !== 'reading') return;
         transaction(() => {
           const counts = { book: 0, film: 0, series: 0, duplicates: 0, review: 0 };
