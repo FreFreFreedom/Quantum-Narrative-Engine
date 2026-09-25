@@ -30564,25 +30564,48 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!log._posWired){
       log._posWired = 1;
       log.addEventListener('scroll', function(){ clearTimeout(log._posTimer); log._posTimer = setTimeout(function(){ saveReadPos(log); }, 250); }, { passive: true });
+      // His own hand on the thread ends every re-settle below at once.
+      ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(function(ev){
+        log.addEventListener(ev, function(){ log._userMoved = 1; }, { passive: true });
+      });
     }
     if(log._posKey === key) return;
     // Only once the thread's answers are actually on the page.
     if(!log.querySelector('.se-turn[data-msg-id]')) return;
-    log._posKey = key;
     var pos = readPosAll()[key];
-    if(!pos || pos.bottom) return;
+    if(!pos || pos.bottom){ log._posKey = key; return; }
+    var find = function(){ return log.querySelector('.se-turn[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(pos.msg) : pos.msg) + '"]'); };
+    // The thread fills in stages: the answer he was reading may not be drawn yet.
+    // Wait for it (a few seconds) instead of giving up on the first paint — giving
+    // up is what made a refresh land somewhere else (2026-09-25).
+    if(!find()){
+      if(log._posTryKey !== key){ log._posTryKey = key; log._posFirstTry = Date.now(); }
+      if(Date.now() - log._posFirstTry < 8000){
+        clearTimeout(log._posRetry);
+        log._posRetry = setTimeout(function(){ if(log.isConnected) restoreReadPos(log, key); }, 400);
+        return;
+      }
+      log._posKey = key; return;
+    }
+    log._posKey = key; log._userMoved = 0;
     var apply = function(){
-      var turn = log.querySelector('.se-turn[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(pos.msg) : pos.msg) + '"]');
+      var turn = find();
       if(!turn) return;
       log._posRestoring = 1;
       log.scrollTop = Math.max(0, log.scrollTop + (turn.getBoundingClientRect().top - log.getBoundingClientRect().top) + (pos.off || 0));
       setTimeout(function(){ log._posRestoring = 0; }, 60);
     };
     apply();
-    // Covers and art load after the text and push it down; settle once more,
-    // unless the reader has already moved.
-    var was = log.scrollTop;
-    setTimeout(function(){ if(log._posKey === key && Math.abs(log.scrollTop - was) < 4) apply(); }, 700);
+    // Covers, timelines and fonts arrive after the text and push it down; settle
+    // again until they are in, unless he has already moved.
+    [150, 400, 800, 1500, 3000].forEach(function(ms){
+      setTimeout(function(){ if(log._posKey === key && !log._userMoved) apply(); }, ms);
+    });
+  }
+  // The last scroll before a refresh can fall inside the 250ms wait; save now.
+  if(!window.__seReadPosPagehide){
+    window.__seReadPosPagehide = 1;
+    window.addEventListener('pagehide', function(){ document.querySelectorAll('.se-log').forEach(function(l){ try { saveReadPos(l); } catch(err){} }); });
   }
 
   function fillEmbed(host, e, opts){
