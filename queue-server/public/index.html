@@ -29744,34 +29744,28 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       fl.innerHTML = '<span class="se-gap-line"></span><button type="button" class="se-gap-plus" aria-label="A chapter here">+</button><span class="se-gap-line"></span>';
     }
     fl.addEventListener('mousedown', function(ev){ if(ev.target.closest('.se-gap-plus')) ev.preventDefault(); });
+    // One click and the chapter is there: a place-holder mark shows at once, and
+    // the server names it from the words that follow the gap (never typed).
     fl.addEventListener('click', function(ev){
       if(!ev.target.closest('.se-gap-plus') || !cur) return;
       ev.stopPropagation();
-      editing = true;
-      fl.classList.add('is-naming');
-      fl.innerHTML = '<span class="se-gap-line"></span><i class="se-chap-rib"></i><input class="se-gap-name" type="text" maxlength="80" aria-label="Chapter name"><span class="se-gap-line"></span>';
-      var inp = fl.querySelector('input');
-      var g = cur;
-      inp.focus();
-      var done = false;
-      function save(){
-        if(done) return; done = true;
-        var name = inp.value.replace(/\s+/g, ' ').trim();
-        var ee = log._gapE, rp = log._gapRepaint;
-        close();
-        if(!ee || !ee.convoId || !g.block.isConnected) return;
-        apiWrite('/api/convos/' + ee.convoId + '/marks', 'POST', { messageId: g.id, snippet: gapSnippet(g.block), label: name })
-          .then(function(out){
-            if(out && out.mark){ if(!ee.marks) ee.marks = []; ee.marks.push(out.mark); }
-            if(rp) rp();
-          })
-          .catch(function(){ ee.note = 'Could not save that chapter.'; if(rp) rp(); });
-      }
-      inp.addEventListener('keydown', function(k){
-        if(k.key === 'Enter'){ k.preventDefault(); save(); }
-        else if(k.key === 'Escape'){ k.preventDefault(); done = true; close(); }
-      });
-      inp.addEventListener('blur', function(){ if(!done){ done = true; close(); } });
+      var g = cur, ee = log._gapE, rp = log._gapRepaint;
+      close();
+      if(!ee || !ee.convoId || !g.block.isConnected) return;
+      var snip = gapSnippet(g.block), tmp = { id: 'pending-' + Date.now(), message_id: g.id, snippet: snip, label: '\u2026' };
+      if(!ee.marks) ee.marks = [];
+      ee.marks.push(tmp);
+      if(rp) rp();
+      apiWrite('/api/convos/' + ee.convoId + '/marks/named', 'POST', { messageId: g.id, snippet: snip })
+        .then(function(out){
+          ee.marks = (ee.marks || []).filter(function(m){ return m.id !== tmp.id; });
+          if(out && out.mark) ee.marks.push(out.mark);
+          if(rp) rp();
+        })
+        .catch(function(){
+          ee.marks = (ee.marks || []).filter(function(m){ return m.id !== tmp.id; });
+          ee.note = 'Could not save that chapter.'; if(rp) rp();
+        });
     });
   }
 

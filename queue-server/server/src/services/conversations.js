@@ -1162,6 +1162,32 @@ export function addMark(convoId, { messageId, snippet = '', label = '' } = {}) {
   return { ok: true, mark: db.prepare(`SELECT * FROM convo_marks WHERE id=?`).get(id) };
 }
 
+// A chapter dropped at a gap is named for what comes after it, not typed (his
+// ask, 2026-09-25: "I just wanna select the place"). The words from the gap to
+// the end of the answer are the evidence; a failed call keeps the first words.
+export async function addNamedMark(convoId, { messageId, snippet = '' } = {}) {
+  const made = addMark(convoId, { messageId, snippet });
+  if (!made.ok) return made;
+  try {
+    const msg = db.prepare(`SELECT text FROM convo_messages WHERE id=? AND convo_id=?`).get(String(messageId), convoId);
+    const flat = String(msg?.text || '').replace(/[#*_>`]/g, '').replace(/\s+/g, ' ');
+    const snip = String(snippet || '').replace(/[#*_>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    const at = snip ? flat.indexOf(snip) : -1;
+    const passage = (at >= 0 ? flat.slice(at) : flat).slice(0, 3000);
+    const out = await generateText({
+      feature: 'summary', label: 'conversations:chapter-name', maxTokens: 30, timeoutMs: 15_000, maxAttempts: 1,
+      prompt: 'Below is a passage from a long answer. Give it a chapter name: three to six words naming what this part is about, the way a book names a chapter. Concrete, not generic ("Rent as a trauma engine", not "Analysis"). Reply with the name alone, no quotes.\n\n' + passage,
+    });
+    const name = cleanTitle(out?.text);
+    if (name) {
+      db.prepare(`UPDATE convo_marks SET label=? WHERE id=?`).run(name.slice(0, 80), made.mark.id);
+      broadcastAll('convos:updated', { convoId });
+      return { ok: true, mark: db.prepare(`SELECT * FROM convo_marks WHERE id=?`).get(made.mark.id) };
+    }
+  } catch (err) { console.warn('[chapter-name]', err?.message || err); }
+  return made;
+}
+
 export function deleteMark(convoId, markId) {
   if (!db) return { error: 'no_db' };
   const row = db.prepare(`SELECT * FROM convo_marks WHERE id=? AND convo_id=?`).get(markId, convoId);

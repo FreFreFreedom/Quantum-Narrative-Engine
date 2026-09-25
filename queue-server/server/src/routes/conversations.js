@@ -872,6 +872,12 @@ export function conversationsRoutes() {
     res.json({ marks: convos.listMarks(req.params.id) });
   });
 
+  router.post('/:id/marks/named', asyncHandler(async (req, res) => {
+    const out = await convos.addNamedMark(req.params.id, { messageId: req.body?.messageId, snippet: req.body?.snippet });
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
+
   router.post('/:id/marks', (req, res) => {
     const out = convos.addMark(req.params.id, {
       messageId: req.body?.messageId,
