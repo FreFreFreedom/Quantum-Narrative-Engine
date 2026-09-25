@@ -3216,7 +3216,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-gap-name { pointer-events:auto; flex:0 1 260px; min-width:120px; border:none; border-bottom:1px solid var(--c-kept-rule, var(--c-brand)); background:transparent; outline:none; padding:2px 2px; font:italic var(--fw-medium, 500) 1.05em var(--font-read); color:var(--c-ink); }
 .se-chap-rib { display:inline-block; flex:none; width:10px; height:14px; background:var(--c-kept-rule, var(--c-brand)); clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%); }
 .se-chap { position:relative; display:flex; align-items:center; gap:10px; margin:1.1em 0 .9em; }
-.se-chap::after { content:attr(data-name); order:1; font:italic var(--fw-medium, 500) 1.05em var(--font-read); color:var(--c-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%; }
+.se-chap::after { content:attr(data-name); order:1; font:italic 400 .82em var(--font-read); color:var(--c-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%; }
 .se-chap::before { content:''; order:2; flex:1; height:1px; background:var(--c-kept-rule, var(--c-brand)); opacity:.35; }
 .se-chap-rib { order:0; }
 .se-chap-drop { order:3; font-weight:400; font-size:11px; color:var(--c-ink-5); cursor:pointer; opacity:0; transition:opacity var(--t-fast) var(--ease); }
@@ -29657,7 +29657,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(at < 0) return;
       var d = document.createElement('div');
       d.className = 'se-chap';
-      d.setAttribute('data-name', gapName(m));
+      // A name cut mid-word ("These two books by Matth") is finished from the words.
+      var nm = String(m.label || '').replace(/\s+/g, ' ').trim(), full = gapSnippet(blocks[at]);
+      if(nm && full.indexOf(nm) === 0){ var to = nm.length; while(to < full.length && /[\w\u2019'\u00C0-\u024F-]/.test(full[to])) to++; nm = full.slice(0, to); }
+      d.setAttribute('data-name', gapName({ label: nm }));
+      if(at === 0) d.style.fontSize = getComputedStyle(body).fontSize;
       d.setAttribute('data-mark-id', m.id);
       d.innerHTML = '<i class="se-chap-rib"></i><b class="se-chap-drop" aria-label="Forget this chapter">✕</b>';
       if(at === 0) turn.parentNode.insertBefore(d, turn); else blocks[at].parentNode.insertBefore(d, blocks[at]);
