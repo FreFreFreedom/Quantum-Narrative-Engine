@@ -577,6 +577,9 @@ body::after {
   /* Gold on navy needs to be lit, not the page's deep gold: the brand, the doors and the
      thread list all take their colour from these two. */
   --c-kept-echo: #e2bf76; --c-accent: #e2bf76; --c-ink-5: #aeb6c4;
+  /* The reading ink is the cream page's deep navy; on this navy panel a kept passage
+     in it was nearly invisible (2026-09-25). */
+  --c-read: #efe4cc;
 }
 /* Oxblood, brass & parchment — Antoine's pick "OXBLOOD · BRASS · PARCHMENT" (2026-09-24), from the dusk-glow palette mockups. */
 :root[data-look="oxblood"] {
@@ -2825,7 +2828,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-ana { display:flex; flex-direction:column; gap:5px; padding:12px 0; }
 .lib-ana-sides { font-family:'Cinzel',var(--font-read); font-size:var(--fs-xs); letter-spacing:.16em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
 .lib-ana-pattern { font-family:var(--room-font, var(--font-read)); font-size:16px; line-height:1.5; color:var(--c-read, var(--c-ink-2)); }
-.lib-ana-foot { display:flex; align-items:center; gap:12px; font-size:var(--fs-sm); color:var(--c-ink-5); }
+.lib-ana-foot { display:flex; align-items:center; gap:12px; font-size:var(--fs-sm); color:var(--c-ink-5); min-width:0; }
+.lib-ana-foot > span:first-child, .lib-ana-acts, .lib-ana-acts > * { flex:none; white-space:nowrap; }
+.lib-ana-foot [data-ana-src] { min-width:0; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; }
 .lib-ana-foot button { border:0; background:none; box-shadow:none; padding:0; min-width:0; height:auto; font:inherit; color:var(--c-ink-4); cursor:pointer; }
 .lib-ana-foot button:hover { color:var(--c-kept-echo, var(--c-accent)); }
 .lib-ana-acts { margin-left:auto; display:flex; gap:12px; }
