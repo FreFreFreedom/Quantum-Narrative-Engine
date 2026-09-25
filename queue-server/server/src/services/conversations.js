@@ -36,7 +36,7 @@ import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
-import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory } from './mind.js';
+import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory, answerTasteBlock } from './mind.js';
 import { chapterize } from './chapters.js';
 import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
@@ -2072,6 +2072,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // setting (Antoine, 2026-09-25: "this is kind of foundational"). Placed with the
     // voice, at the end, where a model weights instructions most.
     depth ? lensBlock() : '',
+    depth ? answerTasteBlock() : '',
     depth && convo.reach ? REACH_BLOCK : '',
     depth ? TIMELINE_BLOCK : '',
     depth && studioPersona() ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',

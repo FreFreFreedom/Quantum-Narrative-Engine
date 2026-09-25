@@ -1867,6 +1867,21 @@ export function initMindSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_core_pub_pending ON core_publications(state)`); } catch {}
+  // Like: a passage of a Room answer marked because it is answered the way he loves.
+  // Unlike Keep (saved_passages, a personal shelf) its only use is teaching the Mind
+  // how he likes an answer — services/mind.js#runAnswerTaste reads both.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS answer_likes (
+      id TEXT PRIMARY KEY,
+      text TEXT NOT NULL,
+      convo_id TEXT,
+      message_id TEXT,
+      note TEXT,                 -- his own quick word on what he liked, optional
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+  try { db.exec(`ALTER TABLE answer_likes ADD COLUMN note TEXT`); } catch {}
 }
 
 // ─── Film enrichment: TMDb metadata (synopsis, genres, keywords, cast) ────────

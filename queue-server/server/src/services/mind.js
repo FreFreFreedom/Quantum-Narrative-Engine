@@ -683,6 +683,168 @@ async function runLibraryHarvest(force) {
 }
 
 // ---------------------------------------------------------------------------
+// How he likes an answer — learned from the passages he marks in Room answers
+// (his ask, 2026-09-25: "when a little passage is answered the way i like, i select
+// it, so the system gets over time more feedback of what i like"). Two marks feed
+// it: Like (answer_likes), made only for this, and Keep (saved_passages), made for
+// a personal reason but still him pointing at what he loves — he wants both to
+// count. Like is the stronger signal, and the prompt says so.
+//
+// Moon, not finger: the kept lines never reach an answering model. A model shown
+// them copies their images and words (the-lens.md, top comment). One pass reads
+// them together and writes down only what they share underneath — the move, the
+// stance, the rhythm, the reach — and a code check refuses any reading that lifts
+// a phrase or a striking word from them. The result is ONE fact in the Mind,
+// refined each time rather than added to, so he can read and correct it there.
+const TASTE_NOTE = 'answer_taste';
+const MARK_TASTE = 'answer_taste_ids';
+const TASTE_MIN = 3;        // kept lines before a reading is worth making
+const TASTE_NEW = 3;        // new keeps before it is worth making again
+const TASTE_LINES = 40;
+
+const wordsOf = (t) => String(t || '').toLowerCase().match(/[a-zÀ-ɏ']+/g) || [];
+// Words a reading of style may share with the lines without having copied them.
+const TASTE_COMMON = new Set(('abstract concrete metaphor metaphors image images sentence sentences paragraph rhythm ' +
+  'answer answers thinking thought thoughts through between something structure pattern patterns feeling feelings ' +
+  'meaning ordinary everyday familiar strange distance different another because without instead itself himself ' +
+  'understanding understand question questions comparison comparisons physical personal emotional ' +
+  'history present nothing everything someone somewhere recognises recognizes surprising unexpected ' +
+  'language describe describes explain explains quietly directly simple plainly').split(' '));
+
+// Any three-word run from a kept line, or any long word the lines use that is not
+// the ordinary vocabulary of talking about style. Pure, for the self-test.
+export function tasteLeaks(reading, lines = []) {
+  const r = wordsOf(reading);
+  const rs = r.join(' ');
+  const out = new Set();
+  const lineWords = new Set();
+  for (const line of lines) {
+    const w = wordsOf(line);
+    w.forEach((x) => lineWords.add(x));
+    for (let i = 0; i + 2 < w.length; i++) {
+      const run = `${w[i]} ${w[i + 1]} ${w[i + 2]}`;
+      if (w.slice(i, i + 3).some((x) => x.length > 3 && !STOPWORDS.has(x)) && (` ${rs} `).includes(` ${run} `)) out.add(`"${run}"`);
+    }
+  }
+  for (const x of new Set(r)) if (x.length >= 7 && lineWords.has(x) && !TASTE_COMMON.has(x) && !STOPWORDS.has(x)) out.add(x);
+  return [...out];
+}
+
+function tastePrompt(liked, kept, current, avoid = []) {
+  return `One man marks passages in the answers an AI writes for him. LIKED passages he marked precisely because they are answered the way he loves — the strongest signal. Some carry his own note on what he liked: those notes are the clearest words you have, follow them. KEPT passages he saved for a personal reason; they still show what he loves, but weigh them less.
+
+Your job: understand what these lines share UNDERNEATH their subjects — the kind of move they make, how far they reach and to where, the stance they take toward the thing, how they are built and paced, what they dare, what they refuse to do — and write that down so an AI can answer in that way about ANY subject.
+
+This is the most important rule: point at the moon, not at the finger. An AI that reads your description will copy any concrete thing in it. So:
+- Never quote or paraphrase a line.
+- Never name an image, object, place, person, field or subject that appears in them.
+- Never reuse their distinctive words.
+Describe the understanding, never the examples.${avoid.length ? `\n- Your last attempt lifted these from the lines; find other words: ${avoid.join(', ')}.` : ''}
+
+${current ? `What was understood before (refine it with these lines — keep what still holds, correct what they contradict, do not start over):\n${current}\n\n` : ''}Return ONLY a JSON object, no fence: {"text": "<the heart of it, plain English, at most 240 characters>", "detail": "<the fuller understanding, at most 900 characters>"}
+
+${liked.length ? `LIKED:\n${liked.map((l) => `- ${String(l).slice(0, 700)}`).join('\n')}\n\n` : ''}${kept.length ? `KEPT:\n${kept.map((l) => `- ${String(l).slice(0, 700)}`).join('\n')}` : ''}`;
+}
+
+function parseTaste(text) {
+  const m = String(text || '').match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try {
+    const o = JSON.parse(m[0]);
+    const t = String(o.text || '').trim();
+    return t ? { text: t.slice(0, 240), detail: String(o.detail || '').trim().slice(0, 900) || null } : null;
+  } catch { return null; }
+}
+
+function tasteFact() {
+  try { return db.prepare(`SELECT * FROM mind_facts WHERE source_note=? AND active=1 ORDER BY updated_at DESC LIMIT 1`).get(TASTE_NOTE) || null; }
+  catch { return null; }
+}
+
+async function runAnswerTaste(force = false) {
+  let liked = [];
+  let kept = [];
+  try { liked = db.prepare(`SELECT id, text, note FROM answer_likes WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT ?`).all(TASTE_LINES); } catch {}
+  try { kept = db.prepare(`SELECT id, text FROM saved_passages WHERE deleted_at IS NULL AND message_id IS NOT NULL ORDER BY created_at DESC LIMIT ?`).all(TASTE_LINES); } catch {}
+  const rows = [...liked, ...kept];
+  // A note changes the reading too, so it is part of what counts as "seen".
+  const ids = rows.map((r) => (r.note ? `${r.id}~${String(r.note).length}` : r.id));
+  const seen = new Set(String(markGet(MARK_TASTE) || '').split(',').filter(Boolean));
+  const added = ids.filter((id) => !seen.has(id)).length;
+  const removed = [...seen].some((id) => !ids.includes(id));
+  if (rows.length < TASTE_MIN) return;
+  if (!force && added < TASTE_NEW && !removed) return;
+
+  const lines = rows.map((r) => r.text);
+  const likedLines = liked.map((r) => r.note ? `${r.text}\n  HIS NOTE ON WHAT HE LIKED: ${String(r.note).slice(0, 400)}` : r.text);
+  const keptLines = kept.map((r) => r.text);
+  const fact = tasteFact();
+  const current = fact ? `${fact.text}${fact.detail ? `\n${fact.detail}` : ''}` : '';
+  let got = null;
+  let avoid = [];
+  for (let attempt = 0; attempt < 2 && !got; attempt++) {
+    const res = await generateText({ feature: 'summary', maxTokens: 700, label: 'mind:answer-taste', prompt: tastePrompt(likedLines, keptLines, current, avoid) });
+    if (res.error) { console.error('[mind] answer taste model error:', res.error); return; }
+    const t = parseTaste(res.text);
+    if (!t) continue;
+    const leaks = tasteLeaks(`${t.text} ${t.detail || ''}`, lines);
+    if (leaks.length) { avoid = leaks.slice(0, 12); console.log('[mind] answer taste lifted words, retrying:', avoid.join(', ')); continue; }
+    got = t;
+  }
+  // Nothing clean: leave the old reading and the watermark alone, try next time.
+  if (!got) return;
+  if (fact) reviseFact(fact.id, { text: got.text, detail: got.detail, kind: 'style' });
+  else saveFact({ kind: 'style', text: got.text, detail: got.detail, sourceNote: TASTE_NOTE, central: true });
+  markSet(MARK_TASTE, ids.join(','));
+  broadcastAll('mind:updated', {});
+  mirrorOut();
+}
+
+// The fuller reading, for the Room's full answers only (conversations.js puts it
+// beside the lens). The short line already rides every turn as a Central style fact.
+export function answerTasteBlock() {
+  const f = tasteFact();
+  if (!f) return '';
+  return `\n=== HOW HE LIKES AN ANSWER — learned from the lines he kept ===\n${f.text}${f.detail ? `\n${f.detail}` : ''}\nThis is a way of answering, not a subject: bring it to whatever he asks.`;
+}
+
+// The Like mark itself.
+export function listLikes() {
+  try { return db.prepare(`SELECT id, text, note, convo_id, message_id, created_at FROM answer_likes WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 500`).all(); }
+  catch { return []; }
+}
+export function likeLine({ text, convoId = null, messageId = null, note = null } = {}) {
+  const body = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 20000);
+  if (!body) return { error: 'empty' };
+  const existing = db.prepare(`SELECT id FROM answer_likes WHERE text=? AND deleted_at IS NULL`).get(body);
+  if (existing) return { ok: true, id: existing.id, already: true };
+  const id = randomUUID();
+  db.prepare(`INSERT INTO answer_likes (id, text, convo_id, message_id, note) VALUES (?,?,?,?,?)`).run(id, body, convoId || null, messageId || null, String(note || '').trim().slice(0, 1000) || null);
+  refreshAnswerTasteSoon();
+  broadcastAll('likes:updated', {});
+  return { ok: true, id };
+}
+export function noteLike(id, note) {
+  const r = db.prepare(`UPDATE answer_likes SET note=? WHERE id=? AND deleted_at IS NULL`).run(String(note || '').trim().slice(0, 1000) || null, id);
+  if (!r.changes) return { error: 'not_found' };
+  refreshAnswerTasteSoon();
+  broadcastAll('likes:updated', {});
+  return { ok: true };
+}
+export function unlikeLine(id) {
+  const r = db.prepare(`UPDATE answer_likes SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND deleted_at IS NULL`).run(id);
+  if (!r.changes) return { error: 'not_found' };
+  refreshAnswerTasteSoon();
+  broadcastAll('likes:updated', {});
+  return { ok: true };
+}
+
+// After a mark is taken back, the reading must forget it too.
+export function refreshAnswerTasteSoon() {
+  setImmediate(() => { runAnswerTaste(false).catch((e) => console.error('[mind] answer taste failed:', e?.message || e)); });
+}
+
+// ---------------------------------------------------------------------------
 // The thickening pass — memory that gets denser instead of longer.
 //
 // The harvest can fold facts together as it goes, but it only ever looks at the
@@ -929,6 +1091,8 @@ async function runSidePasses(force) {
     _libraryInFlight = true;
     try { await runLibraryHarvest(force); }
     catch (e) { console.error('[mind] library harvest failed:', e?.message || e); }
+    try { await runAnswerTaste(false); }
+    catch (e) { console.error('[mind] answer taste failed:', e?.message || e); }
     finally { _libraryInFlight = false; }
   }
   if (!_thickenInFlight) {

@@ -2454,16 +2454,13 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-convo .se-input { order:-1; border-bottom:none; padding:6px 0; flex:1 0 100%; width:100%; min-width:0; }
 .room-convo .se-spend { margin-left:auto; }
 .room-convo .se-send { margin-left:0; }
-.room-convo .se-lanewrap { flex:0 1 auto; max-width:calc(100% - 108px); }
+.room-convo .se-lanewrap { flex:0 1 auto; max-width:calc(100% - 78px); }
 .room-convo .se-quotebar, .room-convo .se-filebar, .room-convo .se-interestbar { max-height:100px; overflow-y:auto; max-width:100%; }
 .room-convo .se-lanepick, .room-convo .se-lanemodel, .room-convo .se-laneeffort { min-width:0; }
 .room-convo .se-lanepick { max-width:72px; padding-left:5px; padding-right:4px; border-color:transparent; background:var(--c-surface-2); }
 .room-convo .se-interview { display:none; }
-.se-reach { -webkit-appearance:none; appearance:none; background:none; border:none; color:var(--c-ink-5); width:26px; height:26px; padding:0; border-radius:var(--r-pill); display:flex; align-items:center; justify-content:center; flex:none; align-self:center; cursor:pointer; }
-.se-reach svg { width:16px; height:16px; }
-.se-reach:hover { color:var(--c-ink); }
-.se-reach.is-set { color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 12%, transparent); }
-.se-reach:disabled { opacity:.4; cursor:default; }
+.se-cmd.se-reach.is-set { color:var(--c-kept-echo, var(--c-accent)); }
+.se-cmd.se-reach.is-set::after { content:' ✓'; }
 .room-convo .se-input:focus { border-bottom:none; }
 .room-convo .se-send { border-radius:var(--r-pill); width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; flex:none;
   background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); }
@@ -2581,6 +2578,16 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-remember .searchbox { flex:1; min-width:0; }
 .room-mind-row { display:flex; align-items:flex-start; gap:6px; padding:5px 0; border-bottom:1px solid var(--c-border); }
 .room-mind-row:last-child { border-bottom:none; }
+.room-likes-head { margin:18px 0 4px; font-size:var(--fs-2xs); letter-spacing:.14em; text-transform:uppercase; color:var(--c-ink-5); }
+.room-like { display:flex; align-items:flex-start; gap:6px; padding:6px 0; border-bottom:1px solid var(--c-border); }
+.room-like:last-child { border-bottom:none; }
+.room-like-body { flex:1; min-width:0; }
+.room-like-text { font-family:var(--font-read); font-style:italic; font-size:var(--fs-sm); line-height:1.5; color:var(--c-ink-2); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.room-like-note { margin-top:3px; font-size:var(--fs-xs); color:var(--c-ink-3); cursor:text; }
+.room-like-note.is-empty { color:var(--c-ink-5); opacity:.6; }
+.room-like-input { width:100%; margin-top:3px; font:inherit; font-size:var(--fs-xs); background:transparent; border:none; border-bottom:1px solid var(--c-border-2); color:var(--c-ink); outline:none; padding:2px 0; }
+.room-like .uicon { flex:none; opacity:.5; padding:1px 3px; }
+.room-like:hover .uicon { opacity:1; }
 .room-mind-text { flex:1; min-width:0; font-size:var(--fs-base); line-height:1.45; color:var(--c-ink-2); cursor:text; }
 .room-mind-row .uicon { flex:none; opacity:.5; padding:1px 3px; }
 .room-mind-row:hover .uicon { opacity:1; }
@@ -3004,6 +3011,8 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    the reading face at a size you can read from a chair, the plain sense under it one
    step smaller and lighter, and the actions as a quiet row of gold capitals at the
    foot. The same card serves a passage with no word: then it is the row alone. */
+.se-like-pop { padding:4px 6px !important; }
+.se-like-note { width:260px; max-width:calc(100vw - 40px); border:none; outline:none; background:transparent; color:inherit; font:inherit; font-size:var(--fs-sm); padding:5px 4px; }
 .se-quote-pop { flex-wrap:wrap; width:max-content; max-width:min(620px, calc(100vw - 12px)); padding:0; gap:0; border-radius:12px;
   background:var(--c-ink-solid); color:var(--c-on-solid); border-color:color-mix(in srgb, var(--c-on-solid) 18%, transparent);
   --pop-gold:var(--c-kept-echo, var(--c-accent)); }
@@ -3042,7 +3051,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    above it, the lane is already pinned, and the command list is for the Studio —
    all three squeezed the box someone types in down to nothing. His words,
    2026-09-13: "i dont even know where to type". */
-.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-interview, .se-slim .se-reach, .se-slim .se-answer-now { display:none; }
+.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-interview, .se-slim .se-answer-now { display:none; }
 .se-slim .se-input { flex:1 1 6rem; min-width:6rem; }
 /* Side talks (plan "fix the Aside / side-talk flow"): the model picker is the one
    .se-lanewrap piece worth keeping even in the slim layout — he wants to change a
@@ -5176,6 +5185,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <button type="button" class="ubtn ubtn--pill" id="roomMindAdd">Remember</button>
           </div>
           <div id="roomMindList"></div>
+          <div id="roomLikes"></div>
           <div id="roomMindNote" class="room-note"></div>
         </div>
         <div class="room-pane room-extract" id="roomExtract">
@@ -13855,7 +13865,7 @@ const ROOM_TAB_HAS = {
   // Same reasoning as analogies above: the pane holds the action that opens the
   // first side talk, so hiding it while empty makes it unreachable.
   side: () => !!roomSel,
-  mind: () => roomMind.length > 0,
+  mind: () => roomMind.length > 0 || roomLikes.length > 0,
   extract: () => roomExtractChunks.length > 0 || !!(roomExtractStatus && roomExtractStatus.total),
 };
 function syncRoomTabs() {
@@ -15400,12 +15410,54 @@ function renderRoomAbout() {
 let roomMind = [];
 let _mindNote = '';
 
+let roomLikes = [];
 async function loadRoomMind() {
   try {
     const r = await api('/api/mind');
     roomMind = (r && r.facts) || [];
   } catch (e) { roomMind = []; }
+  try {
+    const l = await api('/api/mind/likes');
+    roomLikes = (l && l.likes) || [];
+  } catch (e) { roomLikes = []; }
   renderRoomMind();
+  renderRoomLikes();
+}
+
+// The passages he Liked in Room answers — what the Mind learns how to answer him
+// from. Tap a note to write or change it; ✕ takes the Like back.
+function renderRoomLikes() {
+  const box = document.getElementById('roomLikes');
+  if (!box) return;
+  if (!roomLikes.length) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="room-likes-head">Liked</div>' + roomLikes.map((l) =>
+    `<div class="room-like" data-like-id="${qEscAttr(l.id)}">`
+    + `<div class="room-like-body"><div class="room-like-text">${qEsc(l.text)}</div>`
+    + `<div class="room-like-note${l.note ? '' : ' is-empty'}" data-like-note="${qEscAttr(l.id)}" title="What you liked">${qEsc(l.note || '＋')}</div></div>`
+    + `<button type="button" class="uicon" data-like-drop="${qEscAttr(l.id)}" title="Take the Like back" aria-label="Take the Like back"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-x"/></svg></button>`
+    + `</div>`).join('');
+  box.querySelectorAll('[data-like-drop]').forEach((b) => {
+    b.onclick = () => apiWrite('/api/mind/likes/' + encodeURIComponent(b.getAttribute('data-like-drop')), 'DELETE').then(loadRoomMind).catch(() => {});
+  });
+  box.querySelectorAll('[data-like-note]').forEach((el) => {
+    el.onclick = () => {
+      const id = el.getAttribute('data-like-note');
+      const cur = (roomLikes.find((l) => l.id === id) || {}).note || '';
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'room-like-input'; inp.value = cur; inp.maxLength = 1000;
+      let finished = false;
+      const done = (save) => {
+        if (finished) return; finished = true;
+        const v = inp.value.trim();
+        if (save && v !== cur) apiWrite('/api/mind/likes/' + encodeURIComponent(id), 'PATCH', { note: v }).then(loadRoomMind).catch(() => {});
+        else renderRoomLikes();
+      };
+      inp.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); done(true); } else if (ev.key === 'Escape') { ev.preventDefault(); done(false); } };
+      inp.onblur = () => done(true);
+      el.replaceWith(inp);
+      inp.focus();
+    };
+  });
 }
 
 // One row for a fact the Room learned, wherever it is shown — the Room's Mind pane
@@ -28697,7 +28749,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +       '<button type="button" class="se-lanebtn" aria-haspopup="listbox" aria-expanded="false" title="Which model answers"></button>'
         +       '<div class="se-lanepop" hidden role="listbox"></div>'
         +     '</span>'
-        +     '<button type="button" class="se-reach" title="Reach" aria-label="Reach" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="12.5" r="1.6" fill="currentColor"/><path d="M4.4 11.4C6 5.5 10 3 14 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="1.6 2"/><circle cx="14" cy="3" r="1.3" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>'
         +     '<button type="button" class="se-interview" title="Ask me questions before you answer">Interview</button>'
         +     '<button type="button" class="se-answer-now" style="display:none">Answer now</button>'
         +     ((opts.type === 'open' || opts.type === 'side')
@@ -29066,19 +29117,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
       };
     }
-    // Reach: the answer takes the farther leap. Lives on the conversation row.
-    var reachBtn = host.querySelector('.se-reach');
-    if(reachBtn){
-      reachBtn.onclick = function(ev){
-        ev.stopPropagation();
-        if(!e.convoId) return;
-        var was = !!e.reach;
-        e.reach = !was; repaint();
-        apiWrite('/api/convos/' + e.convoId + '/reach', 'POST', { on: e.reach })
-          .then(function(d){ e.reach = !!(d && d.reach); repaint(); })
-          .catch(function(){ e.reach = was; repaint(); });
-      };
-    }
     if(answerNowBtn){
       answerNowBtn.onclick = function(ev){
         ev.stopPropagation();
@@ -29282,6 +29320,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function placeQuotePop(){
     if(!quotePop) return;
     if(quotePop.classList.contains('se-kept-pop')) return killQuotePop();
+    if(quotePop.classList.contains('se-like-pop')) return;
     var sel = window.getSelection && window.getSelection();
     if(!sel || !sel.rangeCount || !String(sel).trim()) return killQuotePop();
     var r = sel.getRangeAt(0).getBoundingClientRect();
@@ -29374,6 +29413,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
           keepPassage(e, msgId, passage, repaint);
         });
+        // Like: answered the way he loves. Teaches the Mind how to answer him; a
+        // quick note on what he liked is offered right after, and can be left empty.
+        if(msgId) mk('spark', 'Like', 'Answered the way I like — teach the Mind', function(){
+          likePassage(e, msgId, passage, r, repaint);
+        });
         // Aside and Remember only make sense against the Room's own main thread
         // (plan "side talks in the Room, and remember this") — a side talk of a
         // task card or a seed has nothing to step out of.
@@ -29451,7 +29495,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   document.addEventListener('selectionchange', function(){
     if(quotePop && quotePop.contains(document.activeElement))return;
     var sel=window.getSelection();
-    if(!sel || !String(sel).trim()){clearTimeout(quoteOfferTimer);if(!(quotePop && quotePop.classList.contains('se-kept-pop')))killQuotePop();return;}
+    if(!sel || !String(sel).trim()){clearTimeout(quoteOfferTimer);if(!(quotePop && (quotePop.classList.contains('se-kept-pop') || quotePop.classList.contains('se-like-pop'))))killQuotePop();return;}
     if(mouseDragging)return;
     var node=sel.anchorNode, el=node && (node.nodeType===1?node:node.parentElement);
     var log=el && el.closest && el.closest('.se-log');
@@ -30076,6 +30120,40 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         return out;
       })
       .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); return null; });
+  }
+  function likePassage(e, messageId, text, rect, repaint){
+    apiWrite('/api/mind/likes', 'POST', { text: text, convoId: e.convoId || null, messageId: messageId || null })
+      .then(function(out){
+        if(!out || !out.id){ e.note = 'Could not like that.'; if(repaint) repaint(); return; }
+        e.note = 'Liked.'; if(repaint) repaint();
+        if(typeof loadRoomMind === 'function') loadRoomMind();
+        killQuotePop();
+        quotePop = document.createElement('div');
+        quotePop.className = 'se-quote-pop se-like-pop';
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.className = 'se-like-note'; inp.maxLength = 1000;
+        inp.placeholder = 'What you liked…'; inp.setAttribute('aria-label', 'What you liked');
+        var finished = false;
+        var done = function(save){
+          if(finished) return; finished = true;
+          var note = inp.value.trim();
+          killQuotePop();
+          if(save && note) apiWrite('/api/mind/likes/' + encodeURIComponent(out.id), 'PATCH', { note: note })
+            .then(function(){ if(typeof loadRoomMind === 'function') loadRoomMind(); }).catch(function(){});
+        };
+        inp.onkeydown = function(ev){
+          if(ev.key === 'Enter'){ ev.preventDefault(); done(true); }
+          else if(ev.key === 'Escape'){ ev.preventDefault(); done(false); }
+        };
+        inp.onblur = function(){ done(true); };
+        quotePop.appendChild(inp);
+        document.body.appendChild(quotePop);
+        var h = quotePop.offsetHeight || 34;
+        quotePop.style.left = Math.max(6, Math.min(window.innerWidth - quotePop.offsetWidth - 6, rect.left)) + 'px';
+        quotePop.style.top = (rect.top > h + 12 ? rect.top - h - 6 : rect.bottom + 8) + 'px';
+        inp.focus();
+      })
+      .catch(function(){ e.note = 'Could not like that.'; if(repaint) repaint(); });
   }
   function unkeepPassages(e, ids, repaint){
     Promise.all(ids.map(function(id){ return apiWrite('/api/passages/' + encodeURIComponent(id), 'DELETE').catch(function(){}); }))
@@ -30915,13 +30993,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         ? 'Interview mode is on — say "answer now" or use Answer now when you have enough'
         : 'Ask me questions before you answer';
     }
-    var reachBtn = host.querySelector('.se-reach');
-    if(reachBtn){
-      reachBtn.classList.toggle('is-set', !!e.reach);
-      reachBtn.setAttribute('aria-pressed', e.reach ? 'true' : 'false');
-      reachBtn.disabled = !e.convoId;
-      reachBtn.title = e.reach ? 'Reach is on' : 'Reach';
-    }
     var answerNowBtn = host.querySelector('.se-answer-now');
     if(answerNowBtn){
       answerNowBtn.style.display = e.clarify === 'interview' ? '' : 'none';
@@ -31000,6 +31071,22 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       };
       cmds.appendChild(b);
     });
+    // Reach (the answer takes the farther leap) lives here, out of sight until asked
+    // for — his call, 2026-09-25. On the conversation row, so it survives a refresh.
+    if(cmds.children.length) cmds.appendChild(dot());
+    var reach = document.createElement('button');
+    reach.type = 'button'; reach.className = 'se-cmd se-reach' + (e.reach ? ' is-set' : '');
+    reach.textContent = 'Reach'; reach.setAttribute('aria-pressed', e.reach ? 'true' : 'false');
+    reach.onclick = function(ev){
+      ev.stopPropagation();
+      var was = !!e.reach;
+      var rp = function(){ if(host.isConnected) fillEmbed(host, e, opts); };
+      e.reach = !was; rp();
+      apiWrite('/api/convos/' + e.convoId + '/reach', 'POST', { on: e.reach })
+        .then(function(d){ e.reach = !!(d && d.reach); rp(); })
+        .catch(function(){ e.reach = was; rp(); });
+    };
+    cmds.appendChild(reach);
     if(e.promptId){
       cmds.appendChild(dot());
       var v = document.createElement('button');

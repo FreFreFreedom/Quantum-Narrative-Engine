@@ -75,6 +75,24 @@ export function mindRoutes() {
     res.json(out);
   });
 
+  // Like — a passage of a Room answer answered the way he loves. Teaches the Mind.
+  router.get('/likes', (req, res) => { res.json({ likes: mind.listLikes() }); });
+  router.post('/likes', (req, res) => {
+    const out = mind.likeLine({ text: req.body?.text, convoId: req.body?.convoId, messageId: req.body?.messageId, note: req.body?.note });
+    if (out.error) return res.status(400).json(out);
+    res.json(out);
+  });
+  router.patch('/likes/:id', (req, res) => {
+    const out = mind.noteLike(req.params.id, req.body?.note);
+    if (out.error) return res.status(404).json(out);
+    res.json(out);
+  });
+  router.delete('/likes/:id', (req, res) => {
+    const out = mind.unlikeLine(req.params.id);
+    if (out.error) return res.status(404).json(out);
+    res.json(out);
+  });
+
   router.patch('/:id', (req, res) => {
     const b = req.body || {};
     if (b.kind && !KINDS.includes(b.kind)) return res.status(400).json({ error: 'bad_kind' });

@@ -3,6 +3,7 @@
 // which already takes any source/source_id pair.
 import { Router } from 'express';
 import * as passages from '../services/passages.js';
+import { refreshAnswerTasteSoon } from '../services/mind.js';
 
 export function passagesRoutes() {
   const router = Router();
@@ -23,6 +24,7 @@ export function passagesRoutes() {
     // The reading writes itself in the background — the save must not wait on a
     // model call, and the shelf polls anyway.
     if (!out.already) passages.readPassageSoon(out.passage.id);
+    if (!out.already) refreshAnswerTasteSoon();
     res.json(out);
   });
 
@@ -36,6 +38,7 @@ export function passagesRoutes() {
   router.delete('/:id', (req, res) => {
     const out = passages.deletePassage(req.params.id);
     if (out.error) return res.status(out.error === 'not_found' ? 404 : 500).json(out);
+    refreshAnswerTasteSoon();
     res.json(out);
   });
 
