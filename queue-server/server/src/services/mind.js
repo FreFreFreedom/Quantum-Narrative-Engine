@@ -1122,6 +1122,8 @@ export function harvestLibrary({ force = true } = {}) {
   setImmediate(async () => {
     try { await runLibraryHarvest(force); }
     catch (e) { console.error('[mind] library harvest failed:', e?.message || e); }
+    try { await runAnswerTaste(force); }
+    catch (e) { console.error('[mind] answer taste failed:', e?.message || e); }
     finally { _libraryInFlight = false; }
   });
   return { ok: true };
