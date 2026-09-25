@@ -29343,13 +29343,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   function defineHere(e, word, sentence, pop, messageId){
     if(!e || !e.convoId) return;
-    var key = e.convoId + '|' + word.toLowerCase().replace(/[’']s$/, '');
+    var key = e.convoId + '|' + word.toLowerCase().replace(/[’']s$/, '').slice(0, 600);
     var paint = function(text){
       if(!text) return;
       var box = defineBox(pop); if(!box) return;
       var head = box.querySelector('.head');
-      head.querySelector('.w').textContent = word;
-      head.hidden = false;
+      var ws = word.split(/\s+/);
+      // A phrase is named in the head; a passage is not — the reading stands alone.
+      head.querySelector('.w').textContent = ws.length > 6 ? ws.slice(0, 6).join(' ') + '…' : word;
+      head.hidden = ws.length > 8;
       var slot = box.querySelector('.here');
       slot.innerHTML = '<p>' + qEsc(text) + '</p>';
       slot.hidden = false;
@@ -29498,10 +29500,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
         document.body.appendChild(quotePop);
         placeQuotePop();
-        // One word selected: its meaning opens under the bar by itself.
+        // Whatever is selected, its meaning here opens under the bar by itself: one
+        // word, a phrase, or a passage (then what it is really saying). The word
+        // class from the dictionary only makes sense for a single word.
+        var nWords = passage.split(' ').length;
         if(/^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage)){
           defineHere(e, passage, sentenceAround(range, passage), quotePop, msgId);
           defineWord(passage, quotePop);
+        } else if(nWords >= 2 && nWords <= 150 && /[A-Za-z]/.test(passage)){
+          defineHere(e, passage, sentenceAround(range, passage), quotePop, msgId);
         }
       }, settleMs);
     };

@@ -44,9 +44,34 @@ no numbering, no heading, no markdown, no quotation marks around the word. ONE s
 of prose, about 15 words — never more than 18 — and nothing after it. Do not begin with the word itself, and do
 not begin with "In this context".`;
 
+// Any selection, not only one word (his ask, 2026-09-25): a phrase gets its meaning
+// here in one sentence, a longer passage what it is really saying in two at most.
+const PHRASE_PROMPT = `You are a dictionary that knows where the reader is. He is reading an answer in a
+long conversation and selected a PHRASE. Write, for him, what this phrase means as it is used
+here — the idea it carries, including any shade or image a plain reading would miss. Plain
+English — it is his second language. No jargon, no list, no heading, no markdown, no quotation
+marks around the phrase. ONE sentence of prose, about 20 words — never more than 26 — and
+nothing after it. Do not begin by repeating the phrase, and do not begin with "In this context".`;
+const PASSAGE_PROMPT = `You are a reading companion who knows where the reader is. He is reading an answer in
+a long conversation and selected a PASSAGE. Say plainly what it is really saying here — the idea
+under the words, unpacked, not repeated. Plain English — it is his second language. No jargon,
+no list, no heading, no markdown. One or two short sentences, at most 45 words in all, and
+nothing after them. Do not begin by repeating the passage, and do not begin with "This passage".`;
+
+function firstSentences(raw, n) {
+  const t = String(raw || '').replace(/\s+/g, ' ').trim();
+  const parts = t.match(/[^.!?]+[.!?]+["”’)]*/g) || [t];
+  return parts.slice(0, n).join(' ').trim();
+}
+
 export async function lookupWord(convoId, { word, sentence = '', messageId = null } = {}) {
-  const w = String(word || '').trim().toLowerCase().replace(/[’']s$/, '');
-  if (!w || w.length > 40 || !/^[a-z][a-z'’-]*$/i.test(w)) return { error: 'not_a_word' };
+  const raw = String(word || '').replace(/\s+/g, ' ').trim();
+  const count = raw ? raw.split(' ').length : 0;
+  const mode = count <= 1 ? 'word' : count <= 8 ? 'phrase' : 'passage';
+  const w = mode === 'word' ? raw.toLowerCase().replace(/[’']s$/, '') : raw.slice(0, 600).toLowerCase();
+  if (!w) return { error: 'not_a_word' };
+  if (mode === 'word' && (w.length > 40 || !/^[a-z][a-z'’-]*$/i.test(w))) return { error: 'not_a_word' };
+  if (mode !== 'word') return lookupPhrase(convoId, { key: w, shown: raw.slice(0, 600), mode, sentence, messageId });
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   if (db) {
@@ -73,6 +98,35 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
   const text = firstSentence(out.text);
   if (text.split(/\s+/).length < 8) return { error: 'too_short' };
   if (db) db.prepare('INSERT OR REPLACE INTO word_lookups (convo_id, word, sentence, text) VALUES (?,?,?,?)').run(convoId, w, sent, text);
+  return { ok: true, text };
+}
+
+async function lookupPhrase(convoId, { key, shown, mode, sentence, messageId }) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const max = mode === 'phrase' ? 30 : 50;
+  if (db) {
+    const hit = db.prepare('SELECT text FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, key);
+    const n = hit ? hit.text.split(/\s+/).length : 0;
+    if (hit && n >= 6 && n <= max) return { ok: true, text: hit.text, cached: true };
+  }
+  const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 900);
+  const title = String(convo.title || '').slice(0, 200);
+  const answer = messageText(convoId, messageId);
+  const out = await generateText({
+    prompt: `${mode === 'phrase' ? PHRASE_PROMPT : PASSAGE_PROMPT}\n\n=== WHAT HE SELECTED ===\n${shown}`
+      + (mode === 'phrase' && sent ? `\n\n=== THE SENTENCE ===\n${sent}` : '')
+      + (answer ? `\n\n=== THE WHOLE ANSWER IT STANDS IN ===\n${answer}` : '')
+      + (title ? `\n\n=== THE CONVERSATION ===\n"${title}"` : ''),
+    feature: 'quick',
+    label: 'room:define',
+    maxTokens: 600,
+    timeoutMs: 30_000,
+  });
+  if (out.error || !out.text) return { error: out.error || 'generation_failed' };
+  const text = firstSentences(out.text, mode === 'phrase' ? 1 : 2);
+  if (text.split(/\s+/).length < 6) return { error: 'too_short' };
+  if (db) db.prepare('INSERT OR REPLACE INTO word_lookups (convo_id, word, sentence, text) VALUES (?,?,?,?)').run(convoId, key, sent, text);
   return { ok: true, text };
 }
 
