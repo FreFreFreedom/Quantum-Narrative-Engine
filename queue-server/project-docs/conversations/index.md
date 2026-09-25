@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Reimagining Justice as Contextual Rehabilitation — conversations/reimagining-justice-as-contextual-rehabilitation-cf34af05.md
+- Mandatory Minimums and the Misdemeanor Engine of Mass Incarceration — conversations/mandatory-minimums-and-the-misdemeanor-engine-of-mass-incarceration-cf34af05.md
 - Fractal reasoning across civic and justice narratives (fork) — conversations/fractal-reasoning-across-civic-and-justice-narratives-fork-400c0cb3.md
 - Kinetic media matching for cardio workouts — conversations/kinetic-media-matching-for-cardio-workouts-a7051bc8.md
 - Fractal reasoning across civic and justice narratives (fork) — conversations/fractal-reasoning-across-civic-and-justice-narratives-fork-05863085.md
