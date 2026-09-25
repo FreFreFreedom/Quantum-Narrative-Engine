@@ -884,7 +884,9 @@ export async function markSubject({ text, convoId = null, messageId = null } = {
   const passage = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
   if (!passage) return { error: 'empty' };
   const res = await generateText({
-    feature: 'summary', maxTokens: 120, label: 'mind:subject',
+    // 600, not 120: a thinking model spends a short budget before it writes a word,
+    // and came back empty — "could not tell which subject that is" (2026-09-25).
+    feature: 'summary', maxTokens: 600, label: 'mind:subject',
     prompt: `He selected this in an answer and marked it: "this subject interests me". Name the ONE subject he is pointing at — a person, an institution, an idea, a place, a work, a field or a thing. Use its usual short name, the way it would appear as a library entry (for example a named institution, a concept, a person's full name). Return ONLY JSON: {"name": "<at most 60 characters>", "kind": "${SUBJECT_KINDS.join('|')}"}
 
 WHAT HE SELECTED:
@@ -895,7 +897,13 @@ ${passage}`,
     const m = String(res.text || '').match(/\{[\s\S]*\}/);
     try { got = m ? JSON.parse(m[0]) : null; } catch { got = null; }
   }
+  if (!got?.name && !res.error) {
+    // A reply that named it without the JSON around it still named it.
+    const line = String(res.text || '').replace(/[`*"{}]/g, '').split('\n').map((l) => l.replace(/^name\s*:\s*/i, '').trim()).find(Boolean) || '';
+    if (line && line.split(' ').length <= 8) got = { name: line, kind: 'other' };
+  }
   if (!got?.name) {
+    if (res.error) console.error('[mind] subject lookup failed:', res.error);
     if (passage.split(' ').length > 6) return { error: 'unreadable' };
     got = { name: passage, kind: 'other' };
   }

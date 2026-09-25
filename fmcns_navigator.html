@@ -3018,6 +3018,18 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    step smaller and lighter, and the actions as a quiet row of gold capitals at the
    foot. The same card serves a passage with no word: then it is the row alone. */
 .se-like-pop { padding:4px 6px !important; }
+.se-mind-toast { position:fixed; z-index:var(--z-popover); display:flex; align-items:center; gap:8px; max-width:270px; padding:6px 14px 6px 10px; border-radius:var(--r-pill); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border); box-shadow:0 8px 24px rgba(0,0,0,.12); font-size:var(--fs-sm); color:var(--c-kept-echo, var(--c-accent)); animation:seToastIn .25s var(--ease, ease) both; transition:opacity .4s, transform .4s; pointer-events:none; }
+.se-mind-toast span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.se-mind-toast.is-miss { color:var(--c-ink-4); padding-left:14px; }
+.se-mind-toast.is-gone { opacity:0; transform:translateY(-6px); }
+.se-mind-toast svg { width:16px; height:16px; flex:none; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linecap:round; }
+.se-mind-toast .ring { stroke-dasharray:40; stroke-dashoffset:40; animation:seRing .5s ease-out forwards; }
+.se-mind-toast.is-wait .ring { stroke-dasharray:10 30; animation:seSpin 1s linear infinite; transform-origin:8px 8px; }
+.se-mind-toast .tick { stroke-dasharray:12; stroke-dashoffset:12; animation:seTick .3s .35s ease-out forwards; }
+@keyframes seToastIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@keyframes seRing { to { stroke-dashoffset:0; } }
+@keyframes seTick { to { stroke-dashoffset:0; } }
+@keyframes seSpin { to { transform:rotate(360deg); } }
 .se-like-note { width:260px; max-width:calc(100vw - 40px); border:none; outline:none; background:transparent; color:inherit; font:inherit; font-size:var(--fs-sm); padding:5px 4px; }
 .se-quote-pop { flex-wrap:wrap; width:max-content; max-width:min(620px, calc(100vw - 12px)); padding:0; gap:0; border-radius:12px;
   background:var(--c-ink-solid); color:var(--c-on-solid); border-color:color-mix(in srgb, var(--c-on-solid) 18%, transparent);
@@ -29466,15 +29478,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // Interested: the subject behind this goes into his library of subjects,
         // which the analogy engines reach toward now and then.
         mk('target', 'Interested', 'This subject interests me', function(){
-          e.note = 'Finding the subject…'; if(repaint) repaint();
+          // Feedback sits by the selection and fades — never a line at the end of
+          // the thread, where it read as the model's own words (2026-09-25).
+          var t = seMindToast(r, '…', 'wait');
           apiWrite('/api/mind/subjects', 'POST', { passage: passage, convoId: e.convoId || null, messageId: msgId || null })
             .then(function(out){
               var n = out && out.subject && out.subject.name;
-              e.note = n ? (out.already ? n + ' — already in your subjects.' : n + ' — added to your subjects.') : 'Could not tell which subject that is.';
-              if(repaint) repaint();
+              seMindToast(r, n || 'Not sure which subject', n ? 'ok' : 'miss', t);
               if(typeof loadRoomMind === 'function') loadRoomMind();
             })
-            .catch(function(){ e.note = 'Could not tell which subject that is.'; if(repaint) repaint(); });
+            .catch(function(){ seMindToast(r, 'Not sure which subject', 'miss', t); });
         });
         // Aside and Remember only make sense against the Room's own main thread
         // (plan "side talks in the Room, and remember this") — a side talk of a
@@ -30187,8 +30200,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function likePassage(e, messageId, text, rect, repaint){
     apiWrite('/api/mind/likes', 'POST', { text: text, convoId: e.convoId || null, messageId: messageId || null })
       .then(function(out){
-        if(!out || !out.id){ e.note = 'Could not like that.'; if(repaint) repaint(); return; }
-        e.note = 'Liked.'; if(repaint) repaint();
+        if(!out || !out.id){ seMindToast(rect, 'Not saved', 'miss'); return; }
         if(typeof loadRoomMind === 'function') loadRoomMind();
         killQuotePop();
         quotePop = document.createElement('div');
@@ -30201,6 +30213,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           if(finished) return; finished = true;
           var note = inp.value.trim();
           killQuotePop();
+          seMindToast(rect, 'Liked', 'ok');
           if(save && note) apiWrite('/api/mind/likes/' + encodeURIComponent(out.id), 'PATCH', { note: note })
             .then(function(){ if(typeof loadRoomMind === 'function') loadRoomMind(); }).catch(function(){});
         };
@@ -30216,7 +30229,24 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         quotePop.style.top = (rect.top > h + 12 ? rect.top - h - 6 : rect.bottom + 8) + 'px';
         inp.focus();
       })
-      .catch(function(){ e.note = 'Could not like that.'; if(repaint) repaint(); });
+      .catch(function(){ seMindToast(rect, 'Not saved', 'miss'); });
+  }
+  // A small pill by the selection: a ring that closes into a tick when saved, then
+  // it fades. Reused in place (pass the one returned) so waiting turns into done.
+  function seMindToast(rect, text, state, reuse){
+    var el = reuse && reuse.isConnected ? reuse : document.createElement('div');
+    el.className = 'se-mind-toast is-' + state;
+    el.innerHTML = (state === 'miss' ? '' : '<svg viewBox="0 0 16 16" aria-hidden="true"><circle class="ring" cx="8" cy="8" r="6.2"/>' + (state === 'ok' ? '<path class="tick" d="M5 8.3l2 2 4-4.3"/>' : '') + '</svg>') + '<span></span>';
+    el.querySelector('span').textContent = text;
+    if(!el.isConnected){
+      document.body.appendChild(el);
+      var top = rect && rect.top > 50 ? rect.top - 42 : (rect ? rect.bottom + 10 : 80);
+      el.style.left = Math.max(8, Math.min(window.innerWidth - 280, rect ? rect.left : 20)) + 'px';
+      el.style.top = top + 'px';
+    }
+    clearTimeout(el._t);
+    if(state !== 'wait') el._t = setTimeout(function(){ el.classList.add('is-gone'); setTimeout(function(){ el.remove(); }, 400); }, state === 'ok' ? 1800 : 2600);
+    return el;
   }
   function unkeepPassages(e, ids, repaint){
     Promise.all(ids.map(function(id){ return apiWrite('/api/passages/' + encodeURIComponent(id), 'DELETE').catch(function(){}); }))
