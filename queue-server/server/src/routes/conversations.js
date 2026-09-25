@@ -649,6 +649,13 @@ export function conversationsRoutes() {
     res.json(out);
   });
 
+  // POST /api/convos/:id/reach — body: { on: bool }. The Reach switch in the composer.
+  router.post('/:id/reach', (req, res) => {
+    const out = convos.setConvoReach(req.params.id, !!req.body?.on);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
   // POST /api/convos/:id/star — keep a thread above the date groups, or let it go.
   router.post('/:id/star', (req, res) => {
     const out = convos.setConvoStar(req.params.id, !!req.body?.starred);

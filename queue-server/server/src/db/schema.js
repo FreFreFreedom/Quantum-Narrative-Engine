@@ -1808,6 +1808,8 @@ export function initConversationsSchema(db) {
   // before an answer). Per conversation, so it survives a refresh and a change
   // of answering model. A conversation with no value here reads as 'normal'.
   try { db.exec(`ALTER TABLE convos ADD COLUMN clarification_mode TEXT NOT NULL DEFAULT 'normal'`); } catch {}
+  // Reach: 1 = the answer takes the farther leap (services/conversations.js#setConvoReach).
+  try { db.exec(`ALTER TABLE convos ADD COLUMN reach INTEGER NOT NULL DEFAULT 0`); } catch {}
 }
 
 // ─── The Room's shared memory (`mind_facts`, plan "room-shared-memory") ───────

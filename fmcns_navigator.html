@@ -2454,11 +2454,16 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-convo .se-input { order:-1; border-bottom:none; padding:6px 0; flex:1 0 100%; width:100%; min-width:0; }
 .room-convo .se-spend { margin-left:auto; }
 .room-convo .se-send { margin-left:0; }
-.room-convo .se-lanewrap { flex:0 1 auto; max-width:calc(100% - 78px); }
+.room-convo .se-lanewrap { flex:0 1 auto; max-width:calc(100% - 108px); }
 .room-convo .se-quotebar, .room-convo .se-filebar, .room-convo .se-interestbar { max-height:100px; overflow-y:auto; max-width:100%; }
 .room-convo .se-lanepick, .room-convo .se-lanemodel, .room-convo .se-laneeffort { min-width:0; }
 .room-convo .se-lanepick { max-width:72px; padding-left:5px; padding-right:4px; border-color:transparent; background:var(--c-surface-2); }
 .room-convo .se-interview { display:none; }
+.se-reach { -webkit-appearance:none; appearance:none; background:none; border:none; color:var(--c-ink-5); width:26px; height:26px; padding:0; border-radius:var(--r-pill); display:flex; align-items:center; justify-content:center; flex:none; align-self:center; cursor:pointer; }
+.se-reach svg { width:16px; height:16px; }
+.se-reach:hover { color:var(--c-ink); }
+.se-reach.is-set { color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 12%, transparent); }
+.se-reach:disabled { opacity:.4; cursor:default; }
 .room-convo .se-input:focus { border-bottom:none; }
 .room-convo .se-send { border-radius:var(--r-pill); width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; flex:none;
   background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); }
@@ -3037,7 +3042,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    above it, the lane is already pinned, and the command list is for the Studio —
    all three squeezed the box someone types in down to nothing. His words,
    2026-09-13: "i dont even know where to type". */
-.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-interview, .se-slim .se-answer-now { display:none; }
+.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-interview, .se-slim .se-reach, .se-slim .se-answer-now { display:none; }
 .se-slim .se-input { flex:1 1 6rem; min-width:6rem; }
 /* Side talks (plan "fix the Aside / side-talk flow"): the model picker is the one
    .se-lanewrap piece worth keeping even in the slim layout — he wants to change a
@@ -27797,6 +27802,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // Interview mode lives on the row, so it survives a refresh and a change of
         // answering model — read straight off the conversation, never guessed.
         e.clarify = (data.convo && data.convo.clarification_mode) || 'normal';
+        e.reach = !!(data.convo && data.convo.reach);
         e.loaded = true;
         e.note = '';
         index[e.key] = data.convo;   // keeps the closed line's count honest
@@ -28688,6 +28694,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +       '<button type="button" class="se-lanebtn" aria-haspopup="listbox" aria-expanded="false" title="Which model answers"></button>'
         +       '<div class="se-lanepop" hidden role="listbox"></div>'
         +     '</span>'
+        +     '<button type="button" class="se-reach" title="Reach" aria-label="Reach" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="12.5" r="1.6" fill="currentColor"/><path d="M4.4 11.4C6 5.5 10 3 14 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="1.6 2"/><circle cx="14" cy="3" r="1.3" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>'
         +     '<button type="button" class="se-interview" title="Ask me questions before you answer">Interview</button>'
         +     '<button type="button" class="se-answer-now" style="display:none">Answer now</button>'
         +     ((opts.type === 'open' || opts.type === 'side')
@@ -29054,6 +29061,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           e.clarify = 'interview'; repaint(); // reflect the click at once
           sendTurn(e, '/interview', repaint, opts.onDone);
         }
+      };
+    }
+    // Reach: the answer takes the farther leap. Lives on the conversation row.
+    var reachBtn = host.querySelector('.se-reach');
+    if(reachBtn){
+      reachBtn.onclick = function(ev){
+        ev.stopPropagation();
+        if(!e.convoId) return;
+        var was = !!e.reach;
+        e.reach = !was; repaint();
+        apiWrite('/api/convos/' + e.convoId + '/reach', 'POST', { on: e.reach })
+          .then(function(d){ e.reach = !!(d && d.reach); repaint(); })
+          .catch(function(){ e.reach = was; repaint(); });
       };
     }
     if(answerNowBtn){
@@ -30891,6 +30911,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       interviewBtn.title = inInterview
         ? 'Interview mode is on — say "answer now" or use Answer now when you have enough'
         : 'Ask me questions before you answer';
+    }
+    var reachBtn = host.querySelector('.se-reach');
+    if(reachBtn){
+      reachBtn.classList.toggle('is-set', !!e.reach);
+      reachBtn.setAttribute('aria-pressed', e.reach ? 'true' : 'false');
+      reachBtn.disabled = !e.convoId;
+      reachBtn.title = e.reach ? 'Reach is on' : 'Reach';
     }
     var answerNowBtn = host.querySelector('.se-answer-now');
     if(answerNowBtn){

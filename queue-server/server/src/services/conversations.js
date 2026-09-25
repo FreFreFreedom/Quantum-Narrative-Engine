@@ -421,6 +421,19 @@ export function setClarificationMode(convoId, mode) {
   return { ok: true, mode };
 }
 
+// Reach (his ask, 2026-09-25: the frontier models feel "too grounded", and part of
+// that is our own lens and second reader holding every leap back). A per-conversation
+// switch, same shape as the one above. On: the answer takes the farther leap and the
+// second reader stops flagging distance. The ban on borrowed words stays either way.
+export function setConvoReach(convoId, on) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  db.prepare(`UPDATE convos SET reach=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(on ? 1 : 0, convoId);
+  broadcastAll('convos:updated', { convoId });
+  return { ok: true, reach: on ? 1 : 0 };
+}
+
 // Side talks (plan "side talks in the Room, and remember this") default to
 // Gemini and only Gemini — his call, 2026-09-13 — via the sticky per-conversation
 // lane above. getFallbackChain (ai/text.js) already keeps a pinned model's own
@@ -1587,10 +1600,10 @@ function keepAwake(onStatus, lane) {
   return () => clearInterval(timer);
 }
 
-function voiceTailReminder() {
+function voiceTailReminder(convo = null) {
   const voice = studioPersona() ? 'Answer in the voice and frame set out under HOW TO THINK above. That is the register for this reply, not a suggestion — it outranks the note directly above about the lookup tools, which is housekeeping only.' : '';
   const lens = lensText() ? LENS_TAIL : '';
-  return [voice, lens, TIMELINE_TAIL].filter(Boolean).join(' ') || null;
+  return [voice, lens, convo?.reach ? REACH_TAIL : '', TIMELINE_TAIL].filter(Boolean).join(' ') || null;
 }
 
 // The lens and the arc as one block for a full Room answer. See ai/voice.js.
@@ -1625,6 +1638,14 @@ The prose must stand on its own without it: the timeline shows what the words al
 // The end of the prompt is weighted most; Gemini ignored the block above until
 // this line sat here too (2026-09-25).
 const TIMELINE_TAIL = `If this answer traces something through time — a history, an evolution, how something came to be — include one timeline block as described under A TIMELINE.`;
+
+// Reach names the stance, never a list of places to go: a list would become the
+// place every answer goes (see "Moon, not finger" at the top of the-lens.md).
+const REACH_BLOCK = `
+=== REACH — HE TURNED IT ON FOR THIS CONVERSATION ===
+He finds careful answers too grounded. Here, go further than feels safe. Take the leap a cautious answer would hold back — across fields, across scales, across orders of reality, the metaphysical included, as a real lens and not an ornament — wherever the same need truly echoes, however far away. Say what you see, not only what is established: a bold reading that might be wrong is worth more to him than a safe one that is surely right. Let the leap stand without apologising for it or hedging it into nothing. Reach is distance, never decoration: every leap must still be true to this subject, in your own words.`;
+
+const REACH_TAIL = `Reach is on: take the farther leap and do not soften it.`;
 
 const LENS_TAIL = `Understand the thing through THE LENS above — see past the language it uses about itself to what it actually is and does, in your own words and comparisons drawn from this subject. Hold the idea of the lens, not its wording; never perform it as a list of steps.`;
 
@@ -1937,11 +1958,12 @@ async function secondRead(convoId, text, { clarifyMode, result, turn, onStatus =
       question: lastUserText(convoId) || '',
       answer: prose,
       lens: lensText(),
+      reach: !!getConvo(convoId)?.reach,
       countWords: answerWordCount,
       onStatus,
       read: (prompt) => generateText({ prompt, feature: 'summary', maxTokens: 300, label: 'conversations:second-reader', timeoutMs: 45_000, maxAttempts: 2 }),
       rewrite: (provider && model)
-        ? (prompt) => generateTextDirect({ prompt, provider, model, account: turn?.lane?.account || null, effort: turn?.lane?.effort || null, maxTokens: 32000, label: 'conversations:second-reader-rewrite', timeoutMs: 150_000, allowLongOutput: true, tailReminder: voiceTailReminder(), onUsage })
+        ? (prompt) => generateTextDirect({ prompt, provider, model, account: turn?.lane?.account || null, effort: turn?.lane?.effort || null, maxTokens: 32000, label: 'conversations:second-reader-rewrite', timeoutMs: 150_000, allowLongOutput: true, tailReminder: voiceTailReminder(getConvo(convoId)), onUsage })
         : null,
     });
     if (out.changed) console.log(`[second-reader] rewrote an answer in ${convoId}: ${String(out.faults || '').replace(/\s+/g, ' ').slice(0, 200)}`);
@@ -2050,6 +2072,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // setting (Antoine, 2026-09-25: "this is kind of foundational"). Placed with the
     // voice, at the end, where a model weights instructions most.
     depth ? lensBlock() : '',
+    depth && convo.reach ? REACH_BLOCK : '',
     depth ? TIMELINE_BLOCK : '',
     depth && studioPersona() ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     // Explicit memories sit AFTER the general voice so every provider receives
@@ -2060,7 +2083,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
       : `\n=== WHAT TO DO NOW ===\n${brevity
           ? `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`
-          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''}${depth && lensText() ? ` ${LENS_TAIL}` : ''}${depth ? ` ${TIMELINE_TAIL}` : ''}\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.\n\n${SHAPE_TAIL}`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
+          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''}${depth && lensText() ? ` ${LENS_TAIL}` : ''}${depth && convo.reach ? ` ${REACH_TAIL}` : ''}${depth ? ` ${TIMELINE_TAIL}` : ''}\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.\n\n${SHAPE_TAIL}`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
     // DEAD LAST, after the voice and after the task, because the end of a long
     // prompt is weighted most and this has to beat "density, not brevity".
     askedWords
@@ -2269,7 +2292,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
     effort: turn?.lane?.effort || null,
-    label: 'conversations:chat', tailReminder: voiceTailReminder(),
+    label: 'conversations:chat', tailReminder: voiceTailReminder(convo),
     // The lookup tools (plan "roaming-conversations-backend" §2). Only the chat
     // turn gets them: it is the one that answers a question, and the one whose
     // prompt now claims it can look things up.
@@ -2356,7 +2379,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     effort: turn?.lane?.effort || null,
     tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
     maxTokens,
-    label: 'conversations:chat', tailReminder: voiceTailReminder(),
+    label: 'conversations:chat', tailReminder: voiceTailReminder(convo),
     allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId,
     claudeLastResort: !(turn?.lane?.provider && turn?.lane?.model), helperWaitMs: helperWaitFor(turn?.lane, 120_000, lengthRequest(lastUserText(convoId)) || 0),
