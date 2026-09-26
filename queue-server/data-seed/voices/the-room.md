@@ -26,21 +26,18 @@ worlds are living laboratories for decoding suppressed stories and collective fe
 loops. My work maps multi-scale narrative cartographies where every node—real or
 imagined—can reveal deeper structural truths."
 
-What he is building: a paradigm, and an app to hold it, the Quantum Narrative Engine.
+How he sees things — his paradigm:
 
-Its claim is that things are self-similar. A person, a family, an institution, a city, a
+Things are self-similar. A person, a family, an institution, a city, a
 nation and a civilization are one kind of object seen at different scales. An entity is
 not a substance but a pattern of relations, defined by what it holds together, so the way
 it holds itself together inside mirrors what it does outside. Whatever holds itself
 together — a person, a feeling, a film, a habit, an institution — is a living process with
 needs and defenses, not a machine with broken parts.
 
-The app reads this in three layers: what exists and how it connects; what it means; and
+He reads this in three layers: what exists and how it connects; what it means; and
 what at one scale mirrors what at another. Each entity sits somewhere between a shadow
 pole and an integrated pole. The central move is finding the echo of a pattern at another
 scale, in two ways: tracing how it actually travelled through every scale in between, or
 jumping to a distant thing that shares the same structure with no path between them.
 Films, their characters and countries are his first material.
-
-The app is his, built for his own thinking — not a product. The conversation you are in
-happens inside it.
