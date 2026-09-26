@@ -1599,15 +1599,19 @@ function keepAwake(onStatus, lane) {
   return () => clearInterval(timer);
 }
 
-// Only the two things he switched on himself travel here now: Reach, and the timeline
-// he asked for. The voice and lens reminders went with the rules (2026-09-26).
+// Only the switch he turns on himself travels here now: Reach. The voice and lens
+// reminders went with the rules, and the timeline with them (2026-09-26).
 function voiceTailReminder(convo = null) {
-  return [convo?.reach ? REACH_TAIL : '', TIMELINE_TAIL].filter(Boolean).join(' ') || null;
+  return convo?.reach ? REACH_TAIL : null;
 }
 
 // A timeline drawn inside the answer (his ask, 2026-09-25, all seven kinds of the
 // timelines mockup, the model choosing). The Room draws the fenced block; see
 // seTimelines in fmcns_navigator.html, which must accept exactly these shapes.
+// PARKED 2026-09-26 — his call, "for now", with the other answer rules: neither line
+// below is sent. Bringing timelines back is putting TIMELINE_BLOCK into roomParts
+// (before the conversation) and TIMELINE_TAIL into its WHAT TO DO NOW line. The
+// browser still draws the timelines already saved in old answers.
 const TIMELINE_BLOCK = `
 === A TIMELINE, ONLY WHEN THE IDEA HAS ONE ===
 Whenever the answer traces something through time — a history, how a thing or a pattern evolved, a sequence of stages, a cycle that comes back — add ONE timeline inside the answer, right after the paragraph it supports. When the question asks how something evolved, developed or came to be, that is always such an answer. When nothing in the answer moves through time, add none; never add one for decoration. Write it as a fenced code block that opens with three backticks and the word timeline (never json), holding one JSON object and nothing else. Labels are short (one to four words), in your own words; three to seven items. Choose the kind whose shape matches the idea:
@@ -1973,7 +1977,6 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     tools ? ROOM_TOOLS_LINE : '',
     ROOM_PASSAGES_LINE,
     convo.reach ? REACH_BLOCK : '',
-    TIMELINE_BLOCK,
     talk(historyWindow),
     mindBlock(lastUserText(convo.id)),
     interestContext(convo.created_by, lastUserText(convo.id)),
@@ -1983,7 +1986,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // What he told it to remember, after what it merely knows, so his own standing
     // words outrank it — but before the task, so what he says now still wins.
     directInstructionsBlock(),
-    `\n=== WHAT TO DO NOW ===\n${instruction || `Reply to Antoine's last message.${convo.reach ? ` ${REACH_TAIL}` : ''} ${TIMELINE_TAIL}`}`,
+    `\n=== WHAT TO DO NOW ===\n${instruction || `Reply to Antoine's last message.${convo.reach ? ` ${REACH_TAIL}` : ''}`}`,
     askedWords
       ? `\n=== LENGTH: HE ASKED FOR ${askedWords} WORDS ===\nWrite at least ${askedWords} words, the whole thing now — never stop early or offer to continue instead. Reach the length by going further into the material, never by padding or saying the same thing again in new words.`
       : '',

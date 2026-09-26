@@ -282,8 +282,8 @@ he never has to repeat himself. So a full Room answer now gets one line ("chat w
 normally and answer his questions in the best way you can"), WHO HE IS (the AI Settings voice
 box, holding `queue-server/data-seed/voices/the-room.md`: his portrait in his own words and
 what he is building — context, never instruction), what the Room has learned about him, the
-conversation, and only the switches he turned on himself (Reach, the timeline, a length he
-asked for, things he told it to remember). No second reader, no lens, no page layout, no
+conversation, and only the switches he turned on himself (Reach, a length he asked for,
+things he told it to remember). Timelines drawn in answers are parked too, "for now". No second reader, no lens, no page layout, no
 banned words. The project map rides only on a question about the app. **When a Room answer
 disappoints, remove a rule before adding one**; never put answer rules into the box. The two
 sections below still describe what he enjoys in an answer — they are taste, not prompt text,
