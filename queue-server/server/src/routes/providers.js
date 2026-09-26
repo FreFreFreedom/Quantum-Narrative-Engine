@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { listProviders } from '../services/ai/catalog.js';
 import { getQuotaState, earliestResetAt, getLaneUsage, getLastRefusals } from '../services/ai/router.js';
+import { laneLabelUsage } from '../services/ai/text.js';
 
 export function providersRoutes() {
   const router = Router();
@@ -30,6 +31,8 @@ export function providersRoutes() {
     res.json({
       providers, state, earliestResetAt: earliestResetAt(),
       day: usage.day, usage: usage.lanes, refusals: getLastRefusals(),
+      // Per feature, on Google's allowance day; ?day=YYYY-MM-DD reads an earlier one.
+      byFeature: laneLabelUsage(/^\d{4}-\d\d-\d\d$/.test(String(req.query.day || '')) ? req.query.day : undefined),
     });
   });
 

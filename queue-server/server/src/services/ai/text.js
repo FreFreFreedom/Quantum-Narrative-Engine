@@ -898,6 +898,10 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // because pickChain() -> listModels() defaults includeMetered:false (see catalog.js, "The
   // one metered exception"). Re-check that if this loop ever changes again.
   let attempted = 0;
+  // The Room's own answer (and its length continuation, and its free-lane fallback
+  // when a paid lane fails, which arrives with no feature) is never held back by
+  // the reserve below; everything else is background work.
+  const forAnswer = feature === 'studio' || /^conversations:(chat|length-continuation)\b/.test(String(label || ''));
   // Rough token count, the same 3.6-chars-a-token rule promptCharBudget uses.
   const promptTokens = Math.ceil(String(prompt || '').length / 3.6);
 
@@ -922,6 +926,17 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       failures.push(`${p}:${m}:stalled-recently`);
       continue;
     }
+    // Room answers first. Nearly every feature in AI Settings points at the same
+    // free Gemini model as the Room, and one Room message sets off six to eight
+    // more calls on it (second read, works, titles he typed, analogies, the
+    // world-look, memory). Google's allowance is per model per day, so by evening
+    // the background work had spent it and his own questions came back
+    // "rate-limited" (2026-09-26). Past 70% of the day's allowance, background
+    // work walks on to the next free lane and the rest is kept for answers.
+    if (!forAnswer && keptForAnswers(p, m)) {
+      failures.push(`${p}:${m}:kept-for-room-answers`);
+      continue;
+    }
 
     // Where the minute actually goes. A dead lane costs a full timeout before the
     // next one is tried, and from outside that is indistinguishable from a model
@@ -938,7 +953,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, onUsage, account: p === providerId ? explicitAccount : null, images, effort });
     }
     attempted += 1;
-    recordLaneCall(p, m, !!result?.text);
+    recordLaneCall(p, m, !!result?.text, label);
 
     if (result?.text) {
       // A lane that answered is not spent, whatever the guess said. Clears the
@@ -1215,6 +1230,9 @@ export async function runWitnessProbe({ request, waitMs = 30_000, label = 'witne
 export async function generateTextDirect({ prompt, provider, model, maxTokens = 800, label = 'ai-text-direct', timeoutMs = 90_000, allowLongOutput = false, account = null, tailReminder = null, onUsage = null, effort = null }) {
   if (!isKnownProvider(provider)) return { error: 'unknown_provider', message: provider };
   const result = await runAttempt({ provider, model, prompt, maxTokens, label, timeoutMs, allowLongOutput, account, tailReminder, onUsage, effort });
+  // Counted like every other call, or a rewrite on the free Gemini spends its
+  // allowance where neither ledger can see it.
+  recordLaneCall(provider, model, !!result?.text, label);
   if (result?.text) {
     recordSideCall(); // one helper call in the daily budget ledger
     return { ...result, provider, model };
@@ -1258,8 +1276,51 @@ export function sideCallBudgetLimit() {
 // refused. The platform-wide side_call_ledger cannot say which lane spent the
 // day's allowance or which one is refusing, and that is the question the quota
 // table in AI Settings has to answer.
-export function recordLaneCall(providerId, model, answered) {
+// The date Google's free allowance counts by: midnight in California.
+export function allowanceDay(at = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(at);
+}
+
+// Calls a lane answered on the current allowance day, from the per-feature ledger.
+export function laneCallsThisAllowanceDay(providerId, model) {
+  if (!db) return 0;
+  try {
+    return db.prepare(`SELECT COALESCE(SUM(calls),0) AS n FROM lane_call_labels WHERE day=? AND provider_id=? AND model=?`)
+      .get(allowanceDay(), providerId, model || '').n;
+  } catch { return 0; }
+}
+
+// Which feature spent what on the current allowance day (the AI Settings quota
+// table, and anyone asking where the free Gemini went).
+export function laneLabelUsage(day = allowanceDay()) {
+  if (!db) return { day, rows: [] };
+  try {
+    return { day, rows: db.prepare(`SELECT provider_id, model, label, calls, refusals FROM lane_call_labels WHERE day=? ORDER BY calls DESC, refusals DESC`).all(day) };
+  } catch { return { day, rows: [] }; }
+}
+
+const ANSWER_RESERVE = 0.3;
+// Only lanes with a known daily allowance, and only Google's, whose day and
+// counting the ledger above matches. Other free lanes refuse per minute, which a
+// daily reserve cannot help.
+function keptForAnswers(providerId, model) {
+  if (providerId !== 'google-ai-studio') return false;
+  const rpd = getModelCatalog(providerId, model)?.limits?.rpd;
+  if (!rpd) return false;
+  return laneCallsThisAllowanceDay(providerId, model) >= Math.floor(rpd * (1 - ANSWER_RESERVE));
+}
+
+export function recordLaneCall(providerId, model, answered, label = '') {
   if (!db || !providerId) return;
+  try {
+    db.prepare(`INSERT INTO lane_call_labels (day, provider_id, model, label, calls, refusals, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      ON CONFLICT(day, provider_id, model, label) DO UPDATE SET
+        calls = calls + excluded.calls,
+        refusals = refusals + excluded.refusals,
+        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`)
+      .run(allowanceDay(), providerId, model || '', String(label || '').slice(0, 80), answered ? 1 : 0, answered ? 0 : 1);
+  } catch {}
   const day = new Date().toISOString().slice(0, 10);
   try {
     db.prepare(`INSERT INTO lane_call_ledger (day, provider_id, model, calls, refusals, updated_at)

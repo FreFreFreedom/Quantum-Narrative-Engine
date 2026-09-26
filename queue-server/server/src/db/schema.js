@@ -615,6 +615,25 @@ function initSchema(db) {
     )
   `);
 
+  // ─── Who spends each lane (2026-09-26) ───────────────────────────────────────
+  // lane_call_ledger says HOW MANY calls a lane took; this says WHICH FEATURE made
+  // them — the question behind "the Room's free Gemini ran dry by evening", which
+  // the per-lane count could not answer. `day` is the date in America/Los_Angeles,
+  // not UTC, because that is the day Google's free allowance resets on, and the
+  // reserve in ai/text.js has to count the same day Google does.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lane_call_labels (
+      day TEXT NOT NULL,
+      provider_id TEXT NOT NULL,
+      model TEXT NOT NULL DEFAULT '',
+      label TEXT NOT NULL DEFAULT '',
+      calls INTEGER NOT NULL DEFAULT 0,
+      refusals INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      PRIMARY KEY (day, provider_id, model, label)
+    )
+  `);
+
   // ─── OpenAI spend ledger (Idea Studio paid lane) ─────────────────────────────
   // One row per UTC day of real money spent on gpt-4o, in dollars (side_call_ledger
   // above counts CALLS; this counts CENTS — they are not interchangeable).
