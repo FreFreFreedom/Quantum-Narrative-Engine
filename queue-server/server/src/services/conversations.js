@@ -1654,8 +1654,8 @@ const LENGTH_TERSE = `Keep answers short unless the user asks for detail.`;
 //
 // So a full Room answer now gets: this one line, WHO HE IS (the AI Settings box —
 // his portrait and his paradigm, never instructions), what the Room has learned about
-// him, the conversation, and only the switches he turned on himself (Reach, the
-// timeline, a length he asked for, things he told it to remember). The card turns
+// him, the conversation, and only the switches he turned on himself (Reach, a
+// length he asked for, things he told it to remember; timelines parked). The card turns
 // (brevity) keep the old operating block. Before adding a rule here, remove one: see
 // AGENTS.md "The Room answers from context, not rules".
 const ROOM_LINE = `You are talking with Antoine. Chat with him normally and answer his questions in the best way you can.`;
