@@ -1,6 +1,7 @@
 // Idea Studio conversation routes — mounted at /api/convos (plan
 // "universal-conversations-core-architecture"). Backed by services/conversations.js
 // and the subject registry in services/subjectContext.js.
+import { transcribe } from '../services/dictation.js';
 import { Router } from 'express';
 import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
@@ -130,6 +131,11 @@ export function conversationsRoutes() {
       bookFacts.bookFactsFor(owner, items.filter((i) => i.kind === 'book')),
     ]);
     res.json({ facts: { ...onScreen, ...inPrint } });
+  }));
+
+  // Dictation: the recording, written out by Whisper (services/dictation.js).
+  router.post('/dictate', asyncHandler(async (req, res) => {
+    res.json(await transcribe({ audio: req.body?.audio, mime: req.body?.mime, context: req.body?.context }));
   }));
 
   // Where a margin cover should go: the book's own Amazon page (its ISBN) or the

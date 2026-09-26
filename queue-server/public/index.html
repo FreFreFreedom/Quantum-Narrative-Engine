@@ -1217,6 +1217,9 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .se-mic:hover, .se-talk:hover { color:var(--c-ink); border-color:var(--c-ink-4); }
 .se-mic .ic, .se-talk .ic, .qne-talk-bar .ic { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; }
 .se-mic.is-rec { background:var(--c-danger); border-color:var(--c-danger); color:var(--c-on-danger); }
+/* While Whisper writes out what was said: the mic breathes until the words land. */
+.se-mic.is-busy { color:var(--c-accent); border-color:var(--c-accent); animation:se-mic-busy 1.1s ease-in-out infinite; }
+@keyframes se-mic-busy { 50% { opacity:.35; } }
 .se-micwave { display:none; flex:1 1 60px; min-width:40px; height:26px; color:var(--c-accent); }
 .se-compose.se-dictating .se-micwave { display:block; }
 .se-compose.se-dictating .se-lanewrap, .se-compose.se-dictating .se-talk { display:none; }
@@ -7470,6 +7473,7 @@ window.qneVoice = (function () {
           for (var i = 0; i < buf.length; i++) { var v = (buf[i] - 128) / 128; s += v * v; }
           return Math.min(1, Math.sqrt(s / buf.length) * 4);
         },
+        stream: stream,
         close: function () { stream.getTracks().forEach(function (t) { t.stop(); }); try { ac.close(); } catch (err) {} },
       };
     }).catch(function () { return null; });
@@ -7518,46 +7522,121 @@ window.qneVoice = (function () {
   // was tried here and he chose the waveform back; the glow stays on Talk).
   function wireDictate(host, e, input) {
     var mic = host.querySelector('.se-mic'), compose = host.querySelector('.se-compose'), wave = host.querySelector('.se-micwave'), cancel = host.querySelector('.se-miccancel');
-    if (!mic || !SR) return;
+    var canRecord = !!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    if (!mic || !(SR || canRecord)) return;
     mic.hidden = false;
-    var rec = null, meter = null, stopWave = null, before = '';
+    // Two ears at once (his bar, 2026-09-26: "as good as ChatGPT's dictation"). The
+    // browser's recogniser writes the words live as he speaks; the recording goes to
+    // Whisper when he stops, and its cleaner text replaces the live draft. The browser
+    // also gives up after a pause, so it is restarted until he stops by hand.
+    var on = false, rec = null, meter = null, stopWave = null, before = '', base = '';
+    var heard = '', live = '', recorder = null, chunks = [], busy = null, sendAfter = false, token = 0;
     function setBox(v) { input.value = v; input.dispatchEvent(new Event('input')); }
-    function cleanup() {
-      rec = null;
+    function draft() { return base + (heard + live).replace(/^\s+/, ''); }
+    function quiet() {
       mic.classList.remove('is-rec'); mic.title = 'Dictate';
       compose.classList.remove('se-dictating');
       if (stopWave) stopWave(); stopWave = null;
-      if (meter) meter.close(); meter = null;
+    }
+    function release() { if (meter) meter.close(); meter = null; }
+    function listen() {
+      if (!SR || !on) return;
+      var r = new SR(); rec = r;
+      r.lang = lang(); r.continuous = true; r.interimResults = true;
+      r.onresult = function (ev) {
+        if (rec !== r) return;
+        var fin = '', tmp = '';
+        for (var i = ev.resultIndex; i < ev.results.length; i++) {
+          if (ev.results[i].isFinal) fin += ev.results[i][0].transcript; else tmp += ev.results[i][0].transcript;
+        }
+        if (fin) heard += (heard && !/\s$/.test(heard) ? ' ' : '') + fin.trim();
+        live = tmp ? (heard ? ' ' : '') + tmp.trim() : '';
+        setBox(draft());
+      };
+      r.onend = function () { if (rec === r) { live = ''; rec = null; if (on) setTimeout(listen, 60); } };
+      r.onerror = function (ev) { if (ev && (ev.error === 'not-allowed' || ev.error === 'service-not-allowed')) { rec = null; if (!recorder) finish(); } };
+      try { r.start(); } catch (err) { rec = null; }
     }
     function start() {
-      var base = input.value && !/\s$/.test(input.value) ? input.value + ' ' : input.value;
       before = input.value;
-      rec = new SR();
-      rec.lang = lang(); rec.continuous = true; rec.interimResults = true;
-      rec.onresult = function (ev) {
-        var said = '';
-        for (var i = 0; i < ev.results.length; i++) said += ev.results[i][0].transcript;
-        setBox(base + said.replace(/^\s+/, ''));
-      };
-      rec.onend = cleanup;
-      rec.onerror = cleanup;
-      try { rec.start(); } catch (err) { cleanup(); return; }
+      base = input.value && !/\s$/.test(input.value) ? input.value + ' ' : input.value;
+      heard = ''; live = ''; chunks = []; on = true; sendAfter = false;
+      var mine = ++token;
       mic.classList.add('is-rec'); mic.title = 'Stop dictating';
       compose.classList.add('se-dictating');
-      openLevel().then(function (m) { if (!rec) { if (m) m.close(); return; } meter = m; });
       stopWave = waveLoop(wave, function () { return meter ? meter.level() : 0.05; });
+      openLevel().then(function (m) {
+        if (!on || mine !== token) { if (m) m.close(); return; }
+        meter = m;
+        if (canRecord && m && m.stream) {
+          try {
+            var type = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find(function (t) { return MediaRecorder.isTypeSupported(t); }) || '';
+            recorder = new MediaRecorder(m.stream, type ? { mimeType: type } : undefined);
+            recorder.ondataavailable = function (ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
+            recorder.start(1000);
+          } catch (err) { recorder = null; }
+        }
+        listen();
+      });
     }
-    mic.onclick = function (ev) { ev.stopPropagation(); if (rec) rec.stop(); else start(); input.focus(); };
+    function toDataUrl(blob) {
+      return new Promise(function (ok) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = function () { ok(''); }; fr.readAsDataURL(blob); });
+    }
+    // Stop listening; the Whisper text replaces the live draft unless he has typed
+    // over it meanwhile. Resolves once the box holds the final words.
+    function finish() {
+      if (!on) return busy || Promise.resolve();
+      on = false;
+      var r = rec; rec = null; if (r) { r.onresult = null; try { r.stop(); } catch (err) {} }
+      quiet();
+      var mine = token, rcd = recorder; recorder = null;
+      var shown = draft(); live = ''; setBox(shown);
+      if (!rcd) { release(); return Promise.resolve(); }
+      mic.classList.add('is-busy'); mic.title = 'Writing out what you said';
+      busy = new Promise(function (done) {
+        rcd.onstop = function () {
+          release();
+          var blob = new Blob(chunks, { type: rcd.mimeType || 'audio/webm' });
+          var last = (e.msgs || []).filter(function (m) { return m.role !== 'user'; }).pop();
+          var context = [last ? String(last.text || '').slice(-400) : '', base].join(' ').trim();
+          toDataUrl(blob).then(function (audio) {
+            return audio ? apiWrite('/api/convos/dictate', 'POST', { audio: audio, mime: blob.type, context: context }) : null;
+          }).then(function (out) {
+            if (mine === token && out && out.text && input.value === shown) setBox(base + out.text);
+          }).catch(function () {}).then(function () {
+            if (mine === token) { mic.classList.remove('is-busy'); mic.title = 'Dictate'; }
+            busy = null; done();
+          });
+        };
+        try { rcd.stop(); } catch (err) { rcd.onstop(); }
+      });
+      return busy;
+    }
+    function send() {
+      sendAfter = false;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
+    }
+    mic.onclick = function (ev) { ev.stopPropagation(); if (busy) return; if (on) finish(); else start(); input.focus(); };
     // Cancel: what was heard is dropped and the box goes back to what it held before.
     if (cancel) cancel.onclick = function (ev) {
       ev.stopPropagation();
-      if (rec) { var r = rec; r.onresult = null; r.abort(); cleanup(); }
+      token++; on = false; sendAfter = false;
+      var r = rec; rec = null; if (r) { r.onresult = null; try { r.abort(); } catch (err) {} }
+      if (recorder) { recorder.onstop = null; try { recorder.stop(); } catch (err) {} recorder = null; }
+      quiet(); release(); mic.classList.remove('is-busy'); busy = null;
       setBox(before); input.focus();
     };
-    // Enter sends what was heard; the late final result must not land in the emptied box.
+    // Enter while listening, or while the words are being written out: wait for the
+    // final words, then send them.
     input.addEventListener('keydown', function (ev) {
-      if (rec && ev.key === 'Enter' && !ev.shiftKey) { var r = rec; r.onresult = null; r.abort(); cleanup(); }
-      if (rec && ev.key === 'Escape') { rec.stop(); }
+      if ((on || busy) && ev.key === 'Enter' && !ev.shiftKey) {
+        ev.preventDefault(); ev.stopImmediatePropagation();
+        if (sendAfter) return;
+        sendAfter = true;
+        finish().then(send);
+        return;
+      }
+      if (on && ev.key === 'Escape') finish();
     }, true);
   }
 
