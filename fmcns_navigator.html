@@ -15,6 +15,7 @@ window.FMCNS_LOOKS = {
   creamteal:{ pv: ['#2e454b','day','#1b2b2f','#9c7530'], name: 'Slate teal', dark: false },
   creamolive:{ pv: ['#363a1f','day','#252815','#9c7530'], name: 'Dark olive', dark: false },
   creamrose:{ pv: ['#3b1a1c','day','#2e1618','#9c7530'], name: 'Rosewood', dark: false },
+  creamcandle:{ pv: ['#3a2716','day','#2b1d12','#a8712a'], name: 'Candlelit', dark: false },
   nightnavy:{ pv: ['#2c3e5c','star','#e4e2dc','#d8d2c2'], name: 'Navy, starlit', dark: true },
   nightteal:{ pv: ['#2e454b','star','#e4e2dc','#d8d2c2'], name: 'Slate teal, starlit', dark: true },
   nightolive:{ pv: ['#363a1f','star','#e4e2dc','#d8d2c2'], name: 'Dark olive, starlit', dark: true },
@@ -24,7 +25,7 @@ window.FMCNS_LOOKS = {
 /* His looks since 2026-09-26: four cream-page day looks (navy, slate teal, dark olive,
    rosewood panel) and five night looks. The older looks' styles are still below but unreachable. */
 /* The picker's rows: one colour, its day look and its night look. */
-window.FMCNS_LOOK_ROWS = [['Navy','creamnavy','nightnavy'],['Slate teal','creamteal','nightteal'],['Dark olive','creamolive','nightolive'],['Rosewood','creamrose','nightrose'],['Candlelit',null,'candle']];
+window.FMCNS_LOOK_ROWS = [['Navy','creamnavy','nightnavy'],['Slate teal','creamteal','nightteal'],['Dark olive','creamolive','nightolive'],['Rosewood','creamrose','nightrose'],['Candlelit','creamcandle','candle']];
 window.FMCNS_LOOK_DAY = 'creamnavy';
 window.FMCNS_LOOK_NIGHT = 'nightnavy';
 (function () {
@@ -781,7 +782,78 @@ body::after {
   --q-av: #2e1618;
   --q-avink: #f2ecdf;
 }
-:root:is([data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) :is(#wsRoom .room-threads, #wsRoom .room-cards, .rail-inner) {
+/* Cream page, candlelit brown panel, gold — his pick 2026-09-26 ("Candlelit · cream page"). */
+:root[data-look="creamcandle"] {
+  color-scheme: light;
+  --pnl: #3a2716;
+  --c-bg: #f2ecdf;
+  --c-surface-rgb: 249 246 239;
+  --c-bg-2: #ece6da;
+  --c-stage: #e8e3d6;
+  --c-mapstage: #e8e3d6;
+  --c-surface: #f9f6ef;
+  --c-surface-2: #e6dfd0;
+  --c-surface-3: #dad4c7;
+  --c-border: #dcd3c1;
+  --c-border-2: #cdc5b7;
+  --c-border-3: #b6b1a7;
+  --c-ink: #2b1d12;
+  --c-ink-2: #3d2d1f;
+  --c-ink-3: #515864;
+  --c-ink-4: #6b6e74;
+  --c-ink-5: #7a7b7d;
+  --c-ink-solid: #2b1d12;
+  --c-ink-solid-2: #3d2d1f;
+  --c-on-solid: #f2ecdf;
+  --c-halo: #f2ecdf;
+  --c-accent: #b38b45;
+  --c-on-accent: #2b1d12;
+  --c-on-brand: #f4fbf7;
+  --c-on-amber: #fffaf2;
+  --c-on-danger: #fdf1ef;
+  --c-on-info: #f2f7fa;
+  --c-cast: #8f6c2e;
+  --c-ring: rgba(179,139,69,0.45);
+  --c-hover-wash: color-mix(in srgb, #2b1d12 5%, transparent);
+  --sh-xs: 0 1px 2px rgba(30,28,25,.05);
+  --sh-sm: 0 2px 10px rgba(30,28,25,.07);
+  --sh-md: 0 10px 26px rgba(30,28,25,.12);
+  --c-warn: #9a6420;
+  --c-warn-tint: #f6e7cf;
+  --c-info: #3f6b85;
+  --c-info-tint: #e6edf0;
+  --c-success-tint: #dfeee6;
+  --c-danger: #a8382c;
+  --c-danger-tint: #f8e0dc;
+  --c-violet: #5c3f80;
+  --c-violet-tint: #ece5f4;
+  --c-violet-tint-2: #faf8fd;
+  --c-brand: #8f6c2e;
+  --c-warm-tint: #eae2d1;
+  --c-amber: #b38b45;
+  --c-amber-tint: #eee6d6;
+  --c-plot-1: #3a2716;
+  --c-plot-2: #3f6b85;
+  --c-plot-3: #8f6c2e;
+  --c-plot-4: #2f7d63;
+  --c-plot-5: #8b6fb0;
+  --c-plot-6: #b38b45;
+  --c-plot-7: #7e8fb0;
+  --c-plot-8: #c08a3e;
+  --c-kept-line: rgba(179,139,69,.7);
+  --c-kept-echo: #75561d;
+  --c-kept-rule: #b38b45;
+  --orb-1: #b38b45;
+  --orb-2: #e1d1b5;
+  --orb-inv: 0;
+  --glow-1: #d4c6aa;
+  --glow-2: #e8dfcd;
+  --glass: rgba(255,255,255,.55);
+  --glass-2: rgba(255,255,255,.6);
+  --q-av: #2b1d12;
+  --q-avink: #f2ecdf;
+}
+:root:is([data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) :is(#wsRoom .room-threads, #wsRoom .room-cards, .rail-inner) {
   --c-bg: var(--pnl); --c-bg-2: var(--pnl); --c-surface: color-mix(in srgb, var(--pnl) 86%, #fff); --c-surface-2: color-mix(in srgb, var(--pnl) 86%, #fff); --c-surface-3: color-mix(in srgb, var(--pnl) 76%, #fff);
   --c-border: color-mix(in srgb, var(--pnl) 84%, #fff); --c-border-2: color-mix(in srgb, var(--pnl) 76%, #fff); --c-border-3: color-mix(in srgb, var(--pnl) 64%, #fff);
   --c-ink: #f1e8d4; --c-ink-2: #ddd6c8; --c-ink-3: color-mix(in srgb, #f1e8d4 72%, var(--pnl)); --c-ink-4: color-mix(in srgb, #f1e8d4 72%, var(--pnl)); --c-ink-5: color-mix(in srgb, #f1e8d4 62%, var(--pnl));
@@ -790,7 +862,7 @@ body::after {
 }
 /* The panel is a deeper shade of its colour all over, no light (his pick "Deep all over",
    2026-09-26 — the lit top read as a glow he didn't want), with a faint canvas weave. */
-:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) :is(#wsRoom .room-threads, #wsRoom .room-cards, .rail-inner, #wsRoom.open) {
+:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) :is(#wsRoom .room-threads, #wsRoom .room-cards, .rail-inner, #wsRoom.open) {
   background-color: var(--pnl);
   background-image:
     repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 2px),
@@ -1490,6 +1562,7 @@ body::after {
 :root[data-look="creamteal"] { --c-read:#1b2b2f; }
 :root[data-look="creamolive"] { --c-read:#252815; }
 :root[data-look="creamrose"] { --c-read:#2e1618; }
+:root[data-look="creamcandle"] { --c-read:#2b1d12; }
 :root[data-look="oxblood"] { --c-read:#e2cc9c; }
 :root[data-look="midnight"] { --c-read:#ece8df; }
 :root[data-look="espresso"] { --c-read:#e7dcc8; }
@@ -1547,8 +1620,8 @@ body::after {
   #wsRoom .room-main { border-radius:18px; }
 }
 /* The side panels sit a shade blacker than the page, as in the mockup. */
-:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) :is(.room-threads, .room-cards) { background:var(--c-bg-2); }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-body :is(h1, h2, h3, h4) { color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) :is(.room-threads, .room-cards) { background:var(--c-bg-2); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-body :is(h1, h2, h3, h4) { color:var(--c-kept-echo); }
 * { box-sizing: border-box; }
 /* Keyboard focus, once, for every control family the app has. Three rules covered 222
    buttons before this. Only :focus-visible, so a mouse click never draws a ring. */
@@ -2028,7 +2101,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    gold Cinzel, the place you are in in full gold, marked by the title's short hairline
    under it — under the icon while the rail is shut, under the word once it opens. */
 .rail-item { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
-:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .rail-item, :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .rail-btnrow .rail-item { color:color-mix(in srgb, var(--c-kept-echo) 75%, var(--c-ink-5)); }
+:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .rail-item, :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .rail-btnrow .rail-item { color:color-mix(in srgb, var(--c-kept-echo) 75%, var(--c-ink-5)); }
 .rail-item:hover, .rail-btnrow .rail-item:hover { color:var(--c-kept-echo, var(--c-accent)); }
 .rail-btnrow .rail-item { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
 .rail-nav .rail-item .rail-label { font-weight:400; font-size:12px; letter-spacing:.2em; }
@@ -3417,7 +3490,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   -webkit-box-decoration-break:clone; box-decoration-break:clone; }
 :root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"],[data-look="darkroom"]) .se-kept { background:color-mix(in srgb, var(--c-kept-rule, #cfa966) 22%, transparent); }
 .dark .se-kept { background:color-mix(in srgb, var(--c-kept-rule, #cfa966) 22%, transparent); }
-:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .se-kept { background:rgba(179,139,69,.22); }
+:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .se-kept { background:rgba(179,139,69,.22); }
 /* The echo lives in the free margin OUTSIDE the reading column, never inside it: a kept
    line used to take a 232px strip off its answer, and the whole thread shifted left the
    moment he pressed Keep (2026-09-24). No margin wide enough: the underline alone. */
@@ -3426,7 +3499,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   font-family:var(--font-read); font-style:italic; font-size:14px; line-height:1.5; color:var(--c-kept-echo, #2f7d63);
   pointer-events:none; }
 :root[data-look="darkroom"] .se-kept-echo { border-left-color:#6fcfa0; color:#6fcfa0; }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
 .se-quote-pop { position:fixed; z-index:var(--z-popover); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
   border-radius:var(--r-md); padding:3px; display:flex; gap:2px; box-shadow:0 6px 18px rgba(0,0,0,.22);
   animation:sePopIn .12s var(--ease); }
@@ -3483,14 +3556,14 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   background:var(--c-ink-solid); color:var(--c-on-solid); border-color:color-mix(in srgb, var(--c-on-solid) 18%, transparent);
   --pop-gold:var(--c-kept-echo, var(--c-accent)); }
 :root[data-look="creamnavy"] { --pnl:#2c3e5c; }
-:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .se-quote-pop { --pop-gold:#e2bf76; background:var(--pnl); color:#f1e8d4; border-color:color-mix(in srgb, var(--pnl) 84%, #fff); }
+:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .se-quote-pop { --pop-gold:#e2bf76; background:var(--pnl); color:#f1e8d4; border-color:color-mix(in srgb, var(--pnl) 84%, #fff); }
 /* The actions (his pick 3, 2026-09-24): bolder Cinzel capitals in the card's own cream,
    a small gold symbol before each, thin dividers between — the thin gold capitals were
    hard to read on the navy. */
 .se-quote-pop button { order:2; flex:1 1 0; min-width:0; justify-content:center; gap:7px; padding:11px 12px; border-radius:0; white-space:nowrap;
   font:500 11px/1 'Cinzel', var(--font-read); letter-spacing:.14em; text-transform:uppercase; color:inherit; }
 .se-quote-pop button + button { border-left:1px solid color-mix(in srgb, var(--c-on-solid) 12%, transparent); }
-:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .se-quote-pop button + button { border-left-color:rgba(241,232,212,.12); }
+:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .se-quote-pop button + button { border-left-color:rgba(241,232,212,.12); }
 .se-quote-pop button:hover { background:color-mix(in srgb, var(--pop-gold) 12%, transparent); color:inherit; }
 .se-quote-pop button .ic { display:block; width:13px; height:13px; color:var(--pop-gold); fill:none; stroke:currentColor; stroke-width:1.4; }
 .se-quote-pop .se-define { order:1; flex:1 1 100%; width:0; min-width:100%; margin:0; padding:13px 18px 14px; border-top:0;
@@ -3503,7 +3576,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-define .here p { margin:0; color:inherit; }
 .se-define .plain { margin-top:10px; font-size:19px; font-style:italic; color:color-mix(in srgb, var(--c-on-solid) 78%, transparent); }
 .se-define .pos { font-family:'Cinzel', var(--font-read); font-size:9.5px; letter-spacing:.18em; text-transform:uppercase; color:color-mix(in srgb, var(--c-on-solid) 65%, transparent); }
-:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .se-define .pos { color:#b8c1cf; }
+:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .se-define .pos { color:#b8c1cf; }
 .se-define p { margin:4px 0 0; }
 .se-define p + p { margin-top:3px; }
 /* "Remember this" (plan "side talks in the Room, and remember this"): the
@@ -3968,8 +4041,8 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
   color:#fff; opacity:1; }
 .se-send.is-stop:hover:not(:disabled), .room-convo .se-send.is-stop:hover:not(:disabled) {
   background:var(--c-danger); border-color:transparent; color:#fff; opacity:.85; }
-:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .se-send.is-stop, :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .room-convo .se-send.is-stop,
-:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .se-send.is-stop:hover:not(:disabled), :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .room-convo .se-send.is-stop:hover:not(:disabled) {
+:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .se-send.is-stop, :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .room-convo .se-send.is-stop,
+:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .se-send.is-stop:hover:not(:disabled), :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .room-convo .se-send.is-stop:hover:not(:disabled) {
   background:var(--pnl); color:#f2ecdf; }
 /* Commands as middot-separated words rather than a second row of pills — the card
    already carries badges and buttons, and pills here would read as a toolbar.
