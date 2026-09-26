@@ -11,18 +11,20 @@
    renderers read, since a canvas gets no CSS). FMCNS_LOOKS is the whole registry: adding
    a look later is one entry here and one block of values in the stylesheet. */
 window.FMCNS_LOOKS = {
-  creamnavy:{ name: 'Navy', dark: false },
-  creamteal:{ name: 'Slate teal', dark: false },
-  creamolive:{ name: 'Dark olive', dark: false },
-  creamrose:{ name: 'Rosewood', dark: false },
-  nightnavy:{ name: 'Navy, starlit', dark: true },
-  nightteal:{ name: 'Slate teal, starlit', dark: true },
-  nightolive:{ name: 'Dark olive, starlit', dark: true },
-  nightrose:{ name: 'Rosewood, starlit', dark: true },
-  candle:{ name: 'Candlelit library', dark: true }
+  creamnavy:{ pv: ['#2c3e5c','day','#1d2a40','#9c7530'], name: 'Navy', dark: false },
+  creamteal:{ pv: ['#2e454b','day','#1b2b2f','#9c7530'], name: 'Slate teal', dark: false },
+  creamolive:{ pv: ['#363a1f','day','#252815','#9c7530'], name: 'Dark olive', dark: false },
+  creamrose:{ pv: ['#3b1a1c','day','#2e1618','#9c7530'], name: 'Rosewood', dark: false },
+  nightnavy:{ pv: ['#2c3e5c','star','#e4e2dc','#d8d2c2'], name: 'Navy, starlit', dark: true },
+  nightteal:{ pv: ['#2e454b','star','#e4e2dc','#d8d2c2'], name: 'Slate teal, starlit', dark: true },
+  nightolive:{ pv: ['#363a1f','star','#e4e2dc','#d8d2c2'], name: 'Dark olive, starlit', dark: true },
+  nightrose:{ pv: ['#3b1a1c','star','#e4e2dc','#d8d2c2'], name: 'Rosewood, starlit', dark: true },
+  candle:{ pv: ['#3a2716','candle','#e8d3ad','#e0a95a'], name: 'Candlelit library', dark: true }
 };
 /* His looks since 2026-09-26: four cream-page day looks (navy, slate teal, dark olive,
    rosewood panel) and five night looks. The older looks' styles are still below but unreachable. */
+/* The picker's rows: one colour, its day look and its night look. */
+window.FMCNS_LOOK_ROWS = [['Navy','creamnavy','nightnavy'],['Slate teal','creamteal','nightteal'],['Dark olive','creamolive','nightolive'],['Rosewood','creamrose','nightrose'],['Candlelit',null,'candle']];
 window.FMCNS_LOOK_DAY = 'creamnavy';
 window.FMCNS_LOOK_NIGHT = 'nightnavy';
 (function () {
@@ -2786,6 +2788,23 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .umenu-item.has-icon .umenu-ic { flex:none; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 .umenu-item.has-icon .umenu-label { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .umenu-sep { height:1px; margin:4px 6px; background:var(--c-border); }
+
+/* The look picker: fixed dark glass whatever the look, so every preview reads true. */
+.umenu.look-picker { max-width:none; width:max-content; transform-origin:bottom left; padding:16px 18px 8px; background:#1c1f24; border-color:#3a3d44; color:#d9ceb2; }
+.umenu.look-picker .umenu-sep { background:#33363c; margin:14px 0 4px; }
+.umenu.look-picker .umenu-item { color:#cfc6b0; }
+.lp-grid { display:grid; grid-template-columns:auto 116px 116px; gap:13px 17px; align-items:center; }
+.lp-ic { justify-self:center; width:15px; height:15px; fill:none; stroke:#bdb39a; stroke-width:1.5; }
+.lp-name { padding-right:8px; font:500 14px/1.2 'Cinzel', var(--font-read); letter-spacing:.16em; text-transform:uppercase; color:#d9ceb2; }
+.lp-win { position:relative; display:flex; width:116px; height:74px; padding:0; border:0; border-radius:7px; overflow:hidden; cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.4); transition:transform var(--t-fast, .12s) var(--ease, ease); }
+.lp-win:hover { transform:translateY(-1px); }
+.lp-win.is-on, .lp-win:focus-visible { outline:2px solid #e2bf76; outline-offset:2px; }
+.lp-rail { width:18%; }
+.lp-page { position:relative; flex:1; margin:3px 3px 3px 0; border-radius:4px; }
+.lp-page i { position:absolute; left:14%; right:14%; height:1.5px; background:var(--lp-ink); opacity:.55; }
+.lp-page i:nth-child(2) { top:45%; } .lp-page i:nth-child(3) { top:60%; } .lp-page .lp-s { top:75%; right:30%; }
+.lp-page .lp-t { top:22%; left:35%; right:35%; background:var(--lp-gold); opacity:1; }
 .room-typemenu { position:fixed; z-index:var(--z-popover-top); background:var(--c-bg); border:1px solid var(--c-border); border-radius:var(--r-md);
   padding:8px; box-shadow:0 4px 14px rgba(0,0,0,.16); display:flex; flex-direction:column; gap:0; min-width:238px; max-width:270px; }
 /* Reading settings, built the way Books and Kindle build them: a labelled group
@@ -20680,8 +20699,9 @@ function openMenu(anchor, items, opts) {
   closeMenu();
   if (sameAnchor) return null;
   const el = document.createElement('div');
-  el.className = 'umenu';
+  el.className = 'umenu' + (o.className ? ' ' + o.className : '');
   el.setAttribute('role', 'menu');
+  if (o.content) el.appendChild(o.content);
   for (const it of items) {
     if (!it) continue;
     if (it.sep) { const hr = document.createElement('div'); hr.className = 'umenu-sep'; el.appendChild(hr); continue; }
@@ -20710,9 +20730,15 @@ function openMenu(anchor, items, opts) {
   // opacity/transform, never size, but this stays the honest order.
   const r = anchor.getBoundingClientRect();
   const w = el.offsetWidth, h = el.offsetHeight;
-  const left = o.align === 'left' ? r.left : r.right - w;
-  el.style.left = Math.max(6, Math.min(window.innerWidth - w - 6, left)) + 'px';
-  el.style.top = (r.bottom + 4 + h > window.innerHeight ? Math.max(6, r.top - h - 4) : r.bottom + 4) + 'px';
+  if (o.side === 'right') {
+    /* Beside the anchor, its foot level with the anchor's foot — for the rail's buttons. */
+    el.style.left = Math.min(window.innerWidth - w - 6, r.right + 10) + 'px';
+    el.style.top = Math.max(6, Math.min(window.innerHeight - h - 6, r.bottom - h)) + 'px';
+  } else {
+    const left = o.align === 'left' ? r.left : r.right - w;
+    el.style.left = Math.max(6, Math.min(window.innerWidth - w - 6, left)) + 'px';
+    el.style.top = (r.bottom + 4 + h > window.innerHeight ? Math.max(6, r.top - h - 4) : r.bottom + 4) + 'px';
+  }
   anchor.setAttribute('aria-expanded', 'true');
   openMenuNow = { el, anchor };
   requestAnimationFrame(() => el.classList.add('is-shown'));
@@ -32472,18 +32498,56 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   btn.addEventListener('click', function () {
     var choice = stored();
-    var items = [];
-    ids.forEach(function (id, i) {
-      if (i && LOOKS[id].dark && !LOOKS[ids[i - 1]].dark) items.push({ sep: true });
-      items.push({ label: LOOKS[id].name, checked: choice === id, on: function () { pick(id); } });
-    });
-    items.push({ sep: true });
-    items.push({ label: 'Match my Mac', checked: choice === 'auto', on: function () { pick('auto'); } });
-    if (typeof window.openMenu === 'function') { window.openMenu(btn, items); return; }
+    if (typeof window.openMenu === 'function') {
+      window.openMenu(btn, [{ sep: true }, { label: 'Match my Mac', checked: choice === 'auto', on: function () { pick('auto'); } }],
+        { content: pickerGrid(choice), className: 'look-picker', side: 'right' });
+      return;
+    }
     /* No menu helper on the page (an older build): cycle instead of doing nothing. */
     var order = ids.concat(['auto']);
     pick(order[(order.indexOf(choice) + 1) % order.length]);
   });
+  /* The look picker (his pick "B1 · XL", 2026-09-26): a row per colour, its day look under
+     a sun and its night look under a moon, each drawn as a little window of the app. */
+  function preview(id, on) {
+    var t = document.createElement('button');
+    t.type = 'button';
+    t.className = 'lp-win' + (on ? ' is-on' : '');
+    t.title = LOOKS[id].name;
+    t.setAttribute('aria-label', LOOKS[id].name);
+    var pv = LOOKS[id].pv, p = pv[0], kind = pv[1];
+    var mix = function (a, b, n) { return 'color-mix(in srgb, ' + a + ' ' + n + '%, ' + b + ')'; };
+    var stars = 'radial-gradient(1px 1px at 20% 30%,#fff8,transparent),radial-gradient(1px 1px at 70% 22%,#fff6,transparent),radial-gradient(1px 1px at 48% 72%,#fff6,transparent),radial-gradient(1px 1px at 86% 60%,#fff5,transparent)';
+    var rail = kind === 'day' ? 'linear-gradient(' + mix(p, '#fff', 80) + ',' + p + ' 45%,' + mix(p, '#000', 55) + ')'
+      : kind === 'candle' ? '#20160e' : mix(p, '#000', 38);
+    var page = kind === 'day' ? 'linear-gradient(115deg,#e7dcc6,#f3eee2 45%)'
+      : kind === 'candle' ? 'radial-gradient(90% 70% at 40% 25%,#3a2716,#221710 60%,#170f0a)'
+      : stars + ',radial-gradient(100% 80% at 70% 0%,' + mix(p, '#fff', 90) + ',' + mix(p, '#000', 55) + ' 55%,' + mix(p, '#000', 30) + ')';
+    t.innerHTML = '<span class="lp-rail"></span><span class="lp-page"><i class="lp-t"></i><i></i><i></i><i class="lp-s"></i></span>';
+    t.querySelector('.lp-rail').style.background = rail;
+    t.style.background = kind === 'day' ? p : rail;   // the frame round the little page
+    t.querySelector('.lp-page').style.background = page;
+    t.style.setProperty('--lp-ink', pv[2]);
+    t.style.setProperty('--lp-gold', pv[3]);
+    t.onclick = function (ev) { ev.stopPropagation(); if (window.closeMenu) window.closeMenu(); pick(id); };
+    return t;
+  }
+  function pickerGrid(choice) {
+    var g = document.createElement('div');
+    g.className = 'lp-grid';
+    g.innerHTML = '<span></span><svg class="lp-ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3"/></svg>'
+      + '<svg class="lp-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.5 10.5A5.5 5.5 0 0 1 5.5 3.5a5.5 5.5 0 1 0 7 7Z"/></svg>';
+    (window.FMCNS_LOOK_ROWS || []).forEach(function (row) {
+      var nm = document.createElement('span');
+      nm.className = 'lp-name';
+      nm.textContent = row[0];
+      g.appendChild(nm);
+      [row[1], row[2]].forEach(function (id) {
+        g.appendChild(id && LOOKS[id] ? preview(id, choice === id) : document.createElement('span'));
+      });
+    });
+    return g;
+  }
   function pick(choice) {
     try { localStorage.setItem('fmcns-look', choice); } catch (e) {}
     apply(choice);
