@@ -25,7 +25,6 @@ import {
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
 import { generateText, generateTextDirect, generateTextStream, studioPersonaText, promptCharBudget } from './ai/text.js';
-import { lensText } from './ai/voice.js';
 import { costOf } from './openaiSpend.js';
 import { isMeteredProvider } from './ai/catalog.js';
 import { resolveTurn, computeLaneTag, tagFromVia } from './turnRouter.js';
@@ -642,9 +641,8 @@ function readLinkedConversation(convoId, input = {}) {
   return { title: row.source_title, offset, total_chars: text.length, text: text.slice(offset, offset + length) };
 }
 
-const MERGE_BRIDGE_PROMPT = `Several earlier conversations have just been brought together into one new Room thread. Write the opening bridge for the new conversation.
-
-State what they genuinely hold in common, where they differ or use different frames, what each one contributes that the others do not, and the live questions that only appear when they are read together. Preserve disagreement. Do not call this a summary, do not describe your task, and do not propose implementation unless the sources themselves are about implementation. Use plain language and no decorative headings. Never invent a conclusion or fact absent from the sources.`;
+// Context, not rules (2026-09-26): the task, who he is, the sources.
+const MERGE_BRIDGE_PROMPT = `Several of his earlier conversations have just been brought together into one new thread. Write its opening: what they hold in common, where they differ, what each brings that the others do not, and the questions that only appear when they are read together. Stay with what the sources say.`;
 
 async function writeMergeBridge(targetConvoId) {
   const target = getConvo(targetConvoId);
@@ -654,7 +652,7 @@ async function writeMergeBridge(targetConvoId) {
   const material = origins.map((o, i) => `=== SOURCE ${i + 1}: ${o.source_title} ===\n${o.digest_text}`).join('\n\n');
   try {
     const out = await generateText({
-      prompt: `${MERGE_BRIDGE_PROMPT}\n\n${lensText() ? `The lens:\n${lensText()}\n\n` : ''}${studioPersonaText() ? `Shared voice and style:\n${studioPersonaText()}\n\n` : ''}${material}`,
+      prompt: `${MERGE_BRIDGE_PROMPT}\n\n${studioPersonaText() ? `=== WHO HE IS ===\n${studioPersonaText()}\n\n` : ''}${material}`,
       feature: 'summary', label: 'conversations:merge-bridge', maxTokens: 1400,
       allowLongOutput: true, timeoutMs: 120_000, helperWaitMs: 120_000, claudeLastResort: true,
     });

@@ -27,8 +27,7 @@ import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
 import { generateText as _generateText } from './ai/text.js';
 import { getConvo, listMessages } from './conversations.js';
-import { USER_FACING_STYLE } from './ai/style.js';
-import { paradigmVoiceBlock } from './ai/voice.js';
+import { whoHeIsBlock } from './ai/voice.js';
 import { subjectsLine } from './mind.js';
 
 let db = null;
@@ -311,8 +310,8 @@ ${HARD_RULES}
 
 Propose ${poolSize} candidates — cast a wide net, the strongest ones will be picked from these.${askCount ? ' Also work out how many he actually wants: a bare number ("twelve", "17") IS a count; a number that is part of a name or established structure (e.g. "five-act structure", "the seven deadly sins") is NOT a request for that many — it is part of the subject. If no count is stated, the default is ' + DEFAULT_COUNT + '.' : ''}
 
-${USER_FACING_STYLE}
-${paradigmVoiceBlock({ lengthRuleWins: true })}
+Write in English.
+${whoHeIsBlock()}
 
 Respond with ONLY this JSON and nothing else:
 {${askCount ? '"requested_count": <integer or null>, ' : ''}"candidates":[{"left":"the first side, 1-3 words","right":"the other side, 1-3 words","title":"the relation itself, under 7 words","reading":"one or two short sentences saying what holds","question":"the new question this makes possible, one sentence","left_scale":"e.g. person, family, institution, city, nation","right_scale":"same idea for the other side","structural_frame":{"positions":["the roles involved, no real names"],"relations":["how those roles relate to each other"]}}]}`;

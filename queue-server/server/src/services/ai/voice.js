@@ -22,6 +22,15 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { studioPersonaText } from './text.js';
+
+// What the Room's side panels read about him (2026-09-26, his call): his portrait
+// and paradigm, the same box the Room's answers read — context, never a voice to
+// obey. See AGENTS.md "The Room answers from context, not rules".
+export function whoHeIsBlock() {
+  const p = String(studioPersonaText() || '').trim();
+  return p ? `\n=== WHO HE IS ===\n${p}\n` : '';
+}
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // services/ai -> services -> src -> server -> queue-server

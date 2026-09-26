@@ -18,7 +18,7 @@
 //     there: the same reports, the same panel shape as the Room's Ideas.
 import { randomUUID } from 'node:crypto';
 import { generateText } from './ai/text.js';
-import { paradigmVoiceBlock } from './ai/voice.js';
+import { whoHeIsBlock } from './ai/voice.js';
 import { broadcastAll } from '../realtime.js';
 
 let db = null;
@@ -67,11 +67,8 @@ export function deletePassage(id) {
 
 // The reading. Short on purpose: this is a line on a shelf, not an essay — the
 // long version is what the Room is for, and the world-look is one click away.
-const READING_PROMPT = `A line was kept out of a conversation because it was worth keeping. Write a short reading of it — three or four sentences, no headings, no bullets, no preamble.
-
-Say what the line actually names — the pattern under it, not a paraphrase of the words. Then say what it could become inside this platform: a way of reading entities, a lens, a measure, a view, a navigation move. Name the thing concretely enough to build, and say plainly if it would be new.
-
-Never restate the line. Never open with "This passage" or "This quote".`;
+// Context, not rules (2026-09-26): the task and its size, then who he is.
+const READING_PROMPT = `He kept this line out of one of his conversations because it was worth keeping. Write a short reading of it, three or four sentences: what the line names underneath, and what it could become inside the platform he is building.`;
 
 export async function readPassage(id, { force = false } = {}) {
   const row = getPassage(id);
@@ -80,7 +77,7 @@ export async function readPassage(id, { force = false } = {}) {
 
   const context = row.source_title ? `\n\nIt came out of a conversation called "${row.source_title}".` : '';
   const out = await generateText({
-    prompt: `${READING_PROMPT}${paradigmVoiceBlock({ lengthRuleWins: true })}\n\n=== THE LINE ===\n"${row.text.slice(0, MAX_READING_INPUT)}"${context}`,
+    prompt: `${READING_PROMPT}\n${whoHeIsBlock()}\n\n=== THE LINE ===\n"${row.text.slice(0, MAX_READING_INPUT)}"${context}`,
     feature: 'summary',
     label: 'passages:reading',
     maxTokens: 320,
