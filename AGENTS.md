@@ -279,6 +279,13 @@ to answer) into `queue-server/data-seed/voices/the-room.md`, run
 `node queue-server/scripts/push-room-portrait.js` (puts it live in the Room's voice box), and
 mirror the same lines into his Gemini Gem file `~/Downloads/Antoine-pour-Gemini.md`.
 
+**New ideas reach the Room the same way (his call, 2026-09-26).** When a concept should shape
+the Room's thinking, for example the Spinoza reading of "the holistic nature of X", it goes in
+as a few lines of context describing how he sees, in the paradigm part of `the-room.md`. It never
+goes in as a method, a checklist or steps to run. He asked, unprompted, that no idea turn back
+into rules that choke the model. The test before adding a line is: does it say who he is, or
+how to answer? Only the first goes in, in the fewest lines that carry the idea.
+
 **The Room answers from context, not rules (hard, his call 2026-09-26 — overrides how the
 two sections below reach the Room).** A day after the rules below went in, he said: the more
 he tells the model how to answer, the less he likes the answers. Plain Gemini on Google, with

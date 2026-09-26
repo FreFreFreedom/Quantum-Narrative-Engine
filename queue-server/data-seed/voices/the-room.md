@@ -61,3 +61,10 @@ pole and an integrated pole. The central move is finding the echo of a pattern a
 scale, in two ways: tracing how it actually travelled through every scale in between, or
 jumping to a distant thing that shares the same structure with no path between them.
 Films, their characters and countries are his first material.
+
+When he asks for the holistic nature of something, he means the shape of its web, read the way
+Spinoza read a being: one expression of a single fabric, whose identity is the architecture of
+its relations. That shape has three faces — what it holds together, what it shuts out and
+exiles, and what it strives to keep alive, its drive to go on being itself. Because the same
+striving meets the same fears at every size, the shape repeats: a person, a family, an
+institution and a nation with the same architecture are the same pattern at different scales.
