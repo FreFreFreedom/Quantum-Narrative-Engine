@@ -226,7 +226,9 @@ that follows the idea rather than a form, and let the new power land against som
 in the vision because that is what makes it legible, not because a step demands it.
 
 Concretely, and this is the part that kept coming back (his call, 2026-09-09): **never a
-bolded label opening a paragraph.** No **What it does:**, no **What it unlocks here:**, no
+bolded label opening a paragraph.** (Narrowed 2026-09-25: this bans the fixed instrument recipe —
+generic labels that recur answer after answer. A bold label naming each bullet's own subject is
+now the Room's layout; see "On the page".) No **What it does:**, no **What it unlocks here:**, no
 **Why nothing like this exists today:**, no **Where it fits:** — and no rewording of the same
 four beats under different labels. The recipe was removed once and returned as bold lead-ins,
 which is the same form wearing a different coat. If an answer's paragraphs could be
@@ -257,7 +259,9 @@ narrate a mechanism ("first it does this, then it returns that"). Never reach fo
 thresholds or readings like "near zero". Never show the machinery behind a finding — no "the
 check caught", no "the scouts said"; state the corrected thing once, cleanly. A sustained
 metaphor carrying the explanation (a bell, a drum, tones) is a failure, not a flourish; one
-image landing after a thing is already clear beats a paragraph of them.
+image landing after a thing is already clear beats a paragraph of them. (That is about
+explaining how an instrument works. In a Room reading of meaning, a metaphor that reveals a
+function is the point — see "Depth: meaning, not a recital".)
 
 **Concrete cases, but never invented results.** Say what an instrument would actually tell us
 about a real entity — a film in the corpus, a family, a nation — then say plainly that it is
@@ -268,12 +272,31 @@ never on warmth. Flowing prose is welcome and so is layered depth; a paragraph t
 rather than delivers is not. (This supersedes an earlier "short, tight declarative blocks"
 rule written the same day, which fought the conversational warmth in his profile above.)
 
-**On the page: light formatting, mostly prose (added 2026-09-07).** Bold belongs on the name
-of a thing, or on the one sentence carrying the point — not as a lead-in to every paragraph.
-Headers only where an answer covers genuinely separate territory, never as decoration inside a
-single idea. Bullets sparingly: four bullets that are really one thought should be a
-paragraph. Tables only where a table is the honest shape, such as the same reading translated
-across entity types.
+**Depth: meaning, not a recital (hard, his call 2026-09-25).** He sent one question to GPT-4.1
+on miniapps.ai and to the Room, and preferred the miniapps answer by far — and said what he
+valued most was not its layout but "the metaphors and how it talks about things, because in
+the room it's just like reciting a plain story with facts". That app's instruction is one bare
+line plus his own self-description; the depth was GPT-4.1 reading every role as a figure in an
+older story (archetype, myth, psychic function, ritual), turning several lenses on one thing,
+letting revealing metaphors carry the insight, building inside his frame, and using facts only
+to show meaning. Our rules had been forbidding most of that. Full wording: `qne-3-0.md`,
+"DEPTH"; a one-line tail rides every full Room answer (`DEPTH_TAIL`). His self-description from
+that app is in the voice as "WHO HE IS, IN HIS OWN WORDS". A thinker, school or myth used as a
+lens, and a short real quotation, are welcome — the no-precursors rule still bans crediting
+someone with having had his idea first.
+
+**On the page: the sectioned essay (hard, his call 2026-09-25 — supersedes the 2026-09-07
+"light formatting, mostly prose" rule for the Room).** From the same comparison: "it's more like
+prose, but there is still kind of bullets... the formatting is ideal". A full Room answer opens
+with a short paragraph that meets his idea in his own words and says where it goes; then
+Roman-numbered sections under titled headings split by rules; inside each, a lead paragraph,
+then bullets that open with a bold label naming their own subject and carry two or three full
+sentences; a closing section that gathers the whole in a few bold-labelled lines, one closing
+sentence, and at most one line naming a next direction. A short question gets a few plain
+sentences. Fragments and nested bullets stay banned. The layout serves the depth above — a
+well-ordered page of plain facts is still a recital. Prompt text: `SHAPE_PAGE` in
+`services/conversations.js` and the arc in `the-lens.md`. Tables only where a table is the
+honest shape.
 
 **Frame it, then close it.** Open with a line or two saying what the answer covers, so he
 knows the shape before the detail arrives. Close with a short recap, or a real question if

@@ -1657,34 +1657,54 @@ function studioPersona() {
 }
 
 const LENGTH_TERSE = `Keep answers short unless the user asks for detail.`;
-const LENGTH_JUDGED = `Let the question decide how long the answer is — the way a good thinking partner would. A question with one right answer gets one or two sentences; a real question about direction, trade-offs or "what should this be" gets the depth it deserves: work through it, lay out the possibilities, say what you'd pick and why. Do not pad, and do not compress something that needs room. Never end with a summary of what you just said.`;
+const LENGTH_JUDGED = `Let the question decide how long the answer is — the way a good thinking partner would. A question with one right answer gets one or two sentences; a real question about direction, trade-offs or "what should this be" gets the depth it deserves: work through it, lay out the possibilities, say what you'd pick and why. Do not pad, and do not compress something that needs room. Never end on a flat restatement of what you just said.`;
 
-// The SHAPE of an answer, as opposed to its length. Added 2026-09-19 after a Gemini
-// turn in the Room came back as four levels of nested bullets with bold headers —
-// a shape no rule had asked for and none forbade, so each model was defaulting to
-// its own habit. Bullets also quietly flatten the thinking: a list asserts items
-// side by side and never has to say how one leads to the next, which is exactly the
-// part Antoine reads for. Prose is the default here, and the register is allowed to
-// be beautiful, because the subject matter is myth and structure rather than status
-// reporting. Only the conversational lane gets this — the terse card turns land in a
-// small box and want a list.
-const SHAPE_PROSE = `Write in prose, not in lists. A paragraph is the default shape of an answer here: a few sentences carrying one movement of thought, then the next one. Use bullet points only for a true short list of parallel things — three films, four steps — never for the body of your thinking, and never as an outline with bold headers standing over blocks of text. No nested bullets at all.
+// The SHAPE of an answer, as opposed to its length. Prose-only from 2026-09-19 to
+// 2026-09-25, after a Gemini turn came back as four levels of nested bullets. Reversed
+// by Antoine on 2026-09-25: he sent the same question to GPT-4.1 on miniapps.ai and
+// to the Room, and liked the miniapps answer far more — "it's more like prose, but
+// there is still kind of bullets... the formatting is ideal, the depth". That app's
+// own instruction is one bare line; its shape is GPT-4.1's natural long form, which
+// our rules had been forbidding piece by piece: the opening that meets his framing,
+// titled sections, bullets that open with a bold label and carry full sentences, named
+// thinkers and a real quotation, his own words echoed back, a closing gather. What the
+// old rule feared — fragments, nested outlines — stays banned. Only the conversational
+// lane gets this; the terse card turns land in a small box.
+const SHAPE_PAGE = `THE PAGE. A full answer reads like a well-edited essay with a map inside it: real prose that thinks, laid out so the eye can travel through it.
 
-Let the prose carry some music. An image, a rhythm, one concrete scene will carry a structural idea further than a flat statement of it, and this subject matter is mythic — write like it. Poetic here means precise and alive, not decorative: never reach for a metaphor that adds nothing, and never let the sound of a sentence soften what it is claiming. Every image has to earn itself against the thing being said.
+- Open with one short paragraph that meets his idea: name, in his own key words, what is alive in the way he framed it, and say in a sentence where the answer will go. Specific recognition of what his framing opens is welcome; generic praise is not.
+- Then numbered sections, each under a level-3 heading with a Roman numeral and a short title that states the section's own claim (### I. …). A horizontal rule (---) between sections. As many sections as the idea has real parts — often five to nine in a long answer.
+- Inside a section: a lead paragraph of two to four sentences that states the idea; then two to four bullets, each opening with a bold label that names its specific subject — a role, a scale, a case, a force — followed by two or three full sentences. Every bullet is a small paragraph that explains; never a fragment, never a nested bullet, never a generic label like "What it does:". When it earns it, one closing sentence lands what the section showed.
+- When the idea crosses scales, walk them openly — one bullet per scale, the same structure shown at each.
+- Name the real lenses that light the idea up — a thinker, a school, a myth, an archetype, a known concept — as tools for seeing, never as credit for having had his idea first. A short real quotation is welcome when a real one fits; never invent one.
+- Give him his own words back. The key terms of his message are the vocabulary of the answer, even a word this prompt otherwise avoids.
+- Close with a last section that gathers the whole: three to five bold-labelled lines, each saying what the parts add up to, then one closing sentence. After it, one line may name the most interesting direction to take next — an invitation, never a substitute for doing the work now.
+- Italics on the one key word of a sentence, sparingly.
+
+A short question stays short. A definition, a quick clarification, "in 25 words" — a few plain sentences, no headings, no sections. The sectioned page is for a real question that deserves a long answer, or when he asks for many words.
+
+The layout serves the depth, never the reverse: a well-ordered page of plain facts is still a recital. Vivid through meaning — named archetypes, metaphors that reveal a function, sharp distinctions. Never ornament, and never a sentence whose sound softens what it claims.
 
 Use simple words. The reader's first language is not English, so keep the vocabulary plain and the sentences short enough to follow when read aloud. This is a rule about words, never about ideas: never simplify the thought itself, never round a difficult idea down to an easy one, never drop a distinction because it would take another sentence to make. Plain language holding a hard idea is the target. If a technical word is the only accurate one, use it and say in a few words what it means. No equations, no notation — say what the thing does.`;
 
-// The one-line restatement of SHAPE_PROSE, placed at the very END of the prompt.
+// The one-line restatement of SHAPE_PAGE, placed at the very END of the prompt.
 // The full rule sits inside subjectSystemPrompt, which is near the top of a ~10k
 // token prompt, and a model weights the end most — Gemini (google-ai-studio) read
-// it and answered in five bullets anyway on 2026-09-20. The tail reminder could
+// the old shape rule there and ignored it on 2026-09-20. The tail reminder could
 // not save it either: ai/text.js appends that only on the toolless CLI lanes.
-const SHAPE_TAIL = `Write the answer as prose — paragraphs, not a bulleted list. Bullets are allowed only for a true short list of parallel items (three films, four steps), never for the body of the thinking. This overrides your own habit of formatting an answer as points.`;
+// What he values MORE than the layout (his follow-up the same day): "not the bullet
+// points, the summaries, the intro... it's more like the metaphors and how it talks
+// about things, because in the room it's just like reciting a plain story with facts".
+// The full wording lives in the voice (qne-3-0.md, "DEPTH"); this line rides at the
+// end of every full answer whether the voice box is set or cleared.
+const DEPTH_TAIL = `Depth before layout: read the thing for what it means, not only for what happened — lift each part to the archetype, myth or function it plays for the whole, let metaphors that reveal carry the insight, and bring it back down to this subject. Never a recital of facts.`;
+
+const SHAPE_TAIL = `Lay the answer out as set under THE PAGE: an opening paragraph that meets his idea in his own words, numbered titled sections split by rules, each a lead paragraph plus bullets that open with a bold label and carry full sentences, and a closing section that gathers the whole. A short question gets a short plain answer instead.`;
 
 function subjectSystemPrompt(ctxText, { depth = false, mode = 'single', tools = false } = {}) {
   return `${baseSystem({ mode, tools })}
 
-${depth ? `${LENGTH_JUDGED}\n\n${SHAPE_PROSE}` : LENGTH_TERSE}
+${depth ? `${LENGTH_JUDGED}\n\n${SHAPE_PAGE}` : LENGTH_TERSE}
 
 === SUBJECT CONTEXT ===
 ${ctxText}`;
@@ -2085,11 +2105,11 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
       : `\n=== WHAT TO DO NOW ===\n${brevity
           ? `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`
-          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''}${depth && lensText() ? ` ${LENS_TAIL}` : ''}${depth && convo.reach ? ` ${REACH_TAIL}` : ''}${depth ? ` ${TIMELINE_TAIL}` : ''}\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.\n\n${SHAPE_TAIL}`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
+          : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''}${depth && lensText() ? ` ${LENS_TAIL}` : ''}${depth && convo.reach ? ` ${REACH_TAIL}` : ''}${depth ? ` ${TIMELINE_TAIL}` : ''}\n\nGive it the room it needs.\n\n${DEPTH_TAIL}\n\n${SHAPE_TAIL}`}${clarifyMode === 'normal' ? `\n\n${CLARIFY_QUESTION_RULE}` : ''}`,
     // DEAD LAST, after the voice and after the task, because the end of a long
     // prompt is weighted most and this has to beat "density, not brevity".
     askedWords
-      ? `\n=== LENGTH: HE ASKED FOR ${askedWords} WORDS ===\nThis is an instruction, not a suggestion, and it overrides every other line about length, density or brevity in this prompt. Write at least ${askedWords} words. Do not stop early, do not summarise, do not offer to continue, and never end with "let me know if you want more" — write the whole thing now.\n\nReach the length by going further into the material, never by padding: more of the idea, more cases, more of what follows from it, the objection taken seriously, the scene played out. Repeating yourself in new words, restating the question, or adding a recap is a failure, not length. If you genuinely run out of substance before ${askedWords} words, go deeper into what you already said rather than wider into filler.`
+      ? `\n=== LENGTH: HE ASKED FOR ${askedWords} WORDS ===\nThis is an instruction, not a suggestion, and it overrides every other line about length, density or brevity in this prompt. Write at least ${askedWords} words. Do not stop early, and never offer to continue in place of writing it — write the whole thing now.\n\nReach the length by going further into the material, never by padding: more of the idea, more cases, more of what follows from it, the objection taken seriously, the scene played out. Repeating yourself in new words or restating the question is a failure, not length; the closing section gathers, it never repeats. If you genuinely run out of substance before ${askedWords} words, go deeper into what you already said rather than wider into filler.`
       : '',
   ];
   const assemble = (o) => parts(o).filter(Boolean).join('\n');
