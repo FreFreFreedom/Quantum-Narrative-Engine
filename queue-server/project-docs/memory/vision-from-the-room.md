@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The prosecutor is the archetypal boundary‑setter, the organ that draws the line between self and other across all scales.
+
+Across domains—from planetary governance to family dynamics—the prosecutor‑like role imposes limits that prevent dissolution. It is not merely a bureaucratic function but a sacred organ that defines the entity’s skin, allowing the system to maintain cohesion. Without this boundary‑setting, the whole collapses into chaos or cannibalizes itself. This insight refines the earlier notion of “interior‑exterior self‑similarity” by explicitly naming the prosecutor as the exterior‑to‑interior boundary mechanism.
+
 ## Allopathic inquiry into social and institutional phenomena isolates local symptoms and manages them with specialized vocabulary, ignoring cross-scale ecology.
 
 Defining a system strictly by the internal vocabulary of the discipline that manages it (such as legal definitions of misdemeanors or welfare definitions of neglect) acts as an allopathic quarantine. It treats the social body as separate parts rather than recognizing that every crisis is a localized concentration of universal structural pressures expressing across scales.
@@ -86,10 +90,6 @@ Quotes the owner pulled out and endorsed: 'Does the wound at the family level fe
 ## A civic structure is not an institution but the living act of a people answering 'how do we hold together?' — crystallized norms, rituals, laws and practices of exclusion.
 
 Developed out of Fences (family dinner table as civic space under Jim Crow — a structure forced to be fortress and sanctuary at once, Troy Maxson's fence as the state's borders, private myth vs public cage), When They See Us (system not broken but operating exactly as designed for pre-guilty bodies — the case is the thesis made visible), and the courthouse/prison/voting-booth as stages where a collective's theory of the human performs. Every civic structure carries its own blind spot — the question it was built not to ask — and what it excludes does not disappear but becomes its shadow, which feeds back into the next act of exclusion, the next arrest, the next law.
-
-## Interior-exterior self-similarity: the internal anatomy of any entity mirrors its external relationships. Relationships inside reflect relationships outside.
-
-Core structural principle: when you zoom into any entity, its internal dynamics reproduce the same pattern it enacts externally. A nation whose foreign policy is imperial will have internal power dynamics mirroring imperialism. A controlling person has an inner landscape dominated by internal policing. The platform must enforce this principle: for any entity analyzed, the engine maps both interior and exterior simultaneously, because they are the same pattern at different scales. This is what makes the fractal reading predictive — you can infer internal dynamics from external behavior and vice versa, because they are structurally identical. The owner's demand: 'if we define thoroughly one thing, it should repeat everywhere.'
 
 ## There are no entities — only patterns of relation. An entity is a crystallization we define by what it relates to, not by intrinsic substance.
 
