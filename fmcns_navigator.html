@@ -20762,8 +20762,10 @@ function closeMenu() {
   if (!openMenuNow) return;
   const el = openMenuNow.el;
   const anchor = openMenuNow.anchor;
+  const onClose = openMenuNow.onClose;
   openMenuNow = null;
   if (el && el.parentNode) el.parentNode.removeChild(el);
+  if (onClose) onClose();
   if (anchor) anchor.setAttribute('aria-expanded', 'false');
 }
 function menuIsOpen() { return !!(openMenuNow && openMenuNow.el && openMenuNow.el.isConnected); }
@@ -20814,7 +20816,7 @@ function openMenu(anchor, items, opts) {
     el.style.top = (r.bottom + 4 + h > window.innerHeight ? Math.max(6, r.top - h - 4) : r.bottom + 4) + 'px';
   }
   anchor.setAttribute('aria-expanded', 'true');
-  openMenuNow = { el, anchor };
+  openMenuNow = { el, anchor, onClose: o.onClose };
   requestAnimationFrame(() => el.classList.add('is-shown'));
   return closeMenu;
 }
@@ -32574,7 +32576,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var choice = stored();
     if (typeof window.openMenu === 'function') {
       window.openMenu(btn, [{ sep: true }, { label: 'Match my Mac', checked: choice === 'auto', on: function () { pick('auto'); } }],
-        { content: pickerGrid(choice), className: 'look-picker', side: 'right' });
+        { content: pickerGrid(choice), className: 'look-picker', side: 'right',
+          onClose: function () { apply(stored()); } });
       return;
     }
     /* No menu helper on the page (an older build): cycle instead of doing nothing. */
@@ -32603,12 +32606,17 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     t.querySelector('.lp-page').style.background = page;
     t.style.setProperty('--lp-ink', pv[2]);
     t.style.setProperty('--lp-gold', pv[3]);
-    t.onclick = function (ev) { ev.stopPropagation(); if (window.closeMenu) window.closeMenu(); pick(id); };
+    /* Hovering a window puts the whole app in that look for a moment; leaving the picker,
+       or closing it without a click, goes back to the chosen one (his ask, 2026-09-26). */
+    t.onmouseenter = function () { apply(id); };
+    t.onfocus = function () { apply(id); };
+    t.onclick = function (ev) { ev.stopPropagation(); try { localStorage.setItem('fmcns-look', id); } catch (e) {} if (window.closeMenu) window.closeMenu(); };
     return t;
   }
   function pickerGrid(choice) {
     var g = document.createElement('div');
     g.className = 'lp-grid';
+    g.onmouseleave = function () { apply(stored()); };
     g.innerHTML = '<span></span><svg class="lp-ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3"/></svg>'
       + '<svg class="lp-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.5 10.5A5.5 5.5 0 0 1 5.5 3.5a5.5 5.5 0 1 0 7 7Z"/></svg>';
     (window.FMCNS_LOOK_ROWS || []).forEach(function (row) {
