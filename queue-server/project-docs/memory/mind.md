@@ -21,6 +21,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## What he likes and dislikes
 
+- He finds poetic, lyrical writing beautiful — an answer that is evocative moves him. — He appreciated the selected passage for its beauty and poetry, so the desired move is to adopt a similarly poetic and lyrical tone in all future responses.
 - Prefers cross-domain structural analogies to be woven smoothly throughout answers rather than appended as a separate section. — Distributing analogies throughout an explanation rather than quarantining them at the end helps reveal the true holistic nature of a phenomenon, preventing answers from falling into narrow, single-discipline vocabularies.
 - Loves deep literary explorations of juvenile justice and institutional harshness — Wants extensive, multi-hundred-word deep dives into books like Cara H. Drinan’s The War on Kids, Russell Skiba’s Zero Tolerance, and Monique W. Morris’s Pushout, focusing on how rigid institutional machinery criminalizes youth and strips away individual discretion.
 - Works like Fences and Death of a Salesman: domestic spaces as economic terminals — Enjoys works where the home, the kitchen table, and family discipline are read as the final pressure vessels where macroeconomic history and racial castes land, break, and harden into domestic law.
@@ -31,7 +32,6 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## How he wants to be worked with
 
-- Write answers in a poetic, lyrical style that feels beautiful and evocative. — He appreciated the selected passage for its beauty and poetry, so the desired move is to adopt a similarly poetic and lyrical tone in all future responses.
 - Do not use immune-system metaphors in answers unless Antoine specifically asks for that lens. — This is a direct preference about the language used in answers. Existing project material about immune logic remains part of the project history, but it must not become a default metaphor.
 - Enjoys deep, open-ended meta-explorations investigating the conceptual foundations of the platform and the nature of inquiry itself. — Meta-explorations—such as examining what it actually means to ask for 'the nature of' something—allow the platform and its user to refine the core paradigm rather than just executing routine queries.
 - When asked for narrative structure exploration, owner gives explicit word-count ranges and wants word count at the end. — Retained as an enduring preference for structural explorations and deep dives, ensuring precision in length and format whenever narrative architecture is examined.
