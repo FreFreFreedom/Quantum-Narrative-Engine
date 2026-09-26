@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Automating Justice: AI Reimagining Prosecutor and Defender — conversations/automating-justice-ai-reimagining-prosecutor-and-defender-cf34af05.md
+- Automating Justice: Speculative Futures of Defense and Prosecution — conversations/automating-justice-speculative-futures-of-defense-and-prosecution-cf34af05.md
 - Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
 - Kinetic workout media selection — conversations/kinetic-workout-media-selection-a7051bc8.md
 - Cook County Court as Fractal Injustice Anatomy — conversations/cook-county-court-as-fractal-injustice-anatomy-05863085.md
