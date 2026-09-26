@@ -3312,6 +3312,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-chap-rib { display:inline-block; flex:none; width:10px; height:14px; background:var(--c-kept-rule, var(--c-brand)); clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%); }
 /* His pick 1 (2026-09-25): small gold capitals, centred between two short hairlines. */
 .se-chap { position:relative; display:flex; align-items:center; gap:14px; margin:1.2em 12% 1em; }
+ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
 .se-chap::before { content:''; order:0; flex:1; height:1px; background:var(--c-kept-rule, var(--c-brand)); opacity:.45; }
 .se-chap::after { content:attr(data-name); order:1; font:500 9.5px/1.4 'Cinzel', var(--font-read); letter-spacing:.28em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-brand)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:72%; }
 .se-chap .se-chap-rib { order:3; flex:1; width:auto; height:1px; clip-path:none; opacity:.45; }
@@ -29926,15 +29927,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // sent, and no way back to the spot).
   function saveMark(e, messageId, snippet, repaint){
     if(!e.convoId || !messageId) return;
-    apiWrite('/api/convos/' + e.convoId + '/marks', 'POST', { messageId: messageId, snippet: snippet })
+    // Shown at once, named by the server for what follows (never its first words).
+    var tmp = { id: 'pending-' + Date.now(), message_id: messageId, snippet: String(snippet || '').replace(/\s+/g, ' ').trim(), label: '\u00b7 \u00b7 \u00b7' };
+    if(!e.marks) e.marks = [];
+    e.marks.push(tmp);
+    if(repaint) repaint();
+    apiWrite('/api/convos/' + e.convoId + '/marks/named', 'POST', { messageId: messageId, snippet: snippet })
       .then(function(out){
-        if(out && out.mark){
-          if(!e.marks) e.marks = [];
-          e.marks.push(out.mark);
-        }
+        e.marks = (e.marks || []).filter(function(m){ return m.id !== tmp.id; });
+        if(out && out.mark) e.marks.push(out.mark);
         if(repaint) repaint();
       })
-      .catch(function(){ e.note = 'Could not save that chapter.'; if(repaint) repaint(); });
+      .catch(function(){ e.marks = (e.marks || []).filter(function(m){ return m.id !== tmp.id; }); e.note = 'Could not save that chapter.'; if(repaint) repaint(); });
   }
 
   function dropMark(e, markId, repaint){
@@ -30206,7 +30210,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function gapBlocks(body){
     var out = [];
     Array.prototype.forEach.call(body.children, function(el){
-      if(/^(P|H[1-6]|UL|OL|BLOCKQUOTE|PRE|TABLE)$/.test(el.tagName)){ if(el.textContent.trim()) out.push(el); }
+      // Each bullet is its own place: a chapter can fall between two of them.
+      if(/^(UL|OL)$/.test(el.tagName)){ Array.prototype.forEach.call(el.children, function(li){ if(li.tagName === 'LI' && li.textContent.trim()) out.push(li); }); }
+      else if(/^(P|H[1-6]|BLOCKQUOTE|PRE|TABLE)$/.test(el.tagName)){ if(el.textContent.trim()) out.push(el); }
       else if(el.tagName === 'DIV' && !el.matches('.se-cover, .se-card, .se-chap')) out = out.concat(gapBlocks(el));
     });
     return out;
@@ -30232,6 +30238,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(!body || snip.length < 2) return;
       var blocks = gapBlocks(body), at = -1;
       for(var i = 0; i < blocks.length; i++){ if(gapSnippet(blocks[i]).indexOf(snip) === 0){ at = i; break; } }
+      // Saved from a selection mid-paragraph: drawn above the paragraph or bullet it starts in.
+      if(at < 0){ var probe = snip.slice(0, 60); for(var j = 0; j < blocks.length; j++){ if(blocks[j].textContent.replace(/\s+/g, ' ').indexOf(probe) !== -1){ at = j; break; } } }
       if(at < 0) return;
       var d = document.createElement('div');
       d.className = 'se-chap';

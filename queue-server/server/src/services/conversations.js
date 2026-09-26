@@ -1177,42 +1177,75 @@ export function addMark(convoId, { messageId, snippet = '', label = '' } = {}) {
   return { ok: true, mark: db.prepare(`SELECT * FROM convo_marks WHERE id=?`).get(id) };
 }
 
-// A chapter dropped at a gap is named for what comes after it, not typed (his
-// ask, 2026-09-25: "I just wanna select the place"). The words from the gap to
-// the end of the answer are the evidence; a failed call keeps the first words.
+// Every chapter is named for what comes after it, never typed and never left as
+// its first words (his asks, 2026-09-25 and 2026-09-26: "I just wanna select the
+// place", and names that kept falling back to the opening words). The words from
+// the chapter's place to the end of the answer are the evidence.
 export async function addNamedMark(convoId, { messageId, snippet = '' } = {}) {
   const made = addMark(convoId, { messageId, snippet });
   if (!made.ok) return made;
+  return (await nameMark(convoId, made.mark.id)) || made;
+}
+
+const CHAPTER_LANES = [
+  { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', strictModel: true },
+  { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', strictModel: true },
+  { provider: 'google-ai-studio', model: 'gemini-flash-latest', strictModel: true },
+  { provider: 'claude-side', account: 'side', model: 'haiku', strictModel: true },
+  { provider: 'codex', strictModel: true },
+];
+
+const flatText = (s) => String(s || '').replace(/[#*_>`]/g, '').replace(/\s+/g, ' ').trim();
+
+// A name that is only the passage's opening words is no name.
+function isUnnamed(mark) {
+  const label = flatText(mark?.label).replace(/\u2026$/, '');
+  const snip = flatText(mark?.snippet);
+  return !label || label === 'Chapter' || (snip && snip.startsWith(label)) || (label.length > 20 && label.startsWith(snip.slice(0, 20)));
+}
+
+function chapterName(raw) {
+  const t = cleanTitle(String(raw || '').replace(/^\s*(chapter\s*[\divxlc]*\s*[:.\-\u2014]\s*)/i, ''));
+  if (t) return t;
+  // Two strong words is still a name ("Inner prosecutor"); cleanTitle wants three.
+  const two = String(raw || '').trim().split('\n')[0].replace(/^["'\u201c\u2018]+|["'\u201d\u2019.]+$/g, '').trim();
+  return /^\S+\s+\S+$/.test(two) && two.length <= 40 ? two : null;
+}
+
+export async function nameMark(convoId, markId) {
   try {
-    const msg = db.prepare(`SELECT text FROM convo_messages WHERE id=? AND convo_id=?`).get(String(messageId), convoId);
-    const flat = String(msg?.text || '').replace(/[#*_>`]/g, '').replace(/\s+/g, ' ');
-    const snip = String(snippet || '').replace(/[#*_>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    const mark = db.prepare(`SELECT * FROM convo_marks WHERE id=? AND convo_id=?`).get(markId, convoId);
+    if (!mark) return null;
+    const msg = db.prepare(`SELECT text FROM convo_messages WHERE id=? AND convo_id=?`).get(mark.message_id, convoId);
+    const flat = flatText(msg?.text);
+    const snip = flatText(mark.snippet).slice(0, 60);
     const at = snip ? flat.indexOf(snip) : -1;
     const passage = (at >= 0 ? flat.slice(at) : flat).slice(0, 3000);
-    // Gemini Flash Lite first, twice (it sometimes answers empty); then the Claude
-    // subscription, then the ChatGPT one — his order, 2026-09-25. Both of those
-    // go through the Mac runner, so with it off only Gemini can name.
-    const lanes = [
-      { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', strictModel: true },
-      { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', strictModel: true },
-      { provider: 'claude-side', account: 'side', model: 'haiku', strictModel: true },
-      { provider: 'codex', strictModel: true },
-    ];
+    if (passage.length < 20) return null;
+    const prompt = 'Below is the part of a long answer that starts where the reader placed a chapter break. Name this chapter: three to six words saying what this part is about, the way a good book names its chapters. Concrete and specific to this passage, never generic ("Rent as a trauma engine", "The prosecutor who guards the line" — not "Analysis", "Introduction", "Key ideas"). Never copy the passage\'s opening words. Reply with the name alone, no quotes, no numbering.\n\n' + passage;
     let name = null;
-    for (let i = 0; i < lanes.length && !name; i++) {
+    for (let i = 0; i < CHAPTER_LANES.length && !name; i++) {
       const out = await generateText({
-        ...lanes[i], feature: 'summary', label: 'conversations:chapter-name', maxTokens: 400, timeoutMs: i < 2 ? 15_000 : 40_000, maxAttempts: 1,
-        prompt: 'Below is a passage from a long answer. Give it a chapter name: three to six words naming what this part is about, the way a book names a chapter. Concrete, not generic ("Rent as a trauma engine", not "Analysis"). Reply with the name alone, no quotes.\n\n' + passage,
+        ...CHAPTER_LANES[i], feature: 'summary', label: 'conversations:chapter-name', maxTokens: 400, timeoutMs: i < 3 ? 15_000 : 40_000, maxAttempts: 1, prompt,
       }).catch(() => null);
-      name = cleanTitle(out?.text);
+      const cand = chapterName(out?.text);
+      if (cand && !isUnnamed({ label: cand, snippet: mark.snippet })) name = cand;
     }
-    if (name) {
-      db.prepare(`UPDATE convo_marks SET label=? WHERE id=?`).run(name.slice(0, 80), made.mark.id);
-      broadcastAll('convos:updated', { convoId });
-      return { ok: true, mark: db.prepare(`SELECT * FROM convo_marks WHERE id=?`).get(made.mark.id) };
-    }
-  } catch (err) { console.warn('[chapter-name]', err?.message || err); }
-  return made;
+    if (!name) return null;
+    db.prepare(`UPDATE convo_marks SET label=? WHERE id=?`).run(name.slice(0, 80), mark.id);
+    broadcastAll('convos:updated', { convoId });
+    return { ok: true, mark: db.prepare(`SELECT * FROM convo_marks WHERE id=?`).get(mark.id) };
+  } catch (err) { console.warn('[chapter-name]', err?.message || err); return null; }
+}
+
+// Chapters still wearing their first words get a real name when the thread is
+// opened — once per chapter per boot, so a lane that keeps failing costs nothing.
+const namingTried = new Set();
+export function nameUnnamedMarksSoon(convoId) {
+  const todo = listMarks(convoId).filter((m) => isUnnamed(m) && !namingTried.has(m.id));
+  if (!todo.length) return;
+  todo.forEach((m) => namingTried.add(m.id));
+  (async () => { for (const m of todo) await nameMark(convoId, m.id); })().catch(() => {});
 }
 
 export function deleteMark(convoId, markId) {

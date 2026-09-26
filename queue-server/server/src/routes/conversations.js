@@ -318,6 +318,7 @@ export function conversationsRoutes() {
   router.get('/:id', (req, res) => {
     const convo = convos.getConvo(req.params.id);
     if (!convo) return res.status(404).json({ error: 'not_found' });
+    convos.nameUnnamedMarksSoon(convo.id);
     // chat_override rides on the row as a raw JSON string (or null) — parsed here
     // into { provider, model, account, tag } so the frontend never re-implements
     // the parse, same shape as GET/POST /:id/lane below.
