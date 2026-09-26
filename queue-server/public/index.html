@@ -2478,7 +2478,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-convo .se-draftbox { padding:6px 8px 6px 10px; border-radius:26px; }
 .room-convo .se-draftbox:has(.se-attachment-summary:not([hidden])), .room-convo .se-draftbox:has(.se-attachment-drawer:not([hidden])) { border-radius:16px; }
 .room-convo .se-compose { flex-wrap:nowrap; align-items:flex-end; gap:6px; }
-.room-convo .se-input { order:0; flex:1 1 auto; width:auto; padding:7px 4px; line-height:1.4; }
+.room-convo .se-input { order:0; flex:1 1 auto; width:auto; padding:7px 4px; line-height:1.4; max-height:45vh; }
 .room-convo .se-more, .room-convo .se-mic, .room-convo .se-talk { width:30px; height:30px; border-color:transparent; margin-bottom:2px; }
 .room-convo .se-more:hover, .room-convo .se-mic:hover, .room-convo .se-talk:hover { border-color:var(--c-border-2); }
 .room-convo .se-send { width:32px; height:32px; margin-bottom:1px; }
@@ -2487,7 +2487,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 70%, var(--c-ink-5)); background:transparent; max-width:64px; }
 .room-convo .se-lanepick.is-set, .room-convo .se-lanepick:hover, .room-convo .se-lanemodel:hover, .room-convo .se-laneeffort:hover { color:var(--c-kept-echo, var(--c-accent)); }
 .room-convo .se-lane-clear { font-size:var(--fs-2xs); color:var(--c-ink-5); }
-.room-convo .se-spend { margin:0 4px 8px; }
+/* The cost sits on the same bottom line as the model, right after it, as one quiet
+   pair — it used to float centred in a tall box, on no line at all (2026-09-26). */
+.room-convo .se-spend { order:1; align-self:flex-end; margin:0 10px 11px 0; line-height:1; }
 .room-convo .se-compose.se-dictating .se-micwave { margin-bottom:4px; }
 /* While dictating the words have the line and the wave is a small mark beside the
    microphone (his pick B, 2026-09-25): the wide wave squeezed what was heard to the left. */
@@ -2503,7 +2505,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 /* Placement 1 (his pick, 2026-09-24): the model after the line, before the microphone,
    in the dimmest gold — a word you find when you look for it. */
 .room-convo .se-lanewrap { order:1; margin-right:4px; }
-.room-convo .se-spend, .room-convo .se-miccancel, .room-convo .se-micwave, .room-convo .se-mic, .room-convo .se-talk, .room-convo .se-send { order:2; }
+.room-convo .se-miccancel, .room-convo .se-micwave, .room-convo .se-mic, .room-convo .se-talk, .room-convo .se-send { order:2; }
 .room-convo .se-miccancel { width:30px; height:30px; margin-bottom:2px; }
 .room-convo .se-lanebtn { font-size:9px; letter-spacing:.2em; color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, var(--c-ink-5)); }
 .room-convo .se-lanebtn.is-set { color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, var(--c-ink-5)); }
@@ -30740,7 +30742,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       + '\n\nMY MESSAGE:\n' + text;
   }
 
-  function grow(el){ el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
+  // The Room's box grows to almost half the window, so a long prompt can be read
+  // whole before it goes (his ask, 2026-09-26: only two lines showed).
+  function grow(el){ var cap = el.closest && el.closest('.room-convo') ? Math.max(110, Math.round(window.innerHeight * 0.45)) : 110; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, cap) + 'px'; }
 
   // Everything that changes between repaints, written into a scaffold that stays
   // put — so the composer keeps the caret, the selection and any IME state while
