@@ -15730,11 +15730,17 @@ async function roomFindMediaArt(item) {
       } else if (kind === 'book') {
         // The server first: it scores matches across Open Library and Google, falls
         // back to an ISBN when both are down, and keeps what it finds for next time.
+        // When the server answers, its answer stands, even an empty one: the loose
+        // search below took the first book with a cover and hung "Conspirators'
+        // Hierarchy" on "Black Detroit" (2026-09-25). It runs only if the server is out.
+        let asked = false;
         try {
           const f = await api('/api/convos/outlink?kind=book&title=' + encodeURIComponent(title)
             + '&creator=' + encodeURIComponent(item?.creator || '') + '&year=' + encodeURIComponent(item?.year || ''));
+          asked = true;
           if (f && /^https:\/\//.test(f.cover || '')) { roomMediaArtCache.set(key, f.cover); return f.cover; }
         } catch (_) {}
+        if (asked) throw new Error('no cover');
         // Open Library's `title=` field wants the title ALONE — a title with the
         // author appended, or with its own subtitle punctuation, matched nothing
         // at all, which is why every book here used to draw a grey placeholder.
@@ -15749,9 +15755,12 @@ async function roomFindMediaArt(item) {
         const tries = [surname ? 'title=' + encodeURIComponent(plain(title)) + '&author=' + encodeURIComponent(surname) : '',
           'q=' + encodeURIComponent(plain(title) + (who ? ' ' + who : '')), 'q=' + encodeURIComponent(plain(title))].filter(Boolean);
         for (const q of tries) {
-          const r = await fetch('https://openlibrary.org/search.json?' + q + '&limit=1&fields=cover_i');
+          const r = await fetch('https://openlibrary.org/search.json?' + q + '&limit=5&fields=cover_i,title');
           if (!r.ok) continue;
-          const id = (await r.json())?.docs?.[0]?.cover_i;
+          // Every word of the main title must be in the match's title.
+          const want = plain(String(title).split(/[:–—]/)[0]).toLowerCase().split(' ').filter((w) => w.length > 2);
+          const doc = ((await r.json())?.docs || []).find((d) => d.cover_i && want.every((w) => String(d.title || '').toLowerCase().includes(w)));
+          const id = doc?.cover_i;
           if (!id) continue;
           const u = 'https://covers.openlibrary.org/b/id/' + id + '-M.jpg';
           roomMediaArtCache.set(key, u); return u;

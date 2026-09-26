@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readInterestScreenshot } from './interestScreenshot.js';
+import { canonicalBook } from './bookFacts.js';
 
 let db;
 const requestTimes = new Map();
@@ -67,6 +68,8 @@ export function bindInterestLibrary(database) {
   `);
   try { db.exec('ALTER TABLE interest_imports ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0'); } catch {}
   try { db.exec('ALTER TABLE interest_imports ADD COLUMN retry_at TEXT'); } catch {}
+  // 1 once a book's title and author have been checked against the catalogue.
+  try { db.exec('ALTER TABLE interest_works ADD COLUMN checked INTEGER NOT NULL DEFAULT 0'); } catch {}
   // One server owns this SQLite queue; resume interrupted reads after boot.
   db.prepare("UPDATE interest_imports SET status='queued',retry_at=NULL WHERE status='reading'").run();
   clearReviewBacklog();
@@ -74,6 +77,30 @@ export function bindInterestLibrary(database) {
   timer.unref();
   purge();
   setTimeout(() => void drain(), 1000).unref();
+  setTimeout(() => void tidyBooks(), 20000).unref();
+}
+
+// A book read off a screenshot is checked once against the catalogue, one at a
+// time: a clipped author ("Boy" for Herb Boyd) or a title cut at "…" is put back
+// whole, which is also what lets its real cover be found (2026-09-25).
+let tidying = false;
+async function tidyBooks() {
+  if (!db || tidying) return;
+  tidying = true;
+  try {
+    for (;;) {
+      const w = db.prepare("SELECT id,owner,title,creator,year FROM interest_works WHERE kind='book' AND checked=0 ORDER BY created_at DESC LIMIT 1").get();
+      if (!w) break;
+      db.prepare('UPDATE interest_works SET checked=1 WHERE id=?').run(w.id);
+      let fix = null;
+      try { fix = await canonicalBook(w.title, w.creator); } catch (_) {}
+      if (!fix) continue;
+      const title = clean(fix.title || w.title), creator = clean(fix.creator ?? w.creator);
+      const identity = ['book', norm(title), norm(creator)].join('|');
+      try { db.prepare('UPDATE interest_works SET title=?,creator=?,identity=? WHERE id=?').run(title, creator, identity, w.id); }
+      catch (_) { /* the whole name is already saved as its own row */ }
+    }
+  } finally { tidying = false; }
 }
 
 // Entries parked by the old review rule are saved outright, so nothing is left
@@ -226,6 +253,7 @@ async function readOne(b) {
           db.prepare('UPDATE interest_imports SET status=?,image=NULL,result=?,error=NULL,retry_at=NULL WHERE id=?')
             .run(result.recognised ? 'done' : 'ordinary', JSON.stringify(counts), b.id);
         });
+        void tidyBooks();
       } catch (err) {
         const current = batchFor(b.owner, b.id);
         if (Number(current.attempts || 0) < 3) {

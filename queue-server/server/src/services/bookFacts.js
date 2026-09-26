@@ -91,11 +91,18 @@ function scoreCandidate(cand, fullTitle, who) {
 
   const sn = surname(who);
   const authors = norm((cand.authors || []).join(' '));
+  let clipped = false;
   if (sn) {
     if (!authors) return 0;                        // an author we can't check is not a match
-    if (!authors.split(' ').includes(sn)) return 0;
+    const toks = authors.split(' ');
+    if (!toks.includes(sn)) {
+      // A name cut off at the edge of a screenshot ("Herb Boy" for Herb Boyd) still
+      // counts, but only as the start of a real surname and never below 3 letters.
+      if (!(sn.length >= 3 && toks.some((t) => t.length > sn.length && t.startsWith(sn)))) return 0;
+      clipped = true;
+    }
   }
-  return 4 + tailHit + (sn ? 4 : 0) + (norm(cand.title) === norm(fullTitle) ? 3 : 0);
+  return 4 + tailHit + (sn ? (clipped ? 2 : 4) : 0) + (norm(cand.title) === norm(fullTitle) ? 3 : 0);
 }
 
 // Google's "no cover" art and the generic library-binding scans are real images of
@@ -210,6 +217,36 @@ export async function lookupBook(title, creator) {
     }
   }
   return out;
+}
+
+// The catalogue's own spelling of a book read off a screenshot. A reader copies
+// what it sees, and what it sees is often cut at the edge — "Boy" for Herb Boyd,
+// a title ending in "…" — which then finds no cover, or someone else's. Only a
+// clipped or missing name is replaced; a full name in another order is left alone.
+export async function canonicalBook(title, creator) {
+  const shown = String(title || '').replace(/\s*(?:…|\.\.\.)\s*$/, '').trim();
+  const clippedTitle = shown !== String(title || '').trim();
+  const who = personName(creator), sn = surname(who);
+  const main = mainTitle(shown);
+  let best = null;
+  for (const q of [main + (who ? ' ' + who : ''), shown, main]) {
+    const j = await getJson('https://openlibrary.org/search.json?limit=8&fields=title,subtitle,author_name&q=' + encodeURIComponent(q));
+    for (const doc of j?.docs || []) {
+      const full = [doc.title, doc.subtitle].filter(Boolean).join(': ');
+      const score = scoreCandidate({ title: full, authors: doc.author_name || [] }, shown, who);
+      if (score > 0 && (!best || score > best.score)) best = { score, full, authors: doc.author_name || [] };
+    }
+    if (best) break;
+  }
+  if (!best || !best.authors.length) return null;
+  const out = {};
+  const toks = norm(best.authors.join(' ')).split(' ');
+  // No author on the screenshot: take the catalogue's only when the title agrees
+  // word for word, so a common title never borrows a stranger's name.
+  if (!sn) { if (norm(best.full).startsWith(norm(shown)) && words(shown).length >= 2) out.creator = best.authors[0]; }
+  else if (!toks.includes(sn)) out.creator = best.authors.find((a) => norm(a).split(' ').some((t) => t.startsWith(sn))) || best.authors[0];
+  if (clippedTitle && norm(best.full).startsWith(norm(shown))) out.title = best.full;
+  return Object.keys(out).length ? out : null;
 }
 
 function isbn10(isbn) {
