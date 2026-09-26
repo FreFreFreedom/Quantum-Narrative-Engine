@@ -901,7 +901,8 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // The Room's own answer (and its length continuation, and its free-lane fallback
   // when a paid lane fails, which arrives with no feature) is never held back by
   // the reserve below; everything else is background work.
-  const forAnswer = feature === 'studio' || /^conversations:(chat|length-continuation)\b/.test(String(label || ''));
+  // A chapter name is one tiny call he asked for by clicking, so it counts as his too.
+  const forAnswer = feature === 'studio' || /^conversations:(chat|length-continuation|chapter-name)\b/.test(String(label || ''));
   // Rough token count, the same 3.6-chars-a-token rule promptCharBudget uses.
   const promptTokens = Math.ceil(String(prompt || '').length / 3.6);
 

@@ -1193,6 +1193,7 @@ const CHAPTER_LANES = [
   { provider: 'google-ai-studio', model: 'gemini-flash-latest', strictModel: true },
   { provider: 'claude-side', account: 'side', model: 'haiku', strictModel: true },
   { provider: 'codex', strictModel: true },
+  {}, // any free model that is awake
 ];
 
 const flatText = (s) => String(s || '').replace(/[#*_>`]/g, '').replace(/\s+/g, ' ').trim();
@@ -1226,7 +1227,7 @@ export async function nameMark(convoId, markId) {
     let name = null;
     for (let i = 0; i < CHAPTER_LANES.length && !name; i++) {
       const out = await generateText({
-        ...CHAPTER_LANES[i], feature: 'summary', label: 'conversations:chapter-name', maxTokens: 400, timeoutMs: i < 3 ? 15_000 : 40_000, maxAttempts: 1, prompt,
+        ...CHAPTER_LANES[i], feature: 'summary', label: 'conversations:chapter-name', maxTokens: 400, timeoutMs: i < 3 ? 15_000 : 40_000, maxAttempts: CHAPTER_LANES[i].provider ? 1 : 3, prompt,
       }).catch(() => null);
       const cand = chapterName(out?.text);
       if (cand && !isUnnamed({ label: cand, snippet: mark.snippet })) name = cand;
