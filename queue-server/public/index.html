@@ -788,14 +788,14 @@ body::after {
   --c-ink-solid: #f1e8d4; --c-on-solid: var(--pnl); --c-hover-wash: rgba(241,232,212,0.06); color: #f1e8d4;
   --c-kept-echo: #e2bf76; --c-accent: #e2bf76; --c-read: #efe4cc;
 }
-/* Dusk light and a faint canvas weave on every dark surface, the frame round the page included. */
-:root:is([data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) :is(#wsRoom .room-threads, #wsRoom .room-cards, .rail-inner, #wsRoom.open) {
+/* The panel is a deeper shade of its colour all over, no light (his pick "Deep all over",
+   2026-09-26 — the lit top read as a glow he didn't want), with a faint canvas weave. */
+:root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) :is(#wsRoom .room-threads, #wsRoom .room-cards, .rail-inner, #wsRoom.open) {
   background-color: var(--pnl);
   background-image:
     repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 2px),
     repeating-linear-gradient(90deg, rgba(0,0,0,.022) 0 1px, transparent 1px 2px),
-    radial-gradient(120% 60% at 30% 0%, rgba(255,255,255,.10), transparent 70%),
-    linear-gradient(to bottom, color-mix(in srgb, var(--pnl) 78%, #fff) 0%, var(--pnl) 45%, color-mix(in srgb, var(--pnl) 55%, #000) 100%);
+    linear-gradient(to bottom, color-mix(in srgb, var(--pnl) 78%, #000) 0%, color-mix(in srgb, var(--pnl) 60%, #000) 100%);
 }
 /* Its side panels and the rail are the dark panel colour, with their own ink. */
 :root[data-look="creamnavy"] :is(#wsRoom .room-threads, #wsRoom .room-cards, .rail-inner) {
@@ -32518,14 +32518,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var pv = LOOKS[id].pv, p = pv[0], kind = pv[1];
     var mix = function (a, b, n) { return 'color-mix(in srgb, ' + a + ' ' + n + '%, ' + b + ')'; };
     var stars = 'radial-gradient(1px 1px at 20% 30%,#fff8,transparent),radial-gradient(1px 1px at 70% 22%,#fff6,transparent),radial-gradient(1px 1px at 48% 72%,#fff6,transparent),radial-gradient(1px 1px at 86% 60%,#fff5,transparent)';
-    var rail = kind === 'day' ? 'linear-gradient(' + mix(p, '#fff', 80) + ',' + p + ' 45%,' + mix(p, '#000', 55) + ')'
+    var rail = kind === 'day' ? 'linear-gradient(' + mix(p, '#000', 78) + ',' + mix(p, '#000', 60) + ')'
       : kind === 'candle' ? '#20160e' : mix(p, '#000', 38);
     var page = kind === 'day' ? 'linear-gradient(115deg,#e7dcc6,#f3eee2 45%)'
       : kind === 'candle' ? 'radial-gradient(90% 70% at 40% 25%,#3a2716,#221710 60%,#170f0a)'
       : stars + ',radial-gradient(100% 80% at 70% 0%,' + mix(p, '#fff', 90) + ',' + mix(p, '#000', 55) + ' 55%,' + mix(p, '#000', 30) + ')';
     t.innerHTML = '<span class="lp-rail"></span><span class="lp-page"><i class="lp-t"></i><i></i><i></i><i class="lp-s"></i></span>';
     t.querySelector('.lp-rail').style.background = rail;
-    t.style.background = kind === 'day' ? p : rail;   // the frame round the little page
+    t.style.background = kind === 'day' ? mix(p, '#000', 70) : rail;   // the frame round the little page
     t.querySelector('.lp-page').style.background = page;
     t.style.setProperty('--lp-ink', pv[2]);
     t.style.setProperty('--lp-gold', pv[3]);
