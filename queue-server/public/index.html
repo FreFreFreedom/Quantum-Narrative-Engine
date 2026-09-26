@@ -30927,12 +30927,40 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     window.addEventListener('pagehide', function(){ document.querySelectorAll('.se-log').forEach(function(l){ try { saveReadPos(l); } catch(err){} }); });
   }
 
+  // Following an answer as it streams is right only while he is at the end. The
+  // test used to be distance alone (within 24px), and a trackpad's first flick
+  // upward moves a few pixels at a time — every repaint (one a frame while an
+  // answer streams) still found him "at the bottom" and pulled him back down: he
+  // could not scroll up while GPT-4.1 was writing (2026-09-26). Any upward move of
+  // his own now lets go; scrolling back down to the end takes hold again.
+  function wireFollow(log){
+    if(log._followWired) return;
+    log._followWired = 1;
+    var lastTop = log.scrollTop, lastInput = 0;
+    var mark = function(){ lastInput = Date.now(); };
+    log.addEventListener('wheel', function(ev){ mark(); if(ev.deltaY < 0) log._detached = 1; }, { passive: true });
+    ['touchstart', 'touchmove', 'mousedown'].forEach(function(ev){ log.addEventListener(ev, mark, { passive: true }); });
+    log.addEventListener('keydown', function(ev){ mark(); if(/^(ArrowUp|PageUp|Home)$/.test(ev.key) || (ev.key === ' ' && ev.shiftKey)) log._detached = 1; });
+    log.addEventListener('scroll', function(){
+      var top = log.scrollTop, dist = log.scrollHeight - top - log.clientHeight;
+      // Only his own hand lets go: a repaint that briefly shortens the page also
+      // moves scrollTop up, and must not count.
+      if(top < lastTop - 1 && Date.now() - lastInput < 1000) log._detached = 1;
+      else if(top > lastTop && dist < 24) log._detached = 0;
+      lastTop = top;
+    }, { passive: true });
+  }
+
   function fillEmbed(host, e, opts){
     persistAttachments(e);
     var log = host.querySelector('.se-log');
+    wireFollow(log);
+    // A different thread in the same panel starts out following its end.
+    var followKey = e.convoId || host.getAttribute('data-se');
+    if(log._followKey !== followKey){ log._followKey = followKey; log._detached = 0; }
     // Hold the reading position. A repaint that yanks you to the bottom while you
     // are three turns up reading is the sort of thing that makes a panel feel cheap.
-    var atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 24;
+    var atBottom = !log._detached && log.scrollHeight - log.scrollTop - log.clientHeight < 24;
     var was = log.scrollTop;
     var nextLog=logHtml(e);
     var selection=window.getSelection();
