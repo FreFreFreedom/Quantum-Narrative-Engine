@@ -20,8 +20,9 @@
   DEPTH (meaning, not a recital), his own self-description from that app, and the sectioned
   page. See AGENTS.md "Depth: meaning, not a recital" and "On the page".
 
-  The live Room reads the AI Settings voice box, not this file — after editing here, paste
-  the body into the box too, or the Room keeps the old voice.
+  Since 2026-09-26 the Room no longer answers in this voice: its AI Settings box holds
+  the-room.md (his portrait and paradigm, no rules) — see AGENTS.md "The Room answers from
+  context, not rules". Do not paste this file into the box. It still feeds the generators.
 
   Body starts after this comment; everything below is sent to the model verbatim.
 -->

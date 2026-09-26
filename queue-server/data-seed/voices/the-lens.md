@@ -17,8 +17,8 @@
   concrete thing it is shown.
 
   Two parts, split by the ARC marker, loaded by server/src/services/ai/voice.js: the lens
-  goes to everything that interprets meaning; the part after the marker only to the Room's
-  full answers. Authority: AGENTS.md, "The lens". Body starts after this comment.
+  goes to everything that interprets meaning except the Room (which answers from context
+  only since 2026-09-26); the part after the marker is no longer sent anywhere. Authority: AGENTS.md, "The lens". Body starts after this comment.
 -->
 
 THE LENS

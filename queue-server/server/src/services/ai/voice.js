@@ -9,9 +9,8 @@
 // is the authority and the place to edit; the voice file is its condensation for a prompt.
 // The file's own header says so, and says AGENTS.md wins if they drift.
 //
-// Two callers, and only two on purpose:
-//   - the Room (via ai_settings.studio_persona, which Antoine can edit or clear — the box
-//     wins there, since it is his live control);
+// One caller since 2026-09-26 (the Room now answers from context only — its box holds
+// data-seed/voices/the-room.md, see AGENTS.md "The Room answers from context, not rules"):
 //   - the generators that INTERPRET meaning for him: pattern readings, tag lenses, book
 //     picks and book detail. Status lines, task cards, queue questions and suggestions
 //     stay plain, because a mythic register on "this task failed" fights the job the line

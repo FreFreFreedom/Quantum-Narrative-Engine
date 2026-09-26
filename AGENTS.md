@@ -272,6 +272,24 @@ never on warmth. Flowing prose is welcome and so is layered depth; a paragraph t
 rather than delivers is not. (This supersedes an earlier "short, tight declarative blocks"
 rule written the same day, which fought the conversational warmth in his profile above.)
 
+**The Room answers from context, not rules (hard, his call 2026-09-26 — overrides how the
+two sections below reach the Room).** A day after the rules below went in, he said: the more
+he tells the model how to answer, the less he likes the answers. Plain Gemini on Google, with
+no setup at all, and GPT-4.1 on miniapps.ai, with one bare line plus his self-description,
+both beat a Room that sent ~30k tokens of shape, length, lens, arc and banned-word rules and
+then had a second reader rewrite the answer. He still wants the Room to know his paradigm so
+he never has to repeat himself. So a full Room answer now gets one line ("chat with him
+normally and answer his questions in the best way you can"), WHO HE IS (the AI Settings voice
+box, holding `queue-server/data-seed/voices/the-room.md`: his portrait in his own words and
+what he is building — context, never instruction), what the Room has learned about him, the
+conversation, and only the switches he turned on himself (Reach, the timeline, a length he
+asked for, things he told it to remember). No second reader, no lens, no page layout, no
+banned words. The project map rides only on a question about the app. **When a Room answer
+disappoints, remove a rule before adding one**; never put answer rules into the box. The two
+sections below still describe what he enjoys in an answer — they are taste, not prompt text,
+and must not be written back into the Room's prompt. Code: `ROOM_LINE` and `roomParts` in
+`services/conversations.js`.
+
 **Depth: meaning, not a recital (hard, his call 2026-09-25).** He sent one question to GPT-4.1
 on miniapps.ai and to the Room, and preferred the miniapps answer by far — and said what he
 valued most was not its layout but "the metaphors and how it talks about things, because in
@@ -280,8 +298,8 @@ line plus his own self-description; the depth was GPT-4.1 reading every role as 
 older story (archetype, myth, psychic function, ritual), turning several lenses on one thing,
 letting revealing metaphors carry the insight, building inside his frame, and using facts only
 to show meaning. Our rules had been forbidding most of that. Full wording: `qne-3-0.md`,
-"DEPTH"; a one-line tail rides every full Room answer (`DEPTH_TAIL`). His self-description from
-that app is in the voice as "WHO HE IS, IN HIS OWN WORDS". A thinker, school or myth used as a
+"DEPTH" (the Room itself no longer receives it — see the section above). His self-description
+from that app is in the voice as "WHO HE IS, IN HIS OWN WORDS". A thinker, school or myth used as a
 lens, and a short real quotation, are welcome — the no-precursors rule still bans crediting
 someone with having had his idea first.
 
@@ -294,9 +312,9 @@ then bullets that open with a bold label naming their own subject and carry two 
 sentences; a closing section that gathers the whole in a few bold-labelled lines, one closing
 sentence, and at most one line naming a next direction. A short question gets a few plain
 sentences. Fragments and nested bullets stay banned. The layout serves the depth above — a
-well-ordered page of plain facts is still a recital. Prompt text: `SHAPE_PAGE` in
-`services/conversations.js` and the arc in `the-lens.md`. Tables only where a table is the
-honest shape.
+well-ordered page of plain facts is still a recital. Tables only where a table is the honest
+shape. (The Room's `SHAPE_PAGE` rule was removed 2026-09-26 — see "The Room answers from
+context, not rules".)
 
 **Frame it, then close it.** Open with a line or two saying what the answer covers, so he
 knows the shape before the detail arrives. Close with a short recap, or a real question if
@@ -366,13 +384,13 @@ terminal agents and the app itself can read it.
 can reach it (added 2026-09-07).** Edit this section, then update them:
 
 - `queue-server/data-seed/voices/qne-3-0.md` — the same voice as a **prompt**, for models
-  that never read this file: the app's Room (through the AI Settings voice box) and the
-  generators that interpret meaning for Antoine. Loaded by
+  that never read this file: the generators that interpret meaning for Antoine. (Not the Room
+  since 2026-09-26: its voice box holds `the-room.md`, context only.) Loaded by
   `server/src/services/ai/voice.js`. Its own header says this section wins if they drift.
 - `queue-server/data-seed/voices/the-lens.md` — the lens under the voice (seeing past a
-  thing's own language to what it is), loaded by the same file and sent with every Room answer, analogy and meaning
-  generator whatever the voice box holds. Its second half, the arc of a long answer, goes to
-  the Room's full answers only.
+  thing's own language to what it is), loaded by the same file and sent with every analogy and
+  meaning generator. Its second half, the arc of a long answer, is no longer sent anywhere
+  (the Room stopped receiving it 2026-09-26).
 - `.claude/skills/qne-3-0/SKILL.md` — so the voice can also be requested by name, and so
   it is a **project** asset rather than something living only in one Mac's personal
   Claude Code folder (where QNE 1.0 and 2.0 still sit, invisible to OpenCode).
