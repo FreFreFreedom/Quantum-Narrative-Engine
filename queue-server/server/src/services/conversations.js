@@ -2036,7 +2036,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
   // Assembled through a function rather than returned outright, because a lane
   // with a hard per-minute ceiling (OpenAI) may need the same prompt built
   // smaller — see the ladder under it.
-  const assemble = ({ withMap, historyWindow }) => [
+  const parts = ({ withMap, historyWindow }) => [
     withMap ? projectMapBlock() : '',
     subjectSystemPrompt(ctx.contextText, { depth, mode: ctx.mode || 'single', tools }),
     withMap ? liveListsBlock() : '',
@@ -2091,7 +2091,8 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     askedWords
       ? `\n=== LENGTH: HE ASKED FOR ${askedWords} WORDS ===\nThis is an instruction, not a suggestion, and it overrides every other line about length, density or brevity in this prompt. Write at least ${askedWords} words. Do not stop early, do not summarise, do not offer to continue, and never end with "let me know if you want more" — write the whole thing now.\n\nReach the length by going further into the material, never by padding: more of the idea, more cases, more of what follows from it, the objection taken seriously, the scene played out. Repeating yourself in new words, restating the question, or adding a recap is a failure, not length. If you genuinely run out of substance before ${askedWords} words, go deeper into what you already said rather than wider into filler.`
       : '',
-  ].filter(Boolean).join('\n');
+  ];
+  const assemble = (o) => parts(o).filter(Boolean).join('\n');
 
   const full = assemble({ withMap: includeProjectContext, historyWindow: CONVO_HISTORY_WINDOW });
   if (!maxChars || full.length <= maxChars) return full;
@@ -2114,6 +2115,32 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     if (out.length <= maxChars) break;
     window = w;
     out = assemble({ withMap: false, historyWindow: w });
+  }
+  // 3. Still over: the context blocks themselves are too big — a subject's whole
+  //    text, a linked conversation, a long side talk's parent. A 35k-token turn
+  //    came back from gpt-4.1 as a raw "Request too large" (2026-09-26) after
+  //    steps 1 and 2 had left 140k characters. The biggest block is cut until the
+  //    prompt fits; the transcript loses its oldest words, every other block its
+  //    tail. The voice, the task and the length rule (the blocks after the
+  //    transcript) are never touched.
+  if (out.length > maxChars) {
+    const list = parts({ withMap: false, historyWindow: window });
+    const talk = list.findIndex((x) => typeof x === 'string' && x.startsWith('\n=== THE CONVERSATION SO FAR ==='));
+    const cuttable = list.map((_, i) => i).filter((i) => i <= talk && list[i]);
+    const sizes = () => list.filter(Boolean).join('\n').length;
+    console.warn(`[studio-turn] blocks: ${cuttable.map((i) => i + ':' + list[i].length).join(' ')}`);
+    for (let guard = 0; guard < 20 && sizes() > maxChars; guard++) {
+      const big = cuttable.reduce((a, i) => (list[i].length > list[a].length ? i : a), cuttable[0]);
+      const keep = Math.max(1500, list[big].length - (sizes() - maxChars) - 200);
+      if (keep >= list[big].length) break;
+      if (big === talk) {
+        const head = '\n=== THE CONVERSATION SO FAR ===\n(earlier words cut to fit)\n';
+        list[big] = head + list[big].slice(-(keep - head.length));
+      } else {
+        list[big] = list[big].slice(0, keep) + '\n(cut to fit)';
+      }
+    }
+    out = list.filter(Boolean).join('\n');
   }
   console.warn(`[studio-turn] prompt ${full.length} chars over the ${maxChars} the lane allows — dropped the project map${window < CONVO_HISTORY_WINDOW ? ` and kept the last ${window} turns` : ''}, now ${out.length}`);
   return out;

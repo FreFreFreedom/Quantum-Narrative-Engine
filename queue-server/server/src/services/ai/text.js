@@ -1531,7 +1531,13 @@ export async function generateTextStream({
         console.warn(`[${label}] tool round ${round} failed after ${text.length} chars — ${stream.message || stream.error}`);
         break;
       }
-      return fallback(`the paid model could not be reached (${stream.message || stream.error}), so this answer came from the free lane instead`);
+      // Said in words, never as the provider's raw JSON (2026-09-26).
+      const raw = String(stream.message || stream.error || '');
+      const why = /too large|tokens per min|TPM/i.test(raw) ? 'this turn was more text than it takes in a minute'
+        : /rate.?limit|429/i.test(raw) ? 'it was asked too often in the last minute'
+        : /quota|billing|insufficient/i.test(raw) ? 'its account is out of credit'
+        : 'it did not answer';
+      return fallback(`${model} could not answer — ${why} — so this came from a free model instead`);
     }
 
     let roundText = '';
