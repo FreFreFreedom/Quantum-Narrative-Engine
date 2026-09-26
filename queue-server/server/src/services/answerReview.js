@@ -11,6 +11,11 @@
 // Every failure path keeps the original answer: a reader that could lose a good
 // answer is worse than none. Dependency-free (generators are passed in) so
 // scripts/answer-review-selftest.js runs it with no network and no credits.
+//
+// The old fourth fault, RECAP ENDING, was removed 2026-09-26: the Room's answers now
+// close with a section that gathers the whole (his pick, from the miniapps.ai GPT-4.1
+// comparison), and a cheap reader could not tell that gather from a recap — each
+// false flag cost a full rewrite on the answer's own, possibly paid, model.
 
 // The lens's own vocabulary (data-seed/voices/the-lens.md, "HOW TO USE IT") and
 // the stock openers the voice's NEVER list bans. A hit is certain, not a judgement.
@@ -45,8 +50,7 @@ const readerPrompt = ({ question, answer, words, reach = false }) => `You are th
 
 1. ${reach ? `DEFAULT DOMAIN — does not apply here: he asked for far, bold leaps, so never flag a comparison for its distance. Only flag one that is plainly a reflex habit of turning everything into an office or a court.` : `DEFAULT DOMAIN.`} It turns the subject into an office, a bureaucracy, a court, a state, a law or a market when that is NOT where this subject's structure truly lives — the habit of making everything an institution. A comparison to an institution is fine when the subject really is institutional, or when that is honestly the best place the same need repeats. It is a fault when a feeling, a meal, an object or a film is dragged there by reflex.
 2. BORROWED WORDS. It uses any of: ${words.length ? words.join(', ') : 'none found'} (already detected — list them if present).
-3. PERFORMED METHOD. It announces its way of looking ("looked at as a living process", "structurally", "through this lens") instead of just seeing, or reads as a checklist of moves.
-4. RECAP ENDING. The last paragraph only restates what was already said.
+3. PERFORMED METHOD. It announces its way of looking ("looked at as a living process", "structurally", "through this lens") instead of just seeing. Numbered sections, headings, bullets with bold labels and a closing section that gathers the whole are the expected layout here — never flag the layout itself.
 
 Reply with exactly KEEP if none apply. Otherwise reply with one line per fault, each naming the fault number and quoting the few words where it happens. Nothing else.
 
@@ -63,7 +67,7 @@ ${answer}
 ${faults}
 
 === WHAT TO DO NOW ===
-Rewrite the answer to the question "${question}" so these faults are gone. Change only what they touch: a comparison dragged into an office or a state by habit is replaced by one from where this subject's structure truly lives; a borrowed word becomes your own; an announced method becomes simply seeing; a recap ending becomes an ending where the thinking truly lands. ${reach ? 'Keep every bold leap that is not itself a named fault — he asked for them. ' : ''}Keep everything that works — the same voice, the same insight, about the same length. Return only the rewritten answer, no note about what changed.`;
+Rewrite the answer to the question "${question}" so these faults are gone. Change only what they touch: a comparison dragged into an office or a state by habit is replaced by one from where this subject's structure truly lives; a borrowed word becomes your own; an announced method becomes simply seeing. ${reach ? 'Keep every bold leap that is not itself a named fault — he asked for them. ' : ''}Keep everything that works — the same voice, the same insight, the same layout (opening, numbered titled sections, bullets with bold labels, the closing section that gathers the whole), about the same length. Return only the rewritten answer, no note about what changed.`;
 
 export async function reviewAnswer({ question, answer, lens = '', reach = false, read, rewrite, onStatus = null, countWords }) {
   const original = String(answer || '').trim();
