@@ -2486,10 +2486,10 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-convo .se-lane-clear { font-size:var(--fs-2xs); color:var(--c-ink-5); }
 .room-convo .se-spend { margin:0 4px 8px; }
 .room-convo .se-compose.se-dictating .se-micwave { margin-bottom:4px; }
-/* While dictating the wave has the line: the words box keeps a small share so what is
-   heard still shows, and the rest of the width is the wave's. */
-.room-convo .se-compose.se-dictating .se-micwave { flex:4 1 160px; }
-.room-convo .se-compose.se-dictating .se-input { flex:1 1 90px; }
+/* While dictating the words have the line and the wave is a small mark beside the
+   microphone (his pick B, 2026-09-25): the wide wave squeezed what was heard to the left. */
+.room-convo .se-compose.se-dictating .se-micwave { flex:none; width:46px; min-width:0; }
+.room-convo .se-compose.se-dictating .se-input { flex:1 1 auto; }
 /* No send button (his ask, 2026-09-24): Enter sends. The round button only appears
    as the stop while an answer is being written. */
 .room-convo .se-send:not(.is-stop) { display:none; }
