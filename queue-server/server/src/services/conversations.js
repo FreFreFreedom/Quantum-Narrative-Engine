@@ -37,6 +37,7 @@ import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTo
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
 import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory, subjectsBlock } from './mind.js';
 import { chapterize } from './chapters.js';
+import { splitByLabels, splitByMarks, parseMarks, MARKS_PROMPT } from './convoImport.js';
 import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
@@ -1297,6 +1298,46 @@ export function forkConvo(convoId, { throughMessageId = null, title = null, crea
 
   broadcastAll('convos:updated', { convoId: forkId });
   return { ok: true, convo: getConvo(forkId), copied: keep.length, of: msgs.length };
+}
+
+// A conversation he had elsewhere — Gemini's site, ChatGPT, a PDF of either —
+// becomes a Room thread he can continue, as if it had happened here. How the text
+// is split into turns lives in convoImport.js.
+const IMPORT_MAX_CHARS = 400_000;
+export async function importConversation({ text, filename = '', createdBy = 'antoine' } = {}) {
+  if (!db) return { error: 'no_db' };
+  const body = String(text || '').replace(/\r\n?/g, '\n').trim().slice(0, IMPORT_MAX_CHARS);
+  if (!body) return { error: 'text_required', message: 'No readable text in this file.' };
+
+  let turns = splitByLabels(body);
+  let how = 'labels';
+  if (!turns) {
+    const out = await generateText({
+      prompt: `${MARKS_PROMPT}\n\n=== THE CONVERSATION ===\n${body}`,
+      feature: 'summary',
+      label: 'conversations:import-marks',
+      maxTokens: 6000,
+      allowLongOutput: true,
+      timeoutMs: 150_000,
+    }).catch(() => null);
+    turns = splitByMarks(body, parseMarks(out?.text));
+    how = 'marks';
+  }
+  if (!turns) { turns = [{ role: 'assistant', text: body }]; how = 'whole'; }
+
+  const name = String(filename || '').replace(/\.[^/.]+$/, '').trim();
+  const made = createOpenConvo({ title: name || 'Imported conversation', createdBy });
+  if (made.error) return made;
+  const id = made.convo.id;
+  const insert = db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta, created_at) VALUES (?,?,?,?,?,?,?)`);
+  const meta = JSON.stringify({ imported: filename || true });
+  const t0 = Date.now() - turns.length * 1000;
+  turns.forEach((t, i) => insert.run(randomUUID(), id, t.role, 'chat', t.text, meta, new Date(t0 + i * 1000).toISOString()));
+  db.prepare(`UPDATE convos SET turns=?, title_auto=1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
+    .run(turns.filter((t) => t.role === 'user').length, id);
+  smartTitleSoon(id);
+  broadcastAll('convos:updated', { convoId: id });
+  return { ok: true, convo: getConvo(id), messages: turns.length, how };
 }
 
 export function latestConvoPlan(id) {

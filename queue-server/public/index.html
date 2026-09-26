@@ -2201,6 +2201,10 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 #wsRoom .room-newbtn { flex:none; background:none; border:none; box-shadow:none; padding:4px 6px; border-radius:0;
   font:300 11px/1 'Genos', var(--font-read); letter-spacing:.3em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
 #wsRoom .room-newbtn:hover { background:none; color:var(--c-ink); }
+.room-importbtn { margin-left:auto; background:none; border:none; padding:4px; cursor:pointer; color:var(--c-kept-echo, var(--c-accent)); line-height:0; }
+.room-importbtn svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.3; stroke-linecap:round; stroke-linejoin:round; }
+.room-importbtn:hover { color:var(--c-ink); }
+.room-importbtn.is-busy { opacity:.4; pointer-events:none; }
 #wsRoom .room-search { margin:0 0 2px; padding:2px 6px 8px; border-bottom-color:transparent; }
 #wsRoom .room-search input { font:300 12px/1.2 'Genos', var(--font-read); letter-spacing:.14em; text-transform:uppercase; }
 #wsRoom .room-search input::placeholder { color:color-mix(in srgb, var(--c-ink-5) 55%, transparent); }
@@ -5183,6 +5187,8 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="side-resize side-resize--right" id="roomThreadsResize" title="Drag to resize"></div>
         <div class="room-newrow">
           <button type="button" class="ubtn ubtn--pill is-primary room-newbtn" id="roomNewBtn">＋ New chat</button>
+          <button type="button" class="room-importbtn" id="roomImportBtn" title="Import a conversation (PDF or text)" aria-label="Import a conversation"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v7M5 7l3 3 3-3M3 10.5v2.5h10v-2.5"/></svg></button>
+          <input type="file" id="roomImportFile" accept=".pdf,.txt,.md,.markdown,text/plain,application/pdf" hidden>
         </div>
         <div class="room-search">
           <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-search"/></svg>
@@ -14130,6 +14136,8 @@ function initRoom() {
   if (roomInited) return;
   roomInited = true;
   document.getElementById('roomNewBtn').onclick = roomNewThread;
+  document.getElementById('roomImportBtn').onclick = () => document.getElementById('roomImportFile').click();
+  document.getElementById('roomImportFile').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) roomImportThread(f); };
   // Filtering a list of a few dozen names is a substring test — no debounce, because
   // there is no layout being rebuilt behind it, only these rows.
   const thq = document.getElementById('roomThreadSearch');
@@ -17204,6 +17212,43 @@ async function roomNewThread() {
     roomThreadsNote = 'Could not start a thread.';
     renderRoomThreads();
   }
+}
+
+// A conversation from elsewhere (Gemini, ChatGPT, a PDF of one) becomes a thread
+// to continue. A PDF is read keeping its line breaks — the server finds who spoke
+// by the lines ("You said", "Gemini said").
+async function roomImportThread(file) {
+  const btn = document.getElementById('roomImportBtn');
+  const say = (msg) => { roomThreadsNote = msg; renderRoomThreads(); };
+  btn.classList.add('is-busy');
+  try {
+    const kind = roomFileKind(file);
+    if (kind !== 'pdf' && kind !== 'text') throw new Error('PDF or text only.');
+    say('Reading…');
+    const text = kind === 'pdf' ? await extractPdfLines(file) : await file.text();
+    if (!text.trim()) throw new Error('No readable text in this file.');
+    say('Importing…');
+    const out = await apiWrite('/api/convos/import', 'POST', { filename: file.name, text });
+    const id = out && out.convo ? out.convo.id : null;
+    roomThreadsNote = '';
+    await loadRoom();
+    if (id) roomSelect(id);
+  } catch (e) {
+    say('Could not import: ' + (e && e.message ? e.message : 'try again.'));
+  } finally {
+    btn.classList.remove('is-busy');
+  }
+}
+
+async function extractPdfLines(file) {
+  const pdfjsLib = await loadPdfjs();
+  const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pages = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const content = await (await doc.getPage(i)).getTextContent();
+    pages.push(content.items.map((it) => it.str + (it.hasEOL ? '\n' : '')).join(''));
+  }
+  return pages.join('\n');
 }
 
 // The name is edited in place: the toolbar's title turns into the field it names.

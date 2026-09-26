@@ -286,6 +286,16 @@ export function conversationsRoutes() {
     res.json({ convo: out.convo, messages: [], created: true, acts: convos.writeActsForConvo(out.convo.id), edits: [], subjects: convos.listConvoSubjects(out.convo.id) });
   });
 
+  // POST /api/convos/import — a conversation from elsewhere (Gemini, ChatGPT, a
+  // PDF of one) as a new Room thread. The browser reads the file; this splits it.
+  router.post('/import', asyncHandler(async (req, res) => {
+    const out = await convos.importConversation({
+      text: req.body?.text, filename: req.body?.filename || '', createdBy: req.user?.id || 'antoine',
+    });
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
+
   // POST /api/convos/merge — a new Room thread descended from two to six
   // conversations. Sources are captured, never altered or concatenated.
   router.post('/merge', asyncHandler(async (req, res) => {
