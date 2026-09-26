@@ -14,12 +14,19 @@ window.FMCNS_LOOKS = {
   creamnavy:{ name: 'Navy', dark: false },
   creamteal:{ name: 'Slate teal', dark: false },
   creamolive:{ name: 'Dark olive', dark: false },
-  creamrose:{ name: 'Rosewood', dark: false }
+  creamrose:{ name: 'Rosewood', dark: false },
+  nightnavy:{ name: 'Navy, starlit', dark: true },
+  nightteal:{ name: 'Slate teal, starlit', dark: true },
+  nightolive:{ name: 'Dark olive, starlit', dark: true },
+  nightrose:{ name: 'Rosewood, starlit', dark: true },
+  candle:{ name: 'Candlelit library', dark: true },
+  emerald:{ name: 'Emerald noir', dark: true },
+  observatory:{ name: 'Starlit observatory', dark: true }
 };
-/* Four looks only since 2026-09-26 (his pick): the cream page with a navy, slate teal, dark
-   olive or rosewood panel. The other looks' styles are still below but unreachable. */
+/* His looks since 2026-09-26: four cream-page day looks (navy, slate teal, dark olive,
+   rosewood panel) and seven night looks. The older looks' styles are still below but unreachable. */
 window.FMCNS_LOOK_DAY = 'creamnavy';
-window.FMCNS_LOOK_NIGHT = 'creamnavy';
+window.FMCNS_LOOK_NIGHT = 'nightnavy';
 (function () {
   var v = null;
   try { v = localStorage.getItem('fmcns-look'); } catch (e) {}
@@ -803,6 +810,160 @@ body::after {
      in it was nearly invisible (2026-09-25). */
   --c-read: #efe4cc;
 }
+/* Night looks — his picks 2026-09-26: Starlit in each of his four colours, plus Candlelit
+   library, Emerald noir and Starlit observatory. The page carries its own light (stars, a
+   candle pool, a lacquer glow); the frame and rail are the darkest shade of the same colour. */
+:root[data-look="nightnavy"] {
+  color-scheme: dark;
+  --c-bg: #182233; --c-bg-2: #121925; --c-stage: #121925; --c-mapstage: #121925;
+  --c-surface: #2a3443; --c-surface-2: #2f3847; --c-surface-3: #3d4554;
+  --c-surface-rgb: 42 52 67;
+  --c-border: #343d4b; --c-border-2: #424a58; --c-border-3: #59606c;
+  --c-ink: #e4e2dc; --c-ink-2: #c7c7c4; --c-ink-3: #afb0b0; --c-ink-4: #9b9d9f; --c-ink-5: #888c90;
+  --c-ink-solid: #e4e2dc; --c-ink-solid-2: #c7c7c4; --c-on-solid: #182233; --c-halo: #121925;
+  --c-accent: #d8d2c2; --c-on-accent: #121925; --c-on-brand: #121925; --c-on-amber: #121925; --c-on-danger: #121925; --c-on-info: #121925;
+  --c-cast: #d8d2c2; --c-ring: color-mix(in srgb, #d8d2c2 55%, transparent); --c-hover-wash: rgba(255,255,255,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #33261a; --c-info: #9fb4d0; --c-info-tint: #1a2438; --c-success-tint: #1d2d2a;
+  --c-danger: #e0707a; --c-danger-tint: #3a1620; --c-violet: #c7a3d9; --c-violet-tint: #2a2040; --c-violet-tint-2: #221a36;
+  --c-brand: #d8d2c2; --c-warm-tint: #2e2014; --c-amber: #d8d2c2; --c-amber-tint: #2a2216;
+  --c-plot-1: #d8d2c2; --c-plot-2: #9fb4d0; --c-plot-3: #c9c1ad; --c-plot-4: #8fb0a0; --c-plot-5: #c7a3d9; --c-plot-6: #e0c9a0; --c-plot-7: #8c8a86; --c-plot-8: #e8b27a;
+  --c-kept-line: color-mix(in srgb, #c9c1ad 75%, transparent); --c-kept-echo: #d8d2c2; --c-kept-rule: #c9c1ad;
+  --orb-1: #464e5c; --orb-2: #d8d2c2; --orb-inv: 1; --glow-1: #182233; --glow-2: #182233;
+  --c-read: #e4e2dc;
+  --n-frame: #0d131c; --n-rail: #111823;
+}
+:root[data-look="nightnavy"] .room-main { background: radial-gradient(1px 1px at 12% 18%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 67% 9%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 83% 41%,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 38% 63%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 91% 78%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 22% 88%,rgba(255,255,255,.3),transparent),radial-gradient(1.5px 1.5px at 55% 30%,rgba(255,255,255,.45),transparent),radial-gradient(1px 1px at 5% 52%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 74% 66%,rgba(255,255,255,.3),transparent), radial-gradient(100% 80% at 70% 0%, #41516c 0%, #182233 55%, #0d131c 100%); }
+:root[data-look="nightteal"] {
+  color-scheme: dark;
+  --c-bg: #192629; --c-bg-2: #121c1e; --c-stage: #121c1e; --c-mapstage: #121c1e;
+  --c-surface: #2b373a; --c-surface-2: #303c3e; --c-surface-3: #3e494b;
+  --c-surface-rgb: 43 55 58;
+  --c-border: #354043; --c-border-2: #424d50; --c-border-3: #596365;
+  --c-ink: #e4e2dc; --c-ink-2: #c8c8c3; --c-ink-3: #afb1ad; --c-ink-4: #9b9e9c; --c-ink-5: #898d8b;
+  --c-ink-solid: #e4e2dc; --c-ink-solid-2: #c8c8c3; --c-on-solid: #192629; --c-halo: #121c1e;
+  --c-accent: #d8d2c2; --c-on-accent: #121c1e; --c-on-brand: #121c1e; --c-on-amber: #121c1e; --c-on-danger: #121c1e; --c-on-info: #121c1e;
+  --c-cast: #d8d2c2; --c-ring: color-mix(in srgb, #d8d2c2 55%, transparent); --c-hover-wash: rgba(255,255,255,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #33261a; --c-info: #9fb4d0; --c-info-tint: #1a2438; --c-success-tint: #1d2d2a;
+  --c-danger: #e0707a; --c-danger-tint: #3a1620; --c-violet: #c7a3d9; --c-violet-tint: #2a2040; --c-violet-tint-2: #221a36;
+  --c-brand: #d8d2c2; --c-warm-tint: #2e2014; --c-amber: #d8d2c2; --c-amber-tint: #2a2216;
+  --c-plot-1: #d8d2c2; --c-plot-2: #9fb4d0; --c-plot-3: #c9c1ad; --c-plot-4: #8fb0a0; --c-plot-5: #c7a3d9; --c-plot-6: #e0c9a0; --c-plot-7: #8c8a86; --c-plot-8: #e8b27a;
+  --c-kept-line: color-mix(in srgb, #c9c1ad 75%, transparent); --c-kept-echo: #d8d2c2; --c-kept-rule: #c9c1ad;
+  --orb-1: #475154; --orb-2: #d8d2c2; --orb-inv: 1; --glow-1: #192629; --glow-2: #192629;
+  --c-read: #e4e2dc;
+  --n-frame: #0e1516; --n-rail: #111a1c;
+}
+:root[data-look="nightteal"] .room-main { background: radial-gradient(1px 1px at 12% 18%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 67% 9%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 83% 41%,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 38% 63%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 91% 78%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 22% 88%,rgba(255,255,255,.3),transparent),radial-gradient(1.5px 1.5px at 55% 30%,rgba(255,255,255,.45),transparent),radial-gradient(1px 1px at 5% 52%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 74% 66%,rgba(255,255,255,.3),transparent), radial-gradient(100% 80% at 70% 0%, #43585d 0%, #192629 55%, #0e1516 100%); }
+:root[data-look="nightolive"] {
+  color-scheme: dark;
+  --c-bg: #1e2011; --c-bg-2: #16170c; --c-stage: #16170c; --c-mapstage: #16170c;
+  --c-surface: #303224; --c-surface-2: #343629; --c-surface-3: #424437;
+  --c-surface-rgb: 48 50 36;
+  --c-border: #393b2e; --c-border-2: #47483c; --c-border-3: #5d5e54;
+  --c-ink: #e4e2dc; --c-ink-2: #c8c7c0; --c-ink-3: #b1b0a7; --c-ink-4: #9d9c93; --c-ink-5: #8b8b81;
+  --c-ink-solid: #e4e2dc; --c-ink-solid-2: #c8c7c0; --c-on-solid: #1e2011; --c-halo: #16170c;
+  --c-accent: #d8d2c2; --c-on-accent: #16170c; --c-on-brand: #16170c; --c-on-amber: #16170c; --c-on-danger: #16170c; --c-on-info: #16170c;
+  --c-cast: #d8d2c2; --c-ring: color-mix(in srgb, #d8d2c2 55%, transparent); --c-hover-wash: rgba(255,255,255,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #33261a; --c-info: #9fb4d0; --c-info-tint: #1a2438; --c-success-tint: #1d2d2a;
+  --c-danger: #e0707a; --c-danger-tint: #3a1620; --c-violet: #c7a3d9; --c-violet-tint: #2a2040; --c-violet-tint-2: #221a36;
+  --c-brand: #d8d2c2; --c-warm-tint: #2e2014; --c-amber: #d8d2c2; --c-amber-tint: #2a2216;
+  --c-plot-1: #d8d2c2; --c-plot-2: #9fb4d0; --c-plot-3: #c9c1ad; --c-plot-4: #8fb0a0; --c-plot-5: #c7a3d9; --c-plot-6: #e0c9a0; --c-plot-7: #8c8a86; --c-plot-8: #e8b27a;
+  --c-kept-line: color-mix(in srgb, #c9c1ad 75%, transparent); --c-kept-echo: #d8d2c2; --c-kept-rule: #c9c1ad;
+  --orb-1: #4b4d41; --orb-2: #d8d2c2; --orb-inv: 1; --glow-1: #1e2011; --glow-2: #1e2011;
+  --c-read: #e4e2dc;
+  --n-frame: #101109; --n-rail: #15160c;
+}
+:root[data-look="nightolive"] .room-main { background: radial-gradient(1px 1px at 12% 18%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 67% 9%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 83% 41%,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 38% 63%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 91% 78%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 22% 88%,rgba(255,255,255,.3),transparent),radial-gradient(1.5px 1.5px at 55% 30%,rgba(255,255,255,.45),transparent),radial-gradient(1px 1px at 5% 52%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 74% 66%,rgba(255,255,255,.3),transparent), radial-gradient(100% 80% at 70% 0%, #4a4e35 0%, #1e2011 55%, #101109 100%); }
+:root[data-look="nightrose"] {
+  color-scheme: dark;
+  --c-bg: #200e0f; --c-bg-2: #180a0b; --c-stage: #180a0b; --c-mapstage: #180a0b;
+  --c-surface: #322122; --c-surface-2: #362627; --c-surface-3: #443535;
+  --c-surface-rgb: 50 33 34;
+  --c-border: #3b2b2c; --c-border-2: #48393a; --c-border-3: #5e5152;
+  --c-ink: #e4e2dc; --c-ink-2: #c9c4bf; --c-ink-3: #b1aba7; --c-ink-4: #9d9692; --c-ink-5: #8c8380;
+  --c-ink-solid: #e4e2dc; --c-ink-solid-2: #c9c4bf; --c-on-solid: #200e0f; --c-halo: #180a0b;
+  --c-accent: #d8d2c2; --c-on-accent: #180a0b; --c-on-brand: #180a0b; --c-on-amber: #180a0b; --c-on-danger: #180a0b; --c-on-info: #180a0b;
+  --c-cast: #d8d2c2; --c-ring: color-mix(in srgb, #d8d2c2 55%, transparent); --c-hover-wash: rgba(255,255,255,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #33261a; --c-info: #9fb4d0; --c-info-tint: #1a2438; --c-success-tint: #1d2d2a;
+  --c-danger: #e0707a; --c-danger-tint: #3a1620; --c-violet: #c7a3d9; --c-violet-tint: #2a2040; --c-violet-tint-2: #221a36;
+  --c-brand: #d8d2c2; --c-warm-tint: #2e2014; --c-amber: #d8d2c2; --c-amber-tint: #2a2216;
+  --c-plot-1: #d8d2c2; --c-plot-2: #9fb4d0; --c-plot-3: #c9c1ad; --c-plot-4: #8fb0a0; --c-plot-5: #c7a3d9; --c-plot-6: #e0c9a0; --c-plot-7: #8c8a86; --c-plot-8: #e8b27a;
+  --c-kept-line: color-mix(in srgb, #c9c1ad 75%, transparent); --c-kept-echo: #d8d2c2; --c-kept-rule: #c9c1ad;
+  --orb-1: #4d3e3f; --orb-2: #d8d2c2; --orb-inv: 1; --glow-1: #200e0f; --glow-2: #200e0f;
+  --c-read: #e4e2dc;
+  --n-frame: #120808; --n-rail: #160a0b;
+}
+:root[data-look="nightrose"] .room-main { background: radial-gradient(1px 1px at 12% 18%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 67% 9%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 83% 41%,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 38% 63%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 91% 78%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 22% 88%,rgba(255,255,255,.3),transparent),radial-gradient(1.5px 1.5px at 55% 30%,rgba(255,255,255,.45),transparent),radial-gradient(1px 1px at 5% 52%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 74% 66%,rgba(255,255,255,.3),transparent), radial-gradient(100% 80% at 70% 0%, #4f3133 0%, #200e0f 55%, #120808 100%); }
+:root[data-look="candle"] {
+  color-scheme: dark;
+  --c-bg: #221710; --c-bg-2: #1a120c; --c-stage: #1a120c; --c-mapstage: #1a120c;
+  --c-surface: #342a23; --c-surface-2: #382e28; --c-surface-3: #453c36;
+  --c-surface-rgb: 52 42 35;
+  --c-border: #3d332d; --c-border-2: #4a413b; --c-border-3: #605853;
+  --c-ink: #e8d3ad; --c-ink-2: #ccb997; --c-ink-3: #b5a284; --c-ink-4: #a18f74; --c-ink-5: #8f7e66;
+  --c-ink-solid: #e8d3ad; --c-ink-solid-2: #ccb997; --c-on-solid: #221710; --c-halo: #1a120c;
+  --c-accent: #e0a95a; --c-on-accent: #1a120c; --c-on-brand: #1a120c; --c-on-amber: #1a120c; --c-on-danger: #1a120c; --c-on-info: #1a120c;
+  --c-cast: #e0a95a; --c-ring: color-mix(in srgb, #e0a95a 55%, transparent); --c-hover-wash: rgba(255,255,255,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #33261a; --c-info: #9fb4d0; --c-info-tint: #1a2438; --c-success-tint: #1d2d2a;
+  --c-danger: #e0707a; --c-danger-tint: #3a1620; --c-violet: #c7a3d9; --c-violet-tint: #2a2040; --c-violet-tint-2: #221a36;
+  --c-brand: #e0a95a; --c-warm-tint: #2e2014; --c-amber: #e0a95a; --c-amber-tint: #2a2216;
+  --c-plot-1: #e0a95a; --c-plot-2: #9fb4d0; --c-plot-3: #c98f45; --c-plot-4: #8fb0a0; --c-plot-5: #c7a3d9; --c-plot-6: #e0c9a0; --c-plot-7: #8c8a86; --c-plot-8: #e8b27a;
+  --c-kept-line: color-mix(in srgb, #c98f45 75%, transparent); --c-kept-echo: #e0a95a; --c-kept-rule: #c98f45;
+  --orb-1: #4e4540; --orb-2: #e0a95a; --orb-inv: 1; --glow-1: #221710; --glow-2: #221710;
+  --c-read: #e8d3ad;
+  --n-frame: #1a120c; --n-rail: #20160e;
+}
+:root[data-look="candle"] .room-main { background: radial-gradient(90% 70% at 40% 25%,#3a2716 0%,#221710 60%,#170f0a 100%); }
+:root[data-look="emerald"] {
+  color-scheme: dark;
+  --c-bg: #0b1f18; --c-bg-2: #07130f; --c-stage: #07130f; --c-mapstage: #07130f;
+  --c-surface: #1f312a; --c-surface-2: #23352f; --c-surface-3: #32433d;
+  --c-surface-rgb: 31 49 42;
+  --c-border: #283a34; --c-border-2: #374742; --c-border-3: #4f5e59;
+  --c-ink: #e2eadf; --c-ink-2: #c4cec3; --c-ink-3: #aab5ab; --c-ink-4: #95a197; --c-ink-5: #818f85;
+  --c-ink-solid: #e2eadf; --c-ink-solid-2: #c4cec3; --c-on-solid: #0b1f18; --c-halo: #07130f;
+  --c-accent: #d9b25e; --c-on-accent: #07130f; --c-on-brand: #07130f; --c-on-amber: #07130f; --c-on-danger: #07130f; --c-on-info: #07130f;
+  --c-cast: #d9b25e; --c-ring: color-mix(in srgb, #d9b25e 55%, transparent); --c-hover-wash: rgba(255,255,255,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #33261a; --c-info: #9fb4d0; --c-info-tint: #1a2438; --c-success-tint: #1d2d2a;
+  --c-danger: #e0707a; --c-danger-tint: #3a1620; --c-violet: #c7a3d9; --c-violet-tint: #2a2040; --c-violet-tint-2: #221a36;
+  --c-brand: #d9b25e; --c-warm-tint: #2e2014; --c-amber: #d9b25e; --c-amber-tint: #2a2216;
+  --c-plot-1: #d9b25e; --c-plot-2: #9fb4d0; --c-plot-3: #5fbf96; --c-plot-4: #8fb0a0; --c-plot-5: #c7a3d9; --c-plot-6: #e0c9a0; --c-plot-7: #8c8a86; --c-plot-8: #e8b27a;
+  --c-kept-line: color-mix(in srgb, #5fbf96 75%, transparent); --c-kept-echo: #d9b25e; --c-kept-rule: #5fbf96;
+  --orb-1: #3c4c46; --orb-2: #d9b25e; --orb-inv: 1; --glow-1: #0b1f18; --glow-2: #0b1f18;
+  --c-read: #e2eadf;
+  --n-frame: #06110d; --n-rail: #0a1a14;
+}
+:root[data-look="emerald"] .room-main { background: radial-gradient(100% 80% at 30% 0%,#12352a 0%,#0b1f18 55%,#07130f 100%); }
+:root[data-look="observatory"] {
+  color-scheme: dark;
+  --c-bg: #0b1128; --c-bg-2: #060917; --c-stage: #060917; --c-mapstage: #060917;
+  --c-surface: #1f2439; --c-surface-2: #23293d; --c-surface-3: #32374a;
+  --c-surface-rgb: 31 36 57;
+  --c-border: #282e42; --c-border-2: #373c4f; --c-border-3: #4f5464;
+  --c-ink: #dfe4f2; --c-ink-2: #c1c6d6; --c-ink-3: #a8adbd; --c-ink-4: #9398a9; --c-ink-5: #808597;
+  --c-ink-solid: #dfe4f2; --c-ink-solid-2: #c1c6d6; --c-on-solid: #0b1128; --c-halo: #060917;
+  --c-accent: #c9d2ee; --c-on-accent: #060917; --c-on-brand: #060917; --c-on-amber: #060917; --c-on-danger: #060917; --c-on-info: #060917;
+  --c-cast: #c9d2ee; --c-ring: color-mix(in srgb, #c9d2ee 55%, transparent); --c-hover-wash: rgba(255,255,255,.06);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.4); --sh-sm: 0 2px 10px rgba(0,0,0,.5); --sh-md: 0 10px 26px rgba(0,0,0,.6);
+  --c-warn: #d9a05c; --c-warn-tint: #33261a; --c-info: #9fb4d0; --c-info-tint: #1a2438; --c-success-tint: #1d2d2a;
+  --c-danger: #e0707a; --c-danger-tint: #3a1620; --c-violet: #c7a3d9; --c-violet-tint: #2a2040; --c-violet-tint-2: #221a36;
+  --c-brand: #c9d2ee; --c-warm-tint: #2e2014; --c-amber: #c9d2ee; --c-amber-tint: #2a2216;
+  --c-plot-1: #c9d2ee; --c-plot-2: #9fb4d0; --c-plot-3: #aeb9e0; --c-plot-4: #8fb0a0; --c-plot-5: #c7a3d9; --c-plot-6: #e0c9a0; --c-plot-7: #8c8a86; --c-plot-8: #e8b27a;
+  --c-kept-line: color-mix(in srgb, #aeb9e0 75%, transparent); --c-kept-echo: #c9d2ee; --c-kept-rule: #aeb9e0;
+  --orb-1: #3c4153; --orb-2: #c9d2ee; --orb-inv: 1; --glow-1: #0b1128; --glow-2: #0b1128;
+  --c-read: #dfe4f2;
+  --n-frame: #050814; --n-rail: #070b1c;
+}
+:root[data-look="observatory"] .room-main { background: radial-gradient(1px 1px at 12% 18%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 67% 9%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 83% 41%,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 38% 63%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 91% 78%,rgba(255,255,255,.35),transparent),radial-gradient(1px 1px at 22% 88%,rgba(255,255,255,.3),transparent),radial-gradient(1.5px 1.5px at 55% 30%,rgba(255,255,255,.45),transparent),radial-gradient(1px 1px at 5% 52%,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 74% 66%,rgba(255,255,255,.3),transparent), radial-gradient(100% 80% at 70% 0%,#172045 0%,#0b1128 55%,#060917 100%); }
+:root:is([data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"]) :is(#wsRoom.open) { background: var(--n-frame); }
+:root:is([data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"]) .rail-inner { background: var(--n-rail); border-right-color: transparent; }
+:root:is([data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"]) :is(#wsRoom .room-threads, #wsRoom .room-cards) { background: color-mix(in srgb, var(--n-rail) 70%, var(--c-bg)); }
+
 /* Oxblood, brass & parchment — Antoine's pick "OXBLOOD · BRASS · PARCHMENT" (2026-09-24), from the dusk-glow palette mockups. */
 :root[data-look="oxblood"] {
   color-scheme: dark;
@@ -1385,8 +1546,8 @@ body::after {
   #wsRoom .room-main { border-radius:18px; }
 }
 /* The side panels sit a shade blacker than the page, as in the mockup. */
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) :is(.room-threads, .room-cards) { background:var(--c-bg-2); }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-body :is(h1, h2, h3, h4) { color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) :is(.room-threads, .room-cards) { background:var(--c-bg-2); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-body :is(h1, h2, h3, h4) { color:var(--c-kept-echo); }
 * { box-sizing: border-box; }
 /* Keyboard focus, once, for every control family the app has. Three rules covered 222
    buttons before this. Only :focus-visible, so a mouse click never draws a ring. */
@@ -3236,7 +3397,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    the margin, nothing that moves the text. Darker looks get the same wash in their own gold. */
 .se-kept { background:rgba(214,190,140,.45); color:inherit; border-bottom:0; border-radius:2px; cursor:pointer;
   -webkit-box-decoration-break:clone; box-decoration-break:clone; }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"],[data-look="darkroom"]) .se-kept { background:color-mix(in srgb, var(--c-kept-rule, #cfa966) 22%, transparent); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"],[data-look="darkroom"]) .se-kept { background:color-mix(in srgb, var(--c-kept-rule, #cfa966) 22%, transparent); }
 .dark .se-kept { background:color-mix(in srgb, var(--c-kept-rule, #cfa966) 22%, transparent); }
 :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"]) .se-kept { background:rgba(179,139,69,.22); }
 /* The echo lives in the free margin OUTSIDE the reading column, never inside it: a kept
@@ -3247,7 +3408,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   font-family:var(--font-read); font-style:italic; font-size:14px; line-height:1.5; color:var(--c-kept-echo, #2f7d63);
   pointer-events:none; }
 :root[data-look="darkroom"] .se-kept-echo { border-left-color:#6fcfa0; color:#6fcfa0; }
-:root:is([data-look="bean"],[data-look="navy"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
+:root:is([data-look="bean"],[data-look="navy"],[data-look="nightnavy"],[data-look="nightteal"],[data-look="nightolive"],[data-look="nightrose"],[data-look="candle"],[data-look="emerald"],[data-look="observatory"],[data-look="plum"],[data-look="ember"],[data-look="dusknavy"],[data-look="slatenavy"],[data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="oxblood"],[data-look="midnight"],[data-look="espresso"],[data-look="teal"],[data-look="slate"],[data-look="sapphire"],[data-look="cherry"]) .se-kept-echo { border-left-color:var(--c-kept-rule); color:var(--c-kept-echo); }
 .se-quote-pop { position:fixed; z-index:var(--z-popover); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
   border-radius:var(--r-md); padding:3px; display:flex; gap:2px; box-shadow:0 6px 18px rgba(0,0,0,.22);
   animation:sePopIn .12s var(--ease); }
@@ -32313,12 +32474,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   btn.addEventListener('click', function () {
     var choice = stored();
-    var items = ids.map(function (id) {
-      return { label: LOOKS[id].name, checked: choice === id, on: function () { pick(id); } };
+    var items = [];
+    ids.forEach(function (id, i) {
+      if (i && LOOKS[id].dark && !LOOKS[ids[i - 1]].dark) items.push({ sep: true });
+      items.push({ label: LOOKS[id].name, checked: choice === id, on: function () { pick(id); } });
     });
+    items.push({ sep: true });
+    items.push({ label: 'Match my Mac', checked: choice === 'auto', on: function () { pick('auto'); } });
     if (typeof window.openMenu === 'function') { window.openMenu(btn, items); return; }
     /* No menu helper on the page (an older build): cycle instead of doing nothing. */
-    var order = ids;
+    var order = ids.concat(['auto']);
     pick(order[(order.indexOf(choice) + 1) % order.length]);
   });
   function pick(choice) {
