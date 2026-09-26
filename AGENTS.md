@@ -272,6 +272,13 @@ never on warmth. Flowing prose is welcome and so is layered depth; a paragraph t
 rather than delivers is not. (This supersedes an earlier "short, tight declarative blocks"
 rule written the same day, which fought the conversational warmth in his profile above.)
 
+**Telling the Room something about him (his way, 2026-09-26).** He finds it more direct to
+tell a coding session "remember this" / "take my story from that message" than to rely on the
+mind harvest. When he does: distil the understanding (never his wording, never a rule about how
+to answer) into `queue-server/data-seed/voices/the-room.md`, run
+`node queue-server/scripts/push-room-portrait.js` (puts it live in the Room's voice box), and
+mirror the same lines into his Gemini Gem file `~/Downloads/Antoine-pour-Gemini.md`.
+
 **The Room answers from context, not rules (hard, his call 2026-09-26 — overrides how the
 two sections below reach the Room).** A day after the rules below went in, he said: the more
 he tells the model how to answer, the less he likes the answers. Plain Gemini on Google, with

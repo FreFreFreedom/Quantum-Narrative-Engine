@@ -1895,6 +1895,28 @@ export function turnMaxTokens(convoId, base = 4000) {
 // visible label counts without also counting its hidden destination. This is the
 // server-side authority for length enforcement; the browser independently counts
 // the rendered words for the small receipt Antoine sees under the answer.
+// Models cannot count their own words: an answer signed "Word count: ~1900" was
+// 1,526 by the count shown under it (2026-09-26). Any claim like that near the top
+// or bottom of an answer gets the real number, counted the same way as the UI.
+const APPROX = String.raw`about|around|roughly|nearly|approximately|approx\.?|environ|~|≈`;
+const NUM = String.raw`\d[\d,.  ]*\d|\d`;
+const WORD_CLAIM = new RegExp(String.raw`((?:word count|words?|mots?)\s*[:：]?\s*(?:${APPROX})?\s*)(${NUM})|((?:${APPROX})?\s*)(${NUM})(\s*(?:words?|mots?)\b)`, 'gi');
+const DROP_APPROX = new RegExp(String.raw`(?:${APPROX})\s*$`, 'i');
+export function trueWordCountClaims(text) {
+  const lines = String(text || '').split('\n');
+  const edge = (i) => i < 3 || i >= lines.length - 4;
+  const claim = (l) => /\b(word count|words?|mots?)\b/i.test(l) && /\d/.test(l) && l.length < 240;
+  const idx = lines.map((l, i) => (edge(i) && claim(l) ? i : -1)).filter((i) => i >= 0);
+  if (!idx.length) return text;
+  const real = answerWordCount(lines.filter((_, i) => !idx.includes(i)).join('\n')).toLocaleString('en-US');
+  for (const i of idx) {
+    lines[i] = lines[i].replace(WORD_CLAIM, (m, a, n, b, n2, c) => (a !== undefined
+      ? `${a.replace(DROP_APPROX, '')}${real}`
+      : `${b.replace(DROP_APPROX, '')}${real}${c}`));
+  }
+  return lines.join('\n');
+}
+
 export function answerWordCount(text) {
   const visible = String(text || '')
     .replace(/```(?:timeline|json)?\s*\n\s*\{\s*"kind"[\s\S]*?(?:```|$)/g, ' ')
@@ -2333,7 +2355,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     effort: turn?.lane?.effort || null,
     onStatus, onToken, onUsage: trackUsage,
   });
-  result.text = completed.text;
+  result.text = trueWordCountClaims(completed.text);
   if (signal?.aborted) return { error: 'cancelled' };
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
@@ -2393,7 +2415,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     account: turn?.lane?.account || null,
     effort: turn?.lane?.effort || null,
   });
-  result.text = completed.text;
+  result.text = trueWordCountClaims(completed.text);
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
   // The id travels back with the answer. Without it the just-arrived turn has no

@@ -4,12 +4,12 @@
   Written 2026-09-26, when he said the more the Room was told how to answer, the less he
   liked its answers, while plain Gemini and GPT-4.1 on miniapps.ai (one bare line plus his
   own self-description) did better. So this is context, never instruction: his portrait
-  in his own words, and what he is building. No rules about shape, length, tone or words.
+  in his own words, his story, and how he sees things. No rules about shape, length, tone or words.
   Before adding a line that tells the model how to answer, don't — see AGENTS.md "The Room
   answers from context, not rules".
 
   The live Room reads the AI Settings voice box, not this file. After editing here, paste
-  the body into the box. The old voice (qne-3-0.md) is untouched and still feeds the
+  the body into the box — `node scripts/push-room-portrait.js` does it. The old voice (qne-3-0.md) is untouched and still feeds the
   generators that write readings, tag lenses and book notes.
 
   Body starts after this comment.
@@ -25,6 +25,26 @@ shadow work, and grief as mirrors of power and memory. Literature, cinema, and s
 worlds are living laboratories for decoding suppressed stories and collective feedback
 loops. My work maps multi-scale narrative cartographies where every node—real or
 imagined—can reveal deeper structural truths."
+
+His story:
+
+He was bullied a lot and hurt by people blind to what their actions did to others. From
+that grew a people-pleasing, codependent structure: boundaries are hard for him, so he stays
+small to avoid friction and punishes himself rather than risk becoming the insensitive
+person who hurt him — and he isolates, because closeness without boundaries suffocates.
+Authority has felt like a cage. For years he lived the conspiracy mindset, which he now
+reads as projection: childhood dynamics with authority figures recreated onto institutions,
+the same feeling replayed. He hated the symbols tied to the hurt — police, soldiers, jocks,
+sports fans, country music, teachers — and the big institutions: government, pharma, banks,
+tech, intelligence agencies, the military-industrial complex.
+
+For the last few years he has been reconciling with the authority archetype: seeing the
+good and necessary side of those institutions and symbols, not only their shadow, and
+through that reconciling with the part of himself that was hurt. He naturally identifies
+with the defender. His growing edge is to see the dignity, even the sacredness, of the
+prosecutor — the one who holds the line, a function no entity survives without, inside a
+person as in a society. Learning to honor that role is his way of learning to hold his own
+boundaries.
 
 How he sees things — his paradigm:
 
