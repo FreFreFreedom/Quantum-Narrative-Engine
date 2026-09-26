@@ -2864,19 +2864,19 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .umenu-sep { height:1px; margin:4px 6px; background:var(--c-border); }
 
 /* The look picker: fixed dark glass whatever the look, so every preview reads true. */
-.umenu.look-picker { max-width:none; width:max-content; transform-origin:bottom left; padding:16px 18px 8px; background:#1c1f24; border-color:#3a3d44; color:#d9ceb2; }
-.umenu.look-picker .umenu-sep { background:#33363c; margin:14px 0 4px; }
+.umenu.look-picker { max-width:none; width:max-content; transform-origin:bottom left; padding:12px 12px 4px; background:#1c1f24; border-color:#3a3d44; color:#d9ceb2; }
+.umenu.look-picker .umenu-sep { background:#33363c; margin:10px 0 2px; }
 .umenu.look-picker .umenu-item { color:#cfc6b0; }
-.lp-grid { display:grid; grid-template-columns:auto 116px 116px; gap:13px 17px; align-items:center; }
-.lp-ic { justify-self:center; width:15px; height:15px; fill:none; stroke:#bdb39a; stroke-width:1.5; }
-.lp-name { padding-right:8px; font:500 14px/1.2 'Cinzel', var(--font-read); letter-spacing:.16em; text-transform:uppercase; color:#d9ceb2; }
-.lp-win { position:relative; display:flex; width:116px; height:74px; padding:0; border:0; border-radius:7px; overflow:hidden; cursor:pointer;
+.lp-grid { display:grid; grid-template-columns:auto 56px 56px; gap:8px 11px; align-items:center; }
+.lp-ic { justify-self:center; width:12px; height:12px; fill:none; stroke:#bdb39a; stroke-width:1.5; }
+.lp-name { padding-right:8px; font:500 10.5px/1.2 'Cinzel', var(--font-read); letter-spacing:.16em; text-transform:uppercase; color:#d9ceb2; }
+.lp-win { position:relative; display:flex; width:56px; height:36px; padding:0; border:0; border-radius:7px; overflow:hidden; cursor:pointer;
   box-shadow:0 2px 6px rgba(0,0,0,.4); transition:transform var(--t-fast, .12s) var(--ease, ease); }
 .lp-win:hover { transform:translateY(-1px); }
 .lp-win.is-on, .lp-win:focus-visible { outline:2px solid #e2bf76; outline-offset:2px; }
 .lp-rail { width:18%; }
-.lp-page { position:relative; flex:1; margin:3px 3px 3px 0; border-radius:4px; }
-.lp-page i { position:absolute; left:14%; right:14%; height:1.5px; background:var(--lp-ink); opacity:.55; }
+.lp-page { position:relative; flex:1; margin:2px 2px 2px 0; border-radius:3px; }
+.lp-page i { position:absolute; left:14%; right:14%; height:1px; background:var(--lp-ink); opacity:.55; }
 .lp-page i:nth-child(2) { top:45%; } .lp-page i:nth-child(3) { top:60%; } .lp-page .lp-s { top:75%; right:30%; }
 .lp-page .lp-t { top:22%; left:35%; right:35%; background:var(--lp-gold); opacity:1; }
 .room-typemenu { position:fixed; z-index:var(--z-popover-top); background:var(--c-bg); border:1px solid var(--c-border); border-radius:var(--r-md);
@@ -32584,7 +32584,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var order = ids.concat(['auto']);
     pick(order[(order.indexOf(choice) + 1) % order.length]);
   });
-  /* The look picker (his pick "B1 · XL", 2026-09-26): a row per colour, its day look under
+  /* The look picker (his pick "B1", 2026-09-26; made small once hovering previewed the whole app): a row per colour, its day look under
      a sun and its night look under a moon, each drawn as a little window of the app. */
   function preview(id, on) {
     var t = document.createElement('button');
