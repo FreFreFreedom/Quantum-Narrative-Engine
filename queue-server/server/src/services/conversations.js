@@ -2152,7 +2152,7 @@ async function suggestedWorks(convoId, userId, answer) {
   const result = await generateText({
     feature: 'summary', maxTokens: 900, label: 'conversations:works', timeoutMs: 20_000, maxAttempts: 2,
     prompt: 'Below is an answer from a reading-and-film advisor. List every book, film and TV series the answer recommends or puts forward as a suggestion. Skip works it only mentions in passing as background.\n'
-      + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series","title":"exact title, no subtitle","creator":"author for a book, director for a film, creator for a series","year":"year if known"}]}. {"works":[]} if there are none.\n\n'
+      + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series","title":"exact title, no subtitle","creator":"author for a book, director for a film, creator for a series","year":"year if known","where":"4 to 8 words copied letter for letter from the answer, where it first speaks of this work — by title, or as \'the memoir\', \'on screen\', its author\'s name"}]}. {"works":[]} if there are none.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 12000),
   });
   if (result.error) return null;
@@ -2161,7 +2161,19 @@ async function suggestedWorks(convoId, userId, answer) {
   const saved = saveSuggestedWorks(userId || 'antoine', list);
   if (!saved.length) return null;
   if (saved.some(w => w.added)) broadcastAll('recommendations:updated', {});
-  return saved.map(({ kind, title, creator, year }) => ({ kind, title, creator, year }));
+  // Where each cover hangs: the words of the answer that speak of the work. An
+  // answer that never says the title ("Stevenson's memoir", "the film") used to
+  // drop both Just Mercy covers under its last line (2026-09-26). Kept only when
+  // the words really are in the answer.
+  const fold = (t) => String(t || '').replace(/[*_`]/g, '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').toLowerCase().trim();
+  const flat = fold(text);
+  const whereOf = (w) => {
+    const hit = list.find((x) => String(x?.kind) === w.kind && String(x?.title || '').toLowerCase().trim() === String(w.title || '').toLowerCase().trim())
+      || list.find((x) => String(x?.title || '').toLowerCase().trim() === String(w.title || '').toLowerCase().trim());
+    const at = fold(hit?.where).slice(0, 120);
+    return at.split(' ').length >= 2 && flat.includes(at) ? at : '';
+  };
+  return saved.map((w) => ({ kind: w.kind, title: w.title, creator: w.creator, year: w.year, where: whereOf(w) }));
 }
 
 // Works he names himself go into the Library too — his rule (2026-09-25): a book or

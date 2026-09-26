@@ -31477,21 +31477,47 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     flush();
     return out.join('\n');
   }
-  function seCoverNorm(t){ return String(t || '').toLowerCase().replace(/[‘’']/g, "'").replace(/\s+/g, ' '); }
+  function seCoverNorm(t){ return String(t || '').toLowerCase().replace(/[‘’']/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' '); }
   function seHangCovers(html, works, convoId){
     var box = document.createElement('div'); box.innerHTML = html;
     var blocks = Array.prototype.slice.call(box.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'))
       .filter(function(b){ return !b.parentElement.closest('li, blockquote'); });
     if(!blocks.length) return html;
     var texts = blocks.map(function(b){ return seCoverNorm(b.textContent); });
-    // Where each work is first named: which block, and how far into it.
+    // Where each work belongs: the paragraph that names it, else the one that names
+    // its author or speaks of its kind ("the memoir", "on screen"). An answer often
+    // never says the title — "Just Mercy" as book and film fell to the very bottom,
+    // stacked under the last line (2026-09-26). Two works never share a paragraph
+    // while another one is free, and nothing is sent to the end when a paragraph
+    // can hold it.
+    var CUE = { film: /\b(film|films|movie|screen|director|directed|cinema|documentary|camera|scene)\b/,
+      series: /\b(series|season|episode|episodes|show|showrunner)\b/,
+      book: /\b(book|books|memoir|novel|print|pages|chapter|chapters|author|wrote|writes|essay)\b/ };
+    var used = {};
     var placed = works.map(function(w, i){
       var name = seCoverNorm(libShortTitle(w.title).replace(/…$/, '')).trim();
-      for(var bi = 0; name && bi < blocks.length; bi++){
-        var at = texts[bi].indexOf(name);
-        if(at >= 0) return { w: w, i: i, bi: bi, at: at };
+      var who = seCoverNorm(String(w.creator || '').split(',')[0]).trim().split(' ').pop() || '';
+      var cue = CUE[roomMediaKind(w)] || CUE.book;
+      // The server's note of where the answer speaks of it wins over every guess.
+      var where = seCoverNorm(w.where || '').trim();
+      var best = null;
+      for(var bi = 0; bi < blocks.length; bi++){
+        var t = texts[bi], score = 0, at = -1, k;
+        if(where && (k = t.indexOf(where)) >= 0){ score += 12; at = k; }
+        if(name && (k = t.indexOf(name)) >= 0){ score += 6; if(at < 0) at = k; }
+        if(who.length > 2 && (k = t.indexOf(who)) >= 0){ score += 3; if(at < 0) at = k; }
+        var cm = t.match(cue);
+        if(cm){ score += 2; if(at < 0) at = cm.index; }
+        if(used[bi]) score -= 5;
+        if(!best || score > best.score) best = { score: score, bi: bi, at: Math.max(0, at) };
       }
-      return { w: w, i: i, bi: blocks.length, at: 0 };
+      // Nothing points anywhere: the first paragraph not yet holding a cover.
+      if(!best || best.score <= 0){
+        var free = 0; while(free < blocks.length - 1 && used[free]) free++;
+        best = { bi: free, at: 0 };
+      }
+      used[best.bi] = true;
+      return { w: w, i: i, bi: best.bi, at: best.at };
     }).sort(function(x, y){ return x.bi - y.bi || x.at - y.at || x.i - y.i; });
     // Two works named in the same sentence share its start; the later one steps to
     // the next sentence so they do not open on the same line.
