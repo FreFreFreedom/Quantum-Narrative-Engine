@@ -1846,10 +1846,6 @@ This dynamic appears whenever an enterprise maintains an elaborate, high-minded 
 
 In the film, the references to the classic novel press on this exact tension. Bryan Stevenson arrives with federal law books and constitutional arguments, but he finds himself fighting an enemy that is much harder to cross-examine than a corrupt sheriff: a collective belief in a story. The town does not need to defend its prejudice with explicit violence because it has already outsourced its conscience to a book. As long as everyone agrees to worship the lawyer in the story, no one has to look at the innocent man sitting on death row a few miles away. The irony is that the town uses its greatest work of art as an intellectual alibi for the very kind of injustice the book was written to condemn.
 
-## you
-
-which is which .. i have not red these 2 books..
-
 ## the room
 
 Every free lane is resting right now — they come back on their own. Wait a minute and send it again, or pick another model in the dropdown.
