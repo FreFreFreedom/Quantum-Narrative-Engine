@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Legal Roles as Threshold Guardians in the AI Era — conversations/legal-roles-as-threshold-guardians-in-the-ai-era-cf34af05.md
+- The Ethics of Legal Roles in an AI‑Driven Future — conversations/the-ethics-of-legal-roles-in-an-ai-driven-future-cf34af05.md
 - Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
 - Kinetic workout media selection — conversations/kinetic-workout-media-selection-a7051bc8.md
 - Cook County Court as Fractal Injustice Anatomy — conversations/cook-county-court-as-fractal-injustice-anatomy-05863085.md
