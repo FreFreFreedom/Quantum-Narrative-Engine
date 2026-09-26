@@ -163,8 +163,8 @@ assert.ok(directBlock.includes('Do not end every answer with a question.'));
 ok('direct remembered instructions become one provider-independent priority block');
 
 const promptBuilderBody = conversationsSrc.slice(conversationsSrc.indexOf('function buildTurnPrompt'), conversationsSrc.indexOf('async function runRoutedTurn'));
-assert.ok(promptBuilderBody.indexOf('depth && studioPersona()') < promptBuilderBody.indexOf('directInstructionsBlock()'));
-assert.ok(promptBuilderBody.indexOf('directInstructionsBlock()') < promptBuilderBody.indexOf('instruction\n'));
+assert.ok(promptBuilderBody.indexOf('studioPersona() ?') < promptBuilderBody.indexOf('directInstructionsBlock()'));
+assert.ok(promptBuilderBody.indexOf('directInstructionsBlock()') < promptBuilderBody.indexOf('=== WHAT TO DO NOW ==='));
 ok('remembered instructions follow the general voice but the current request still comes last');
 
 // The Core addition is a dated, self-contained record — a future agent reading

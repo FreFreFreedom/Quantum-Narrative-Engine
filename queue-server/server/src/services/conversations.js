@@ -2041,7 +2041,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     ROOM_PASSAGES_LINE,
     convo.reach ? REACH_BLOCK : '',
     talk(historyWindow),
-    mindBlock(lastUserText(convo.id)),
+    mindBlock(lastUserText(convo.id), { exclude: repoFacts ? ['style'] : ['style', 'decision', 'project'] }),
     interestContext(convo.created_by, lastUserText(convo.id)),
     shelfContext(convo.created_by, lastUserText(convo.id)),
     subjectsBlock(3),

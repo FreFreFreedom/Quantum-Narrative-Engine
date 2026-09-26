@@ -282,9 +282,13 @@ const RELEVANCE_PULL = 6;   // how hard the current subject outranks plain recen
 // headline without its argument is close to useless a month later. So the block is
 // now ranked against the subject, and the few facts closest to it bring their
 // reasoning with them.
-export function mindBlock(context = '') {
+// `exclude` drops kinds from this block. The Room drops 'style' always (a style fact
+// is a rule in disguise — AGENTS.md "The Room answers from context, not rules") and
+// 'decision'/'project' unless the question is about the app itself.
+export function mindBlock(context = '', { exclude = [] } = {}) {
   try {
-    const facts = db.prepare(`SELECT id, kind, text, detail, weight, hits, last_used_at, updated_at, created_at FROM mind_facts WHERE active=1`).all();
+    const facts = db.prepare(`SELECT id, kind, text, detail, weight, hits, last_used_at, updated_at, created_at FROM mind_facts WHERE active=1`).all()
+      .filter((f) => !exclude.includes(f.kind));
     return renderMindBlockFrom(facts, context);
   } catch { return ''; }
 }
@@ -311,7 +315,7 @@ export function renderMindBlockFrom(facts = [], context = '', now = Date.now()) 
   const deep = scored.filter((x) => x.rel > 0 && x.f.detail).slice(0, DETAIL_FACTS);
   const deepIds = new Set(deep.map((x) => x.f.id));
 
-  let out = '\n=== WHAT YOU KNOW ABOUT THE OWNER ===\nFollow explicit instructions and preferences here. When an older theme conflicts with a newer direct instruction, the direct instruction wins.\n';
+  let out = '\n=== WHAT YOU KNOW ABOUT THE OWNER ===\nWho he is and how he thinks, learned from past conversations.\n';
   if (deep.length) {
     out += '\nCLOSEST TO WHAT HE IS ASKING NOW — the claim, and the thinking under it:\n';
     for (const { f } of deep) {
@@ -328,7 +332,7 @@ export function renderMindBlockFrom(facts = [], context = '', now = Date.now()) 
   return out;
 }
 
-// Direct "remember this" instructions and Central style/taste memories get a
+// Direct "remember this" instructions and style rules he typed himself get a
 // second, focused placement near the end of every conversation prompt. The broad
 // memory block above carries facts and vision too, but it appears before the
 // Room's voice; a later voice line such as "metaphor is welcome" could therefore
@@ -348,7 +352,7 @@ export function directInstructionsBlock() {
     const rows = db.prepare(`
       SELECT text FROM mind_facts
       WHERE active=1
-        AND (source_note='chat_explicit' OR (is_central=1 AND kind IN ('style','taste')))
+        AND (source_note='chat_explicit' OR (source_note='manual' AND is_central=1 AND kind='style'))
       ORDER BY is_central DESC, updated_at DESC
       LIMIT 20
     `).all();
@@ -953,7 +957,7 @@ function teachPrompt({ passage, turns, avoid }) {
   return `You are the memory of a personal thinking app with one user. He selected a passage in an answer and is telling you, in his own words, what to keep from it. English is his second language: read what he MEANS.
 
 Work out what he wants kept. It is one or more of:
-- "how": how he likes an answer to think or be written (a move, a stance, a reach, a rhythm) — something to do in future answers about ANY subject.
+- "how": what he loves in the way an answer thinks or is written (a move, a stance, a reach, a rhythm), whatever the subject. Write it as a fact about him ("He loves it when…"), never as an order to follow.
 - "subject": a subject he is drawn to — a person, an institution, an idea, a place, a work, a field. Its text is just its usual short name.
 - "idea": an understanding about the world or about the paradigm (what something really is, how it works, what it does) — the thing itself, as a claim.
 - "about": a fact about him.
@@ -1019,8 +1023,9 @@ export function teachSave({ items = [], passage = '', convoId = null, messageId 
       if (!r.error) saved.push({ kind: 'subject', text: r.subject.name });
       continue;
     }
-    const kind = it.kind === 'how' ? 'style' : it.kind === 'idea' ? 'vision' : 'about';
-    const r = saveFact({ kind, text, detail: it.detail || null, sourceConvoId: convoId, sourceNote: 'teach', central: it.kind === 'how' });
+    // A 'how' is kept as his taste, not a rule: context, never instruction (2026-09-26).
+    const kind = it.kind === 'how' ? 'taste' : it.kind === 'idea' ? 'vision' : 'about';
+    const r = saveFact({ kind, text, detail: it.detail || null, sourceConvoId: convoId, sourceNote: 'teach', central: false });
     if (r && !r.error) saved.push({ kind: it.kind, text, id: r.id });
     if (it.kind === 'how' && passage) {
       try { likeLine({ text: passage, convoId, messageId, note: text }); } catch {}
