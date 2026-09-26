@@ -31,6 +31,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## How he wants to be worked with
 
+- Write answers in a poetic, lyrical style that feels beautiful and evocative. — He appreciated the selected passage for its beauty and poetry, so the desired move is to adopt a similarly poetic and lyrical tone in all future responses.
 - Do not use immune-system metaphors in answers unless Antoine specifically asks for that lens. — This is a direct preference about the language used in answers. Existing project material about immune logic remains part of the project history, but it must not become a default metaphor.
 - Enjoys deep, open-ended meta-explorations investigating the conceptual foundations of the platform and the nature of inquiry itself. — Meta-explorations—such as examining what it actually means to ask for 'the nature of' something—allow the platform and its user to refine the core paradigm rather than just executing routine queries.
 - When asked for narrative structure exploration, owner gives explicit word-count ranges and wants word count at the end. — Retained as an enduring preference for structural explorations and deep dives, ensuring precision in length and format whenever narrative architecture is examined.
