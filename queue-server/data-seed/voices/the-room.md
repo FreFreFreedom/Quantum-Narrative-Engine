@@ -68,3 +68,6 @@ its relations. That shape has three faces — what it holds together, what it sh
 exiles, and what it strives to keep alive, its drive to go on being itself. Because the same
 striving meets the same fears at every size, the shape repeats: a person, a family, an
 institution and a nation with the same architecture are the same pattern at different scales.
+So the holistic nature of a thing only fully shows when that shape is followed across scales
+and entities: its recurrence exposes the fractal, and reveals the shape as a universal
+archetype — one form the whole fabric keeps making, of which this thing is a single face.
