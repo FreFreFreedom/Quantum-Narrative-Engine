@@ -42,7 +42,7 @@ export function bindBookFacts(database) {
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
-const MATCHER = 3;
+const MATCHER = 4;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
@@ -227,7 +227,10 @@ export async function lookupBook(title, creator) {
   // Neither catalogue answered — Open Library down, Google's anonymous quota
   // spent, which is exactly when a margin cover used to come up blank. The
   // Library of Congress still knows the ISBN, and a cover can be had from that.
-  if (!out.cover || !out.isbn) {
+  // That fallback matches on the main title alone, so it is skipped when a short
+  // title with no author could be someone else's book — the same rule as above.
+  const head = words(main), loose = !surname(who) && head.length < 4 && words(title).some((w) => !head.includes(w));
+  if ((!out.cover || !out.isbn) && !(loose && !cands.length)) {
     const isbns = [out.isbn, ...(await catalogueIsbns(title, creator).catch(() => []))].filter(Boolean);
     if (!out.isbn && isbns.length) out.isbn = isbns.find((i) => i.length === 10) || isbns[0];
     for (const i of out.cover ? [] : isbns.slice(0, 5)) {
