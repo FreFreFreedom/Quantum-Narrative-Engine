@@ -39,10 +39,12 @@ export function bindBookFacts(database) {
   // "What it is", written by the app in about forty words — a publisher's blurb
   // opens with prizes in capitals and was cut mid-praise on the card.
   try { db.exec('ALTER TABLE book_facts ADD COLUMN about TEXT'); } catch (err) { /* already there */ }
+  // The book's own Goodreads page, checked; '-' once it was looked for and not found.
+  try { db.exec("ALTER TABLE book_facts ADD COLUMN goodreads TEXT NOT NULL DEFAULT ''"); } catch (err) { /* already there */ }
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
-const MATCHER = 6;
+const MATCHER = 7;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
@@ -218,7 +220,13 @@ export async function lookupBook(title, creator) {
   for (const c of cands) {
     if (out.cover && out.blurb && out.isbn) break;
     if (!out.year && c.year) out.year = c.year;
-    if (c.src === 'apple') { if (!out.cover) out.cover = c.art; continue; }
+    if (c.src === 'apple') {
+      if (!out.cover) out.cover = c.art;
+      // Apple's jacket file is named by the book's ISBN — enough for Goodreads.
+      const n = (c.art.match(/\b(97[89]\d{10})\b/) || [])[1];
+      if (!out.isbn && n) out.isbn = n;
+      continue;
+    }
     if (c.src === 'g') {
       if (!out.isbn) {
         const ids = c.v.industryIdentifiers || [];
@@ -391,12 +399,35 @@ function save(title, creator, facts) {
 }
 
 // The same shape a film's facts come back in, so the wall draws both the same way.
+// Goodreads answers /book/isbn/<n> with a redirect to a book page — for ANY number,
+// a wrong one included (a made-up one opened "The Year of the Lion"). So the page it
+// lands on is kept only when its name agrees with the book we hold.
+async function goodreadsFor(isbn, title) {
+  const n = String(isbn || '').replace(/[^0-9Xx]/g, '');
+  if (n.length !== 10 && n.length !== 13) return '';
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch('https://www.goodreads.com/book/isbn/' + n, { redirect: 'manual', signal: ctrl.signal, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    clearTimeout(timer);
+    const to = r.headers.get('location') || '';
+    const m = to.match(/^https:\/\/www\.goodreads\.com\/book\/show\/\d+[-.]([a-z0-9-_]+)/i);
+    if (!m) return '';
+    const slug = new Set(norm(m[1].replace(/[-_]/g, ' ')).split(' '));
+    const head = words(mainTitle(title));
+    const telling = words(title).filter((w) => w.length >= 5);
+    const agrees = (head.length && head.every((w) => slug.has(w))) || telling.some((w) => slug.has(w));
+    return agrees ? to.split('?')[0] : '';
+  } catch (err) { return ''; }
+}
+
 function shape(row, item) {
   return {
     title: item.title, kind: 'book', year: row?.year || item.year || '',
     poster: row?.cover || '', rating: 0, votes: 0,
     overview: row?.about || row?.blurb || '', fromBook: false, book: null,
     isbn: row?.isbn || '',
+    goodreads: /^https:\/\//.test(row?.goodreads || '') ? row.goodreads : '',
     relevance: row?.relevance || '',
   };
 }
@@ -431,10 +462,16 @@ export async function bookFactsFor(owner, items = []) {
       if (facts.cover || facts.blurb || facts.year || rematch) {
         save(it.title, it.creator, facts);
         // save() keeps an old cover when the new answer has none; a re-match must not.
-        if (rematch) { try { db.prepare('UPDATE book_facts SET cover=?, isbn=? WHERE key=?').run(facts.cover || '', facts.isbn || '', keyOf(it.title, it.creator)); } catch (err) { /* next time */ } }
+        if (rematch) { try { db.prepare("UPDATE book_facts SET cover=?, isbn=?, goodreads='' WHERE key=?").run(facts.cover || '', facts.isbn || '', keyOf(it.title, it.creator)); } catch (err) { /* next time */ } }
         row = rowOf(it.title, it.creator);
       }
       else if (row) { try { db.prepare('UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP WHERE key=?').run(keyOf(it.title, it.creator)); } catch (err) { /* next time */ } }
+    }
+    // The Goodreads page, once per book, checked against the title (see goodreadsFor).
+    if (row && row.isbn && !row.goodreads) {
+      const g = await goodreadsFor(row.isbn, it.title);
+      try { db.prepare('UPDATE book_facts SET goodreads=? WHERE key=?').run(g || '-', keyOf(it.title, it.creator)); } catch (err) { /* next time */ }
+      row = { ...row, goodreads: g || '-' };
     }
     out[it.id] = shape(row, it);
   }

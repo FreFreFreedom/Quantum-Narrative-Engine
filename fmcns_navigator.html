@@ -18413,13 +18413,16 @@ function libYouTubeLink(w) {
 
 // Goodreads, first in a book's menu (his ask, 2026-09-27). A search by title and
 // author, like Amazon: a catalogue ISBN can name an edition Goodreads does not list.
-function libGoodreadsLink(w) {
+function libGoodreadsLink(w, f) {
   if (!w || w.kind !== 'book') return null;
+  // The book's own page when the server found and checked it — "Want to Read" is
+  // one click there, in his own account if he is signed in; a search otherwise.
+  const page = f && /^https:\/\/www\.goodreads\.com\/book\/show\//.test(f.goodreads || '') ? f.goodreads : '';
   const q = [libShortTitle(w.title), w.creator || ''].filter(Boolean).join(' ');
-  return { label: 'Goodreads', url: 'https://www.goodreads.com/search?q=' + encodeURIComponent(q) };
+  return { label: 'Goodreads', url: page || 'https://www.goodreads.com/search?q=' + encodeURIComponent(q) };
 }
 function bookLinks(w, f) {
-  return [libGoodreadsLink(w), libOutLink(w, f), libGoogleLink(w, f), libYouTubeLink(w)].filter(Boolean);
+  return [libGoodreadsLink(w, f), libOutLink(w, f), libGoogleLink(w, f), libYouTubeLink(w)].filter(Boolean);
 }
 // A book window, laid out as his pick C (2026-09-27): every link behind one ↗ in
 // the head, opening a short list below it; About and Contents as two tabs, the
@@ -32474,7 +32477,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // His pick C (2026-09-27): small cover, title, ↗ for every link; About and
       // Contents as tabs. A click outside or Escape closes it, so no ✕ here.
       var bw = { kind: kind, title: d.coverTitle, creator: d.coverCreator };
-      var ff = f.isbn ? f : (seOutFacts[d.coverArt] || null);
+      var ff = (f.goodreads || f.isbn) ? f : (seOutFacts[d.coverArt] || null);
       var cov = (seOutFacts[d.coverArt] || {}).cover || roomMediaArtCache.get(d.coverArt) || '';
       var about = f.note ? '<p class="se-card-note">' + qEsc(f.note) + '</p>'
         : (!card ? waitHtml('searching', 'Looking it up', 'p', 'se-card-wait') : '');

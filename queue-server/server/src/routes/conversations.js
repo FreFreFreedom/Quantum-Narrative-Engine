@@ -145,7 +145,7 @@ export function conversationsRoutes() {
     const it = { id: 'x', kind: String(req.query.kind || 'book'), title: String(req.query.title || '').slice(0, 300),
       creator: String(req.query.creator || '').slice(0, 200), year: String(req.query.year || '').slice(0, 8) };
     if (!it.title.trim()) return res.status(400).json({ error: 'title required' });
-    if (it.kind === 'book') { const f = (await bookFacts.bookFactsFor(owner, [it])).x || {}; return res.json({ isbn: f.isbn || '', cover: f.poster || '' }); }
+    if (it.kind === 'book') { const f = (await bookFacts.bookFactsFor(owner, [it])).x || {}; return res.json({ isbn: f.isbn || '', cover: f.poster || '', goodreads: f.goodreads || '' }); }
     const f = (await screen.screenFactsFor(owner, [it])).x || {};
     res.json({ imdbId: f.imdbId || '', cover: f.poster || '' });
   }));
