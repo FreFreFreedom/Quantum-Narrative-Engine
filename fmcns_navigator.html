@@ -32609,6 +32609,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
                  + ((m.text || m.body) ? '<button type="button" class="se-turncopy" data-se-copy="' + qEsc(String(idx)) + '" title="Copy the text">\u29c9</button>' : '')
                  + (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
                  + (you && m.id ? '<button type="button" class="se-turnrewind" data-se-rewind="' + qEsc(m.id) + '" title="Rewind to here — this and everything after is removed, and the words come back to the box to change and ask again">↶</button>' : '')
+                 // Under an answer too (his ask, 2026-09-27): rewinds to the question it answered.
+                 + (!you && idx > 0 && e.msgs[idx - 1] && e.msgs[idx - 1].role === 'user' && e.msgs[idx - 1].id
+                   ? '<button type="button" class="se-turnrewind" data-se-rewind="' + qEsc(e.msgs[idx - 1].id) + '" title="Rewind to the question — it and everything after is removed, and the words come back to the box to change and ask again">↶</button>' : '')
                  + (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
                  // Remove just this one (his ask, 2026-09-24). Two clicks: the first
                  // arms it, so a stray click never costs a message.
