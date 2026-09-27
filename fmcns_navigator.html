@@ -2747,7 +2747,10 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    browser's defaults — an h1 inside a conversation is a section, not a title page. */
 .se-body.md { white-space:normal; }
 .se-covered::after { content:''; display:block; clear:both; }
-.se-cover { width:min(240px, 42%); padding:0; border:0; background:none; cursor:pointer; margin:6px 0 12px; }
+.se-cover { width:min(190px, 34%); padding:0; border:0; background:none; cursor:pointer; margin:6px 0 12px; }
+/* A new section always starts below any cover, never beside it: a heading running
+   up next to the last section's cover made the answer look scrambled (2026-09-27). */
+.se-body.md h1, .se-body.md h2, .se-body.md h3, .se-body.md h4, .se-body.md hr { clear:both; }
 .se-cover.is-right { float:right; clear:both; margin-left:24px; }
 .se-cover.is-left { float:left; clear:both; margin-right:24px; }
 .se-cover > span { display:flex; align-items:center; justify-content:center; width:100%; height:auto; aspect-ratio:2/3; border-radius:4px;
@@ -32365,7 +32368,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     placed.forEach(function(pl, k){
       var w = pl.w, key = roomMediaArtKey(w), art = roomMediaArtCache.get(key) || '';
       var btn = document.createElement('button');
-      btn.type = 'button'; btn.className = 'se-cover ' + (k % 2 ? 'is-left' : 'is-right');
+      // Always on the right (his ask, 2026-09-27): covers alternating sides, next to
+      // bullets, read as chaos. One column of covers, the text in order beside it.
+      btn.type = 'button'; btn.className = 'se-cover is-right';
       btn.title = w.title + (w.creator ? ' — ' + w.creator : '');
       btn.dataset.convo = convoId || '';
       btn.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '"'
