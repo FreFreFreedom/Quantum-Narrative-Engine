@@ -42,7 +42,7 @@ export function bindBookFacts(database) {
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
-const MATCHER = 4;
+const MATCHER = 5;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
@@ -403,7 +403,13 @@ export async function bookFactsFor(owner, items = []) {
       const facts = await lookupBook(it.title, it.creator);
       // An answer from an older matcher is replaced even by nothing: a wrong
       // jacket is worse than a plain card.
-      if (facts.cover || facts.blurb || facts.year || (row && Number(row.found_by || 0) < MATCHER)) { save(it.title, it.creator, facts); row = rowOf(it.title, it.creator); }
+      const rematch = row && Number(row.found_by || 0) < MATCHER;
+      if (facts.cover || facts.blurb || facts.year || rematch) {
+        save(it.title, it.creator, facts);
+        // save() keeps an old cover when the new answer has none; a re-match must not.
+        if (rematch) { try { db.prepare('UPDATE book_facts SET cover=?, isbn=? WHERE key=?').run(facts.cover || '', facts.isbn || '', keyOf(it.title, it.creator)); } catch (err) { /* next time */ } }
+        row = rowOf(it.title, it.creator);
+      }
       else if (row) { try { db.prepare('UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP WHERE key=?').run(keyOf(it.title, it.creator)); } catch (err) { /* next time */ } }
     }
     out[it.id] = shape(row, it);
