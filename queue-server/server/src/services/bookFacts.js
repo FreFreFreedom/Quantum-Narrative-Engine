@@ -42,7 +42,7 @@ export function bindBookFacts(database) {
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
-const MATCHER = 2;
+const MATCHER = 3;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
@@ -88,6 +88,10 @@ function scoreCandidate(cand, fullTitle, who) {
   // A one-word main title ("Broken") proves nothing by itself — the subtitle has
   // to agree too, when we have one.
   if (head.length < 2 && tail.length && !tailHit) return 0;
+  // With no author to check, a short main title proves nothing either: "Bob's Boys:
+  // The Life and Times of Robert Morgenthau" took a cricket book's jacket
+  // (2026-09-27). The subtitle has to agree before a stranger's cover is used.
+  if (!surname(who) && head.length < 4 && tail.length && !tailHit) return 0;
 
   const sn = surname(who);
   const authors = norm((cand.authors || []).join(' '));
@@ -171,11 +175,26 @@ export async function lookupBook(title, creator) {
     if (cands.some((c) => c.src === 'g')) break;
   }
 
+  // Apple Books: keyless, no daily quota, and sharp jacket art — the source that
+  // still answers when Google's anonymous quota is spent, which it often is.
+  if (!cands.some((c) => c.src === 'g' && c.v?.imageLinks)) {
+    for (const media of ['ebook', 'audiobook']) {
+      const a = await getJson('https://itunes.apple.com/search?limit=10&media=' + media + '&term=' + encodeURIComponent(main + (who ? ' ' + who : '')));
+      for (const r of a?.results || []) {
+        const name = r.trackName || r.collectionName || '';
+        const score = scoreCandidate({ title: name, authors: [r.artistName || ''] }, title, who);
+        if (score > 0 && r.artworkUrl100) cands.push({ score: score + 0.25, src: 'apple', art: String(r.artworkUrl100).replace(/\/\d+x\d+bb\.(jpg|png)$/, '/600x600bb.jpg'), year: String(r.releaseDate || '').slice(0, 4) });
+      }
+      if (cands.some((c) => c.src === 'apple')) break;
+    }
+  }
+
   cands.sort((a, b) => b.score - a.score);
   const out = { cover: '', blurb: '', year: '', isbn: '' };
   for (const c of cands) {
     if (out.cover && out.blurb && out.isbn) break;
     if (!out.year && c.year) out.year = c.year;
+    if (c.src === 'apple') { if (!out.cover) out.cover = c.art; continue; }
     if (c.src === 'g') {
       if (!out.isbn) {
         const ids = c.v.industryIdentifiers || [];
@@ -379,7 +398,9 @@ export async function bookFactsFor(owner, items = []) {
     if (stale && fetched < FETCH_CAP) {
       fetched += 1;
       const facts = await lookupBook(it.title, it.creator);
-      if (facts.cover || facts.blurb || facts.year) { save(it.title, it.creator, facts); row = rowOf(it.title, it.creator); }
+      // An answer from an older matcher is replaced even by nothing: a wrong
+      // jacket is worse than a plain card.
+      if (facts.cover || facts.blurb || facts.year || (row && Number(row.found_by || 0) < MATCHER)) { save(it.title, it.creator, facts); row = rowOf(it.title, it.creator); }
       else if (row) { try { db.prepare('UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP WHERE key=?').run(keyOf(it.title, it.creator)); } catch (err) { /* next time */ } }
     }
     out[it.id] = shape(row, it);
