@@ -42,7 +42,7 @@ export function bindBookFacts(database) {
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
-const MATCHER = 5;
+const MATCHER = 6;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
@@ -187,6 +187,30 @@ export async function lookupBook(title, creator) {
       }
       if (cands.some((c) => c.src === 'apple')) break;
     }
+  }
+
+  // Nothing by that title, but the author is known: a model often gets the title
+  // wrong and the author right — "Bob's Boys: The Life and Times of Robert
+  // Morgenthau" is Andrew Meier's "Morgenthau" (2026-09-27). Among that author's
+  // own books, take the one sharing a telling word (five letters or more) with the
+  // title we hold, and only when exactly one of them does.
+  if (!cands.length && surname(who)) {
+    const want = new Set(words(title).filter((w) => w.length >= 5));
+    const sn = surname(who), mine = [];
+    const ol = await getJson('https://openlibrary.org/search.json?limit=30&fields=cover_i,key,title,subtitle,author_name,first_publish_year,isbn&author=' + encodeURIComponent(who));
+    for (const doc of ol?.docs || []) {
+      if (!norm((doc.author_name || []).join(' ')).split(' ').includes(sn)) continue;
+      const hit = words([doc.title, doc.subtitle].filter(Boolean).join(' ')).filter((w) => want.has(w)).length;
+      if (hit) mine.push({ score: 1 + hit, src: 'ol', doc, year: doc.first_publish_year ? String(doc.first_publish_year) : '', name: norm(doc.title) });
+    }
+    const ap = await getJson('https://itunes.apple.com/search?limit=25&media=ebook&term=' + encodeURIComponent(who));
+    for (const r of ap?.results || []) {
+      if (!norm(r.artistName || '').split(' ').includes(sn) || !r.artworkUrl100) continue;
+      const hit = words(r.trackName || '').filter((w) => want.has(w)).length;
+      if (hit) mine.push({ score: 1.25 + hit, src: 'apple', art: String(r.artworkUrl100).replace(/\/\d+x\d+bb\.(jpg|png)$/, '/600x600bb.jpg'), year: String(r.releaseDate || '').slice(0, 4), name: norm(r.trackName || '') });
+    }
+    const titles = new Set(mine.map((c) => c.name.split(' ').filter((w) => w.length > 2).slice(0, 3).join(' ')));
+    if (titles.size === 1) cands.push(...mine);
   }
 
   cands.sort((a, b) => b.score - a.score);
