@@ -28,6 +28,16 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-09-24 — The Room is the dusk-glow design, in every look.** Floating rounded panels on a darker frame, a warm radial glow over the conversation, glass cards for messages and the composer, a small Q beside each answer, paper grain over the whole app. A new look must give `--glow-1`/`--glow-2` (and `--glass`/`--q-av` if it is a day look), or its Room falls back to a flat page. Looks now: atlas, darkroom, bean, navy, plum, ember. The 59 palette mockups behind it were a local throwaway page.
+
+**2026-09-24 — Waiting is drawn with orbs; never add dots or a spinner.** Every place the app works on something uses `orbHtml(state, size)` (Thinking Orbs, nine named motions) or `waitHtml(state, text)` for an orb plus a shimmering line; the Queue's moving stage uses `matrixHtml()`. One rAF loop draws them all in the look's accent, so plain markup is enough. The Room composer has Dictate (browser speech, free) and a Talk overlay (ElevenLabs orb + `speechSynthesis`, free). See `plans/living-orbs-dictate-talk.md`.
+
+**2026-09-19 — Amazon book tabs mean book-title YouTube searches.** When Antoine
+asks to do the YouTube searches for the books open on Amazon in Edge, search each
+book title rather than its author names. Open one YouTube results tab per unique
+title, keep every Amazon tab open, and avoid duplicate title searches. The current
+Codex profile also has the `amazon-book-youtube` skill for this.
+
 **2026-09-19 — Visual retry keeps the image, the next prompt does not.** A sent
 Room or Side Talk image/document leaves the composer even when generation fails, so it
 cannot leak into the next new prompt. The in-session Answer again action keeps the sent
@@ -1166,3 +1176,9 @@ Publishing, 2026-09-18: an Antoine request to make a live-session change is also
 permission to publish it. Do not ask a second question about deployment or leave a
 completed change waiting locally; commit and push `develop` under the Ship directly
 rule. Unattended overnight work remains unshipped.
+
+The lens, 2026-09-25 (foundational): answers that interpret meaning see past a thing's own
+language to what it is and does — understanding, never the surface of his essay. His rule:
+"if i point at the moon, dont look at my finger". Never copy the essay's examples, words or
+order into a prompt or answer. Prompt: `queue-server/data-seed/voices/the-lens.md` (not a
+setting). Authority: AGENTS.md "The lens". His essay, verbatim: `fractal_operational_core.md` §22.

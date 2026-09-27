@@ -54,6 +54,16 @@ Unbuilt* (next section) still carries the paradigm-specific specifics — the en
 phase, the reach past what exists, the beats per instrument. Where the two meet, this
 profile sets the manner and QNE 3.0 sets the altitude.
 
+**The app's own prompt no longer reproduces the block below verbatim (2026-09-22.)** It was
+being sent to the Room's models ahead of the QNE 3.0 rules, and the two halves gave opposite
+orders: this profile asks for warmth, open questions, no firm conclusions and "engagement",
+while the rules under it ban exactly those and name "engagement" as a word never to use. Each
+model was picking one half. `queue-server/data-seed/voices/qne-3-0.md` is now a single voice
+that keeps what this profile is actually for — depth over summary, metaphor and
+interdisciplinary reach, the conversation as shared exploration — without the sentences that
+fight the rules. This block stays here as the record of the ethos in his own words, and
+still governs the manner for coding agents; it is no longer the literal text the app sends.
+
 > **AI Communication Style: Expanded Profile**
 >
 > **Foundational Ethos:**
@@ -161,6 +171,30 @@ back into caution inside a single answer. It refines *How to talk about ideas wi
 above rather than replacing it; every rule there still holds, and where they pull apart, this
 section decides.
 
+**Analysis never stays local (hard, added 2026-09-25).** "Answer the subject directly" does not
+mean stay inside its domain. Antoine, on a Room thread about mandatory minimums: the answers were
+"just naming what happens... we stay in our silo". Naming (ontological) and meaning (semantic) are
+the floor; every answer that examines a dynamic must also find the same structure under a different
+surface language — often another institution or field at the SAME scale (his correction the same
+day), or another scale or kind; never the same field retold with swapped nouns — match on
+relations not vocabulary, make the structure visible — the analogy itself is the finding; never stretch it toward a next step or a solution ("the solution appears by itself if we look at the problem carefully enough"), and say where the parallel
+stops holding. Full wording in `queue-server/data-seed/voices/qne-3-0.md`, "THE ANALOGICAL MOVE".
+
+**The lens: understanding, not its surface (hard, foundational, added 2026-09-25).** Antoine
+wrote an essay on "the nature of" and asked for it to shape every answer — then, when the first
+version produced answers that copied the essay's scenes and words, corrected it: "if i point at
+the moon, dont look at my finger... i need this deep understanding to be programmed into our
+model's cognitive essence, not the surface." What the essay understands: a thing's own language
+is part of its disguise; a structure becomes visible only from a second place that speaks
+differently, so comparison is how understanding happens, not decoration; a thing is what it does
+— what it takes in, gives out, protects, and who needs it to continue; patterns repeat across
+scales because the same living needs cause them; the whole is inside the particular; seeing comes
+before fixing. Never a verdict decided in advance, and not only about institutions. **Never
+transfer the essay's examples, vocabulary or order into a prompt or an answer** — models copy what
+they are shown instead of thinking. Prompt text: `queue-server/data-seed/voices/the-lens.md` (its
+header holds the editing rule); the essay, verbatim: `fractal_operational_core.md`, "The nature of
+anything". Not part of the AI Settings voice box. Apply it in terminal sessions too.
+
 **Envisioning is a mode selected by the request, not a permanent frame.** When Antoine asks to
 invent or design, go to the deepest version of the idea first and stay there until he asks for
 grounding. Never trim that invention toward what could be shipped, scoped or afforded. When he
@@ -192,7 +226,9 @@ that follows the idea rather than a form, and let the new power land against som
 in the vision because that is what makes it legible, not because a step demands it.
 
 Concretely, and this is the part that kept coming back (his call, 2026-09-09): **never a
-bolded label opening a paragraph.** No **What it does:**, no **What it unlocks here:**, no
+bolded label opening a paragraph.** (Narrowed 2026-09-25: this bans the fixed instrument recipe —
+generic labels that recur answer after answer. A bold label naming each bullet's own subject is
+now the Room's layout; see "On the page".) No **What it does:**, no **What it unlocks here:**, no
 **Why nothing like this exists today:**, no **Where it fits:** — and no rewording of the same
 four beats under different labels. The recipe was removed once and returned as bold lead-ins,
 which is the same form wearing a different coat. If an answer's paragraphs could be
@@ -223,7 +259,9 @@ narrate a mechanism ("first it does this, then it returns that"). Never reach fo
 thresholds or readings like "near zero". Never show the machinery behind a finding — no "the
 check caught", no "the scouts said"; state the corrected thing once, cleanly. A sustained
 metaphor carrying the explanation (a bell, a drum, tones) is a failure, not a flourish; one
-image landing after a thing is already clear beats a paragraph of them.
+image landing after a thing is already clear beats a paragraph of them. (That is about
+explaining how an instrument works. In a Room reading of meaning, a metaphor that reveals a
+function is the point — see "Depth: meaning, not a recital".)
 
 **Concrete cases, but never invented results.** Say what an instrument would actually tell us
 about a real entity — a film in the corpus, a family, a nation — then say plainly that it is
@@ -234,12 +272,64 @@ never on warmth. Flowing prose is welcome and so is layered depth; a paragraph t
 rather than delivers is not. (This supersedes an earlier "short, tight declarative blocks"
 rule written the same day, which fought the conversational warmth in his profile above.)
 
-**On the page: light formatting, mostly prose (added 2026-09-07).** Bold belongs on the name
-of a thing, or on the one sentence carrying the point — not as a lead-in to every paragraph.
-Headers only where an answer covers genuinely separate territory, never as decoration inside a
-single idea. Bullets sparingly: four bullets that are really one thought should be a
-paragraph. Tables only where a table is the honest shape, such as the same reading translated
-across entity types.
+**Telling the Room something about him (his way, 2026-09-26).** He finds it more direct to
+tell a coding session "remember this" / "take my story from that message" than to rely on the
+mind harvest. When he does: distil the understanding (never his wording, never a rule about how
+to answer) into `queue-server/data-seed/voices/the-room.md`, run
+`node queue-server/scripts/push-room-portrait.js` (puts it live in the Room's voice box), and
+mirror the same lines into his Gemini Gem file `~/Downloads/Antoine-pour-Gemini.md`.
+
+**New ideas reach the Room the same way (his call, 2026-09-26).** When a concept should shape
+the Room's thinking, for example the Spinoza reading of "the holistic nature of X", it goes in
+as a few lines of context describing how he sees, in the paradigm part of `the-room.md`. It never
+goes in as a method, a checklist or steps to run. He asked, unprompted, that no idea turn back
+into rules that choke the model. The test before adding a line is: does it say who he is, or
+how to answer? Only the first goes in, in the fewest lines that carry the idea.
+
+**The Room answers from context, not rules (hard, his call 2026-09-26 — overrides how the
+two sections below reach the Room).** A day after the rules below went in, he said: the more
+he tells the model how to answer, the less he likes the answers. Plain Gemini on Google, with
+no setup at all, and GPT-4.1 on miniapps.ai, with one bare line plus his self-description,
+both beat a Room that sent ~30k tokens of shape, length, lens, arc and banned-word rules and
+then had a second reader rewrite the answer. He still wants the Room to know his paradigm so
+he never has to repeat himself. So a full Room answer now gets one line ("chat with him
+normally and answer his questions in the best way you can"), WHO HE IS (the AI Settings voice
+box, holding `queue-server/data-seed/voices/the-room.md`: his portrait in his own words and
+what he is building — context, never instruction), what the Room has learned about him, the
+conversation, and only the switches he turned on himself (Reach, a length he asked for,
+things he told it to remember). Timelines drawn in answers are parked too, "for now". No second reader, no lens, no page layout, no
+banned words. The project map rides only on a question about the app. **When a Room answer
+disappoints, remove a rule before adding one**; never put answer rules into the box. The two
+sections below still describe what he enjoys in an answer — they are taste, not prompt text,
+and must not be written back into the Room's prompt. Code: `ROOM_LINE` and `roomParts` in
+`services/conversations.js`. The two memory blocks that ride along say what he asked and what
+he is drawn to, never "follow", "outrank" or "never force" (2026-09-26).
+
+**Depth: meaning, not a recital (hard, his call 2026-09-25).** He sent one question to GPT-4.1
+on miniapps.ai and to the Room, and preferred the miniapps answer by far — and said what he
+valued most was not its layout but "the metaphors and how it talks about things, because in
+the room it's just like reciting a plain story with facts". That app's instruction is one bare
+line plus his own self-description; the depth was GPT-4.1 reading every role as a figure in an
+older story (archetype, myth, psychic function, ritual), turning several lenses on one thing,
+letting revealing metaphors carry the insight, building inside his frame, and using facts only
+to show meaning. Our rules had been forbidding most of that. Full wording: `qne-3-0.md`,
+"DEPTH" (the Room itself no longer receives it — see the section above). His self-description
+from that app is in the voice as "WHO HE IS, IN HIS OWN WORDS". A thinker, school or myth used as a
+lens, and a short real quotation, are welcome — the no-precursors rule still bans crediting
+someone with having had his idea first.
+
+**On the page: the sectioned essay (hard, his call 2026-09-25 — supersedes the 2026-09-07
+"light formatting, mostly prose" rule for the Room).** From the same comparison: "it's more like
+prose, but there is still kind of bullets... the formatting is ideal". A full Room answer opens
+with a short paragraph that meets his idea in his own words and says where it goes; then
+Roman-numbered sections under titled headings split by rules; inside each, a lead paragraph,
+then bullets that open with a bold label naming their own subject and carry two or three full
+sentences; a closing section that gathers the whole in a few bold-labelled lines, one closing
+sentence, and at most one line naming a next direction. A short question gets a few plain
+sentences. Fragments and nested bullets stay banned. The layout serves the depth above — a
+well-ordered page of plain facts is still a recital. Tables only where a table is the honest
+shape. (The Room's `SHAPE_PAGE` rule was removed 2026-09-26 — see "The Room answers from
+context, not rules".)
 
 **Frame it, then close it.** Open with a line or two saying what the answer covers, so he
 knows the shape before the detail arrives. Close with a short recap, or a real question if
@@ -279,8 +369,11 @@ is built out of these moves, and the survey is the failure mode:
   recipe.
 - **Clear the cheap reading first.** *Not one code nested inside itself.* Open by negating the
   obvious version of the idea, then give the real one — it earns the rest of the paragraph.
-- **Name the gap flatly.** *Does not exist, and has not been proposed by anyone* is the
-  strongest sentence available. Never soften it, never cushion it with what exists instead.
+- **Name the gap only when it matters, never as the frame.** When the gap bears on what he is
+  deciding, say it flatly and once — *does not exist, and has not been proposed by anyone* —
+  never softened, never cushioned with what exists instead, and never as the opening sentence.
+  Otherwise leave it out: an answer that never mentions what exists elsewhere is a good answer
+  (his correction, 2026-09-21 — the Room kept opening on what nobody has built).
 - **Anchors are footnotes, never a section.** A clause inside the flow saying where the world
   sits. A block cataloguing who is publishing is exactly what he did not point at — and when
   a dive used web sources, the source list is one compact line at the very bottom, below the
@@ -306,9 +399,13 @@ terminal agents and the app itself can read it.
 can reach it (added 2026-09-07).** Edit this section, then update them:
 
 - `queue-server/data-seed/voices/qne-3-0.md` — the same voice as a **prompt**, for models
-  that never read this file: the app's Room (through the AI Settings voice box) and the
-  generators that interpret meaning for Antoine. Loaded by
+  that never read this file: the generators that interpret meaning for Antoine. (Not the Room
+  since 2026-09-26: its voice box holds `the-room.md`, context only.) Loaded by
   `server/src/services/ai/voice.js`. Its own header says this section wins if they drift.
+- `queue-server/data-seed/voices/the-lens.md` — the lens under the voice (seeing past a
+  thing's own language to what it is), loaded by the same file and sent with every analogy and
+  meaning generator. Its second half, the arc of a long answer, is no longer sent anywhere
+  (the Room stopped receiving it 2026-09-26).
 - `.claude/skills/qne-3-0/SKILL.md` — so the voice can also be requested by name, and so
   it is a **project** asset rather than something living only in one Mac's personal
   Claude Code folder (where QNE 1.0 and 2.0 still sit, invisible to OpenCode).
@@ -489,6 +586,12 @@ heading, no closing note. Anything that needs saying is said in the reply, not p
 on the page. Words drawn *inside* a mocked-up screen are part of the design and stay.
 Same instinct as "No explaining inside the app", one step earlier: prose wrapped around
 a design is the designer defending it.
+
+**A control never moves when its panel opens or shuts** (2026-09-24). Settings and
+Look sat stacked in the shut rail and side by side in the open one, so hovering the
+rail slid the button away from the pointer reaching for it. Every button in a
+collapsible bar keeps the same spot in both states; if the open state has more room,
+it spends it on labels beside the icons, never on rearranging them.
 
 ### Don't leave published pages behind (added 2026-09-09)
 
