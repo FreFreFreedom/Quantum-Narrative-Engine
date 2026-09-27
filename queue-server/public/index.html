@@ -3737,7 +3737,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-rail-drop:hover { color:var(--c-ink); background:var(--c-surface-2); }
 /* Small and tight (his pick A, 2026-09-24): a narrow list, one line per kept
    chapter, and the search folded into an icon in the head. */
-#roomConvo .se-rail:hover, #roomConvo .se-rail:focus-within { width:250px; padding:6px 5px; border-radius:12px; }
+#roomConvo .se-rail:hover, #roomConvo .se-rail:focus-within { width:300px; padding:6px 5px; border-radius:12px; }
 #roomConvo .se-rail-head { align-items:center; padding-left:10px; padding-right:4px; }
 #roomConvo .se-rail:hover .se-rail-head, #roomConvo .se-rail:focus-within .se-rail-head { padding-top:4px; padding-bottom:6px; border-bottom-color:transparent; }
 .se-rail-findbtn { display:flex; align-items:center; justify-content:center; width:24px; height:24px; padding:0; border:0; border-radius:6px; background:none; color:var(--c-ink-5); cursor:pointer; }
@@ -3748,7 +3748,11 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 #roomConvo .se-rail-find input { font:13px var(--font-ui); }
 #roomConvo .se-rail-item { gap:10px; min-height:26px; padding:5px 8px; border-radius:7px; }
 #roomConvo .se-rail-num { width:16px; font:500 10px/1 'Cinzel', var(--font-read); }
-#roomConvo .se-rail-name { display:block; white-space:nowrap; text-overflow:ellipsis; font:13px/1.35 var(--font-ui); }
+#roomConvo .se-rail-name { font:13px/1.35 var(--font-ui); }
+/* Open, a chapter name shows whole — wrapped, never cut; the number sits on its first line. */
+#roomConvo .se-rail:hover .se-rail-item, #roomConvo .se-rail:focus-within .se-rail-item { align-items:baseline; }
+#roomConvo .se-rail:not(:hover):not(:focus-within) .se-rail-name { display:block; white-space:nowrap; text-overflow:ellipsis; }
+#roomConvo .se-rail:hover .se-rail-name, #roomConvo .se-rail:focus-within .se-rail-name { -webkit-line-clamp:3; }
 #roomConvo .se-rail-item.is-here::before { top:6px; bottom:6px; }
 .se-rail-mark { display:none; flex:none; width:10px; height:12px; color:var(--c-brand); }
 .se-rail:hover .se-rail-item.is-saved .se-rail-mark, .se-rail:focus-within .se-rail-item.is-saved .se-rail-mark { display:block; }
