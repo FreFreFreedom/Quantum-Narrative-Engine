@@ -31490,7 +31490,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // Only his own hand lets go: a repaint that briefly shortens the page also
       // moves scrollTop up, and must not count.
       if(top < lastTop - 1 && Date.now() - lastInput < 1000) log._detached = 1;
-      else if(top > lastTop && dist < 24) log._detached = 0;
+      // Taking hold again needs some slack: words keep landing below while he
+      // scrolls down to them, so the very end is a moving target.
+      else if(top > lastTop && dist < 80) log._detached = 0;
       lastTop = top;
     }, { passive: true });
   }
@@ -31511,7 +31513,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var selecting=selection && selection.rangeCount && !selection.isCollapsed
       && (log.contains(selection.anchorNode)||log.contains(selection.focusNode));
     var draggingHere=mouseDragging && log.matches(':hover');
-    if(log.renderedHtml!==nextLog){
+    // While an answer streams, only its own words change. Rebuilding the whole
+    // thread once a frame kept the page too busy to follow his hand and wrote the
+    // scroll position back every frame, so scrolling up mid-answer kept landing him
+    // at the bottom again (2026-09-27, after the follow fix alone did not cure it).
+    // When everything around the streaming words is unchanged, only they are
+    // replaced, and the scroll position is not touched unless he is following.
+    var streamAt = nextLog.indexOf('<!--se-stream-->'), streamEnd = nextLog.indexOf('<!--/se-stream-->');
+    var streamShell = streamAt !== -1 && streamEnd > streamAt ? nextLog.slice(0, streamAt) + nextLog.slice(streamEnd) : null;
+    var streamBody = log.renderedHtml !== nextLog && streamShell !== null && streamShell === log._streamShell
+      ? log.querySelector('.se-body.md[data-se-streaming]') : null;
+    if(streamBody && !(selecting && (streamBody.contains(selection.anchorNode) || streamBody.contains(selection.focusNode)))){
+      streamBody.innerHTML = nextLog.slice(streamAt + 16, streamEnd);
+      log.renderedHtml = nextLog;
+      if(atBottom) log.scrollTop = log.scrollHeight;
+    } else if(log.renderedHtml!==nextLog){
       if(selecting || draggingHere){
         // Keep selected DOM nodes alive. New content waits until the reader has
         // finished selecting/using the passage; unrelated composer updates continue.
@@ -31535,8 +31551,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           }
         }
         log.innerHTML=nextLog;log.renderedHtml=nextLog;
+        log._streamShell = streamShell;
+        if(streamShell !== null){ var sb = log.querySelectorAll('.se-turn > .se-body.md'); if(sb.length) sb[sb.length - 1].setAttribute('data-se-streaming', '1'); }
         seLoadCovers(log);
-        log.scrollTop=atBottom?log.scrollHeight:was;
+        // A write of the same place still breaks off a scroll in progress; only move when it must.
+        if(atBottom) log.scrollTop = log.scrollHeight;
+        else if(Math.abs(log.scrollTop - was) > 1) log.scrollTop = was;
         if(anchors.length){
           var holdAt = anchors[0].top;
           var hold = function(){
@@ -31544,7 +31564,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
               var el = log.querySelector('.se-turn[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(anchors[ai].id) : anchors[ai].id) + '"]');
               if(!el) continue;
               var want = ai === 0 ? anchors[0].top : holdAt;
-              log.scrollTop = Math.max(0, log.scrollTop + (el.getBoundingClientRect().top - log.getBoundingClientRect().top) - want);
+              var shift = (el.getBoundingClientRect().top - log.getBoundingClientRect().top) - want;
+              if(Math.abs(shift) > 1) log.scrollTop = Math.max(0, log.scrollTop + shift);
               return log.scrollTop;
             }
             return log.scrollTop;
@@ -32476,7 +32497,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // before the first token, and for lanes that don't stream at all.
       html += '<div class="se-turn">'
            +  (e.stream
-                ? '<div class="se-body md">' + fmtBody(e.stream, true) + orbHtml('composing', 30, 'se-cursor-orb') + '</div>'
+                ? '<div class="se-body md"><!--se-stream-->' + fmtBody(e.stream, true) + orbHtml('composing', 30, 'se-cursor-orb') + '<!--/se-stream--></div>'
                 : '<div class="se-waiting">' + orbHtml(orbForPhase(e.phase), 40) + '<span class="se-phase qne-shimmer">' + qEsc(e.phase || 'Thinking') + '</span></div>'
                   // What it is doing while there is nothing to show yet — a lookup,
                   // or a lane that is not answering. Silence for a minute reads as
