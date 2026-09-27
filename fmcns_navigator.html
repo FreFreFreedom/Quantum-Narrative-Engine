@@ -2779,6 +2779,27 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-card-out { display:inline-flex; align-items:center; gap:6px; margin-top:22px; padding:9px 18px; border:1px solid var(--c-border-2); border-radius:999px;
   font-size:15px; font-weight:500; letter-spacing:.02em; color:var(--c-ink); text-decoration:none; }
 .se-card-outs { display:flex; flex-wrap:wrap; gap:8px; }
+/* A book window, pick C: head with ↗, then About · Contents tabs. */
+.bk-head { display:flex; align-items:center; gap:16px; }
+.bk-cover { flex:none; width:56px; height:84px; border-radius:4px; background:var(--c-surface-2) center/cover no-repeat; box-shadow:0 6px 16px rgba(0,0,0,.28); }
+.bk-id { flex:1; min-width:0; }
+.bk-id .se-card-title { padding-right:0; font-size:26px; }
+.bk-out { position:relative; flex:none; align-self:flex-start; }
+.bk-out-btn { width:32px; height:32px; border-radius:50%; border:1px solid color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, transparent); background:none;
+  color:var(--c-kept-echo, var(--c-accent)); font-size:15px; line-height:1; cursor:pointer; }
+.bk-out-btn:hover, .bk-out-btn[aria-expanded="true"] { background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 12%, transparent); }
+.bk-out-menu { position:absolute; right:0; top:calc(100% + 6px); z-index:5; display:flex; flex-direction:column; gap:2px; min-width:150px; padding:6px;
+  background:var(--c-surface-2, var(--c-surface)); border:1px solid var(--c-border); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,.3); }
+.bk-out-menu[hidden] { display:none; }
+.bk-out-menu a { padding:6px 10px; border-radius:6px; font-size:var(--fs-sm); color:var(--c-ink-2); text-decoration:none; white-space:nowrap; }
+.bk-out-menu a:first-child { color:var(--c-kept-echo, var(--c-accent)); }
+.bk-out-menu a:hover { background:var(--c-hover-wash); color:var(--c-ink); }
+.bk-tabs { display:flex; gap:20px; margin-top:18px; border-bottom:1px solid var(--c-border); }
+.bk-tabs button { padding:9px 0; border:0; background:none; font:inherit; font-size:var(--fs-xs); letter-spacing:.16em; text-transform:uppercase; color:var(--c-ink-5); cursor:pointer; }
+.bk-tabs button.on { color:var(--c-ink); box-shadow:inset 0 -2px 0 var(--c-kept-echo, var(--c-accent)); }
+.bk-pane[hidden] { display:none; }
+.se-card .bk-pane .se-card-toc { margin-top:10px; }
+.shelf-panel-head .bk-out { margin-left:auto; }
 .se-card-out:hover { background:var(--c-hover-wash); }
 .se-body.md > :first-child { margin-top:0; }
 .se-body.md > :last-child { margin-bottom:0; }
@@ -18278,19 +18299,15 @@ function shelfPanel(b) {
     + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
     + '<div><b>' + qEsc(d.title) + '</b>' + (d.author ? '<small>' + qEsc(d.author) + '</small>' : '')
     + '<div class="shelf-facts">' + facts + '</div>'
-    + (() => { const bw = { kind: 'book', title: d.title, creator: d.author || '' };
-        return '<div class="shelf-acts">' + [libOutLink(bw, null), libGoogleLink(bw, null), libYouTubeLink(bw)].filter(Boolean).map(out =>
-          '<a class="shelf-out" href="' + qEscAttr(out.url) + '" target="_blank" rel="noopener noreferrer">'
-          + qEsc(out.label) + ' <span aria-hidden="true">↗</span></a>').join('') + '</div>'; })()
     + '</div>'
+    + bookOutMenu(bookLinks({ kind: 'book', title: d.title, creator: d.author || '' }, null))
     + '<button type="button" data-close aria-label="Close">✕</button></div>'
-    + libContentsMarkup(libShortTitle(d.title), d.author || '', '')
-    + shelfNotesMarkup(d)
-    // What sat here when nothing was kept was the book's first page — the
-    // publisher's front matter in capitals, which reads as broken text.
-    + (d.passages.length
-      ? '<div class="shelf-kept">' + d.passages.map((p) => '<blockquote>' + qEsc(String(p.text || '').slice(0, 320)) + '</blockquote>').join('') + '</div>'
-      : '')
+    + bookTabs(shelfNotesMarkup(d)
+      // What sat here when nothing was kept was the book's first page — the
+      // publisher's front matter in capitals, which reads as broken text.
+      + (d.passages.length
+        ? '<div class="shelf-kept">' + d.passages.map((p) => '<blockquote>' + qEsc(String(p.text || '').slice(0, 320)) + '</blockquote>').join('') + '</div>'
+        : ''), libContentsMarkup(libShortTitle(d.title), d.author || '', '', true))
     + '</div>';
 }
 
@@ -18391,6 +18408,57 @@ function libYouTubeLink(w) {
   return { label: 'YouTube', url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q) };
 }
 
+// Goodreads, first in a book's menu (his ask, 2026-09-27). A search by title and
+// author, like Amazon: a catalogue ISBN can name an edition Goodreads does not list.
+function libGoodreadsLink(w) {
+  if (!w || w.kind !== 'book') return null;
+  const q = [libShortTitle(w.title), w.creator || ''].filter(Boolean).join(' ');
+  return { label: 'Goodreads', url: 'https://www.goodreads.com/search?q=' + encodeURIComponent(q) };
+}
+function bookLinks(w, f) {
+  return [libGoodreadsLink(w), libOutLink(w, f), libGoogleLink(w, f), libYouTubeLink(w)].filter(Boolean);
+}
+// A book window, laid out as his pick C (2026-09-27): every link behind one ↗ in
+// the head, opening a short list below it; About and Contents as two tabs, the
+// Contents tab only once a catalogue has given one. The tab he last chose is kept.
+function bookOutMenu(links) {
+  if (!links.length) return '';
+  return '<span class="bk-out"><button type="button" class="bk-out-btn" aria-label="Open elsewhere" aria-expanded="false">↗</button>'
+    + '<span class="bk-out-menu" hidden>' + links.map((o) =>
+      '<a href="' + qEscAttr(o.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(o.label) + '</a>').join('') + '</span></span>';
+}
+function bookTab() { try { return localStorage.getItem('qne-book-tab') === 'contents' ? 'contents' : 'about'; } catch (_) { return 'about'; } }
+function bookTabs(about, contents) {
+  if (!contents) return '<div class="bk-pane">' + about + '</div>';
+  const t = bookTab();
+  return '<div class="bk-tabs" role="tablist">'
+    + '<button type="button" role="tab" data-bk-tab="about" class="' + (t === 'about' ? 'on' : '') + '">About</button>'
+    + '<button type="button" role="tab" data-bk-tab="contents" class="' + (t === 'contents' ? 'on' : '') + '">Contents</button></div>'
+    + '<div class="bk-pane" data-bk-pane="about"' + (t === 'about' ? '' : ' hidden') + '>' + about + '</div>'
+    + '<div class="bk-pane" data-bk-pane="contents"' + (t === 'contents' ? '' : ' hidden') + '>' + contents + '</div>';
+}
+if (!window.__bkWired) {
+  window.__bkWired = true;
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest && ev.target.closest('.bk-out-btn');
+    document.querySelectorAll('.bk-out-menu:not([hidden])').forEach((m) => {
+      if (!btn || m.previousElementSibling !== btn) { m.hidden = true; m.previousElementSibling?.setAttribute('aria-expanded', 'false'); }
+    });
+    if (btn) {
+      ev.stopPropagation();
+      const m = btn.nextElementSibling; m.hidden = !m.hidden; btn.setAttribute('aria-expanded', String(!m.hidden));
+      return;
+    }
+    const tab = ev.target.closest && ev.target.closest('[data-bk-tab]');
+    if (tab) {
+      const t = tab.dataset.bkTab, host = tab.closest('.bk-tabs').parentElement;
+      try { localStorage.setItem('qne-book-tab', t); } catch (_) {}
+      host.querySelectorAll(':scope > .bk-tabs [data-bk-tab]').forEach((b) => b.classList.toggle('on', b.dataset.bkTab === t));
+      host.querySelectorAll(':scope > [data-bk-pane]').forEach((p) => { p.hidden = p.dataset.bkPane !== t; });
+    }
+  }, true);
+}
+
 // A book's table of contents, from real catalogues only (Library of Congress,
 // then Open Library, then Google Books — the server tries them in turn and keeps
 // the answer). Asked for when a book's panel opens; a book no catalogue lists
@@ -18403,7 +18471,7 @@ document.addEventListener('toggle', (ev) => {
   libTocOpen = ev.target.open;
   try { localStorage.setItem('qne-lib-toc', libTocOpen ? '1' : '0'); } catch (_) {}
 }, true);
-function libContentsMarkup(title, author, isbn) {
+function libContentsMarkup(title, author, isbn, inTab) {
   const key = libNorm(title) + '|' + libNorm(author);
   const c = libContents[key];
   if (!c) {
@@ -18412,10 +18480,14 @@ function libContentsMarkup(title, author, isbn) {
       .then((out) => { libContents[key] = { entries: out.entries || [], source: out.source || '' }; })
       .catch(() => { libContents[key] = { entries: [], source: '' }; })
       .finally(() => renderInterestLibrary({ quiet: true }));
-    return waitHtml('searching', 'Looking for the contents', 'p', 'shelf-note-wait');
+    return inTab ? '' : waitHtml('searching', 'Looking for the contents', 'p', 'shelf-note-wait');
   }
-  if (c.busy) return waitHtml('searching', 'Looking for the contents', 'p', 'shelf-note-wait');
+  if (c.busy) return inTab ? '' : waitHtml('searching', 'Looking for the contents', 'p', 'shelf-note-wait');
   if (!c.entries.length) return '';
+  if (inTab) return '<div class="shelf-note lib-toc"><ol>'
+    + c.entries.map((e) => '<li class="' + (e.l ? 'sub' : (/^(part|pt\.|book|section|volume)\b/i.test(e.t) ? 'part' : '')) + '">'
+      + '<span>' + qEsc(e.t) + '</span>' + (e.p ? '<em>' + qEsc(e.p) + '</em>' : '') + '</li>').join('')
+    + '</ol><small>' + qEsc(c.source) + '</small></div>';
   return '<details class="shelf-note lib-toc"' + (libTocOpen ? ' open' : '') + '><summary><h6>Contents</h6></summary><ol>'
     + c.entries.map((e) => '<li class="' + (e.l ? 'sub' : (/^(part|pt\.|book|section|volume)\b/i.test(e.t) ? 'part' : '')) + '">'
       + '<span>' + qEsc(e.t) + '</span>' + (e.p ? '<em>' + qEsc(e.p) + '</em>' : '') + '</li>').join('')
@@ -18489,6 +18561,22 @@ function libScreenPanel(w) {
       + '<span class="lib-bchip" data-bt="' + qEscAttr(f.book.title) + '" data-ba="' + qEscAttr(f.book.author || '') + '"></span><div><small>From a book' + (f.book.where === 'shelf' ? ' · on your shelf' : f.book.where === 'library' ? ' · in your library' : '') + '</small><b>'
       + qEsc(f.book.title) + ' <span aria-hidden="true">↗</span></b>' + (f.book.author ? '<span class="lib-based-by">' + qEsc(f.book.author) + '</span>' : '')
       + '</div></a>' : '';
+  const isBook = w.kind === 'book';
+  if (isBook) {
+    const about = (f.overview ? '<div class="shelf-note"><h6>What it is</h6><p>' + qEsc(libForty(f.overview)) + '</p></div>' : '')
+      + (f.relevance
+        ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-rescreen title="Write it again">⟳</button></h6><p>' + qEsc(libForty(f.relevance)) + '</p></div>'
+        : (libScreenBusy ? waitHtml('weaving', 'Working out what it gives you', 'p', 'shelf-note-wait') : ''));
+    return '<div class="shelf-panel">'
+      + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
+      + '<div><b title="' + qEscAttr(w.title) + '">' + qEsc(libShortTitle(w.title)) + '</b>'
+      + (w.creator ? '<small>' + qEsc(w.creator) + '</small>' : '')
+      + ((f.year || w.year) ? '<div class="shelf-facts"><span>' + qEsc(f.year || w.year) + '</span></div>' : '') + '</div>'
+      + bookOutMenu(bookLinks(w, f))
+      + '<button type="button" data-close aria-label="Close">✕</button></div>'
+      + bookTabs(about, libContentsMarkup(libShortTitle(w.title), w.creator || '', f.isbn || '', true))
+      + '<div class="shelf-acts">' + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</div></div>';
+  }
   return '<div class="shelf-panel">'
     + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
     + '<div><b title="' + qEscAttr(w.title) + '">' + (w.url && /^https:\/\//.test(w.url)
@@ -32376,6 +32464,24 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if (f.runtime) meta.push(kind === 'series' ? f.runtime + ' min/ep' : Math.floor(f.runtime / 60) + 'h ' + String(f.runtime % 60).padStart(2, '0'));
       if (f.seasons) meta.push(f.seasons + (f.seasons === 1 ? ' season' : ' seasons'));
       (f.genres || []).forEach(function(g){ meta.push(g); });
+    }
+    if (book) {
+      // His pick C (2026-09-27): small cover, title, ↗ for every link; About and
+      // Contents as tabs. A click outside or Escape closes it, so no ✕ here.
+      var bw = { kind: kind, title: d.coverTitle, creator: d.coverCreator };
+      var ff = f.isbn ? f : (seOutFacts[d.coverArt] || null);
+      var cov = (seOutFacts[d.coverArt] || {}).cover || roomMediaArtCache.get(d.coverArt) || '';
+      var about = f.note ? '<p class="se-card-note">' + qEsc(f.note) + '</p>'
+        : (!card ? waitHtml('searching', 'Looking it up', 'p', 'se-card-wait') : '');
+      var cc = libContents[libNorm(libShortTitle(d.coverTitle)) + '|' + libNorm(d.coverCreator)];
+      var toc = cc && !cc.busy && cc.entries.length ? '<ol class="se-card-toc">' + cc.entries.map(function(x){
+          return '<li class="' + (x.l ? 'sub' : (/^(part|pt\.|book|section|volume)\b/i.test(x.t) ? 'part' : '')) + '"><span>' + qEsc(x.t) + '</span>' + (x.p ? '<em>' + qEsc(x.p) + '</em>' : '') + '</li>';
+        }).join('') + '</ol><small class="se-card-src">' + qEsc(cc.source) + '</small>' : '';
+      return '<div class="bk-head"><span class="bk-cover"' + (/^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '') + '></span>'
+        + '<div class="bk-id"><b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
+        + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '') + '</div>'
+        + bookOutMenu(bookLinks(bw, ff)) + '</div>'
+        + bookTabs(about, toc);
     }
     var html = '<button type="button" class="se-card-x" data-card-close aria-label="Close">✕</button>'
       + '<b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
