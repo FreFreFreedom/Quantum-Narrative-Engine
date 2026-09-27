@@ -74,15 +74,20 @@ export function saveReference(owner, ref) {
 export function referenceSaved(owner, identity) {return !!db.prepare('SELECT 1 FROM reference_saves WHERE owner=? AND identity=?').get(owner,identity);}
 export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
   ownerCheck(owner);
-  const media=db.prepare('SELECT id,kind,title,creator,year,state FROM interest_works WHERE owner=?').all(owner).map(r=>({...r,type:'media'}));
+  // Newest first (his ask, 2026-09-27): what he just added shows at the top. Two
+  // timestamp formats live in these tables ('YYYY-MM-DD HH:MM:SS' and ISO), so each
+  // row carries one comparable number.
+  const addedMs=(t)=>{if(!t)return 0;const v=String(t).replace(' ','T');const n=Date.parse(/[zZ]$|[+-]\d\d:?\d\d$/.test(v)?v:v+'Z');return Number.isNaN(n)?0:n;};
+  const media=db.prepare('SELECT id,kind,title,creator,year,state,created_at FROM interest_works WHERE owner=?').all(owner).map(({created_at,...r})=>({...r,type:'media',added:addedMs(created_at)}));
   // A passage kept from a conversation carries no source line; only one from a
   // book or a document names where it came from.
-  const passages=db.prepare('SELECT id,text,source_title,convo_id,message_id FROM saved_passages WHERE created_by=? AND deleted_at IS NULL').all(owner)
-    .map(r=>({type:'passage',id:r.id,kind:'passage',title:r.text.slice(0,100),text:r.text,sourceTitle:(r.convo_id||r.message_id)?'':(r.source_title||'')}));
-  const saved=db.prepare('SELECT id,snapshot FROM reference_saves WHERE owner=? ORDER BY created_at DESC').all(owner).map(r=>({...parse(r.snapshot),type:'saved',id:r.id}));
+  const passages=db.prepare('SELECT id,text,source_title,convo_id,message_id,created_at FROM saved_passages WHERE created_by=? AND deleted_at IS NULL').all(owner)
+    .map(r=>({type:'passage',id:r.id,kind:'passage',title:r.text.slice(0,100),text:r.text,sourceTitle:(r.convo_id||r.message_id)?'':(r.source_title||''),added:addedMs(r.created_at)}));
+  const saved=db.prepare('SELECT id,snapshot,created_at FROM reference_saves WHERE owner=? ORDER BY created_at DESC').all(owner).map(r=>({...parse(r.snapshot),type:'saved',id:r.id,added:addedMs(r.created_at)}));
   const words=String(query).toLowerCase().slice(0,250).split(/\s+/).filter(Boolean);
   const importedKeys=new Set(media.map(mediaKey).filter(Boolean));
-  const items=[...saved.filter(r=>!mediaKey(r)||!importedKeys.has(mediaKey(r))),...media,...passages].filter(r=>(!kind||r.kind===kind)&&words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w)));
+  const items=[...saved.filter(r=>!mediaKey(r)||!importedKeys.has(mediaKey(r))),...media,...passages].filter(r=>(!kind||r.kind===kind)&&words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w)))
+    .sort((a,b)=>(b.added||0)-(a.added||0));
   const start=Math.max(0,Number(offset)||0), cap=Math.max(1,Math.min(2000,Number(limit)||40));
   // How many of each kind the library holds (the search still applies, the kind
   // filter does not), for the kind menu. Book titles travel too so the page can

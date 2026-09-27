@@ -3466,6 +3466,22 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 @keyframes shelfSpin { to { transform:rotate(360deg); } }
 .shelf-slot:not(:empty) { margin-top:8px; font-size:var(--fs-sm); color:var(--c-ink-4); }
 .room-shelf.is-dropping { outline:1px dashed var(--c-ink-4); outline-offset:4px; border-radius:6px; }
+#roomInterests.is-dropping { box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 70%, transparent), inset 0 0 40px color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 14%, transparent); border-radius:12px; transition:box-shadow .2s ease; }
+/* A screenshot's row: reading (orb), added (a tick that pops), failed (a cross, one shake). */
+.shelf-working { animation:shelfRowIn .28s cubic-bezier(.22,.61,.36,1) both; transition:opacity .4s ease, transform .4s ease; }
+.shelf-working.is-leaving { opacity:0; transform:translateY(-4px); }
+.shelf-mark { display:inline-flex; align-items:center; justify-content:center; flex:none; width:20px; height:20px; border-radius:50%; font-style:normal; font-size:11px; line-height:1; }
+.shelf-mark.is-ok { color:var(--c-bg, #fff); background:var(--c-kept-echo, var(--c-accent)); animation:shelfTick .45s cubic-bezier(.34,1.56,.64,1) both; }
+.shelf-mark.is-bad { color:var(--c-danger, #c0392b); border:1.5px solid currentColor; }
+.shelf-working.is-done small { color:var(--c-kept-echo, var(--c-accent)); }
+.shelf-working.is-failed { animation:shelfShake .42s ease both; }
+.shelf-working.is-failed small { color:var(--c-danger, #c0392b); }
+.shelf-card.is-new { animation:shelfNew 1.6s cubic-bezier(.22,.61,.36,1) both; border-radius:8px; }
+@keyframes shelfRowIn { from { opacity:0; transform:translateY(-6px); } }
+@keyframes shelfTick { 0% { transform:scale(0); } 100% { transform:scale(1); } }
+@keyframes shelfShake { 0%,100% { transform:none; } 20% { transform:translateX(-5px); } 40% { transform:translateX(5px); } 60% { transform:translateX(-3px); } 80% { transform:translateX(3px); } }
+@keyframes shelfNew { 0% { opacity:0; transform:scale(.9); box-shadow:0 0 0 0 transparent; } 35% { opacity:1; transform:scale(1.02); box-shadow:0 0 0 3px color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 60%, transparent); } 100% { transform:none; box-shadow:0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .shelf-working, .shelf-mark.is-ok, .shelf-working.is-failed, .shelf-card.is-new { animation:none; } }
 .shelf-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
 .shelf-head strong { flex:1; }
 .interest-filter { display:flex; gap:6px; margin-bottom:8px; }
@@ -18157,9 +18173,26 @@ function shelfStage(key, name, stage) {
   shelfRepaint();
 }
 function shelfDone(key) { shelfPending = shelfPending.filter((p) => p.key !== key); shelfRepaint(true); }
+// A screenshot's row ends on what happened to it: a tick and what was added, or a
+// cross that shakes once when nothing could be taken from it. It stays a moment,
+// fades, and only then leaves.
+function shelfFinish(key, ok, said) {
+  const row = shelfPending.find((p) => p.key === key);
+  if (!row) return;
+  row.state = ok ? 'done' : 'failed'; row.stage = said;
+  shelfRepaint();
+  setTimeout(() => { row.state += ' is-leaving'; shelfRepaint(); }, ok ? 2600 : 5200);
+  setTimeout(() => { shelfPending = shelfPending.filter((p) => p !== row); shelfRepaint(); }, ok ? 3000 : 5600);
+}
 function shelfWorkingMarkup() {
-  return shelfPending.map((p) => '<div class="shelf-working">' + orbHtml('working', 20)
-    + '<span>' + qEsc(p.name) + '</span><small>' + qEsc(p.stage) + '…</small></div>').join('');
+  return shelfPending.map((p) => {
+    const st = p.state || '';
+    const mark = st.startsWith('done') ? '<i class="shelf-mark is-ok" aria-hidden="true">✓</i>'
+      : st.startsWith('failed') ? '<i class="shelf-mark is-bad" aria-hidden="true">✕</i>'
+      : orbHtml('working', 20);
+    return '<div class="shelf-working' + (st ? ' is-' + st : '') + '">' + mark
+      + '<span>' + qEsc(p.name) + '</span><small>' + qEsc(p.stage) + (st ? '' : '…') + '</small></div>';
+  }).join('');
 }
 // A stage change repaints the working rows alone — a full redraw per page of the
 // PDF would mean one shelf fetch per page.
@@ -18408,15 +18441,25 @@ function libStars(v) {
 }
 function libVotes(n) { return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : String(n || 0); }
 
+function libAddedMs(t) {
+  if (!t) return 0;
+  const v = String(t).replace(' ', 'T');
+  const n = Date.parse(/[zZ]$|[+-]\d\d:?\d\d$/.test(v) ? v : v + 'Z');
+  return Number.isNaN(n) ? 0 : n;
+}
 function libCard(it) {
   const open = libOpen && libOpen.type === it.type && libOpen.id === it.id;
+  // Something that just came in from a drop arrives with a glow, once.
+  const gk = it.type + ':' + it.id;
+  const fresh = libFreshSince && it.added && it.added >= libFreshSince - 30000 && !libGlowed.has(gk);
+  if (fresh) libGlowed.add(gk);
   const facts = it.type === 'media' ? libScreen[it.id] : null;
   const src = (facts && facts.poster) || it.cover || '';
   const cover = /^https:\/\//.test(src) ? ' style="background-image:url(&quot;' + qEscAttr(src) + '&quot;)"' : '';
   const art = it.type === 'media' && !cover
     ? roomMediaArtMarkup(it.raw, 'shelf-cover')       // filled in by the catalogue once it answers
     : '<span class="shelf-cover"' + cover + '></span>';
-  return '<div class="shelf-card' + (open ? ' is-open' : '') + '" data-lib="' + qEscAttr(it.type + ':' + it.id) + '">'
+  return '<div class="shelf-card' + (open ? ' is-open' : '') + (fresh ? ' is-new' : '') + '" data-lib=""' + qEscAttr(it.type + ':' + it.id) + '">'
     + '<button type="button" class="shelf-open" data-open aria-label="' + qEscAttr(it.title) + '">' + art
     + (facts && facts.rating ? '<span class="lib-badge">' + facts.rating.toFixed(1) + '</span>' : '')
     + (libIsScreen(it.raw) ? '<span class="lib-kind">' + (it.raw.kind === 'series' ? '◗' : '▶') + '</span>' : '')
@@ -18616,8 +18659,10 @@ async function renderInterestLibrary(opts) {
     const shelfNames = new Set(books.map((b) => libNorm(b.title)));
     const media = out.items.filter((w) => (w.type === 'media' || ['book', 'film', 'series'].includes(w.kind)) && !shelfNames.has(libNorm(w.title)));
     const rest = out.items.filter((w) => !(w.type === 'media' || ['book', 'film', 'series'].includes(w.kind)));
-    const wall = books.map((b) => ({ type: 'shelf', id: b.id, title: b.title, creator: b.author, cover: b.cover_url || '', raw: b }))
-      .concat(media.map((w) => ({ type: 'media', id: w.id, title: w.title, creator: w.creator || '', cover: String(w.artwork || ''), raw: w })));
+    // Newest first, books and saved works together (his ask, 2026-09-27).
+    const wall = books.map((b) => ({ type: 'shelf', id: b.id, title: b.title, creator: b.author, cover: b.cover_url || '', raw: b, added: libAddedMs(b.created_at) }))
+      .concat(media.map((w) => ({ type: 'media', id: w.id, title: w.title, creator: w.creator || '', cover: String(w.artwork || ''), raw: w, added: Number(w.added) || 0 })))
+      .sort((a, b) => b.added - a.added);
 
     host.querySelector('.shelf-grid').innerHTML = wall.length ? libWall(wall, cols) : '';
     const results = host.querySelector('.interest-results');
@@ -18783,6 +18828,27 @@ async function renderInterestLibrary(opts) {
 // lives in the wall's own thin bar.
 function libWireDrop(shelfHost, slot) {
   if (!shelfHost) return;
+  // The whole Library pane takes a drop, not only the wall of covers.
+  const pane = document.getElementById('roomInterests');
+  if (pane && !pane.dataset.dropWired) {
+    pane.dataset.dropWired = '1';
+    let depth = 0;
+    const files = (ev) => !!(ev.dataTransfer && Array.from(ev.dataTransfer.types || []).includes('Files'));
+    pane.addEventListener('dragenter', (ev) => { if (!files(ev)) return; ev.preventDefault(); depth++; pane.classList.add('is-dropping'); });
+    pane.addEventListener('dragover', (ev) => { if (!files(ev)) return; ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'copy'; });
+    pane.addEventListener('dragleave', (ev) => { if (!files(ev)) return; depth = Math.max(0, depth - 1); if (!depth) pane.classList.remove('is-dropping'); });
+    pane.addEventListener('drop', (ev) => {
+      if (!files(ev)) return;
+      ev.preventDefault(); depth = 0; pane.classList.remove('is-dropping');
+      const shelf = document.getElementById('roomShelf');
+      if (shelf && shelf._takeDrop) { shelf._takeDrop(ev); return; }
+      // Suggestions were showing: go back to his own wall, where the rows appear.
+      const shots = Array.from(ev.dataTransfer.files || []).filter((f) => roomFileKind(f) === 'image');
+      if (!shots.length) return;
+      libSuggesting = false;
+      Promise.resolve(renderInterestLibrary()).then(() => libReadShots(shots, document.querySelector('#roomShelf .shelf-slot')));
+    });
+  }
   const take = async (file) => {
     if (!file) return;
     const key = 'pick-' + Date.now();
@@ -18790,12 +18856,11 @@ function libWireDrop(shelfHost, slot) {
     try { await shelfPut(file, key); shelfDone(key); }
     catch (err) { shelfDone(key); if (slot) slot.textContent = err.message; }
   };
-  shelfHost.ondragover = (ev) => { ev.preventDefault(); shelfHost.classList.add('is-dropping'); };
-  shelfHost.ondragleave = () => shelfHost.classList.remove('is-dropping');
   // Every file dropped, not only the first: screenshots are read into the Library
   // (books, films, series found in them), PDFs and text go on the shelf.
-  shelfHost.ondrop = (ev) => {
-    ev.preventDefault(); shelfHost.classList.remove('is-dropping');
+  // Called by the pane's own drop listener above, so a drop is read once.
+  shelfHost._takeDrop = (ev) => {
+    ev.preventDefault();
     const files = Array.from(ev.dataTransfer?.files || []);
     const shots = files.filter((f) => roomFileKind(f) === 'image');
     if (shots.length) libReadShots(shots, slot);
@@ -18821,8 +18886,13 @@ async function libShotDataUrl(file) {
 const libShotWatch = new Map();   // batch id → shelf row key
 let libShotTimer = null;
 let libShotTally = { book: 0, film: 0, series: 0, duplicates: 0 };
+let libFreshSince = 0;              // when the last drop began: what lands after it glows once
+const libGlowed = new Set();
 async function libReadShots(files, slot) {
   if (slot) slot.textContent = '';
+  libFreshSince = Date.now();
+  // The rows sit at the top of the Library; bring the top into view so he sees them.
+  const sc = libScroller(document.getElementById('roomInterests')); if (sc) sc.scrollTop = 0;
   await Promise.all(files.map(async (file, i) => {
     const key = 'shot-' + Date.now() + '-' + i;
     const name = file.name && !/^image\.(png|jpe?g)$/i.test(file.name) ? file.name : 'Screenshot ' + (i + 1);
@@ -18830,15 +18900,24 @@ async function libReadShots(files, slot) {
     try {
       const image = await libShotDataUrl(file);
       const b = await apiWrite('/api/convos/library/interest-imports', 'POST', { image, filename: name });
-      if (b && (b.status === 'done' || b.status === 'ordinary')) { libShotLanded(b); shelfDone(key); return; }
+      if (b && (b.status === 'done' || b.status === 'ordinary')) { libShotLanded(b, key); return; }
+      if (!b || !b.id || b.status === 'failed') { shelfFinish(key, false, 'Could not read it'); return; }
       libShotWatch.set(b.id, key);
-    } catch (err) { shelfDone(key); if (slot) slot.textContent = err.message || 'Could not read that screenshot'; }
+    } catch (err) { shelfFinish(key, false, 'Could not read it'); }
   }));
   libShotPoll(slot);
 }
-function libShotLanded(b) {
+// What one screenshot gave, said on its own row.
+function libShotLanded(b, key) {
   const r = b.result || {};
   ['book', 'film', 'series', 'duplicates'].forEach((k) => { libShotTally[k] += Number(r[k] || 0); });
+  const parts = [];
+  if (r.book) parts.push(r.book + (r.book > 1 ? ' books' : ' book'));
+  if (r.film) parts.push(r.film + (r.film > 1 ? ' films' : ' film'));
+  if (r.series) parts.push(r.series + ' series');
+  if (parts.length) shelfFinish(key, true, '+ ' + parts.join(' · '));
+  else if (r.duplicates) shelfFinish(key, true, 'Already here');
+  else shelfFinish(key, false, 'Nothing found in it');
 }
 function libShotPoll(slot) {
   clearTimeout(libShotTimer);
@@ -18849,22 +18928,16 @@ function libShotPoll(slot) {
     let landed = false;
     (Array.isArray(list) ? list : (list && list.batches) || []).forEach((b) => {
       const key = libShotWatch.get(b.id); if (!key) return;
-      if (b.status === 'done' || b.status === 'ordinary') { libShotLanded(b); libShotWatch.delete(b.id); shelfDone(key); landed = true; }
-      else if (b.status === 'failed' || b.status === 'undone') { libShotWatch.delete(b.id); shelfDone(key); }
+      if (b.status === 'done' || b.status === 'ordinary') { libShotLanded(b, key); libShotWatch.delete(b.id); landed = true; }
+      else if (b.status === 'failed' || b.status === 'undone') { libShotWatch.delete(b.id); shelfFinish(key, false, 'Could not read it'); }
     });
     if (landed) renderInterestLibrary();
     libShotPoll(slot);
   }, 2000);
 }
-function libShotSay(slot) {
-  const t = libShotTally; const parts = [];
-  if (t.book) parts.push(t.book + (t.book > 1 ? ' books' : ' book'));
-  if (t.film) parts.push(t.film + (t.film > 1 ? ' films' : ' film'));
-  if (t.series) parts.push(t.series + ' series');
-  const s = parts.length ? '+ ' + parts.join(' · ') : (t.duplicates ? 'Already in the Library' : 'Nothing found');
+function libShotSay() {
+  // Each row already said what its screenshot gave; the wall just shows it, newest first.
   libShotTally = { book: 0, film: 0, series: 0, duplicates: 0 };
-  const host = slot && slot.isConnected ? slot : document.querySelector('#roomShelf .shelf-slot');
-  if (host) { host.textContent = s; setTimeout(() => { if (host.textContent === s) host.textContent = ''; }, 6000); }
   renderInterestLibrary();
 }
 // Pasting a screenshot while the Library is on screen reads it the same way.
@@ -18951,7 +19024,10 @@ if (roomDropZone && roomFileInput) {
   if (!ws || ws.dataset.dropWired) return;
   ws.dataset.dropWired = '1';
   let depth = 0;
-  const hasFiles = (ev) => !!(ev.dataTransfer && Array.from(ev.dataTransfer.types || []).includes('Files'));
+  // The Library takes its own drops (his ask, 2026-09-27): a screenshot let go over
+  // it is read into the Library, never attached to the message box.
+  const hasFiles = (ev) => !!(ev.dataTransfer && Array.from(ev.dataTransfer.types || []).includes('Files'))
+    && !(ev.target && ev.target.closest && ev.target.closest('#roomInterests'));
   const clear = () => { depth = 0; ws.classList.remove('is-file-over'); };
   ws.addEventListener('dragenter', (ev) => { if (!hasFiles(ev)) return; ev.preventDefault(); depth++; ws.classList.add('is-file-over'); }, true);
   ws.addEventListener('dragover', (ev) => { if (!hasFiles(ev)) return; ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'copy'; }, true);
