@@ -156,11 +156,11 @@ const directBlock = renderDirectInstructions([
   { text: 'Use fewer immune-system metaphors.' },
   { text: 'Do not end every answer with a question.' },
 ]);
-assert.ok(directBlock.includes('ACROSS EVERY MODEL'));
-assert.ok(directBlock.includes('They outrank the general voice above'));
+assert.ok(directBlock.includes('WHAT HE ASKED YOU TO REMEMBER'));
+assert.ok(!/follow|outrank|must/i.test(directBlock.split('\n- ')[0]), 'the block carries context, never an order');
 assert.ok(directBlock.includes('Use fewer immune-system metaphors.'));
 assert.ok(directBlock.includes('Do not end every answer with a question.'));
-ok('direct remembered instructions become one provider-independent priority block');
+ok('what he asked to remember reaches every model as context, not orders');
 
 const promptBuilderBody = conversationsSrc.slice(conversationsSrc.indexOf('function buildTurnPrompt'), conversationsSrc.indexOf('async function runRoutedTurn'));
 assert.ok(promptBuilderBody.indexOf('studioPersona() ?') < promptBuilderBody.indexOf('directInstructionsBlock()'));

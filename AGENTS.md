@@ -302,7 +302,8 @@ banned words. The project map rides only on a question about the app. **When a R
 disappoints, remove a rule before adding one**; never put answer rules into the box. The two
 sections below still describe what he enjoys in an answer — they are taste, not prompt text,
 and must not be written back into the Room's prompt. Code: `ROOM_LINE` and `roomParts` in
-`services/conversations.js`.
+`services/conversations.js`. The two memory blocks that ride along say what he asked and what
+he is drawn to, never "follow", "outrank" or "never force" (2026-09-26).
 
 **Depth: meaning, not a recital (hard, his call 2026-09-25).** He sent one question to GPT-4.1
 on miniapps.ai and to the Room, and preferred the miniapps answer by far — and said what he

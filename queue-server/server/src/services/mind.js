@@ -332,18 +332,15 @@ export function renderMindBlockFrom(facts = [], context = '', now = Date.now()) 
   return out;
 }
 
-// Direct "remember this" instructions and style rules he typed himself get a
-// second, focused placement near the end of every conversation prompt. The broad
-// memory block above carries facts and vision too, but it appears before the
-// Room's voice; a later voice line such as "metaphor is welcome" could therefore
-// weaken a remembered "use fewer immune-system metaphors" preference. This block
-// is deliberately provider-free: the same text reaches Gemini, Claude, ChatGPT
-// and every other Room lane.
+// What he told the Room to remember, placed near the end of every conversation
+// prompt so it sits close to his current message. Context, not rules (his call,
+// 2026-09-26): it says what he asked, never that the model must obey or that it
+// outranks anything. Provider-free: the same text reaches every Room lane.
 export function renderDirectInstructions(rows = []) {
   if (!rows.length) return '';
   return `
-=== OWNER INSTRUCTIONS REMEMBERED ACROSS EVERY MODEL ===
-These are direct standing instructions from Antoine. Follow them regardless of which engine is answering. They outrank the general voice above. If his current message explicitly changes one, the current message wins.
+=== WHAT HE ASKED YOU TO REMEMBER ===
+Things he told you to keep in mind, across every conversation, so he never has to say them twice. His message now is newer than any of them.
 ${rows.map((row) => `- ${String(row.text || '').slice(0, 240)}`).join('\n')}`;
 }
 
@@ -933,12 +930,12 @@ export function pickSubjects(all = [], n = 3, rand = Math.random) {
 export function subjectsLine(n = 3) {
   const picked = pickSubjects(listSubjects(), n);
   if (!picked.length) return '';
-  return `Subjects he is drawn to, a few picked at random this time: ${picked.map((s) => s.name).join('; ')}. When you look for the far parallel, you may reach toward one of these — but only if the same structure truly repeats there. Most answers will use none of them, and that is right. Never force one in, never mention this list.`;
+  return `Subjects he is drawn to, a few picked at random this time: ${picked.map((s) => s.name).join('; ')}.`;
 }
 
 export function subjectsBlock(n = 3) {
   const line = subjectsLine(n);
-  return line ? `\n=== WHERE HE LIKES TO LOOK ===\n${line}` : '';
+  return line ? `\n=== SUBJECTS HE IS DRAWN TO ===\n${line}` : '';
 }
 
 // ---------------------------------------------------------------------------
