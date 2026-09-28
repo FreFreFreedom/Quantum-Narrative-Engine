@@ -2753,12 +2753,14 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-body.md h1, .se-body.md h2, .se-body.md h3, .se-body.md h4, .se-body.md hr { clear:both; }
 .se-cover.is-right { float:right; clear:both; margin-left:24px; }
 .se-cover.is-left { float:left; clear:both; margin-right:24px; }
+.se-cover-row { float:right; clear:both; width:min(260px, 46%); margin:6px 0 12px 24px; display:flex; flex-wrap:wrap; gap:10px; }
+.se-cover-row > .se-cover { float:none; clear:none; width:calc(50% - 5px); margin:0; }
 .se-cover > span { display:flex; align-items:center; justify-content:center; width:100%; height:auto; aspect-ratio:2/3; border-radius:4px;
   background:var(--c-hover-wash) center/cover no-repeat; box-shadow:0 8px 20px rgba(0,0,0,.28);
   font:var(--fs-xs)/1.25 var(--font-ui); color:var(--c-ink-5); text-align:center; padding:8px; overflow:hidden;
   transition:transform .25s ease, box-shadow .25s ease; }
 .se-cover:hover > span, .se-cover:focus-visible > span { transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.34); }
-@media (max-width:520px) { .se-cover { width:130px; } .se-cover > span { width:130px; height:195px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } }
+@media (max-width:520px) { .se-cover { width:130px; } .se-cover > span { width:130px; height:195px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } .se-cover-row { width:200px; margin-left:14px; } .se-cover-row > .se-cover, .se-cover-row > .se-cover > span { width:100%; height:auto; } .se-cover-row > .se-cover { width:calc(50% - 5px); } }
 .se-card { position:fixed; z-index:var(--z-popover); width:min(560px, calc(100vw - 16px)); max-height:min(720px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
   padding:28px 32px 28px; border-radius:16px; font-family:var(--font-ui); color:var(--c-ink); }
@@ -30874,7 +30876,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // Each bullet is its own place: a chapter can fall between two of them.
       if(/^(UL|OL)$/.test(el.tagName)){ Array.prototype.forEach.call(el.children, function(li){ if(li.tagName === 'LI' && li.textContent.trim()) out.push(li); }); }
       else if(/^(P|H[1-6]|BLOCKQUOTE|PRE|TABLE)$/.test(el.tagName)){ if(el.textContent.trim()) out.push(el); }
-      else if(el.tagName === 'DIV' && !el.matches('.se-cover, .se-card, .se-chap')) out = out.concat(gapBlocks(el));
+      else if(el.tagName === 'DIV' && !el.matches('.se-cover, .se-cover-row, .se-card, .se-chap')) out = out.concat(gapBlocks(el));
     });
     return out;
   }
@@ -32356,6 +32358,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var cue = CUE[roomMediaKind(w)] || CUE.book;
       // The server's note of where the answer speaks of it wins over every guess.
       var where = seCoverNorm(w.where || '').trim();
+      // A section headed by the work is its home, over the first passing mention:
+      // an opening line that names all four works used to stack all four covers
+      // there, and every heading below waited under the column (2026-09-28).
+      var mark = (name.match(/[a-z']{5,}/) || [''])[0];
+      for(var hi = 0; hi < blocks.length; hi++){
+        if(!/^H[1-4]$/.test(blocks[hi].tagName)) continue;
+        var ht = texts[hi];
+        if(!((name && ht.indexOf(name) >= 0) || (mark && new RegExp('\\b' + mark + '\\b').test(ht)))) continue;
+        var body = hi + 1;
+        while(body < blocks.length && /^H[1-4]$/.test(blocks[body].tagName)) body++;
+        if(body < blocks.length){ used[body] = true; return { w: w, i: i, bi: body, at: 0 }; }
+      }
       var best = null;
       for(var bi = 0; bi < blocks.length; bi++){
         var t = texts[bi], score = 0, at = -1, k;
@@ -32365,6 +32379,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var cm = t.match(cue);
         if(cm){ score += 2; if(at < 0) at = cm.index; }
         if(used[bi]) score -= 5;
+        if(/^H[1-4]$/.test(blocks[bi].tagName)) score -= 4;
         if(!best || score > best.score) best = { score: score, bi: bi, at: Math.max(0, at) };
       }
       // Nothing points anywhere: the first paragraph not yet holding a cover.
@@ -32377,7 +32392,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }).sort(function(x, y){ return x.bi - y.bi || x.at - y.at || x.i - y.i; });
     // Two works named in the same sentence share its start; the later one steps to
     // the next sentence so they do not open on the same line.
-    var lastAt = {};
+    var lastAt = {}, rowOf = {}, perBlock = {};
+    placed.forEach(function(pl){ perBlock[pl.bi] = (perBlock[pl.bi] || 0) + 1; });
     placed.forEach(function(pl, k){
       var w = pl.w, key = roomMediaArtKey(w), art = roomMediaArtCache.get(key) || '';
       var btn = document.createElement('button');
@@ -32389,6 +32405,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       btn.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '"'
         + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"' : '') + '>' + (art ? '' : qEsc(libShortTitle(w.title))) + '</span>';
       if(pl.bi >= blocks.length){ var last = blocks[blocks.length - 1]; last.parentNode.insertBefore(btn, last.nextSibling); return; }
+      // Two or more covers for one paragraph sit side by side in one small float,
+      // never stacked into a column taller than the text beside it.
+      if(perBlock[pl.bi] > 1){
+        if(rowOf[pl.bi]){ rowOf[pl.bi].appendChild(btn); return; }
+        var row = document.createElement('div'); row.className = 'se-cover-row';
+        row.appendChild(btn); rowOf[pl.bi] = row;
+        btn = row; pl.at = 0;
+      }
       var block = blocks[pl.bi], text = texts[pl.bi];
       // Back to the start of the sentence that names it.
       var start = 0, re = /[.!?…]["”’)]*\s+/g, m;
