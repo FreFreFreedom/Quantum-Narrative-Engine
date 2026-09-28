@@ -14,7 +14,7 @@ export const KINDS = new Set(['real', 'fictional', 'myth', 'place', 'archetype',
 // Bumped when a kind is added, so answers read before it are read once more (v7: whole names, even when the answer writes only a part).
 export const PEOPLE_V = 7;
 // Bumped when a card asks for something new, so cards written before it are written again (v2: the whole name).
-const CARD_V = 2;
+const CARD_V = 3;
 // A long answer names many places and offices in passing; only a few are worth a card.
 const PER_KIND = { place: 8, institution: 6, archetype: 4 };
 // Ten used to be the cap, and a long answer's list stopped there: Astraea and
@@ -102,11 +102,11 @@ const bareLife = (t) => String(t || '').replace(/^\s*(a real person|a character|
 
 // What each kind's card asks for. `echoes` only for an archetype: who lives it.
 const CARD = {
-  real: { what: (w, f) => `${w}${f ? ` (${f})` : ''}`, life: 'birth–death years, or born YEAR', pattern: 'the main pattern this person lives out' },
+  real: { what: (w, f) => `${w}${f ? ` (${f})` : ''}`, life: 'birth–death years, or born YEAR', pattern: 'the main pattern this person lives out', screen: 'about this person' },
   fictional: { what: (w, f) => `the fictional character ${w}${f ? ` (${f})` : ''}`, life: 'the work it comes from and its year', pattern: 'the main pattern this character lives out' },
   myth: { what: (w, f) => `${w}, a being of myth, religion or folklore${f ? ` (${f})` : ''}`, life: 'the tradition and its oldest source', pattern: 'the main pattern this being carries' },
   place: { what: (w, f) => `the place ${w}${f ? ` (${f})` : ''}`, life: 'where it is and the era that matters, or the myth or book it comes from', pattern: 'the pattern this place holds — what its walls keep in, or keep out' },
-  institution: { what: (w, f) => `the institution ${w}${f ? ` (${f})` : ''}`, life: 'founded YEAR, and where', pattern: 'how it keeps itself alive, and what it splits off to do so' },
+  institution: { what: (w, f) => `the institution ${w}${f ? ` (${f})` : ''}`, life: 'founded YEAR, and where', pattern: 'how it keeps itself alive, and what it splits off to do so', screen: 'about this institution' },
   archetype: { what: (w, f) => `the archetype ${w}${f ? ` (${f})` : ''}`, life: 'the traditions it appears in', pattern: 'what this archetype does, as a movement', echoes: true },
 };
 
@@ -126,7 +126,12 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
       `Write a short card about ${what}, for the conversation below.`,
       LENS,
       'Reply with JSON only: {"whole":"its whole name as the world knows it — the answer may write only a part of it (Sutton -> Jeffrey S. Sutton, Motley -> Constance Baker Motley); repeat the given name unchanged if you are not sure","life":"' + spec.life + '","pattern":"' + spec.pattern + ', 4 to 10 words, no name in it","here":"50 to 70 words: why it matters HERE — which idea of this conversation it shows, and how, read through the lens. Use the conversation\'s own ideas. Plain simple words, no jargon, no preamble, all sentences finished."'
-        + (spec.echoes ? ',"echoes":["three names only, no explanation: who lives this archetype — real, fictional or of myth — at different scales if you can (a person, a character, a nation)"]' : '') + '}',
+        + (spec.echoes ? ',"echoes":["three names only, no explanation: who lives this archetype — real, fictional or of myth — at different scales if you can (a person, a character, a nation)"]' : '')
+        // Films and series about the person or the institution (his ask, 2026-09-28).
+        // Named wrongly they are worse than none, so the model is told to leave the
+        // list empty unless it is sure the work exists and is really about this.
+        + (spec.screen ? ',"screen":[{"title":"exact title","kind":"film"|"series","year":"YYYY","note":"3 to 6 words: a biopic, a documentary, a dramatisation of ONE episode"}]'
+          + ' — at most three films, series or documentaries ' + spec.screen + ', only ones you are sure exist under that exact title. Not a work it merely appears in, not a work it made. [] when there are none or you are unsure' : '') + '}',
       'If you do not know it, reply {"life":"","pattern":"","here":""}.',
       '=== THE CONVERSATION (latest turns) ===', msgs.slice(-6000),
     ].join('\n\n'),
@@ -142,7 +147,13 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
   const whole = plain(j.whole).slice(0, 120);
   const card = { v: CARD_V, ...(whole && norm(whole) !== norm(who) && norm(whole).includes(norm(who).split(' ').pop()) ? { whole } : {}),
     life: lifeRaw.length > 110 ? lifeRaw.slice(0, 110).replace(/\s+\S*$/, '') + '…' : lifeRaw, pattern: plain(j.pattern).replace(/[.]$/, '').slice(0, 120), here,
-    ...(spec.echoes && Array.isArray(j.echoes) ? { echoes: j.echoes.map((x) => plain(x).split(/\s+[–—-]\s+|[:(,]/)[0].trim().slice(0, 60)).filter(Boolean).slice(0, 3) } : {}) };
+    ...(spec.echoes && Array.isArray(j.echoes) ? { echoes: j.echoes.map((x) => plain(x).split(/\s+[–—-]\s+|[:(,]/)[0].trim().slice(0, 60)).filter(Boolean).slice(0, 3) } : {}),
+    ...(spec.screen && Array.isArray(j.screen) ? { screen: j.screen.map((x) => ({
+      title: plain(x?.title).slice(0, 80),
+      kind: String(x?.kind) === 'series' ? 'series' : 'film',
+      year: (String(x?.year || '').match(/\d{4}/) || [''])[0],
+      note: plain(x?.note).slice(0, 44),
+    })).filter((x) => x.title).slice(0, 3) } : {}) };
   if (!card.pattern && !card.here) return card;
   db.prepare(`INSERT INTO person_notes (convo_id, key, body) VALUES (?,?,?)
     ON CONFLICT(convo_id, key) DO UPDATE SET body=excluded.body, created_at=CURRENT_TIMESTAMP`).run(convoId, key, JSON.stringify(card));

@@ -2810,6 +2810,12 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .bk-cover.is-person { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center;
   font-family:var(--font-read); font-size:28px; color:var(--c-ink-4); background-position:center 20%; }
 .bk-cover.is-thing { border-radius:10px; }
+.se-card-screen { display:flex; flex-wrap:wrap; gap:14px; }
+.se-card-screen .se-screen { width:74px; margin:0; float:none; clear:none; text-align:center; }
+.se-card-screen .se-screen > span:first-child { aspect-ratio:2/3; border-radius:3px; }
+.se-card-screen .se-screen-name { display:block; width:auto; aspect-ratio:auto; background:none; box-shadow:none; transform:none !important;
+  margin-top:6px; padding:0; font:var(--fs-xs)/1.25 var(--font-ui); color:var(--c-ink-4); text-align:center; }
+.se-card-screen .se-screen-name i { font-style:normal; color:var(--c-ink-5); }
 .se-card-echoes { display:flex; flex-wrap:wrap; gap:8px; }
 .se-card-echoes a { padding:6px 14px; border:1px solid var(--c-border-2); border-radius:999px; font-size:15px; color:var(--c-ink-2); text-decoration:none; }
 .se-card-echoes a:hover { background:var(--c-hover-wash); color:var(--c-ink); }
@@ -32819,6 +32825,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var span = btn.querySelector('[data-cover-art]'); if (!span) return;
     var d = span.dataset;
     if (seCardFor === d.coverArt) { seCardClose(); return; }
+    // A film named inside a card opens its own; the card holding the poster is
+    // about to close, so the new one hangs from the name in the text instead.
+    var host = btn.closest('.se-card');
+    if (host && seCardAnchor && seCardAnchor.isConnected && !host.contains(seCardAnchor)) btn = seCardAnchor;
     seCardClose();
     seCard = document.createElement('div'); seCard.className = 'se-card'; seCard.setAttribute('role', 'dialog');
     seCardFor = d.coverArt; seCardAnchor = btn;
@@ -32917,6 +32927,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       : (f.pattern ? '<p class="se-card-pattern">' + qEsc(f.pattern) + '</p>' : '')
         + (f.here ? '<p class="se-card-note">' + qEsc(f.here) + '</p>' : '')
         // An archetype's card names who lives it, each a search of its own.
+        // Films and series about this person or this institution, each opening its
+        // own card (his ask, 2026-09-28). Posters load like any other cover.
+        + (f.screen && f.screen.length ? '<h6>On screen</h6><div class="se-card-screen">' + f.screen.map(function(x){
+            var it = { kind: x.kind || 'film', title: x.title, creator: '', year: x.year || '' };
+            var ky = roomMediaArtKey(it), a = roomMediaArtCache.get(ky) || '';
+            return '<button type="button" class="se-cover se-screen" title="' + qEscAttr(x.title + (x.note ? ' — ' + x.note : '')) + '" data-convo="' + qEscAttr(d.convo || '') + '">'
+              + '<span data-cover-art="' + qEscAttr(ky) + '" data-cover-kind="' + qEscAttr(it.kind) + '" data-cover-title="' + qEscAttr(x.title) + '" data-cover-creator="" data-cover-year="' + qEscAttr(it.year) + '"'
+              + (/^https:\/\//.test(a) ? ' style="background-image:url(&quot;' + qEscAttr(a) + '&quot;)"' : '') + '></span>'
+              + '<span class="se-screen-name">' + qEsc(x.title) + (x.year ? ' <i>' + qEsc(x.year) + '</i>' : '') + '</span></button>';
+          }).join('') + '</div>' : '')
         + (f.echoes && f.echoes.length ? '<h6>Echoes</h6><div class="se-card-echoes">' + f.echoes.map(function(x){
             return '<a href="https://en.wikipedia.org/w/index.php?search=' + encodeURIComponent(x) + '" target="_blank" rel="noopener noreferrer">' + qEsc(x) + '</a>';
           }).join('') + '</div>' : '');
@@ -32936,7 +32956,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var card = null;
     var paint = function(){
       if (!seCard || seCardFor !== id) return;
-      seCard.innerHTML = sePersonHtml(d, card); seCardPlace(btn);
+      seCard.innerHTML = sePersonHtml(d, card); seLoadCovers(seCard); seCardPlace(btn);
       // The card came back with a fuller name than the answer wrote: look for its picture under that one.
       if (card && card.whole && !(card.whole in sePeopleArt)) sePersonArt({ pFull: card.whole, pKind: d.pKind, pFrom: d.pFrom }).then(paint);
     };
