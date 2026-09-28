@@ -33019,7 +33019,27 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // the same resize and scroll the window does, and the card was closing on both
   // (his complaint, 2026-09-28). While the page is zoomed the card is left exactly
   // where it is, and a plain resize moves it back to its name instead of closing.
-  function seZoomed(){ return !!(window.visualViewport && Math.abs(window.visualViewport.scale - 1) > 0.01); }
+  // A trackpad pinch on a desktop browser is a page zoom, not a viewport zoom:
+  // the scale stays 1 and only the pixel ratio and the window size change, so the
+  // first guard never caught it and the card still jumped (his complaint again,
+  // 2026-09-28). Three signs of a zoom now freeze the card: a viewport scale, a
+  // changed pixel ratio, and the pinch gesture itself while it is under way.
+  var seZoomRatio = window.devicePixelRatio || 1, seZoomAt = 0;
+  function seZoomTouch(){ seZoomAt = Date.now(); }
+  window.addEventListener('wheel', function(ev){ if (ev.ctrlKey || ev.metaKey) seZoomTouch(); }, { passive: true, capture: true });
+  window.addEventListener('gesturestart', seZoomTouch, true);
+  window.addEventListener('gesturechange', seZoomTouch, true);
+  window.addEventListener('gestureend', seZoomTouch, true);
+  window.addEventListener('keydown', function(ev){
+    if ((ev.ctrlKey || ev.metaKey) && (ev.key === '+' || ev.key === '-' || ev.key === '=' || ev.key === '0')) seZoomTouch();
+  }, true);
+  function seZoomed(){
+    if (window.visualViewport && Math.abs(window.visualViewport.scale - 1) > 0.01) return true;
+    if (Date.now() - seZoomAt < 600) return true;
+    var r = window.devicePixelRatio || 1;
+    if (Math.abs(r - seZoomRatio) > 0.001) { seZoomRatio = r; return true; }
+    return false;
+  }
   window.addEventListener('resize', function(){
     if (!seCard || seZoomed()) return;
     if (!seCardAnchor || !seCardAnchor.isConnected) { seCardClose(); return; }
