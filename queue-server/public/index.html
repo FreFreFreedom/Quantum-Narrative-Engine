@@ -2810,9 +2810,11 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .bk-cover.is-person { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center;
   font-family:var(--font-read); font-size:28px; color:var(--c-ink-4); background-position:center 20%; }
 .bk-cover.is-thing { border-radius:10px; }
-.se-card-screen { display:flex; flex-wrap:wrap; gap:14px; }
-.se-card-screen .se-screen { width:74px; margin:0; float:none; clear:none; text-align:center; }
-.se-card-screen .se-screen > span:first-child { aspect-ratio:2/3; border-radius:3px; }
+/* Pick D (2026-09-28): a strip of posters at the foot of the card, under a rule,
+   with no heading over it. Each poster opens that film's own card. */
+.se-card-screen { display:flex; flex-wrap:wrap; gap:16px; margin-top:20px; padding-top:18px; border-top:1px solid var(--c-border); }
+.se-card-screen .se-screen { width:98px; margin:0; float:none; clear:none; text-align:center; }
+.se-card-screen .se-screen > span:first-child { aspect-ratio:2/3; border-radius:4px; font-size:12px; }
 .se-card-screen .se-screen-name { display:block; width:auto; aspect-ratio:auto; background:none; box-shadow:none; transform:none !important;
   margin-top:6px; padding:0; font:var(--fs-xs)/1.25 var(--font-ui); color:var(--c-ink-4); text-align:center; }
 .se-card-screen .se-screen-name i { font-style:normal; color:var(--c-ink-5); }
@@ -32929,12 +32931,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // An archetype's card names who lives it, each a search of its own.
         // Films and series about this person or this institution, each opening its
         // own card (his ask, 2026-09-28). Posters load like any other cover.
-        + (f.screen && f.screen.length ? '<h6>On screen</h6><div class="se-card-screen">' + f.screen.map(function(x){
+        + (f.screen && f.screen.length ? '<div class="se-card-screen">' + f.screen.map(function(x){
             var it = { kind: x.kind || 'film', title: x.title, creator: '', year: x.year || '' };
             var ky = roomMediaArtKey(it), a = roomMediaArtCache.get(ky) || '';
             return '<button type="button" class="se-cover se-screen" title="' + qEscAttr(x.title + (x.note ? ' — ' + x.note : '')) + '" data-convo="' + qEscAttr(d.convo || '') + '">'
               + '<span data-cover-art="' + qEscAttr(ky) + '" data-cover-kind="' + qEscAttr(it.kind) + '" data-cover-title="' + qEscAttr(x.title) + '" data-cover-creator="" data-cover-year="' + qEscAttr(it.year) + '"'
-              + (/^https:\/\//.test(a) ? ' style="background-image:url(&quot;' + qEscAttr(a) + '&quot;)"' : '') + '></span>'
+              + (/^https:\/\//.test(a) ? ' style="background-image:url(&quot;' + qEscAttr(a) + '&quot;)"' : '') + '>' + (a ? '' : qEsc(libShortTitle(x.title))) + '</span>'
               + '<span class="se-screen-name">' + qEsc(x.title) + (x.year ? ' <i>' + qEsc(x.year) + '</i>' : '') + '</span></button>';
           }).join('') + '</div>' : '')
         + (f.echoes && f.echoes.length ? '<h6>Echoes</h6><div class="se-card-echoes">' + f.echoes.map(function(x){
