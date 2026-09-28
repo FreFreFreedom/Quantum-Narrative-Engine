@@ -2401,8 +2401,8 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // anchor on screen until the conversation is reloaded, and Chapter — which needs
   // a message to point at — is hidden on exactly the answer he is reading.
   // The people it names are found alongside, so the marks cost no extra wait.
-  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => null)]);
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), people: people || [], peopleV: PEOPLE_V });
+  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false)]);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   logConversation(convoId, CONVO_HISTORY_WINDOW);
@@ -2462,8 +2462,8 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   // anchor on screen until the conversation is reloaded, and Chapter — which needs
   // a message to point at — is hidden on exactly the answer he is reading.
   // The people it names are found alongside, so the marks cost no extra wait.
-  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => null)]);
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(works ? { works } : {}), people: people || [], peopleV: PEOPLE_V });
+  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false)]);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   logConversation(convoId, CONVO_HISTORY_WINDOW);

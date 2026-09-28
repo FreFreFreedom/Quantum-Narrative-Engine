@@ -29032,7 +29032,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var arrivedWhole = !e.stream;
           // id carried straight from the save, so the answer he is reading can be
           // marked as a chapter right away instead of only after a reload.
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0, works: d.works || null, people: d.people || null, peopleRead: true });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0, works: d.works || null, people: d.people || null, peopleRead: d.people !== false });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           // /interview, /grill-me and "answer now" all report the mode they left the
           // conversation in, so the toggle and the composer reflect it at once — no
@@ -29118,7 +29118,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           e.note = d.message || 'Could not answer now — try again.';
         } else if(d.text){
           var arrivedWhole = !e.stream;
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, works: d.works || null, people: d.people || null, peopleRead: true });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, works: d.works || null, people: d.people || null, peopleRead: d.people !== false });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           e.clarify = d.mode || 'normal';
           if(e.type === 'open' && onDone) onDone();

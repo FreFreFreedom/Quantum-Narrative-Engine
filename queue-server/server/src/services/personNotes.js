@@ -48,7 +48,7 @@ export async function namedPeople(answer) {
   const text = String(answer || '');
   if (text.length < 80 || !NAME_HINT.test(text)) return null;
   const result = await generateText({
-    feature: 'summary', maxTokens: 2000, label: 'room:people', timeoutMs: 20_000, maxAttempts: 2,
+    feature: 'summary', maxTokens: 3500, label: 'room:people', timeoutMs: 45_000, maxAttempts: 2,
     prompt: 'Below is an answer. List what it names, of six kinds:\n'
       + '- real: real people, living or historical\n'
       + '- fictional: characters from books, films and series\n'
@@ -60,9 +60,10 @@ export async function namedPeople(answer) {
       + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"full name","kind":"real"|"fictional"|"myth"|"place"|"institution"|"archetype","from":"3 to 6 words on what it is — real: who they are; fictional: the work it comes from; myth: the tradition and what it is (Greek goddess of justice); place: where, and what it is; institution: what it is and where; archetype: the tradition that names it"}]}. {"people":[]} if there are none. At most 25, in order of first mention; never leave out a being of myth, a place or an archetype to make room.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 12000),
   });
-  if (result.error) return null;
+  // A failed or cut-off reply is not "no names": it throws, so the answer is read again.
+  if (result.error) throw new Error(String(result.error));
   const list = firstJson(result.text)?.people;
-  if (!Array.isArray(list)) return null;
+  if (!Array.isArray(list)) throw new Error('unreadable reply');
   const flat = text.replace(/[*_`]/g, '');
   const seen = new Set();
   const out = [];
@@ -142,12 +143,14 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
 // twelve answers per call (the page keeps asking while `more` is true), each
 // stored with its list, an empty one too, so it is never read again.
 const scanning = new Set();
+// An answer whose read keeps failing is left alone until the next boot, so the page stops asking.
+const failures = new Map();
 export async function scanPeople(convoId, { limit = 12 } = {}) {
   if (!db || !convoId) return {};
   const rows = db.prepare(`SELECT id, text, meta FROM convo_messages WHERE convo_id=? AND role='assistant' AND kind='chat' ORDER BY created_at DESC, rowid DESC`).all(convoId);
   const unread = rows.filter((r) => {
     let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch { meta = {}; }
-    return !meta.failed && (!Array.isArray(meta.people) || (Number(meta.peopleV) || 0) < PEOPLE_V) && !scanning.has(r.id) && String(r.text || '').trim();
+    return !meta.failed && (!Array.isArray(meta.people) || (Number(meta.peopleV) || 0) < PEOPLE_V) && !scanning.has(r.id) && (failures.get(r.id) || 0) < 2 && String(r.text || '').trim();
   });
   const todo = unread.slice(0, limit);
   const found = {};
@@ -155,7 +158,8 @@ export async function scanPeople(convoId, { limit = 12 } = {}) {
     await Promise.all(todo.slice(i, i + 3).map(async (r) => {
       scanning.add(r.id);
       try {
-        const people = await namedPeople(r.text).catch(() => null);
+        let people;
+        try { people = await namedPeople(r.text); } catch { failures.set(r.id, (failures.get(r.id) || 0) + 1); return; }
         const fresh = db.prepare('SELECT meta FROM convo_messages WHERE id=?').get(r.id);
         let meta = {}; try { meta = fresh?.meta ? JSON.parse(fresh.meta) || {} : {}; } catch {}
         meta.people = people || [];
