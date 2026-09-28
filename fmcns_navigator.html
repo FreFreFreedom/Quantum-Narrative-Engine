@@ -30403,7 +30403,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // Passages shelf and is read there. Never automatic: a selection is as often
         // a quote for the message box, and keeping it unasked got in the way.
         mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
-          keepPassage(e, msgId, passage, repaint);
+          keepPassage(e, msgId, passage, repaint, r);
         });
         // Aside and Remember only make sense against the Room's own main thread
         // (plan "side talks in the Room, and remember this") — a side talk of a
@@ -31108,7 +31108,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
 
   // Keep a line. The reading of it is written server-side straight after, so this
   // returns as soon as the line is safe rather than waiting on a model.
-  function keepPassage(e, messageId, text, repaint){
+  function keepPassage(e, messageId, text, repaint, rect){
+    var toast = rect ? seMindToast(rect, 'Keeping', 'wait') : null;
     return apiWrite('/api/passages', 'POST', {
       text: text,
       convoId: e.convoId || null,
@@ -31116,12 +31117,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       sourceTitle: e.title || null,
     })
       .then(function(out){
-        e.note = (out && out.already) ? 'Already kept.' : 'Kept — it is in Passages.';
+        var already = !!(out && out.already);
+        if(rect){
+          seMindToast(rect, already ? 'Already in Passages' : 'Kept in Passages', already ? 'miss' : 'ok', toast);
+          if(!already) seFlyToMind(rect, '[data-room-primary="library"]');
+        } else {
+          e.note = already ? 'Already kept.' : 'Kept — it is in Passages.';
+        }
         if(repaint) repaint();
         if(window.loadRoomPassages) window.loadRoomPassages();
         return out;
       })
-      .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); return null; });
+      .catch(function(){
+        if(rect) seMindToast(rect, 'Not kept', 'miss', toast); else e.note = 'Could not keep that line.';
+        if(repaint) repaint(); return null;
+      });
   }
   function likePassage(e, messageId, text, rect, repaint){
     apiWrite('/api/mind/likes', 'POST', { text: text, convoId: e.convoId || null, messageId: messageId || null })
@@ -31221,8 +31231,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     paint(); inp.focus();
   }
   // A dot flies from where it was saved to the Mind tab, when that tab is on screen.
-  function seFlyToMind(from){
-    var tab = document.querySelector('[data-room-pane="mind"]');
+  function seFlyToMind(from, target){
+    var tab = document.querySelector(target || '[data-room-pane="mind"]');
     if(!tab || !tab.offsetParent) return;
     var to = tab.getBoundingClientRect();
     var dot = document.createElement('div'); dot.className = 'se-fly-dot';
