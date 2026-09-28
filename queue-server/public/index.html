@@ -2766,7 +2766,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-face { width:min(150px, 28%); }
 .se-face > span:first-child { aspect-ratio:4/5; border-radius:3px; background-position:center top; }
 .se-face.is-thing > span:first-child { aspect-ratio:4/3; background-position:center; }
-.se-face-name { display:block; width:auto; aspect-ratio:auto; background:none; box-shadow:none; transform:none !important;
+.se-face > .se-face-name { display:block; width:auto; aspect-ratio:auto; background:none; box-shadow:none; transform:none !important;
   margin-top:6px; padding:0; font:var(--fs-xs)/1.3 var(--font-ui); color:var(--c-ink-4); text-align:center; }
 @media (max-width:520px) { .se-face { width:110px; } }
 @media (max-width:520px) { .se-cover { width:130px; } .se-cover > span { width:130px; height:195px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } .se-cover-row { width:200px; margin-left:14px; } .se-cover-row > .se-cover, .se-cover-row > .se-cover > span { width:100%; height:auto; } .se-cover-row > .se-cover { width:calc(50% - 5px); } }
@@ -32470,7 +32470,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(!((name && ht.indexOf(name) >= 0) || (mark && new RegExp('\\b' + mark + '\\b').test(ht)))) continue;
         var body = hi + 1;
         while(body < blocks.length && /^H[1-4]$/.test(blocks[body].tagName)) body++;
-        if(body < blocks.length){ used[body] = true; return { w: w, i: i, bi: body, at: 0 }; }
+        if(body < blocks.length){ used[body] = true; return { w: w, i: i, bi: body, at: 0, score: 14 }; }
       }
       var best = null;
       for(var bi = 0; bi < blocks.length; bi++){
@@ -32490,8 +32490,17 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         best = { bi: free, at: 0 };
       }
       used[best.bi] = true;
-      return { w: w, i: i, bi: best.bi, at: best.at };
-    }).sort(function(x, y){ return x.bi - y.bi || x.at - y.at || x.i - y.i; });
+      return { w: w, i: i, bi: best.bi, at: best.at, score: best.score || 0 };
+    });
+    // A ceiling on how many covers one answer can hang (his ask, 2026-09-28): an
+    // answer naming nine works turned into a wall of pictures. The ones the answer
+    // really speaks of — a work under its own heading, then one named by title —
+    // keep their cover; the rest are still in the Library, just not on the page.
+    if(placed.length > SE_FLOAT_MAX){
+      var keep = placed.slice().sort(function(x, y){ return (y.score || 0) - (x.score || 0) || x.i - y.i; }).slice(0, SE_FLOAT_MAX);
+      placed = placed.filter(function(pl){ return keep.indexOf(pl) >= 0; });
+    }
+    placed.sort(function(x, y){ return x.bi - y.bi || x.at - y.at || x.i - y.i; });
     // Two works named in the same sentence share its start; the later one steps to
     // the next sentence so they do not open on the same line.
     var lastAt = {}, rowOf = {}, perBlock = {};
@@ -32974,12 +32983,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
   });
   document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') seCardClose(); });
-  window.addEventListener('resize', seCardClose);
+  // Pinching the trackpad to read a card used to move it or shut it: a zoom fires
+  // the same resize and scroll the window does, and the card was closing on both
+  // (his complaint, 2026-09-28). While the page is zoomed the card is left exactly
+  // where it is, and a plain resize moves it back to its name instead of closing.
+  function seZoomed(){ return !!(window.visualViewport && Math.abs(window.visualViewport.scale - 1) > 0.01); }
+  window.addEventListener('resize', function(){
+    if (!seCard || seZoomed()) return;
+    if (!seCardAnchor || !seCardAnchor.isConnected) { seCardClose(); return; }
+    seCardPlace(seCardAnchor);
+  });
   // Clicking a cover can scroll the pane a little (the button takes focus), so a
   // scroll moves the card with its cover and only closes it once the cover has
   // left the screen.
   document.addEventListener('scroll', function(ev){
-    if (!seCard || seCard.contains(ev.target)) return;
+    if (!seCard || seZoomed() || seCard.contains(ev.target)) return;
     if (!seCardAnchor || !seCardAnchor.isConnected) { seCardClose(); return; }
     var r = seCardAnchor.getBoundingClientRect();
     if (r.bottom < 0 || r.top > window.innerHeight) seCardClose(); else seCardPlace(seCardAnchor);
