@@ -10,6 +10,7 @@ import * as screen from '../services/screenFacts.js';
 import { bookContents } from '../services/bookContents.js';
 import { workNote } from '../services/workNotes.js';
 import { personCard, scanPeople, KINDS as PERSON_KINDS } from '../services/personNotes.js';
+import { convoImage } from '../services/convoImages.js';
 import * as bookFacts from '../services/bookFacts.js';
 import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
@@ -951,6 +952,14 @@ export function conversationsRoutes() {
     const out = convos.rewindConvo(req.params.id, req.body?.messageId || null);
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
+  });
+
+  // GET /api/convos/:id/images/:imageId — an image sent with one of his messages.
+  router.get('/:id/images/:imageId', (req, res) => {
+    const img = convoImage(req.params.id, req.params.imageId);
+    const m = img && /^data:([^;]+);base64,(.*)$/s.exec(img.data_url);
+    if (!m) return res.status(404).json({ error: 'not_found' });
+    res.set('Content-Type', m[1]).set('Cache-Control', 'private, max-age=31536000').send(Buffer.from(m[2], 'base64'));
   });
 
   // DELETE /api/convos/:id/messages/:messageId — remove one message, keep the rest.

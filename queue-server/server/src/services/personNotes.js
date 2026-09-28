@@ -11,8 +11,8 @@ import { generateText } from './ai/text.js';
 
 let db = null;
 export const KINDS = new Set(['real', 'fictional', 'myth', 'place', 'archetype', 'institution']);
-// Bumped when a kind is added, so answers read before it are read once more (v6: no laws as beings of myth, no jobs as archetypes).
-export const PEOPLE_V = 6;
+// Bumped when a kind is added, so answers read before it are read once more (v7: whole names, even when the answer writes only a part).
+export const PEOPLE_V = 7;
 // A long answer names many places and offices in passing; only a few are worth a card.
 const PER_KIND = { place: 8, institution: 6, archetype: 4 };
 // Ten used to be the cap, and a long answer's list stopped there: Astraea and
@@ -62,7 +62,7 @@ export async function namedPeople(answer) {
       + '- institution: a named organisation the answer discusses, not one it only mentions in passing — a court, an office, an agency, a church, a company\n'
       + '- archetype: a figure of the psyche or of myth that recurs across stories, used by name (the Shadow, the Trickster, the scapegoat, the Great Mother, the Wounded Healer); it may be written in lower case. Never a role or job (a public defender), never a group (the people)\n'
       + 'Skip the reader and the writer of the answer, skip groups and peoples, and skip a name used only inside a book or film title.\n'
-      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"full name","kind":"real"|"fictional"|"myth"|"place"|"institution"|"archetype","from":"3 to 6 words on what it is — real: who they are; fictional: the work it comes from; myth: the tradition and what it is (Greek goddess of justice); place: where, and what it is; institution: what it is and where; archetype: the tradition that names it"}]}. {"people":[]} if there are none. At most 25, in order of first mention; never leave out a being of myth, a place or an archetype to make room.\n\n'
+      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"its whole name as the world knows it, even when the answer writes only a part of it (Sutton -> Jeffrey S. Sutton)","kind":"real"|"fictional"|"myth"|"place"|"institution"|"archetype","from":"3 to 6 words on what it is — real: who they are; fictional: the work it comes from; myth: the tradition and what it is (Greek goddess of justice); place: where, and what it is; institution: what it is and where; archetype: the tradition that names it"}]}. {"people":[]} if there are none. At most 25, in order of first mention; never leave out a being of myth, a place or an archetype to make room.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 12000),
   });
   // A failed or cut-off reply is not "no names": it throws, so the answer is read again.
@@ -123,7 +123,7 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
     prompt: [
       `Write a short card about ${what}, for the conversation below.`,
       LENS,
-      'Reply with JSON only: {"life":"' + spec.life + '","pattern":"' + spec.pattern + ', 4 to 10 words, no name in it","here":"50 to 70 words: why it matters HERE — which idea of this conversation it shows, and how, read through the lens. Use the conversation\'s own ideas. Plain simple words, no jargon, no preamble, all sentences finished."'
+      'Reply with JSON only: {"whole":"its whole name as the world knows it — the answer may write only a part of it (Sutton -> Jeffrey S. Sutton, Motley -> Constance Baker Motley); repeat the given name unchanged if you are not sure","life":"' + spec.life + '","pattern":"' + spec.pattern + ', 4 to 10 words, no name in it","here":"50 to 70 words: why it matters HERE — which idea of this conversation it shows, and how, read through the lens. Use the conversation\'s own ideas. Plain simple words, no jargon, no preamble, all sentences finished."'
         + (spec.echoes ? ',"echoes":["three names only, no explanation: who lives this archetype — real, fictional or of myth — at different scales if you can (a person, a character, a nation)"]' : '') + '}',
       'If you do not know it, reply {"life":"","pattern":"","here":""}.',
       '=== THE CONVERSATION (latest turns) ===', msgs.slice(-6000),
@@ -137,7 +137,9 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
     here = end > 80 ? here.slice(0, end + 1) : '';
   }
   const lifeRaw = bareLife(plain(j.life));
-  const card = { life: lifeRaw.length > 110 ? lifeRaw.slice(0, 110).replace(/\s+\S*$/, '') + '…' : lifeRaw, pattern: plain(j.pattern).replace(/[.]$/, '').slice(0, 120), here,
+  const whole = plain(j.whole).slice(0, 120);
+  const card = { ...(whole && norm(whole) !== norm(who) && norm(whole).includes(norm(who).split(' ').pop()) ? { whole } : {}),
+    life: lifeRaw.length > 110 ? lifeRaw.slice(0, 110).replace(/\s+\S*$/, '') + '…' : lifeRaw, pattern: plain(j.pattern).replace(/[.]$/, '').slice(0, 120), here,
     ...(spec.echoes && Array.isArray(j.echoes) ? { echoes: j.echoes.map((x) => plain(x).split(/\s+[–—-]\s+|[:(,]/)[0].trim().slice(0, 60)).filter(Boolean).slice(0, 3) } : {}) };
   if (!card.pattern && !card.here) return card;
   db.prepare(`INSERT INTO person_notes (convo_id, key, body) VALUES (?,?,?)

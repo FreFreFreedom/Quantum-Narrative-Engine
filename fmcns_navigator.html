@@ -2765,6 +2765,11 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-card { position:fixed; z-index:var(--z-popover); width:min(560px, calc(100vw - 16px)); max-height:min(720px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
   padding:28px 32px 28px; border-radius:16px; font-family:var(--font-ui); color:var(--c-ink); }
+.se-card.is-person-card { width:auto; min-width:min(360px, calc(100vw - 16px)); max-width:min(500px, calc(100vw - 16px)); padding:22px 26px; }
+.se-card.is-person-card .se-card-title { font-size:25px; }
+.se-card.is-person-card .se-card-meta { font-size:15px; }
+.se-card.is-person-card .se-card-note { font-size:18px; margin-top:14px; }
+.se-card.is-person-card .bk-cover.is-person { width:56px; height:56px; }
 .se-card-x { position:absolute; top:14px; right:14px; width:30px; height:30px; font-size:16px; border:0; background:none; color:var(--c-ink-5); cursor:pointer; border-radius:6px; }
 .se-card-x:hover { background:var(--c-hover-wash); color:var(--c-ink); }
 .se-card-title { display:block; padding-right:22px; font-family:var(--font-read); font-style:italic; font-weight:500; font-size:30px; line-height:1.2; padding-right:36px; }
@@ -4040,6 +4045,11 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
 .se-filechip, .se-message-file { display:inline-flex; align-items:center; gap:5px; max-width:17rem; padding:3px 7px;
   border:1px solid var(--c-border-2); background:var(--c-surface-2); color:var(--c-ink-3); border-radius:var(--r-sm); font-size:var(--fs-xs); }
 .se-filechip span, .se-message-file span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.se-message-file.is-image { font:inherit; font-size:var(--fs-xs); cursor:zoom-in; }
+.se-message-file.is-image:hover { color:var(--c-ink-2); border-color:var(--c-ink-4); }
+.se-imgview { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:24px;
+  background:rgba(6,8,14,.86); cursor:zoom-out; }
+.se-imgview img { max-width:100%; max-height:100%; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.6); }
 .se-filechip img { width:28px; height:28px; border-radius:var(--r-xs); object-fit:cover; cursor:zoom-in; }
 .se-filechip img:hover { outline:1px solid var(--c-ink-4); outline-offset:1px; }
 .img-view { position:fixed; inset:0; z-index:9000; display:flex; align-items:center; justify-content:center;
@@ -28865,10 +28875,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (meta.checked) out.checked = meta.checked;
         if (meta.answered) out.answered = meta.answered;
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
-        if (Array.isArray(meta.attachments)) out.attachments = meta.attachments;
+        if (Array.isArray(meta.attachments)) { out.attachments = meta.attachments; if (meta.body && !out.body) out.body = meta.body; }
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
         // Read again when a kind was added since (v2 places, archetypes, institutions; v3 tighter).
-        if (Array.isArray(meta.people)) { out.peopleRead = (Number(meta.peopleV) || 0) >= 6; if (meta.people.length) out.people = meta.people; }
+        if (Array.isArray(meta.people)) { out.peopleRead = (Number(meta.peopleV) || 0) >= 7; if (meta.people.length) out.people = meta.people; }
       }
       return out;
     });
@@ -31892,10 +31902,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(e.busy) return;
         var m = e.msgs[Number(b.getAttribute('data-se-redo'))];
         if(m && m.text){
-          var carried = (m.body || (m.retryAttachments && m.retryAttachments.length))
-            ? { body: m.body || m.text, quotes: m.quotes || [], attachments: m.retryAttachments || [] }
-            : undefined;
-          openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); }, carried);
+          var go = function(){
+            var carried = (m.body || (m.retryAttachments && m.retryAttachments.length))
+              ? { body: m.body || m.text, quotes: m.quotes || [], attachments: m.retryAttachments || [] }
+              : undefined;
+            openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); }, carried);
+          };
+          // Answering again after a reload: fetch the kept images, so the question is not sent without them.
+          var kept = (m.attachments || []).filter(function(a){ return a.imageId; });
+          if (kept.length && !(m.retryAttachments && m.retryAttachments.length)) {
+            Promise.all(kept.map(function(a){
+              return seImgUrl(e.convoId, a.imageId).then(function(bl){ return new Promise(function(res){ var fr = new FileReader(); fr.onload = function(){ res({ kind: 'image', name: a.name, mimeType: bl.type || a.mimeType, dataUrl: fr.result }); }; fr.onerror = function(){ res(null); }; fr.readAsDataURL(bl); }); }).catch(function(){ return null; });
+            })).then(function(list){ list = list.filter(Boolean); if (list.length) m.retryAttachments = list; go(); });
+          } else go();
         }
       };
     });
@@ -32718,30 +32737,57 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Who they are, the main pattern they live out, and why they matter here,
   // with searches out for books by or about them and for videos.
   var sePeopleArt = {};
+  function seWikiSummary(title){
+    return fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(String(title).replace(/ /g, '_')))
+      .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+  }
+  // The pages Wikipedia offers for a name plus what the answer said it is —
+  // "Bunk" alone finds nothing, "Bunk The Wire character" finds Bunk Moreland.
+  function seWikiSearch(q){
+    return fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&origin=*&srlimit=4&srsearch='
+      + encodeURIComponent(q))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){ return ((j && j.query && j.query.search) || []).map(function(x){ return x.title; }); })
+      .catch(function(){ return []; });
+  }
+  function seArtFrom(j, d){
+    if (!j || j.type === 'disambiguation' || !(j.thumbnail && j.thumbnail.source)) return '';
+    // A place or an institution: its own page's picture, whatever it shows.
+    if (d.pKind === 'place' || d.pKind === 'institution') return j.thumbnail.source;
+    // A portrait only when the page is the same kind of being: "Hamlet" the play
+    // is not Hamlet the prince.
+    var desc = String(j.description || '') + ' ' + String(j.extract || '').slice(0, 200);
+    var fictional = /\b(character|fictional)\b/i.test(desc);
+    var myth = /\b(mytholog\w*|myths?|deity|deities|gods?|goddess|titan\w*|spirit|angel|demon|nymph|legend\w*|folklore|biblical|saint|hero)\b/i.test(desc);
+    var kind = fictional ? 'fictional' : myth ? 'myth' : 'real';
+    if (kind !== d.pKind && !(d.pKind === 'real' && kind === 'myth' && /\bsaint\b/i.test(desc))) return '';
+    return j.thumbnail.source;
+  }
   function sePersonArt(d){
     var who = d.pFull || d.pName;
     if (who in sePeopleArt || d.pKind === 'archetype') return Promise.resolve();
     sePeopleArt[who] = '';
-    var thing = d.pKind === 'place' || d.pKind === 'institution';
-    return fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(who.replace(/ /g, '_')))
-      .then(function(r){ return r.ok ? r.json() : null; })
-      .then(function(j){
-        if (!j || j.type === 'disambiguation') return;
-        // A place or an institution: its own page's picture, whatever it shows.
-        if (thing) { sePeopleArt[who] = (j.thumbnail && j.thumbnail.source) || ''; return; }
-        // A portrait only when the page is the same kind of person: "Hamlet" the
-        // play is not Hamlet the prince.
-        var desc = String(j.description || '');
-        var fictional = /\b(character|fictional)\b/i.test(desc);
-        var myth = /\b(mytholog\w*|myths?|deity|deities|gods?|goddess|titan\w*|spirit|angel|demon|nymph|legend\w*|folklore|biblical|saint|hero)\b/i.test(desc);
-        var kind = fictional ? 'fictional' : myth ? 'myth' : 'real';
-        if (kind !== d.pKind && !(d.pKind === 'real' && kind === 'myth' && /\bsaint\b/i.test(desc))) return;
-        sePeopleArt[who] = (j.thumbnail && j.thumbnail.source) || '';
-      }).catch(function(){});
+    return seWikiSummary(who).then(function(j){
+      var art = seArtFrom(j, d);
+      if (art) { sePeopleArt[who] = art; return; }
+      // No page under that name, the wrong one, or one with no picture: ask
+      // Wikipedia what it has for this name and what the answer said it is.
+      return seWikiSearch(who + (d.pFrom ? ' ' + d.pFrom : '')).then(function(titles){
+        var next = function(i){
+          if (i >= titles.length) return;
+          return seWikiSummary(titles[i]).then(function(k){
+            var a = seArtFrom(k, d);
+            if (a) { sePeopleArt[who] = a; return; }
+            return next(i + 1);
+          });
+        };
+        return next(0);
+      });
+    }).catch(function(){});
   }
   function sePersonHtml(d, card){
-    var f = card || {}, who = d.pFull || d.pName, k = d.pKind, fic = k === 'fictional';
-    var art = sePeopleArt[who] || '';
+    var f = card || {}, who = f.whole || d.pFull || d.pName, k = d.pKind, fic = k === 'fictional';
+    var art = sePeopleArt[who] || sePeopleArt[d.pFull || d.pName] || '';
     var q = who + (fic && d.pFrom ? ' ' + d.pFrom : k === 'myth' ? ' mythology' : k === 'archetype' ? ' archetype' : '');
     var links = [
       { label: 'Amazon', url: 'https://www.amazon.com/s?i=stripbooks&k=' + encodeURIComponent(q) },
@@ -32767,13 +32813,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var d = btn.dataset, id = 'p|' + (d.pFull || d.pName);
     if (seCardFor === id) { seCardClose(); return; }
     seCardClose();
-    seCard = document.createElement('div'); seCard.className = 'se-card'; seCard.setAttribute('role', 'dialog');
+    seCard = document.createElement('div'); seCard.className = 'se-card is-person-card'; seCard.setAttribute('role', 'dialog');
     seCardFor = id; seCardAnchor = btn;
     document.body.appendChild(seCard);
     var card = null;
     var paint = function(){
       if (!seCard || seCardFor !== id) return;
       seCard.innerHTML = sePersonHtml(d, card); seCardPlace(btn);
+      // The card came back with a fuller name than the answer wrote: look for its picture under that one.
+      if (card && card.whole && !(card.whole in sePeopleArt)) sePersonArt({ pFull: card.whole, pKind: d.pKind, pFrom: d.pFrom }).then(paint);
     };
     paint();
     sePersonArt(d).then(paint);
@@ -32783,7 +32831,32 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .then(function(c){ card = c || {}; }).catch(function(){ card = {}; })
       .then(paint);
   }
+  // Images sent with his messages, opened full size over the Room.
+  var seImgStore = {}, seImgN = 0;
+  function seImgKeep(url){ for (var k in seImgStore) if (seImgStore[k] === url) return k; var key = 'i' + (++seImgN); seImgStore[key] = url; return key; }
+  function seImgUrl(convoId, id){
+    return fetch(API_BASE + '/api/convos/' + convoId + '/images/' + id, { headers: { 'Authorization': 'Bearer ' + TOKEN } })
+      .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); });
+  }
+  function seImgOpen(btn){
+    var show = function(src){
+      var box = document.createElement('div'); box.className = 'se-imgview';
+      var img = document.createElement('img'); img.src = src; img.alt = btn.textContent || '';
+      box.appendChild(img);
+      var close = function(){ box.remove(); document.removeEventListener('keydown', onKey, true); };
+      var onKey = function(ev){ if (ev.key === 'Escape') { ev.stopPropagation(); close(); } };
+      box.addEventListener('click', close);
+      document.addEventListener('keydown', onKey, true);
+      document.body.appendChild(box);
+    };
+    var key = btn.dataset.imgKey;
+    if (key && seImgStore[key]) return show(seImgStore[key]);
+    if (!btn.dataset.imgId) return;
+    seImgUrl(btn.dataset.convo, btn.dataset.imgId).then(function(b){ show(URL.createObjectURL(b)); }).catch(function(){});
+  }
   document.addEventListener('click', function(ev){
+    var ib = ev.target.closest && ev.target.closest('.se-message-file.is-image');
+    if (ib) { ev.preventDefault(); ev.stopPropagation(); seImgOpen(ib); return; }
     var pb = ev.target.closest && ev.target.closest('.se-person');
     if (pb) { ev.preventDefault(); sePersonOpen(pb); return; }
     var btn = ev.target.closest && ev.target.closest('.se-cover');
@@ -32882,7 +32955,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var filesHtml = '';
       if (you && m.attachments && m.attachments.length) {
         filesHtml = '<div class="se-message-files">' + m.attachments.map(function(a){
-          return '<span class="se-message-file"><span>' + qEsc(a.name || 'file') + '</span></span>';
+          // An image opens: from this session's copy while it is fresh, else from the server.
+          var local = (m.retryAttachments || []).find(function(r){ return r.name === a.name && r.dataUrl; });
+          var key = local ? seImgKeep(local.dataUrl) : '';
+          if (!a.imageId && !key) return '<span class="se-message-file"><span>' + qEsc(a.name || 'file') + '</span></span>';
+          return '<button type="button" class="se-message-file is-image" data-img-id="' + qEscAttr(a.imageId || '') + '" data-img-key="' + key + '" data-convo="' + qEscAttr(e.convoId || '') + '"><span>' + qEsc(a.name || 'image') + '</span></button>';
         }).join('') + '</div>';
       }
       var shown = (you && m.body) ? m.body : m.text;
