@@ -102,18 +102,18 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
 }
 
 // Answers written before names were marked (or before a kind was added) are read
-// once when their conversation is opened: the latest unread answers, a few at a
-// time, each stored with its list — an empty one too, so it is never read again.
+// once when their conversation is opened — the whole conversation, newest first,
+// twelve answers per call (the page keeps asking while `more` is true), each
+// stored with its list, an empty one too, so it is never read again.
 const scanning = new Set();
 export async function scanPeople(convoId, { limit = 12 } = {}) {
   if (!db || !convoId) return {};
-  const rows = db.prepare(`SELECT id, text, meta FROM convo_messages WHERE convo_id=? AND role='assistant' AND kind='chat' ORDER BY created_at DESC, rowid DESC LIMIT 60`).all(convoId);
-  const todo = [];
-  for (const r of rows) {
+  const rows = db.prepare(`SELECT id, text, meta FROM convo_messages WHERE convo_id=? AND role='assistant' AND kind='chat' ORDER BY created_at DESC, rowid DESC`).all(convoId);
+  const unread = rows.filter((r) => {
     let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch { meta = {}; }
-    if (!meta.failed && !Array.isArray(meta.people) && !scanning.has(r.id)) todo.push(r);
-    if (todo.length >= limit) break;
-  }
+    return !meta.failed && !Array.isArray(meta.people) && !scanning.has(r.id) && String(r.text || '').trim();
+  });
+  const todo = unread.slice(0, limit);
   const found = {};
   for (let i = 0; i < todo.length; i += 3) {
     await Promise.all(todo.slice(i, i + 3).map(async (r) => {
@@ -128,5 +128,5 @@ export async function scanPeople(convoId, { limit = 12 } = {}) {
       } finally { scanning.delete(r.id); }
     }));
   }
-  return found;
+  return { found, more: unread.length > todo.length };
 }

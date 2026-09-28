@@ -28902,10 +28902,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .then(function(){ e.loading = false; if(repaint) repaint(); seScanPeople(e, repaint); });
   }
   // Answers from before names were marked are read once, the first time their
-  // conversation opens, and the marks appear when that comes back.
-  function seScanPeople(e, repaint){
-    if (e.peopleScan || !e.convoId || !e.loaded) return;
-    if (!(e.msgs || []).some(function(m){ return m.role === 'assistant' && m.kind === 'chat' && m.id && m.text && !m.peopleRead; })) return;
+  // conversation opens — the whole conversation, newest first, a stretch at a
+  // time, the marks appearing as each stretch comes back.
+  function seScanPeople(e, repaint, again){
+    if ((e.peopleScan && !again) || !e.convoId || !e.loaded) return;
+    if (!(e.msgs || []).some(function(m){ return m.role === 'assistant' && m.kind === 'chat' && m.id && m.text && !m.peopleRead; })) { e.peopleScan = false; return; }
     e.peopleScan = true;
     apiWrite('/api/convos/' + encodeURIComponent(e.convoId) + '/people-scan', 'POST', {})
       .then(function(out){
@@ -28916,6 +28917,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           if (got[m.id].length) { m.people = got[m.id]; any = true; }
         });
         if (any && repaint) repaint();
+        if (out && out.more && Object.keys(got).length) seScanPeople(e, repaint, true);
+        else e.peopleScan = false;
       })
       .catch(function(){ e.peopleScan = false; });
   }

@@ -176,7 +176,8 @@ export function conversationsRoutes() {
 
   // Older answers get their names marked the first time the conversation opens.
   router.post('/:id/people-scan', asyncHandler(async (req, res) => {
-    res.json({ people: await scanPeople(req.params.id) });
+    const { found, more } = await scanPeople(req.params.id);
+    res.json({ people: found || {}, more: !!more });
   }));
 
   // A book's table of contents, from the catalogues in turn (services/bookContents.js).
