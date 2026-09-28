@@ -32752,6 +32752,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   function seArtFrom(j, d){
     if (!j || j.type === 'disambiguation' || !(j.thumbnail && j.thumbnail.source)) return '';
+    // A search for a person can land on a book they wrote or a film about them.
+    if (d.pKind !== 'institution' && /\b(book|novel|memoir|film|movie|album|song|magazine|newspaper|journal)\b/i.test(String(j.description || ''))) return '';
     // A place or an institution: its own page's picture, whatever it shows.
     if (d.pKind === 'place' || d.pKind === 'institution') return j.thumbnail.source;
     // A portrait only when the page is the same kind of being: "Hamlet" the play
@@ -32772,7 +32774,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if (art) { sePeopleArt[who] = art; return; }
       // No page under that name, the wrong one, or one with no picture: ask
       // Wikipedia what it has for this name and what the answer said it is.
-      return seWikiSearch(who + (d.pFrom ? ' ' + d.pFrom : '')).then(function(titles){
+      // The page must still be about this name, not merely mention it.
+      var last = who.split(/\s+/).filter(function(x){ return x.length > 2; }).pop() || who;
+      return seWikiSearch(who + (d.pFrom ? ' ' + d.pFrom : '')).then(function(all){
+        var titles = all.filter(function(x){ return x.toLowerCase().indexOf(last.toLowerCase()) >= 0; });
         var next = function(i){
           if (i >= titles.length) return;
           return seWikiSummary(titles[i]).then(function(k){

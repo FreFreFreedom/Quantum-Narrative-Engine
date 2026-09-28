@@ -13,6 +13,8 @@ let db = null;
 export const KINDS = new Set(['real', 'fictional', 'myth', 'place', 'archetype', 'institution']);
 // Bumped when a kind is added, so answers read before it are read once more (v7: whole names, even when the answer writes only a part).
 export const PEOPLE_V = 7;
+// Bumped when a card asks for something new, so cards written before it are written again (v2: the whole name).
+const CARD_V = 2;
 // A long answer names many places and offices in passing; only a few are worth a card.
 const PER_KIND = { place: 8, institution: 6, archetype: 4 };
 // Ten used to be the cap, and a long answer's list stopped there: Astraea and
@@ -113,7 +115,7 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
   if (!db || !convoId || !norm(who)) return {};
   const key = `${kind}|${norm(who)}`;
   const row = db.prepare('SELECT body FROM person_notes WHERE convo_id=? AND key=?').get(convoId, key);
-  if (row && !refresh) { try { const c = JSON.parse(row.body); if (!(c.echoes || []).some((x) => / [–—-] /.test(x))) return { ...c, life: bareLife(c.life) }; } catch {} }
+  if (row && !refresh) { try { const c = JSON.parse(row.body); if ((c.v || 0) >= CARD_V && !(c.echoes || []).some((x) => / [–—-] /.test(x))) return { ...c, life: bareLife(c.life) }; } catch {} }
   const msgs = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' ORDER BY created_at DESC, rowid DESC LIMIT 6`)
     .all(convoId).reverse().map((m) => (m.role === 'user' ? 'HIM: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1200)).join('\n\n');
   const spec = CARD[kind] || CARD.real;
@@ -138,7 +140,7 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
   }
   const lifeRaw = bareLife(plain(j.life));
   const whole = plain(j.whole).slice(0, 120);
-  const card = { ...(whole && norm(whole) !== norm(who) && norm(whole).includes(norm(who).split(' ').pop()) ? { whole } : {}),
+  const card = { v: CARD_V, ...(whole && norm(whole) !== norm(who) && norm(whole).includes(norm(who).split(' ').pop()) ? { whole } : {}),
     life: lifeRaw.length > 110 ? lifeRaw.slice(0, 110).replace(/\s+\S*$/, '') + '…' : lifeRaw, pattern: plain(j.pattern).replace(/[.]$/, '').slice(0, 120), here,
     ...(spec.echoes && Array.isArray(j.echoes) ? { echoes: j.echoes.map((x) => plain(x).split(/\s+[–—-]\s+|[:(,]/)[0].trim().slice(0, 60)).filter(Boolean).slice(0, 3) } : {}) };
   if (!card.pattern && !card.here) return card;
