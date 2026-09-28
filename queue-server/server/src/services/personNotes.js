@@ -69,12 +69,15 @@ export async function namedPeople(answer) {
 // The paradigm in two lines, kept short on purpose: context, not a method.
 const LENS = 'The lens is his paradigm: every self-maintaining thing — a cell, a person, a family, a nation — holds a boundary against its own dissolution, is split inside itself, and the same inner conflict echoes from one scale to the next; what heals it is integration, what hides it is shadow.';
 
+// The model sometimes repeats the instruction's own label ("a being of myth: Greek…").
+const bareLife = (t) => String(t || '').replace(/^\s*(a real person|a character|a being of myth)\s*:\s*/i, '');
+
 export async function personCard(convoId, { name = '', full = '', kind = 'real', from = '' } = {}, { refresh = false } = {}) {
   const who = plain(full || name);
   if (!db || !convoId || !norm(who)) return {};
   const key = `${kind}|${norm(who)}`;
   const row = db.prepare('SELECT body FROM person_notes WHERE convo_id=? AND key=?').get(convoId, key);
-  if (row && !refresh) { try { return JSON.parse(row.body); } catch {} }
+  if (row && !refresh) { try { const c = JSON.parse(row.body); return { ...c, life: bareLife(c.life) }; } catch {} }
   const msgs = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' ORDER BY created_at DESC, rowid DESC LIMIT 6`)
     .all(convoId).reverse().map((m) => (m.role === 'user' ? 'HIM: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1200)).join('\n\n');
   const what = kind === 'fictional' ? `the fictional character ${who}${from ? ` (${from})` : ''}`
@@ -97,7 +100,7 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
     const end = Math.max(here.lastIndexOf('. '), here.lastIndexOf('! '), here.lastIndexOf('? '));
     here = end > 80 ? here.slice(0, end + 1) : '';
   }
-  const card = { life: plain(j.life).slice(0, 80), pattern: plain(j.pattern).replace(/[.]$/, '').slice(0, 120), here };
+  const card = { life: bareLife(plain(j.life)).slice(0, 80), pattern: plain(j.pattern).replace(/[.]$/, '').slice(0, 120), here };
   if (!card.pattern && !card.here) return card;
   db.prepare(`INSERT INTO person_notes (convo_id, key, body) VALUES (?,?,?)
     ON CONFLICT(convo_id, key) DO UPDATE SET body=excluded.body, created_at=CURRENT_TIMESTAMP`).run(convoId, key, JSON.stringify(card));
