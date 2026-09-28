@@ -2796,6 +2796,10 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-person:hover, .se-person:focus-visible { color:var(--c-kept-echo, var(--c-accent)); }
 .bk-cover.is-person { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center;
   font-family:var(--font-read); font-size:28px; color:var(--c-ink-4); background-position:center 20%; }
+.bk-cover.is-thing { border-radius:10px; }
+.se-card-echoes { display:flex; flex-wrap:wrap; gap:8px; }
+.se-card-echoes a { padding:6px 14px; border:1px solid var(--c-border-2); border-radius:999px; font-size:15px; color:var(--c-ink-2); text-decoration:none; }
+.se-card-echoes a:hover { background:var(--c-hover-wash); color:var(--c-ink); }
 .se-card-pattern { margin:18px 0 0; font-family:var(--font-read); font-style:italic; font-size:21px; line-height:1.45; color:var(--c-ink); }
 .bk-out { position:relative; flex:none; align-self:flex-start; }
 .bk-out-btn { width:32px; height:32px; border-radius:50%; border:1px solid color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, transparent); background:none;
@@ -28863,8 +28867,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) out.attachments = meta.attachments;
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
-        // A list of ten or more read under the old cap is read again, whole.
-        if (Array.isArray(meta.people)) { out.peopleRead = !(meta.people.length >= 10 && !meta.peopleFull); if (meta.people.length) out.people = meta.people; }
+        // Read again when a kind was added since (places, archetypes, institutions: v2).
+        if (Array.isArray(meta.people)) { out.peopleRead = (Number(meta.peopleV) || 0) >= 2; if (meta.people.length) out.people = meta.people; }
       }
       return out;
     });
@@ -32515,7 +32519,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var btn = document.createElement('button');
         btn.type = 'button'; btn.className = 'se-person';
         btn.dataset.pName = name; btn.dataset.pFull = p.full || name;
-        btn.dataset.pKind = p.kind === 'fictional' || p.kind === 'myth' ? p.kind : 'real';
+        btn.dataset.pKind = /^(fictional|myth|place|institution|archetype)$/.test(p.kind || '') ? p.kind : 'real';
         btn.dataset.pFrom = p.from || ''; btn.dataset.convo = convoId || '';
         btn.title = (p.full || name) + (p.from ? ' — ' + p.from : '');
         word.parentNode.replaceChild(btn, word); btn.appendChild(word);
@@ -32712,12 +32716,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   var sePeopleArt = {};
   function sePersonArt(d){
     var who = d.pFull || d.pName;
-    if (who in sePeopleArt) return Promise.resolve();
+    if (who in sePeopleArt || d.pKind === 'archetype') return Promise.resolve();
     sePeopleArt[who] = '';
+    var thing = d.pKind === 'place' || d.pKind === 'institution';
     return fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(who.replace(/ /g, '_')))
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(j){
         if (!j || j.type === 'disambiguation') return;
+        // A place or an institution: its own page's picture, whatever it shows.
+        if (thing) { sePeopleArt[who] = (j.thumbnail && j.thumbnail.source) || ''; return; }
         // A portrait only when the page is the same kind of person: "Hamlet" the
         // play is not Hamlet the prince.
         var desc = String(j.description || '');
@@ -32729,19 +32736,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       }).catch(function(){});
   }
   function sePersonHtml(d, card){
-    var f = card || {}, who = d.pFull || d.pName, fic = d.pKind === 'fictional', myth = d.pKind === 'myth';
+    var f = card || {}, who = d.pFull || d.pName, k = d.pKind, fic = k === 'fictional';
     var art = sePeopleArt[who] || '';
-    var q = who + (fic && d.pFrom ? ' ' + d.pFrom : myth ? ' mythology' : '');
+    var q = who + (fic && d.pFrom ? ' ' + d.pFrom : k === 'myth' ? ' mythology' : k === 'archetype' ? ' archetype' : '');
     var links = [
       { label: 'Amazon', url: 'https://www.amazon.com/s?i=stripbooks&k=' + encodeURIComponent(q) },
       { label: 'YouTube', url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q) },
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/w/index.php?search=' + encodeURIComponent(who) }];
+    if (k === 'place') links.push({ label: 'Map', url: 'https://www.google.com/maps/search/' + encodeURIComponent(who) });
     var meta = fic ? [f.life || d.pFrom] : [d.pFrom, f.life];
     meta = meta.filter(Boolean);
     var body = !card ? waitHtml('searching', 'Looking it up', 'p', 'se-card-wait')
       : (f.pattern ? '<p class="se-card-pattern">' + qEsc(f.pattern) + '</p>' : '')
-        + (f.here ? '<p class="se-card-note">' + qEsc(f.here) + '</p>' : '');
-    return '<div class="bk-head"><span class="bk-cover is-person"' + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)">' : '>' + qEsc(who.charAt(0)))
+        + (f.here ? '<p class="se-card-note">' + qEsc(f.here) + '</p>' : '')
+        // An archetype's card names who lives it, each a search of its own.
+        + (f.echoes && f.echoes.length ? '<h6>Echoes</h6><div class="se-card-echoes">' + f.echoes.map(function(x){
+            return '<a href="https://en.wikipedia.org/w/index.php?search=' + encodeURIComponent(x) + '" target="_blank" rel="noopener noreferrer">' + qEsc(x) + '</a>';
+          }).join('') + '</div>' : '');
+    var shape = (k === 'place' || k === 'institution') ? 'is-person is-thing' : 'is-person';
+    return '<div class="bk-head"><span class="bk-cover ' + shape + '"' + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)">' : '>' + qEsc(who.charAt(0)))
       + '</span><div class="bk-id"><b class="se-card-title">' + qEsc(who) + '</b>'
       + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '') + '</div>'
       + bookOutMenu(links) + '</div>' + body;

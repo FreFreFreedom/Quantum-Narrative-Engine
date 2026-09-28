@@ -1,4 +1,5 @@
-// People in a Room answer — real or fictional — and the card each one opens.
+// People in a Room answer — real, fictional or of myth — and, since the same day,
+// the places, archetypes and institutions it gives weight to, each with its card.
 // Antoine's ask (2026-09-28): a name in an answer marked like a book cover is, so a
 // click tells him who this is, the main pattern the person shows, and why they
 // matter to this conversation through the paradigm, with searches out to Amazon
@@ -9,7 +10,9 @@
 import { generateText } from './ai/text.js';
 
 let db = null;
-export const KINDS = new Set(['real', 'fictional', 'myth']);
+export const KINDS = new Set(['real', 'fictional', 'myth', 'place', 'archetype', 'institution']);
+// Bumped when a kind is added, so answers read before it are read once more.
+export const PEOPLE_V = 2;
 // Ten used to be the cap, and a long answer's list stopped there: Astraea and
 // Ma'at, named after ten lawyers, were never marked (2026-09-28).
 const MAX_PEOPLE = 25;
@@ -44,8 +47,15 @@ export async function namedPeople(answer) {
   if (text.length < 80 || !NAME_HINT.test(text)) return null;
   const result = await generateText({
     feature: 'summary', maxTokens: 2000, label: 'room:people', timeoutMs: 20_000, maxAttempts: 2,
-    prompt: 'Below is an answer. List the beings it names: real people (living or historical), fictional characters from books, films and series, and beings of myth, religion or folklore (gods, goddesses, titans, spirits, angels, demons, legendary heroes, saints). Skip the reader and the writer of the answer, skip groups, peoples and places, and skip a name used only inside a book or film title.\n'
-      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"full name","kind":"real"|"fictional"|"myth","from":"fictional: the work it comes from; myth: the tradition and what it is, 3 to 6 words (Greek goddess of justice); real: who they are in 3 to 6 words"}]}. {"people":[]} if there are none. At most 25, in order of first mention; never leave out a being of myth or religion to make room.\n\n'
+    prompt: 'Below is an answer. List what it names, of six kinds:\n'
+      + '- real: real people, living or historical\n'
+      + '- fictional: characters from books, films and series\n'
+      + '- myth: beings of myth, religion or folklore (gods, goddesses, titans, spirits, angels, demons, legendary heroes, saints)\n'
+      + '- place: a specific place the answer gives weight to — a prison, a city, a building, a sacred or mythic site (Attica, Eleusis, Atlantis); not a passing mention of a country or city\n'
+      + '- institution: a named organisation the answer discusses — a court, an office, an agency, a church, a company, a movement with a name\n'
+      + '- archetype: an archetype or mythic pattern the answer uses by name (the Shadow, the Trickster, the scapegoat, the Great Mother); it may be written in lower case\n'
+      + 'Skip the reader and the writer of the answer, skip groups and peoples, and skip a name used only inside a book or film title.\n'
+      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"full name","kind":"real"|"fictional"|"myth"|"place"|"institution"|"archetype","from":"3 to 6 words on what it is — real: who they are; fictional: the work it comes from; myth: the tradition and what it is (Greek goddess of justice); place: where, and what it is; institution: what it is and where; archetype: the tradition that names it"}]}. {"people":[]} if there are none. At most 25, in order of first mention; never leave out a being of myth, a place or an archetype to make room.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 12000),
   });
   if (result.error) return null;
@@ -56,7 +66,8 @@ export async function namedPeople(answer) {
   const out = [];
   for (const p of list) {
     const name = plain(p?.name).slice(0, 80);
-    if (name.length < 2 || !/[A-ZÀ-Þ]/.test(name[0]) || seen.has(name)) continue;
+    // A proper name starts with a capital; an archetype may not ("the scapegoat").
+    if (name.length < 2 || (p?.kind !== 'archetype' && !/[A-ZÀ-Þ]/.test(name[0])) || seen.has(name)) continue;
     const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (!new RegExp('(^|[^\\p{L}])' + esc + '(?![\\p{L}])', 'u').test(flat)) continue;
     seen.add(name);
@@ -70,7 +81,17 @@ export async function namedPeople(answer) {
 const LENS = 'The lens is his paradigm: every self-maintaining thing — a cell, a person, a family, a nation — holds a boundary against its own dissolution, is split inside itself, and the same inner conflict echoes from one scale to the next; what heals it is integration, what hides it is shadow.';
 
 // The model sometimes repeats the instruction's own label ("a being of myth: Greek…").
-const bareLife = (t) => String(t || '').replace(/^\s*(a real person|a character|a being of myth)\s*:\s*/i, '');
+const bareLife = (t) => String(t || '').replace(/^\s*(a real person|a character|a being of myth|a place|an institution|an archetype)\s*:\s*/i, '');
+
+// What each kind's card asks for. `echoes` only for an archetype: who lives it.
+const CARD = {
+  real: { what: (w, f) => `${w}${f ? ` (${f})` : ''}`, life: 'birth–death years, or born YEAR', pattern: 'the main pattern this person lives out' },
+  fictional: { what: (w, f) => `the fictional character ${w}${f ? ` (${f})` : ''}`, life: 'the work it comes from and its year', pattern: 'the main pattern this character lives out' },
+  myth: { what: (w, f) => `${w}, a being of myth, religion or folklore${f ? ` (${f})` : ''}`, life: 'the tradition and its oldest source', pattern: 'the main pattern this being carries' },
+  place: { what: (w, f) => `the place ${w}${f ? ` (${f})` : ''}`, life: 'where it is and the era that matters, or the myth or book it comes from', pattern: 'the pattern this place holds — what its walls keep in, or keep out' },
+  institution: { what: (w, f) => `the institution ${w}${f ? ` (${f})` : ''}`, life: 'founded YEAR, and where', pattern: 'how it keeps itself alive, and what it splits off to do so' },
+  archetype: { what: (w, f) => `the archetype ${w}${f ? ` (${f})` : ''}`, life: 'the traditions it appears in', pattern: 'what this archetype does, as a movement', echoes: true },
+};
 
 export async function personCard(convoId, { name = '', full = '', kind = 'real', from = '' } = {}, { refresh = false } = {}) {
   const who = plain(full || name);
@@ -80,16 +101,16 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
   if (row && !refresh) { try { const c = JSON.parse(row.body); return { ...c, life: bareLife(c.life) }; } catch {} }
   const msgs = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' ORDER BY created_at DESC, rowid DESC LIMIT 6`)
     .all(convoId).reverse().map((m) => (m.role === 'user' ? 'HIM: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1200)).join('\n\n');
-  const what = kind === 'fictional' ? `the fictional character ${who}${from ? ` (${from})` : ''}`
-    : kind === 'myth' ? `${who}, a being of myth, religion or folklore${from ? ` (${from})` : ''}`
-    : `${who}${from ? ` (${from})` : ''}`;
+  const spec = CARD[kind] || CARD.real;
+  const what = spec.what(who, from);
   const out = await generateText({
     feature: 'summary', maxTokens: 800, label: 'room:person-card', timeoutMs: 30_000, maxAttempts: 2,
     prompt: [
       `Write a short card about ${what}, for the conversation below.`,
       LENS,
-      'Reply with JSON only: {"life":"a real person: birth–death years, or born YEAR; a character: the work and year; a being of myth: the tradition and its oldest source","pattern":"the main pattern this person lives out, 4 to 10 words, no name in it","here":"50 to 70 words: why this person matters HERE — which idea of this conversation they show, and how, read through the lens. Use the conversation\'s own ideas. Plain simple words, no jargon, no preamble, all sentences finished."}',
-      'If you do not know the person, reply {"life":"","pattern":"","here":""}.',
+      'Reply with JSON only: {"life":"' + spec.life + '","pattern":"' + spec.pattern + ', 4 to 10 words, no name in it","here":"50 to 70 words: why it matters HERE — which idea of this conversation it shows, and how, read through the lens. Use the conversation\'s own ideas. Plain simple words, no jargon, no preamble, all sentences finished."'
+        + (spec.echoes ? ',"echoes":["three who live this archetype — real, fictional or of myth — at different scales if you can (a person, a character, a nation)"]' : '') + '}',
+      'If you do not know it, reply {"life":"","pattern":"","here":""}.',
       '=== THE CONVERSATION (latest turns) ===', msgs.slice(-6000),
     ].join('\n\n'),
   });
@@ -100,7 +121,8 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
     const end = Math.max(here.lastIndexOf('. '), here.lastIndexOf('! '), here.lastIndexOf('? '));
     here = end > 80 ? here.slice(0, end + 1) : '';
   }
-  const card = { life: bareLife(plain(j.life)).slice(0, 80), pattern: plain(j.pattern).replace(/[.]$/, '').slice(0, 120), here };
+  const card = { life: bareLife(plain(j.life)).slice(0, 80), pattern: plain(j.pattern).replace(/[.]$/, '').slice(0, 120), here,
+    ...(spec.echoes && Array.isArray(j.echoes) ? { echoes: j.echoes.map((x) => plain(x).slice(0, 60)).filter(Boolean).slice(0, 3) } : {}) };
   if (!card.pattern && !card.here) return card;
   db.prepare(`INSERT INTO person_notes (convo_id, key, body) VALUES (?,?,?)
     ON CONFLICT(convo_id, key) DO UPDATE SET body=excluded.body, created_at=CURRENT_TIMESTAMP`).run(convoId, key, JSON.stringify(card));
@@ -117,8 +139,7 @@ export async function scanPeople(convoId, { limit = 12 } = {}) {
   const rows = db.prepare(`SELECT id, text, meta FROM convo_messages WHERE convo_id=? AND role='assistant' AND kind='chat' ORDER BY created_at DESC, rowid DESC`).all(convoId);
   const unread = rows.filter((r) => {
     let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch { meta = {}; }
-    const cut = Array.isArray(meta.people) && meta.people.length >= 10 && !meta.peopleFull;   // read under the old cap of ten
-    return !meta.failed && (!Array.isArray(meta.people) || cut) && !scanning.has(r.id) && String(r.text || '').trim();
+    return !meta.failed && (!Array.isArray(meta.people) || (Number(meta.peopleV) || 0) < PEOPLE_V) && !scanning.has(r.id) && String(r.text || '').trim();
   });
   const todo = unread.slice(0, limit);
   const found = {};
@@ -130,7 +151,8 @@ export async function scanPeople(convoId, { limit = 12 } = {}) {
         const fresh = db.prepare('SELECT meta FROM convo_messages WHERE id=?').get(r.id);
         let meta = {}; try { meta = fresh?.meta ? JSON.parse(fresh.meta) || {} : {}; } catch {}
         meta.people = people || [];
-        meta.peopleFull = 1;
+        meta.peopleV = PEOPLE_V;
+        delete meta.peopleFull;
         db.prepare('UPDATE convo_messages SET meta=? WHERE id=?').run(JSON.stringify(meta), r.id);
         found[r.id] = meta.people;
       } finally { scanning.delete(r.id); }
