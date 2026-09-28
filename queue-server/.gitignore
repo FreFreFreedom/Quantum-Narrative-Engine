@@ -3,3 +3,4 @@ data/
 .env
 *.log
 .env.bak*
+data-seed/scripts/f_boy_a.txt
