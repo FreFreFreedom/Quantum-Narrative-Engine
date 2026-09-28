@@ -53,7 +53,7 @@ export async function namedPeople(answer) {
       + '- real: real people, living or historical\n'
       + '- fictional: characters from books, films and series\n'
       + '- myth: beings of myth, religion or folklore (gods, goddesses, titans, spirits, angels, demons, legendary heroes, saints)\n'
-      + '- place: any named place the answer gives weight to — a country, a state or region, a city, a neighbourhood, a prison or court building, a sacred or mythic site (South Africa, Alabama, Attica, Eleusis, Atlantis). Not a place named only in a date or an address line\n'
+      + '- place: any named place the answer gives weight to — a country, a state or region, a city, a neighbourhood, a prison or court building, a sacred or mythic site (South Africa, Alabama, Attica, Eleusis, Atlantis). The place\'s own name, never an adjective made from it (not Parisian, American, Appalachian). Not a place named only in a date or an address line\n'
       + '- institution: a named organisation the answer discusses, not one it only mentions in passing — a court, an office, an agency, a church, a company\n'
       + '- archetype: a figure of the psyche or of myth that recurs across stories, used by name (the Shadow, the Trickster, the scapegoat, the Great Mother, the Wounded Healer); it may be written in lower case. Never a role or job (a public defender), never a group (the people)\n'
       + 'Skip the reader and the writer of the answer, skip groups and peoples, and skip a name used only inside a book or film title.\n'
