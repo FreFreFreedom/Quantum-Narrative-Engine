@@ -48,6 +48,18 @@ export function savePassage({ text, convoId = null, messageId = null, sourceTitl
   // shelf with duplicates of whatever he re-reads most.
   const existing = db.prepare(`SELECT * FROM saved_passages WHERE text=? AND deleted_at IS NULL`).get(body);
   if (existing) return { ok: true, passage: existing, already: true };
+  // A line already inside a kept passage is that passage; a longer selection that
+  // holds a kept one replaces it with the fuller text (2026-09-28).
+  if (body.length >= 30) {
+    const inside = db.prepare(`SELECT * FROM saved_passages WHERE deleted_at IS NULL AND instr(text, ?) > 0 LIMIT 1`).get(body);
+    if (inside) return { ok: true, passage: inside, already: true };
+    const held = db.prepare(`SELECT * FROM saved_passages WHERE deleted_at IS NULL AND length(text) >= 30 AND instr(?, text) > 0 ORDER BY length(text) DESC LIMIT 1`).get(body);
+    if (held) {
+      db.prepare(`UPDATE saved_passages SET text=? WHERE id=?`).run(body, held.id);
+      broadcastAll('passages:updated', { passageId: held.id });
+      return { ok: true, passage: getPassage(held.id), already: true };
+    }
+  }
 
   const id = randomUUID();
   db.prepare(

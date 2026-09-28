@@ -1,13 +1,9 @@
 import { randomUUID } from 'node:crypto';
+import { workFingerprint, sameEntry } from './sameWork.js';
 let db;
 const parse = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
 const fail = (s, status = 400) => { throw Object.assign(new Error(s), { status }); };
 const norm=s=>String(s||'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
-function mediaKey(item) {
-  if(!['book','film','series'].includes(item.kind))return null;
-  const qualifier=item.kind==='book'?item.creator:item.year;
-  return qualifier?[item.kind,norm(item.title),norm(qualifier)].join('|'):null;
-}
 export function bindReferenceLibrary(database) {
   db = database;
   db.exec(`CREATE TABLE IF NOT EXISTS reference_saves (
@@ -64,8 +60,10 @@ export function saveReference(owner, ref) {
   const item=resolveReference(owner,ref);
   if(item.type==='media') {db.prepare('UPDATE interest_works SET kept=1 WHERE id=? AND owner=?').run(item.id,owner);return item;}
   if(item.type==='passage'||item.type==='saved')return item;
-  const key=mediaKey(item);
-  if(key)db.prepare('UPDATE interest_works SET kept=1 WHERE owner=? AND identity=?').run(owner,key);
+  // Already in the Library under another spelling: that copy is the one kept.
+  const fp=workFingerprint(item);
+  if(fp)for(const w of db.prepare('SELECT id,kind,title,creator,year FROM interest_works WHERE owner=?').all(owner))
+    if(workFingerprint(w)===fp&&sameEntry(w,item))db.prepare('UPDATE interest_works SET kept=1 WHERE id=?').run(w.id);
   db.prepare('INSERT OR IGNORE INTO reference_saves(id,owner,identity,source_id,snapshot) VALUES(?,?,?,?,?)')
     .run(randomUUID(),owner,item.identity,item.id,JSON.stringify(item));
   const row=db.prepare('SELECT id FROM reference_saves WHERE owner=? AND identity=?').get(owner,item.identity);
@@ -85,15 +83,18 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
     .map(r=>({type:'passage',id:r.id,kind:'passage',title:r.text.slice(0,100),text:r.text,sourceTitle:(r.convo_id||r.message_id)?'':(r.source_title||''),added:addedMs(r.created_at)}));
   const saved=db.prepare('SELECT id,snapshot,created_at FROM reference_saves WHERE owner=? ORDER BY created_at DESC').all(owner).map(r=>({...parse(r.snapshot),type:'saved',id:r.id,added:addedMs(r.created_at)}));
   const words=String(query).toLowerCase().slice(0,250).split(/\s+/).filter(Boolean);
-  const importedKeys=new Set(media.map(mediaKey).filter(Boolean));
-  const items=[...saved.filter(r=>!mediaKey(r)||!importedKeys.has(mediaKey(r))),...media,...passages].filter(r=>(!kind||r.kind===kind)&&words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w)))
+  // A saved suggestion that is the same work as a Library entry is shown once, as
+  // the entry — matched with or without subtitle, author or year (2026-09-28).
+  const twinOf=(r)=>{const fp=workFingerprint(r);return !!fp&&media.some(m=>workFingerprint(m)===fp&&sameEntry(m,r));};
+  const savedShown=saved.filter(r=>!twinOf(r));
+  const items=[...savedShown,...media,...passages].filter(r=>(!kind||r.kind===kind)&&words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w)))
     .sort((a,b)=>(b.added||0)-(a.added||0));
   const start=Math.max(0,Number(offset)||0), cap=Math.max(1,Math.min(2000,Number(limit)||40));
   // How many of each kind the library holds (the search still applies, the kind
   // filter does not), for the kind menu. Book titles travel too so the page can
   // leave out the ones its own shelf already counts.
   const counts={}, bookTitles=[];
-  for(const r of [...saved.filter(r=>!mediaKey(r)||!importedKeys.has(mediaKey(r))),...media,...passages]) {
+  for(const r of [...savedShown,...media,...passages]) {
     if(!words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w))) continue;
     counts[r.kind]=(counts[r.kind]||0)+1;
     if(r.kind==='book') bookTitles.push(r.title);
@@ -136,8 +137,9 @@ export function removeReference(owner,ref) {
   else if(item.type==='media') {
     db.exec('BEGIN IMMEDIATE');
     try {db.prepare("UPDATE interest_entries SET work_id=NULL,status='removed' WHERE work_id=? AND owner=?").run(item.id,owner);db.prepare('DELETE FROM interest_works WHERE id=? AND owner=?').run(item.id,owner);
-      const key=mediaKey(item);
-      if(key)for(const saved of db.prepare('SELECT id,snapshot FROM reference_saves WHERE owner=?').all(owner))if(mediaKey(parse(saved.snapshot))===key)db.prepare('DELETE FROM reference_saves WHERE id=? AND owner=?').run(saved.id,owner);
+      // Its hidden twins go with it, or removing one copy would uncover the other.
+      const fp=workFingerprint(item);
+      if(fp)for(const saved of db.prepare('SELECT id,snapshot FROM reference_saves WHERE owner=?').all(owner)){const snap=parse(saved.snapshot);if(workFingerprint(snap)===fp&&sameEntry(item,snap))db.prepare('DELETE FROM reference_saves WHERE id=? AND owner=?').run(saved.id,owner);}
       db.exec('COMMIT');}catch(e){db.exec('ROLLBACK');throw e;}
   } else fail('This item is not saved.');
   return {ok:true};

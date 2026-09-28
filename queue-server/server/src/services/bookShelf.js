@@ -25,6 +25,7 @@ import { wholeSentences, looksCut, PROSE_TOKENS, NOTE_WORDS, tooShort, writeAbou
 import { uniqueTitle } from './knowledgeDocs.js';
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
+import { sameWork, sameMaker } from './sameWork.js';
 
 let db = null;
 export function bindBookShelf(database) {
@@ -142,6 +143,12 @@ export function addBook(owner, { title, author = '', year = '', filename = '', t
     return { error: 'already_here', message: 'That book is already on the shelf.' };
   }
 
+  // The same book under another file or edition is still one book on the shelf.
+  if (db.prepare('SELECT title, author FROM shelf_books WHERE owner=?').all(owner)
+    .some((b) => sameWork(b.title, name) && sameMaker(b.author, author))) {
+    return { error: 'already_here', message: 'That book is already on the shelf.' };
+  }
+
   const chars = shared ? sharedDoc.chars : body.length;
   let docTitle = shared ? sharedDoc.title : uniqueTitle(db, `${BOOK_PREFIX}${name}`.slice(0, 160));
   if (!shared) {
@@ -162,8 +169,9 @@ export function addBook(owner, { title, author = '', year = '', filename = '', t
   // If he already saved this book as an interest, the shelf copy IS that book —
   // mark it kept so the two never read as separate things.
   try {
-    const key = author ? ['book', norm(name), norm(author)].join('|') : null;
-    if (key) db.prepare('UPDATE interest_works SET kept=1 WHERE owner=? AND identity=?').run(owner, key);
+    for (const w of db.prepare("SELECT id, title, creator FROM interest_works WHERE owner=? AND kind='book'").all(owner)) {
+      if (sameWork(w.title, name) && sameMaker(w.creator, author)) db.prepare('UPDATE interest_works SET kept=1 WHERE id=?').run(w.id);
+    }
   } catch (err) { /* the shelf entry stands whether or not an interest matched */ }
 
   return { id, title: name, author, year, chars, cover_url: /^https:\/\//.test(String(cover || '')) ? String(cover) : null };

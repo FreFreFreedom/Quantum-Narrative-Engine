@@ -277,6 +277,33 @@ export async function lookupBook(title, creator) {
 // what it sees, and what it sees is often cut at the edge — "Boy" for Herb Boyd,
 // a title ending in "…" — which then finds no cover, or someone else's. Only a
 // clipped or missing name is replaced; a full name in another order is left alone.
+// Does any catalogue know this book, by this author? true, false, or null when no
+// catalogue could be reached (never a guess either way). Used to tell a real book
+// from a title a model made up: "Bob's Boys: The Life and Times of Robert
+// Morgenthau" by Andrew Meier is in no catalogue at all, while his "Morgenthau"
+// is (2026-09-28), and the made-up one was sitting in the Library as a second copy.
+export async function bookKnown(title, creator) {
+  const shown = String(title || '').replace(/\s*(?:…|\.\.\.)\s*$/, '').trim();
+  const who = personName(creator);
+  if (!mainTitle(shown) || !surname(who)) return null;
+  // Existence, not a cover: the main title whole and the author's surname are
+  // enough here ("Morgenthau" by Andrew Meier is the book, whatever its subtitle).
+  const head = words(mainTitle(shown)), sn = surname(who);
+  const hit = (t, authors) => { const got = new Set(words(t)); return head.length > 0 && head.every((x) => got.has(x)) && norm((authors || []).join(' ')).split(' ').includes(sn); };
+  let reached = false;
+  const ol = await getJson('https://openlibrary.org/search.json?limit=8&fields=title,subtitle,author_name&q=' + encodeURIComponent(mainTitle(shown) + ' ' + who));
+  if (ol) {
+    reached = true;
+    if ((ol.docs || []).some((d) => hit([d.title, d.subtitle].filter(Boolean).join(': '), d.author_name))) return true;
+  }
+  const gb = await getJson('https://www.googleapis.com/books/v1/volumes?maxResults=8&q=' + encodeURIComponent('intitle:' + mainTitle(shown) + ' inauthor:' + surname(who)));
+  if (gb) {
+    reached = true;
+    if ((gb.items || []).some((i) => hit([i.volumeInfo?.title, i.volumeInfo?.subtitle].filter(Boolean).join(': '), i.volumeInfo?.authors))) return true;
+  }
+  return reached ? false : null;
+}
+
 export async function canonicalBook(title, creator) {
   const shown = String(title || '').replace(/\s*(?:…|\.\.\.)\s*$/, '').trim();
   const clippedTitle = shown !== String(title || '').trim();

@@ -3346,6 +3346,16 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-size input::-moz-range-track { height:1px; background:transparent; }
 .shelf-size input::-moz-range-thumb { width:6px; height:6px; border:0; border-radius:50%; background:var(--c-ink-5); }
 .shelf-card { position:relative; min-width:0; }
+/* A book and its film in one place (pick B5): the poster tucked behind the book,
+   sliding out into the next place on hover — to the left from the last column. */
+.lib-pair { position:relative; min-width:0; }
+.lib-pair > .shelf-card { transition:transform .35s cubic-bezier(.2,.8,.2,1), filter .35s; }
+.lib-pair > .shelf-card:first-child { z-index:2; }
+.lib-pair > .shelf-card:last-child { position:absolute; top:0; left:0; width:100%; z-index:1; transform:translate(7%, 3%) rotate(3deg); filter:brightness(.72); }
+.lib-pair:hover, .lib-pair:focus-within { z-index:5; }
+.lib-pair:hover > .shelf-card:last-child, .lib-pair:focus-within > .shelf-card:last-child { transform:translateX(calc(100% + 12px)); filter:none; }
+.lib-pair.is-edge:hover > .shelf-card:last-child, .lib-pair.is-edge:focus-within > .shelf-card:last-child { transform:translateX(calc(-100% - 12px)); }
+@media (prefers-reduced-motion: reduce) { .lib-pair > .shelf-card { transition:none; } }
 .shelf-cover { aspect-ratio:2/3; border-radius:5px; border:1px solid var(--c-border-2); background:var(--c-surface-2) center/cover no-repeat;
   display:flex; align-items:flex-end; padding:6px; font-size:var(--fs-2xs); line-height:1.3; color:var(--c-ink-5); overflow:hidden; }
 .shelf-card b { display:block; margin-top:5px; font-size:var(--fs-xs); font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
@@ -18351,6 +18361,14 @@ function libScroller(el) {
 let libScreenBusy = false;   // true while a relevance line is being written
 
 function libNorm(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+// The same work under any spelling: without its subtitle or a leading article, as
+// the server's sameWork.js reads it, so the wall and the server agree on doubles.
+function libWorkKey(t) {
+  const raw = String(t || '').replace(/\s+/g, ' ').trim();
+  const main = raw.split(/\s*[:—–]\s*|\s+-\s+/)[0] || raw;
+  return String(main.length >= 3 ? main : raw).normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/^(the|a|an|le|la|les|l) /, '');
+}
 function libIsScreen(w) { return w && (w.kind === 'film' || w.kind === 'series'); }
 // Five stars out of ten, which is how a rating is read at a glance. Two rows of
 // the same five stars, the lit one clipped to the exact share — no half-star
@@ -18642,11 +18660,31 @@ function libMediaPanel(w) {
     + libBtn('remove', 'Remove') + '</div></div>';
 }
 
+// A book and the film or series made from it share one place on the wall (his
+// pick B5, 2026-09-28): the book in front, the poster tucked behind it, sliding
+// out beside it on hover so each can still be opened on its own.
 function libWall(items, cols) {
-  const at = items.findIndex((it) => libOpen && libOpen.type === it.type && libOpen.id === it.id);
-  const after = at < 0 ? -1 : Math.min(items.length - 1, Math.floor(at / cols) * cols + cols - 1);
-  return items.map((it, i) => libCard(it)
-    + (i === after ? (items[at].type === 'shelf' ? shelfPanel(items[at].raw) : libMediaPanel(items[at].raw)) : '')).join('');
+  const isScreen = (it) => it.type === 'media' && libIsScreen(it.raw);
+  const isBook = (it) => it.type === 'shelf' || (it.raw && it.raw.kind === 'book');
+  const cells = [], placed = new Set();
+  items.forEach((it, i) => {
+    if (placed.has(i)) return;
+    placed.add(i);
+    const k = libWorkKey(it.title);
+    const j = k ? items.findIndex((o, n) => !placed.has(n) && libWorkKey(o.title) === k
+      && ((isBook(it) && isScreen(o)) || (isScreen(it) && isBook(o)))) : -1;
+    if (j < 0) { cells.push([it]); return; }
+    placed.add(j);
+    cells.push(isBook(it) ? [it, items[j]] : [items[j], it]);
+  });
+  const isOpen = (it) => libOpen && libOpen.type === it.type && libOpen.id === it.id;
+  const at = cells.findIndex((c) => c.some(isOpen));
+  const after = at < 0 ? -1 : Math.min(cells.length - 1, Math.floor(at / cols) * cols + cols - 1);
+  const openIt = at < 0 ? null : cells[at].find(isOpen);
+  return cells.map((c, i) => (c.length === 2
+      ? '<div class="lib-pair' + (i % cols === cols - 1 ? ' is-edge' : '') + '">' + libCard(c[0]) + libCard(c[1]) + '</div>'
+      : libCard(c[0]))
+    + (i === after ? (openIt.type === 'shelf' ? shelfPanel(openIt.raw) : libMediaPanel(openIt.raw)) : '')).join('');
 }
 
 async function renderInterestLibrary(opts) {
@@ -18750,8 +18788,8 @@ async function renderInterestLibrary(opts) {
     }
     if (request !== interestLibraryRequest) return;
     if (out.counts) {
-      const onShelf = new Set((shelf.books || []).map((b) => libNorm(b.title)));
-      libCounts = { ...out.counts, book: (shelf.books || []).length + (out.bookTitles || []).filter((t) => !onShelf.has(libNorm(t))).length };
+      const onShelf = new Set((shelf.books || []).map((b) => libWorkKey(b.title)));
+      libCounts = { ...out.counts, book: (shelf.books || []).length + (out.bookTitles || []).filter((t) => !onShelf.has(libWorkKey(t))).length };
       host.querySelectorAll('[data-lib-count]').forEach((el) => { el.textContent = libCountFor(el.dataset.libCount); });
       libSyncTab();
     }
@@ -18760,8 +18798,10 @@ async function renderInterestLibrary(opts) {
     // as the shelf copy — the same thing, not two.
     const books = (interestLibraryKind && interestLibraryKind !== 'book') ? [] : (shelf.books || []).filter((b) =>
       !interestLibraryQuery || libNorm(b.title + ' ' + (b.author || '')).includes(libNorm(interestLibraryQuery)));
-    const shelfNames = new Set(books.map((b) => libNorm(b.title)));
-    const media = out.items.filter((w) => (w.type === 'media' || ['book', 'film', 'series'].includes(w.kind)) && !shelfNames.has(libNorm(w.title)));
+    // With or without its subtitle: "Golden Gulag" on the shelf and "Golden Gulag:
+    // Prisons, Surplus…" saved as an interest are one book.
+    const shelfNames = new Set(books.map((b) => libWorkKey(b.title)));
+    const media = out.items.filter((w) => (w.type === 'media' || ['book', 'film', 'series'].includes(w.kind)) && !(w.kind === 'book' && shelfNames.has(libWorkKey(w.title))));
     const rest = out.items.filter((w) => !(w.type === 'media' || ['book', 'film', 'series'].includes(w.kind)));
     // Newest first, books and saved works together (his ask, 2026-09-27).
     const wall = books.map((b) => ({ type: 'shelf', id: b.id, title: b.title, creator: b.author, cover: b.cover_url || '', raw: b, added: libAddedMs(b.created_at) }))

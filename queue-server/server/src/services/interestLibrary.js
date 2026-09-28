@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readInterestScreenshot } from './interestScreenshot.js';
-import { canonicalBook } from './bookFacts.js';
+import { canonicalBook, bookKnown } from './bookFacts.js';
+import { workKey, sameWork, kindGroup, sameMaker, sameEntry, workFingerprint } from './sameWork.js';
 
 let db;
 const requestTimes = new Map();
@@ -70,6 +71,9 @@ export function bindInterestLibrary(database) {
   try { db.exec('ALTER TABLE interest_imports ADD COLUMN retry_at TEXT'); } catch {}
   // 1 once a book's title and author have been checked against the catalogue.
   try { db.exec('ALTER TABLE interest_works ADD COLUMN checked INTEGER NOT NULL DEFAULT 0'); } catch {}
+  // 1 once a book has been compared with the other books by the same author.
+  try { db.exec('ALTER TABLE interest_works ADD COLUMN twin_checked INTEGER NOT NULL DEFAULT 0'); } catch {}
+  try { mergeDoubles(); } catch (err) { console.warn('[interests] merging doubles failed:', err.message); }
   // One server owns this SQLite queue; resume interrupted reads after boot.
   db.prepare("UPDATE interest_imports SET status='queued',retry_at=NULL WHERE status='reading'").run();
   clearReviewBacklog();
@@ -98,9 +102,95 @@ async function tidyBooks() {
       const title = clean(fix.title || w.title), creator = clean(fix.creator ?? w.creator);
       const identity = ['book', norm(title), norm(creator)].join('|');
       try { db.prepare('UPDATE interest_works SET title=?,creator=?,identity=? WHERE id=?').run(title, creator, identity, w.id); }
-      catch (_) { /* the whole name is already saved as its own row */ }
+      catch (_) {
+        // The whole name is already saved as its own row: the clipped one folds into it.
+        const other = db.prepare('SELECT * FROM interest_works WHERE owner=? AND identity=?').get(w.owner, identity);
+        const self = db.prepare('SELECT * FROM interest_works WHERE id=?').get(w.id);
+        if (other && self && other.id !== self.id) mergeInto(other, self);
+      }
     }
+    mergeDoubles();
+    await twinBooks();
   } finally { tidying = false; }
+}
+
+// ─── No doubles (his ask, 2026-09-28) ────────────────────────────────────────
+// Every Library row that is the same work as an older one is folded into the
+// older: its screenshot entries move across, "kept" survives, a missing author or
+// year is filled in, and the double is deleted. Runs on boot and after every tidy.
+function mergeInto(keep, drop) {
+  transaction(() => {
+    db.prepare('UPDATE interest_entries SET work_id=? WHERE work_id=?').run(keep.id, drop.id);
+    db.prepare('DELETE FROM interest_works WHERE id=?').run(drop.id);
+    const creator = keep.creator || drop.creator || '', year = keep.year || drop.year || '';
+    const identity = [keep.kind, norm(String(keep.title || '')), norm(String(keep.kind === 'book' ? creator : year))].join('|');
+    db.prepare('UPDATE interest_works SET kept=MAX(kept,?), state=CASE WHEN state=\'interested\' THEN ? ELSE state END WHERE id=?')
+      .run(Number(drop.kept) || 0, drop.state || 'interested', keep.id);
+    try { db.prepare('UPDATE interest_works SET creator=?,year=?,identity=? WHERE id=?').run(creator, year, identity, keep.id); } catch (_) {}
+  });
+}
+function mergeDoubles() {
+  if (!db) return 0;
+  const rows = db.prepare('SELECT * FROM interest_works ORDER BY created_at, rowid').all();
+  const groups = new Map();
+  for (const r of rows) {
+    const k = r.owner + '|' + (workFingerprint(r) || r.id);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(r);
+  }
+  let merged = 0;
+  for (const list of groups.values()) {
+    const gone = new Set();
+    for (const a of list) {
+      if (gone.has(a.id)) continue;
+      for (const b of list) {
+        if (b === a || gone.has(b.id) || !sameEntry(a, b)) continue;
+        mergeInto(a, b); gone.add(b.id); merged++;
+        if (!a.creator && b.creator) a.creator = b.creator;
+        if (!a.year && b.year) a.year = b.year;
+      }
+    }
+  }
+  if (merged) { console.log('[interests] merged ' + merged + ' double(s)'); broadcastLibrary(); }
+  return merged;
+}
+// Two titles by the same author about the same subject, where only one of them is
+// in any catalogue, are one book under a made-up name — a model suggested "Bob's
+// Boys: The Life and Times of Robert Morgenthau" beside Andrew Meier's real
+// "Morgenthau" (2026-09-28). The unknown one folds into the real one. Nothing is
+// merged when a catalogue cannot be reached, or when both are real books.
+const TWIN_STOP = new Set(['about', 'after', 'against', 'american', 'america', 'history', 'story', 'life', 'lives', 'times',
+  'world', 'people', 'power', 'justice', 'their', 'there', 'where', 'which', 'inside', 'through', 'journey', 'years', 'united', 'states']);
+const subjectWords = (t) => new Set(norm(String(t || '')).split(' ').filter((w) => w.length >= 5 && !TWIN_STOP.has(w)));
+async function twinBooks() {
+  for (;;) {
+    const w = db.prepare("SELECT * FROM interest_works WHERE kind='book' AND twin_checked=0 ORDER BY created_at DESC LIMIT 1").get();
+    if (!w) return;
+    db.prepare('UPDATE interest_works SET twin_checked=1 WHERE id=?').run(w.id);
+    if (!w.creator) continue;
+    const mine = subjectWords(w.title);
+    const twins = db.prepare("SELECT * FROM interest_works WHERE kind='book' AND owner=? AND id<>? AND creator<>''").all(w.owner, w.id)
+      .filter((o) => sameMaker(o.creator, w.creator) && !sameWork(o.title, w.title) && [...subjectWords(o.title)].some((x) => mine.has(x)));
+    if (!twins.length) continue;
+    let known = null;
+    try { known = await bookKnown(w.title, w.creator); } catch (_) {}
+    if (known === null) { db.prepare('UPDATE interest_works SET twin_checked=0 WHERE id=?').run(w.id); return; }  // try again next tidy
+    for (const o of twins) {
+      let otherKnown = null;
+      try { otherKnown = await bookKnown(o.title, o.creator); } catch (_) {}
+      const still = (id) => db.prepare('SELECT * FROM interest_works WHERE id=?').get(id);
+      const a = still(w.id), b = still(o.id);
+      if (!a || !b) continue;
+      if (known && otherKnown === false) { mergeInto(a, b); broadcastLibrary(); console.log('[interests] folded unknown "' + b.title + '" into "' + a.title + '"'); }
+      else if (!known && otherKnown === true) { mergeInto(b, a); broadcastLibrary(); console.log('[interests] folded unknown "' + a.title + '" into "' + b.title + '"'); break; }
+    }
+  }
+}
+let libraryPing = null;
+function broadcastLibrary() {
+  if (libraryPing) return;
+  libraryPing = setTimeout(() => { libraryPing = null; import('../realtime.js').then((m) => m.broadcastAll('recommendations:updated', {})).catch(() => {}); }, 500);
+  libraryPing.unref?.();
 }
 
 // Entries parked by the old review rule are saved outright, so nothing is left
@@ -205,7 +295,8 @@ function saveWork(owner, c, explicit = false) {
   const exact = same.find(w => w.identity === identity);
   if (exact) return { id: exact.id, added: false };
   // The same book with or without its subtitle is one book, not two.
-  const alike = db.prepare('SELECT id,title FROM interest_works WHERE owner=? AND kind=?').all(owner, c.kind).find(w => sameWork(w.title, c.title));
+  // A film saved once as a series is the same work too.
+  const alike = db.prepare('SELECT id,kind,title FROM interest_works WHERE owner=?').all(owner).find(w => kindGroup(w.kind) === kindGroup(c.kind) && sameWork(w.title, c.title));
   if (alike) return { id: alike.id, added: false };
   // Missing disambiguators must not silently merge two possible works.
   if (same.length && !explicit && same.some(w => c.kind === 'book' ? !c.creator || !w.creator : !c.year || !w.year)) return null;
@@ -310,12 +401,7 @@ export function resolveInterestEntry(owner, id, input) {
 // never duplicated because this time the answer also named the author.
 // The same work under two spellings: "The New Jim Crow: Mass Incarceration in
 // the Age of Colorblindness" and "New Jim Crow" are one book.
-function workKey(t) {
-  const raw = String(t || '').replace(/\s+/g, ' ').trim();
-  const main = raw.split(/\s*[:—–]\s*|\s+-\s+/)[0] || raw;
-  return norm(main.length >= 3 ? main : raw).replace(/^(the|a|an|le|la|les|l) /, '');
-}
-function sameWork(a, b) { const x = workKey(a); return !!x && x === workKey(b); }
+// (workKey and sameWork live in sameWork.js, shared with the shelf and the wall.)
 export function saveSuggestedWorks(owner, works = []) {
   if (!db || !owner) return [];
   const out = [];
@@ -340,6 +426,8 @@ export function saveSuggestedWorks(owner, works = []) {
     db.prepare('UPDATE interest_works SET kept=1 WHERE id=?').run(saved.id);
     out.push({ ...c, id: saved.id, added: saved.added });
   }
+  // A new book is checked against the catalogue and its author's other books.
+  if (out.some((w) => w.added && w.kind === 'book')) void tidyBooks();
   return out;
 }
 export function listInterests(owner, { query = '', kind = '', limit = 100, offset = 0 } = {}) {
