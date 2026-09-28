@@ -11,10 +11,10 @@ import { generateText } from './ai/text.js';
 
 let db = null;
 export const KINDS = new Set(['real', 'fictional', 'myth', 'place', 'archetype', 'institution']);
-// Bumped when a kind is added, so answers read before it are read once more (v3: tighter places and archetypes).
-export const PEOPLE_V = 3;
+// Bumped when a kind is added, so answers read before it are read once more (v4: countries and states count as places again).
+export const PEOPLE_V = 4;
 // A long answer names many places and offices in passing; only a few are worth a card.
-const PER_KIND = { place: 5, institution: 6, archetype: 4 };
+const PER_KIND = { place: 8, institution: 6, archetype: 4 };
 // Ten used to be the cap, and a long answer's list stopped there: Astraea and
 // Ma'at, named after ten lawyers, were never marked (2026-09-28).
 const MAX_PEOPLE = 25;
@@ -53,7 +53,7 @@ export async function namedPeople(answer) {
       + '- real: real people, living or historical\n'
       + '- fictional: characters from books, films and series\n'
       + '- myth: beings of myth, religion or folklore (gods, goddesses, titans, spirits, angels, demons, legendary heroes, saints)\n'
-      + '- place: a specific named site the answer\'s idea turns on — a prison, a court building, a neighbourhood, a sacred or mythic site (Attica, Eleusis, Atlantis). Never a country, state or region, and never a city named only as where something happened\n'
+      + '- place: any named place the answer gives weight to — a country, a state or region, a city, a neighbourhood, a prison or court building, a sacred or mythic site (South Africa, Alabama, Attica, Eleusis, Atlantis). Not a place named only in a date or an address line\n'
       + '- institution: a named organisation the answer discusses, not one it only mentions in passing — a court, an office, an agency, a church, a company\n'
       + '- archetype: a figure of the psyche or of myth that recurs across stories, used by name (the Shadow, the Trickster, the scapegoat, the Great Mother, the Wounded Healer); it may be written in lower case. Never a role or job (a public defender), never a group (the people)\n'
       + 'Skip the reader and the writer of the answer, skip groups and peoples, and skip a name used only inside a book or film title.\n'
