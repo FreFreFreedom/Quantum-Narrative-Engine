@@ -28863,7 +28863,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) out.attachments = meta.attachments;
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
-        if (Array.isArray(meta.people) && meta.people.length) out.people = meta.people;
+        if (Array.isArray(meta.people)) { out.peopleRead = true; if (meta.people.length) out.people = meta.people; }
       }
       return out;
     });
@@ -28899,7 +28899,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         index[e.key] = data.convo;   // keeps the closed line's count honest
       })
       .catch(function(err){ e.err = 'Could not open this conversation: ' + (err.message || err); })
-      .then(function(){ e.loading = false; if(repaint) repaint(); });
+      .then(function(){ e.loading = false; if(repaint) repaint(); seScanPeople(e, repaint); });
+  }
+  // Answers from before names were marked are read once, the first time their
+  // conversation opens, and the marks appear when that comes back.
+  function seScanPeople(e, repaint){
+    if (e.peopleScan || !e.convoId || !e.loaded) return;
+    if (!(e.msgs || []).some(function(m){ return m.role === 'assistant' && m.kind === 'chat' && m.id && m.text && !m.peopleRead; })) return;
+    e.peopleScan = true;
+    apiWrite('/api/convos/' + encodeURIComponent(e.convoId) + '/people-scan', 'POST', {})
+      .then(function(out){
+        var got = (out && out.people) || {}, any = false;
+        (e.msgs || []).forEach(function(m){
+          if (!m.id || !got[m.id]) return;
+          m.peopleRead = true;
+          if (got[m.id].length) { m.people = got[m.id]; any = true; }
+        });
+        if (any && repaint) repaint();
+      })
+      .catch(function(){ e.peopleScan = false; });
   }
 
   // Returns true if the message was accepted and is on its way, false if it could
@@ -29006,7 +29024,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var arrivedWhole = !e.stream;
           // id carried straight from the save, so the answer he is reading can be
           // marked as a chapter right away instead of only after a reload.
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0, works: d.works || null, people: d.people || null });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0, works: d.works || null, people: d.people || null, peopleRead: true });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           // /interview, /grill-me and "answer now" all report the mode they left the
           // conversation in, so the toggle and the composer reflect it at once — no
@@ -29092,7 +29110,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           e.note = d.message || 'Could not answer now — try again.';
         } else if(d.text){
           var arrivedWhole = !e.stream;
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, works: d.works || null, people: d.people || null });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, works: d.works || null, people: d.people || null, peopleRead: true });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           e.clarify = d.mode || 'normal';
           if(e.type === 'open' && onDone) onDone();
@@ -32493,7 +32511,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var btn = document.createElement('button');
         btn.type = 'button'; btn.className = 'se-person';
         btn.dataset.pName = name; btn.dataset.pFull = p.full || name;
-        btn.dataset.pKind = p.kind === 'fictional' ? 'fictional' : 'real';
+        btn.dataset.pKind = p.kind === 'fictional' || p.kind === 'myth' ? p.kind : 'real';
         btn.dataset.pFrom = p.from || ''; btn.dataset.convo = convoId || '';
         btn.title = (p.full || name) + (p.from ? ' — ' + p.from : '');
         word.parentNode.replaceChild(btn, word); btn.appendChild(word);
@@ -32698,15 +32716,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (!j || j.type === 'disambiguation') return;
         // A portrait only when the page is the same kind of person: "Hamlet" the
         // play is not Hamlet the prince.
-        var fictional = /\b(character|fictional|mytholog\w*|deity|god|goddess)\b/i.test(String(j.description || ''));
-        if ((d.pKind === 'fictional') !== fictional) return;
+        var desc = String(j.description || '');
+        var fictional = /\b(character|fictional)\b/i.test(desc);
+        var myth = /\b(mytholog\w*|myths?|deity|deities|gods?|goddess|titan\w*|spirit|angel|demon|nymph|legend\w*|folklore|biblical|saint|hero)\b/i.test(desc);
+        var kind = fictional ? 'fictional' : myth ? 'myth' : 'real';
+        if (kind !== d.pKind && !(d.pKind === 'real' && kind === 'myth' && /\bsaint\b/i.test(desc))) return;
         sePeopleArt[who] = (j.thumbnail && j.thumbnail.source) || '';
       }).catch(function(){});
   }
   function sePersonHtml(d, card){
-    var f = card || {}, who = d.pFull || d.pName, fic = d.pKind === 'fictional';
+    var f = card || {}, who = d.pFull || d.pName, fic = d.pKind === 'fictional', myth = d.pKind === 'myth';
     var art = sePeopleArt[who] || '';
-    var q = who + (fic && d.pFrom ? ' ' + d.pFrom : '');
+    var q = who + (fic && d.pFrom ? ' ' + d.pFrom : myth ? ' mythology' : '');
     var links = [
       { label: 'Amazon', url: 'https://www.amazon.com/s?i=stripbooks&k=' + encodeURIComponent(q) },
       { label: 'YouTube', url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q) },

@@ -9,6 +9,7 @@
 import { generateText } from './ai/text.js';
 
 let db = null;
+export const KINDS = new Set(['real', 'fictional', 'myth']);
 export function bindPersonNotes(database) {
   db = database;
   db.exec(`CREATE TABLE IF NOT EXISTS person_notes (
@@ -40,8 +41,8 @@ export async function namedPeople(answer) {
   if (text.length < 80 || !NAME_HINT.test(text)) return null;
   const result = await generateText({
     feature: 'summary', maxTokens: 700, label: 'room:people', timeoutMs: 20_000, maxAttempts: 2,
-    prompt: 'Below is an answer. List the people it names: real people (living or historical) and fictional characters from books, films, series, myth or religion. Skip the reader and the writer of the answer, skip groups, peoples and places, and skip a name used only inside a book or film title.\n'
-      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"full name","kind":"real"|"fictional","from":"fictional: the work or myth it comes from; real: who they are in 3 to 6 words"}]}. {"people":[]} if there are none. At most 10, in order of first mention.\n\n'
+    prompt: 'Below is an answer. List the beings it names: real people (living or historical), fictional characters from books, films and series, and beings of myth, religion or folklore (gods, goddesses, titans, spirits, angels, demons, legendary heroes, saints). Skip the reader and the writer of the answer, skip groups, peoples and places, and skip a name used only inside a book or film title.\n'
+      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"full name","kind":"real"|"fictional"|"myth","from":"fictional: the work it comes from; myth: the tradition and what it is, 3 to 6 words (Greek goddess of justice); real: who they are in 3 to 6 words"}]}. {"people":[]} if there are none. At most 10, in order of first mention.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 12000),
   });
   if (result.error) return null;
@@ -56,7 +57,7 @@ export async function namedPeople(answer) {
     const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (!new RegExp('(^|[^\\p{L}])' + esc + '(?![\\p{L}])', 'u').test(flat)) continue;
     seen.add(name);
-    out.push({ name, full: plain(p?.full || name).slice(0, 120), kind: p?.kind === 'fictional' ? 'fictional' : 'real', from: plain(p?.from).slice(0, 120) });
+    out.push({ name, full: plain(p?.full || name).slice(0, 120), kind: KINDS.has(p?.kind) ? p.kind : 'real', from: plain(p?.from).slice(0, 120) });
     if (out.length >= 10) break;
   }
   return out.length ? out : null;
@@ -73,13 +74,15 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
   if (row && !refresh) { try { return JSON.parse(row.body); } catch {} }
   const msgs = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' ORDER BY created_at DESC, rowid DESC LIMIT 6`)
     .all(convoId).reverse().map((m) => (m.role === 'user' ? 'HIM: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1200)).join('\n\n');
-  const what = kind === 'fictional' ? `the fictional character ${who}${from ? ` (${from})` : ''}` : `${who}${from ? ` (${from})` : ''}`;
+  const what = kind === 'fictional' ? `the fictional character ${who}${from ? ` (${from})` : ''}`
+    : kind === 'myth' ? `${who}, a being of myth, religion or folklore${from ? ` (${from})` : ''}`
+    : `${who}${from ? ` (${from})` : ''}`;
   const out = await generateText({
     feature: 'summary', maxTokens: 800, label: 'room:person-card', timeoutMs: 30_000, maxAttempts: 2,
     prompt: [
       `Write a short card about ${what}, for the conversation below.`,
       LENS,
-      'Reply with JSON only: {"life":"a real person: birth–death years, or born YEAR; a character: the work and year","pattern":"the main pattern this person lives out, 4 to 10 words, no name in it","here":"50 to 70 words: why this person matters HERE — which idea of this conversation they show, and how, read through the lens. Use the conversation\'s own ideas. Plain simple words, no jargon, no preamble, all sentences finished."}',
+      'Reply with JSON only: {"life":"a real person: birth–death years, or born YEAR; a character: the work and year; a being of myth: the tradition and its oldest source","pattern":"the main pattern this person lives out, 4 to 10 words, no name in it","here":"50 to 70 words: why this person matters HERE — which idea of this conversation they show, and how, read through the lens. Use the conversation\'s own ideas. Plain simple words, no jargon, no preamble, all sentences finished."}',
       'If you do not know the person, reply {"life":"","pattern":"","here":""}.',
       '=== THE CONVERSATION (latest turns) ===', msgs.slice(-6000),
     ].join('\n\n'),
@@ -96,4 +99,34 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
   db.prepare(`INSERT INTO person_notes (convo_id, key, body) VALUES (?,?,?)
     ON CONFLICT(convo_id, key) DO UPDATE SET body=excluded.body, created_at=CURRENT_TIMESTAMP`).run(convoId, key, JSON.stringify(card));
   return card;
+}
+
+// Answers written before names were marked (or before a kind was added) are read
+// once when their conversation is opened: the latest unread answers, a few at a
+// time, each stored with its list — an empty one too, so it is never read again.
+const scanning = new Set();
+export async function scanPeople(convoId, { limit = 12 } = {}) {
+  if (!db || !convoId) return {};
+  const rows = db.prepare(`SELECT id, text, meta FROM convo_messages WHERE convo_id=? AND role='assistant' AND kind='chat' ORDER BY created_at DESC, rowid DESC LIMIT 60`).all(convoId);
+  const todo = [];
+  for (const r of rows) {
+    let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch { meta = {}; }
+    if (!meta.failed && !Array.isArray(meta.people) && !scanning.has(r.id)) todo.push(r);
+    if (todo.length >= limit) break;
+  }
+  const found = {};
+  for (let i = 0; i < todo.length; i += 3) {
+    await Promise.all(todo.slice(i, i + 3).map(async (r) => {
+      scanning.add(r.id);
+      try {
+        const people = await namedPeople(r.text).catch(() => null);
+        const fresh = db.prepare('SELECT meta FROM convo_messages WHERE id=?').get(r.id);
+        let meta = {}; try { meta = fresh?.meta ? JSON.parse(fresh.meta) || {} : {}; } catch {}
+        meta.people = people || [];
+        db.prepare('UPDATE convo_messages SET meta=? WHERE id=?').run(JSON.stringify(meta), r.id);
+        found[r.id] = meta.people;
+      } finally { scanning.delete(r.id); }
+    }));
+  }
+  return found;
 }
