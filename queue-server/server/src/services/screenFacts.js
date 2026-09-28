@@ -140,7 +140,7 @@ async function fetchFacts(kind, title, year) {
     return { v: v + Math.min(1, Number(r.popularity || 0) / 100), exact };
   };
   const seen = new Set();
-  let hit = null;
+  let hit = null, fallback = null;
   // The kind the answer gave first, the other one only if nothing answers at all.
   for (const mediaType of [kind === 'series' ? 'tv' : 'movie', kind === 'series' ? 'movie' : 'tv']) {
     const pool = [];
@@ -160,7 +160,17 @@ async function fetchFacts(kind, title, year) {
       .filter((c) => c.v >= 5 || (c.exact && c.v >= 3.5))
       .sort((a, b) => b.v - a.v);
     if (ranked[0]) { hit = ranked[0].r; kind = mediaType === 'tv' ? 'series' : 'film'; break; }
+    // Last resort: the catalogue knows the work under another name — "The People
+    // vs. O. J. Simpson" is a season of "American Crime Story", so nothing matches
+    // by title. Its own answer is taken only when the asked title is long enough
+    // to be unmistakable and the year agrees exactly, never for a short one
+    // ("13th" would take "Friday the 13th").
+    if (!fallback && y && asked.length >= 3) {
+      const near = pool.find((r) => Number(String(r.release_date || r.first_air_date || '').slice(0, 4)) === y);
+      if (near) fallback = { r: near, mediaType };
+    }
   }
+  if (!hit && fallback) { hit = fallback.r; kind = fallback.mediaType === 'tv' ? 'series' : 'film'; }
   if (!hit) return null;
   const detail = await tmdbFetch(`${kind === 'series' ? '/tv' : '/movie'}/${hit.id}`, { append_to_response: 'keywords,external_ids,credits' });
   const words = [...(detail?.keywords?.keywords || []), ...(detail?.keywords?.results || [])].map((k) => k.name || '').join(', ');
