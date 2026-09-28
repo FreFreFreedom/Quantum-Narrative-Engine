@@ -96,24 +96,68 @@ async function sourceBook(imdbId) {
   } catch (e) { return undefined; }   // undefined = could not ask; try again another time
 }
 
+// Finding the right film is the whole game: a wrong poster is worse than none,
+// and no poster at all is what he kept seeing (2026-09-28). So the search is tried
+// several ways before giving up — the title as given, without its subtitle,
+// without a leading article, and, when nothing answers, as the other kind of
+// thing (a "film" that is really a series, and the reverse). A title that matches
+// word for word is kept even when the year the answer gave is wrong, since the
+// year is the thing an answer most often gets wrong.
+const stripArticle = (t) => String(t).replace(/^(the|a|an|le|la|les|un|une)\s+/i, '').trim();
+function titleTries(title) {
+  const t = String(title || '').trim();
+  const out = [t];
+  const cut = t.split(/\s*[:–—]\s*/)[0].trim();
+  if (cut && cut.length >= 3) out.push(cut);
+  const noPar = t.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  if (noPar && noPar !== t) out.push(noPar);
+  const bare = stripArticle(cut || t);
+  if (bare && bare.length >= 4) out.push(bare);
+  return out.filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 3);
+}
+async function searchScreen(mediaType, query, y) {
+  const path = mediaType === 'tv' ? '/search/tv' : '/search/movie';
+  const withYear = y ? ((await tmdbFetch(path, { query, ...(mediaType === 'tv' ? { first_air_date_year: y } : { primary_release_year: y }) }))?.results || []) : [];
+  const plain = (await tmdbFetch(path, { query }))?.results || [];
+  return [...withYear, ...plain].map((r) => ({ ...r, media_type: mediaType }));
+}
 async function fetchFacts(kind, title, year) {
-  const path = kind === 'series' ? '/search/tv' : '/search/movie';
-  // The first search result is not the film: "13th" (2016) came back as
-  // "Friday the 13th" (1980). Every candidate from both searches is scored — the
-  // same title, the same year — and a short title must match exactly.
   const want = norm(title), y = Number(String(year || '').slice(0, 4)) || 0;
-  const withYear = y ? ((await tmdbFetch(path, { query: title, ...(kind === 'series' ? { first_air_date_year: y } : { primary_release_year: y }) }))?.results || []) : [];
-  const plain = (await tmdbFetch(path, { query: title }))?.results || [];
+  const wantCut = norm(String(title).split(/\s*[:–—]\s*/)[0]);
+  const asked = want.split(' ').filter((w) => w.length > 2);
   const score = (r) => {
     const t = norm(r.title || r.name || ''), o = norm(r.original_title || r.original_name || '');
     const ry = Number(String(r.release_date || r.first_air_date || '').slice(0, 4)) || 0;
-    let v = (t === want || o === want) ? 6 : (t.includes(want) && want.split(' ').length > 1 ? 2 : 0);
-    if (y && ry) v += ry === y ? 4 : Math.abs(ry - y) === 1 ? 2 : -3;
-    return v + Math.min(1, Number(r.popularity || 0) / 100);
+    const exact = t === want || o === want || t === wantCut || o === wantCut;
+    // How much of the asked title the candidate carries — "Thurgood" against
+    // "Thurgood Marshall" is a near miss, "Friday the 13th" against "13th" is not.
+    const share = asked.length ? asked.filter((w) => t.includes(w) || o.includes(w)).length / asked.length : 0;
+    let v = exact ? 6 : share === 1 && asked.length > 1 ? 3 : share >= 0.6 && asked.length > 2 ? 2 : 0;
+    if (y && ry) v += ry === y ? 4 : Math.abs(ry - y) <= 1 ? 2 : -2;
+    return { v: v + Math.min(1, Number(r.popularity || 0) / 100), exact };
   };
-  const cands = [...withYear, ...plain].filter((r, i, a) => a.findIndex((x) => x.id === r.id) === i)
-    .map((r) => ({ r, v: score(r) })).filter((c) => c.v >= 5).sort((a, b) => b.v - a.v);
-  const hit = cands[0]?.r;
+  const seen = new Set();
+  let hit = null;
+  // The kind the answer gave first, the other one only if nothing answers at all.
+  for (const mediaType of [kind === 'series' ? 'tv' : 'movie', kind === 'series' ? 'movie' : 'tv']) {
+    const pool = [];
+    for (const q of titleTries(title)) {
+      let found;
+      try { found = await searchScreen(mediaType, q, y); } catch (err) { found = []; }
+      for (const r of found) {
+        const id = mediaType + ':' + r.id;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        pool.push(r);
+      }
+      // A word-for-word match under the title as given: stop looking.
+      if (pool.some((r) => score(r).exact)) break;
+    }
+    const ranked = pool.map((r) => ({ r, ...score(r) }))
+      .filter((c) => c.v >= 5 || (c.exact && c.v >= 3.5))
+      .sort((a, b) => b.v - a.v);
+    if (ranked[0]) { hit = ranked[0].r; kind = mediaType === 'tv' ? 'series' : 'film'; break; }
+  }
   if (!hit) return null;
   const detail = await tmdbFetch(`${kind === 'series' ? '/tv' : '/movie'}/${hit.id}`, { append_to_response: 'keywords,external_ids,credits' });
   const words = [...(detail?.keywords?.keywords || []), ...(detail?.keywords?.results || [])].map((k) => k.name || '').join(', ');

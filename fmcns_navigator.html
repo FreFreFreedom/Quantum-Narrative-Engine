@@ -16431,7 +16431,10 @@ async function roomFindMediaArt(item) {
         // A bare title is often a song or a novel on Wikipedia ("The House I Live
         // In"); the film's own page is named "(2012 film)" or "(film)". Try those first.
         const year = String(item?.year || '').match(/\d{4}/)?.[0] || '';
-        for (const t of [year ? title + ' (' + year + ' film)' : '', title + ' (film)', title].filter(Boolean)) {
+        const bare = title.split(/\s*[:–—]\s*/)[0].trim();
+        for (const t of [year ? title + ' (' + year + ' film)' : '', title + ' (film)', title + ' (documentary)',
+          year ? title + ' (' + year + ' TV series)' : '', title + ' (TV series)', title,
+          bare !== title ? bare + ' (film)' : '', bare !== title ? bare : ''].filter(Boolean)) {
           const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(t.replace(/ /g, '_')));
           if (!r.ok) continue;
           const j = await r.json();
@@ -28893,6 +28896,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) { out.attachments = meta.attachments; if (meta.body && !out.body) out.body = meta.body; }
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
+        out.worksRead = (Number(meta.worksV) || 0) >= 1;
         // Read again when a kind was added since (v2 places, archetypes, institutions; v3 tighter).
         if (Array.isArray(meta.people)) { out.peopleRead = (Number(meta.peopleV) || 0) >= 7; if (meta.people.length) out.people = meta.people; }
       }
@@ -28937,18 +28941,24 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // time, the marks appearing as each stretch comes back.
   function seScanPeople(e, repaint, again){
     if ((e.peopleScan && !again) || !e.convoId || !e.loaded) return;
-    if (!(e.msgs || []).some(function(m){ return m.role === 'assistant' && m.kind === 'chat' && m.id && m.text && !m.peopleRead; })) { e.peopleScan = false; return; }
+    if (!(e.msgs || []).some(function(m){ return m.role === 'assistant' && m.kind === 'chat' && m.id && m.text && (!m.peopleRead || !m.worksRead); })) { e.peopleScan = false; return; }
     e.peopleScan = true;
     apiWrite('/api/convos/' + encodeURIComponent(e.convoId) + '/people-scan', 'POST', {})
       .then(function(out){
-        var got = (out && out.people) || {}, any = false;
+        var got = (out && out.people) || {}, gotW = (out && out.works) || {}, any = false;
         (e.msgs || []).forEach(function(m){
-          if (!m.id || !got[m.id]) return;
-          m.peopleRead = true;
-          if (got[m.id].length) { m.people = got[m.id]; any = true; }
+          if (!m.id) return;
+          if (got[m.id]) {
+            m.peopleRead = true;
+            if (got[m.id].length) { m.people = got[m.id]; any = true; }
+          }
+          if (gotW[m.id]) {
+            m.worksRead = true;
+            if (gotW[m.id].length) { m.works = gotW[m.id]; any = true; }
+          }
         });
         if (any && repaint) repaint();
-        if (out && out.more && Object.keys(got).length) seScanPeople(e, repaint, true);
+        if (out && out.more && (Object.keys(got).length || Object.keys(gotW).length)) seScanPeople(e, repaint, true);
         else e.peopleScan = false;
       })
       .catch(function(){ e.peopleScan = false; });

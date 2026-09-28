@@ -178,7 +178,14 @@ export function conversationsRoutes() {
   // Older answers get their names marked the first time the conversation opens.
   router.post('/:id/people-scan', asyncHandler(async (req, res) => {
     const { found, more } = await scanPeople(req.params.id);
-    res.json({ people: found || {}, more: !!more });
+    // Works are read back the same way, so an older answer that names a book
+    // gets its cover and its card too (his screenshot, 2026-09-28).
+    let works = {}, worksMore = false;
+    try {
+      const w = await convos.scanWorks(req.params.id, { userId: req.user?.id || 'antoine' });
+      works = w.found || {}; worksMore = !!w.more;
+    } catch (err) { console.warn('[works-scan]', err?.message || err); }
+    res.json({ people: found || {}, works, more: !!more || worksMore });
   }));
 
   // A book's table of contents, from the catalogues in turn (services/bookContents.js).

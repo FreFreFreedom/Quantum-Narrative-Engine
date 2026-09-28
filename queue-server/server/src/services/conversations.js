@@ -2210,6 +2210,11 @@ function answerOffersWorks(text) {
 async function suggestedWorks(convoId, userId, answer) {
   const text = String(answer || '');
   if (text.length < 80 || !(WORKS_ASK.test(lastUserText(convoId)) || answerOffersWorks(text))) return null;
+  return worksFromAnswer(userId, text);
+}
+// null means the reading itself failed (so the answer is read again another time);
+// an empty list means it was read and puts no work forward.
+async function worksFromAnswer(userId, text) {
   const result = await generateText({
     feature: 'summary', maxTokens: 900, label: 'conversations:works', timeoutMs: 20_000, maxAttempts: 2,
     prompt: 'Below is an answer from a reading-and-film advisor. List every book, film and TV series the answer recommends or puts forward as a suggestion. Skip works it only mentions in passing as background.\n'
@@ -2218,9 +2223,10 @@ async function suggestedWorks(convoId, userId, answer) {
   });
   if (result.error) return null;
   const list = firstJson(result.text)?.works;
-  if (!Array.isArray(list) || !list.length) return null;
+  if (!Array.isArray(list)) return null;
+  if (!list.length) return [];
   const saved = saveSuggestedWorks(userId || 'antoine', list);
-  if (!saved.length) return null;
+  if (!saved.length) return [];
   if (saved.some(w => w.added)) broadcastAll('recommendations:updated', {});
   // Where each cover hangs: the words of the answer that speak of the work. An
   // answer that never says the title ("Stevenson's memoir", "the film") used to
@@ -2262,6 +2268,46 @@ async function mentionedWorks(convoId, userId) {
     const saved = saveSuggestedWorks(userId || 'antoine', list);
     if (saved.some(w => w.added)) broadcastAll('recommendations:updated', {});
   } catch (err) { console.warn('[mentioned-works]', err?.message || err); }
+}
+
+// Answers written before a work could be picked out of the answer itself carry no
+// works at all, so their covers and cards never appear (his screenshot, 2026-09-28:
+// "Book: Thurgood Marshall: American Revolutionary" with nothing to click). They are
+// read once, the first time their conversation is opened, exactly as names are.
+// An answer that puts no work forward costs nothing: it is marked read without a call.
+export const WORKS_V = 1;
+const worksScanning = new Set();
+const worksFailures = new Map();
+export async function scanWorks(convoId, { limit = 8, userId = 'antoine' } = {}) {
+  if (!db || !convoId) return {};
+  const rows = db.prepare(`SELECT id, text, meta FROM convo_messages WHERE convo_id=? AND role='assistant' AND kind='chat' ORDER BY created_at DESC, rowid DESC`).all(convoId);
+  const unread = rows.filter((r) => {
+    let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch { meta = {}; }
+    return !meta.failed && (Number(meta.worksV) || 0) < WORKS_V && !worksScanning.has(r.id)
+      && (worksFailures.get(r.id) || 0) < 2 && String(r.text || '').trim();
+  });
+  const todo = unread.slice(0, limit);
+  const found = {};
+  const mark = (id, works) => {
+    const fresh = db.prepare('SELECT meta FROM convo_messages WHERE id=?').get(id);
+    let meta = {}; try { meta = fresh?.meta ? JSON.parse(fresh.meta) || {} : {}; } catch {}
+    if (works && works.length) meta.works = works;
+    meta.worksV = WORKS_V;
+    db.prepare('UPDATE convo_messages SET meta=? WHERE id=?').run(JSON.stringify(meta), id);
+    found[id] = works || [];
+  };
+  for (const r of todo) {
+    let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch {}
+    if (Array.isArray(meta.works) && meta.works.length) { mark(r.id, meta.works); continue; }
+    if (!answerOffersWorks(String(r.text || ''))) { mark(r.id, []); continue; }
+    worksScanning.add(r.id);
+    try {
+      const works = await worksFromAnswer(userId, String(r.text || ''));
+      if (works === null) { worksFailures.set(r.id, (worksFailures.get(r.id) || 0) + 1); continue; }
+      mark(r.id, works);
+    } finally { worksScanning.delete(r.id); }
+  }
+  return { found, more: unread.length > todo.length };
 }
 
 function saveAssistantTurn(convoId, text, meta = null) {
