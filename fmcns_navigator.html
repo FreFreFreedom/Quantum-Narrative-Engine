@@ -2751,6 +2751,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 /* A new section always starts below any cover, never beside it: a heading running
    up next to the last section's cover made the answer look scrambled (2026-09-27). */
 .se-body.md h1, .se-body.md h2, .se-body.md h3, .se-body.md h4, .se-body.md hr { clear:both; }
+.se-body.md .se-wrap-by { clear:none; }
 .se-cover.is-right { float:right; clear:both; margin-left:24px; }
 .se-cover.is-left { float:left; clear:both; margin-right:24px; }
 .se-cover-row { float:right; clear:both; width:min(260px, 46%); margin:6px 0 12px 24px; display:flex; flex-wrap:wrap; gap:10px; }
@@ -31736,6 +31737,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         log._streamShell = streamShell;
         if(streamShell !== null){ var sb = log.querySelectorAll('.se-turn > .se-body.md'); if(sb.length) sb[sb.length - 1].setAttribute('data-se-streaming', '1'); }
         seLoadCovers(log);
+        seTidyCovers(log);
         // A write of the same place still breaks off a scroll in progress; only move when it must.
         if(atBottom) log.scrollTop = log.scrollHeight;
         else if(Math.abs(log.scrollTop - was) > 1) log.scrollTop = was;
@@ -32464,6 +32466,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       el.style.backgroundImage = 'url("' + u.replace(/"/g, '%22') + '")'; el.textContent = '';
     });
   }
+  // A heading starts below a cover only when that costs a line or two. When the
+  // cover hangs much lower, the heading wraps beside it instead: waiting would
+  // leave a hole in the page (the "Trauma" answer, 2026-09-28).
+  function seTidyCovers(root){
+    (root || document).querySelectorAll('.se-covered').forEach(function(box){
+      var heads = box.querySelectorAll('h1, h2, h3, h4, hr');
+      if(!heads.length || !box.querySelector('.se-cover')) return;
+      heads.forEach(function(h){ h.classList.add('se-wrap-by'); });
+      var floats = Array.prototype.slice.call(box.querySelectorAll('.se-cover-row, .se-cover:not(.se-cover-row .se-cover)'));
+      heads.forEach(function(h){
+        var top = h.getBoundingClientRect().top, low = -Infinity;
+        floats.forEach(function(f){
+          if(f.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING) low = Math.max(low, f.getBoundingClientRect().bottom);
+        });
+        if(low > top && low - top < 70) h.classList.remove('se-wrap-by');
+      });
+    });
+  }
+  if(!window.__seTidyWired){ window.__seTidyWired = true; window.addEventListener('resize', function(){ clearTimeout(window.__seTidyT); window.__seTidyT = setTimeout(function(){ seTidyCovers(document); }, 200); }); }
   function seLoadCovers(root){
     root.querySelectorAll('.se-cover [data-cover-art]').forEach(function(el){
       var key = el.dataset.coverArt, d = el.dataset;
