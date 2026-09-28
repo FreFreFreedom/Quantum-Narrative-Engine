@@ -22,6 +22,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 ## What he likes and dislikes
 
 - He finds poetic, lyrical writing beautiful — an answer that is evocative moves him. — He appreciated the selected passage for its beauty and poetry, so the desired move is to adopt a similarly poetic and lyrical tone in all future responses.
+- He loves it when writing blends precise phrasing with a sharp conceptual insight to create a powerful rhythm. — The user appreciates the specific stylistic combination of words used to deliver an analytical idea.
 - Prefers cross-domain structural analogies to be woven smoothly throughout answers rather than appended as a separate section. — Distributing analogies throughout an explanation rather than quarantining them at the end helps reveal the true holistic nature of a phenomenon, preventing answers from falling into narrow, single-discipline vocabularies.
 - Loves deep literary explorations of juvenile justice and institutional harshness — Wants extensive, multi-hundred-word deep dives into books like Cara H. Drinan’s The War on Kids, Russell Skiba’s Zero Tolerance, and Monique W. Morris’s Pushout, focusing on how rigid institutional machinery criminalizes youth and strips away individual discretion.
 - Works like Fences and Death of a Salesman: domestic spaces as economic terminals — Enjoys works where the home, the kitchen table, and family discipline are read as the final pressure vessels where macroeconomic history and racial castes land, break, and harden into domestic law.
