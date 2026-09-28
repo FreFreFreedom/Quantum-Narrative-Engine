@@ -1,6 +1,6 @@
-# The Noble Prosecutor as Archetypal Boundary
+# Reimagining the Prosecutor’s Role in Community Justice
 
-Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 135 turns · last said 2026-09-28T07:05:45.025Z
+Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 140 turns · last said 2026-09-28T20:22:05.258Z
 
 ## you
 

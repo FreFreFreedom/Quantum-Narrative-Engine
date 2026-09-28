@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- The Noble Prosecutor as Archetypal Boundary — conversations/the-noble-prosecutor-as-archetypal-boundary-cf34af05.md
+- Reimagining the Prosecutor’s Role in Community Justice — conversations/reimagining-the-prosecutor-s-role-in-community-justice-cf34af05.md
 - Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
 - Kinetic workout media selection — conversations/kinetic-workout-media-selection-a7051bc8.md
 - Cook County Court as Fractal Injustice Anatomy — conversations/cook-county-court-as-fractal-injustice-anatomy-05863085.md

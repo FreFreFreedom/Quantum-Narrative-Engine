@@ -11,21 +11,21 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The fractal cross‑domain engine maps the direction and feedback loops of patterns across scales, turning institutional language barriers into anatomical signatures that reveal how archetypes travel from macro to micro.
+
+Merges the concept that the fractal cross‑domain engine is a new organ of perception that dissolves institutional‑language barriers by comparing anatomy directly across domains (mf_9be72013) with the idea that the instrument’s power lies in mapping a pattern’s travel direction and its feedback closure, showing whether wounds flow upward or downward and how loops form (mf_dea07b4c). Retains details: focus on structural signatures, direction of flow, feedback loops, multi‑scale tracing, and the replacement of word‑level translation with anatomical comparison.
+
+## The prosecutor functions as the system’s boundary‑setting immune organ: it defines the line between self and other, names threats, acts proportionally to protect cohesion, and resists destruction for its own sake.
+
+Combines the view of the prosecutor as the archetypal boundary‑setter that draws the line between self and other across all scales (mf_d0edfad6) with the notion that the true prosecutor is the collective’s immune wisdom that names, notices, and acts against contagion without destroying or exiling for its own sake (mf_300583b5). Preserves mechanisms: boundary‑setting, skin‑like organ, naming threats, proportional action, renewal of order, intolerance of lazy violence, champion of rehabilitation, and resistance to power‑driven excess.
+
 ## The judge is society's living organ of discernment: the pivot point holding the tension between exclusion and belonging, order and mercy.
 
 Strip away robes and gavels, and the judge is a living portal where the urge to exclude and the cry to belong are brought into dialogue under the weight of time, memory, grief, and possibility. The nerve center that listens to all arguments—state, accused, future, past—holding contradiction without collapse and refusing pure exclusion or pure chaos.
 
-## The true prosecutor is the immune wisdom of the collective: boundary, memory, and repair that acts against contagion without destroying or exiling for its own sake.
-
-Strip out dead routines and see the living root: the mature prosecutor is the entity's capacity to name, notice, and act against what would eat it alive, but only to the degree needed to renew order, not to destroy or exile for its own sake. A healthy prosecutor is fiercely honest, unseducable by power, intolerant of lazy violence, and a champion of rehabilitation. Justice as medicine, not as blade.
-
 ## Connection versus freedom is the fundamental axis of relationship dynamics across all scales, where any repressed pole is projected outward onto others.
 
 Connection versus freedom (rebellion versus conformity) is the candidate for THE one fundamental pattern, reducing all entity behavior and relationship dynamics to a single primordial axis. Every entity sits at a unique balance—a specific degree of integration and of repression of each pole—and whatever is repressed is subconsciously projected outward onto the people it meets, self-similarly across every scale.
-
-## The prosecutor is the archetypal boundary‑setter, the organ that draws the line between self and other across all scales.
-
-Across domains—from planetary governance to family dynamics—the prosecutor‑like role imposes limits that prevent dissolution. It is not merely a bureaucratic function but a sacred organ that defines the entity’s skin, allowing the system to maintain cohesion. Without this boundary‑setting, the whole collapses into chaos or cannibalizes itself. This insight refines the earlier notion of “interior‑exterior self‑similarity” by explicitly naming the prosecutor as the exterior‑to‑interior boundary mechanism.
 
 ## Allopathic inquiry into social and institutional phenomena isolates local symptoms and manages them with specialized vocabulary, ignoring cross-scale ecology.
 
@@ -90,10 +90,6 @@ The shadow-metabolizing idea grew into a named immune anatomy being traced acros
 ## The fractal cross-domain engine is not a fancier analytics tool but a new organ of perception — a discipline of seeing, benchmarked against telescope and microscope — that traces one archetype's anatomy across domains where vocabularies dif
 
 Its job is to dissolve institutional-language barriers not by translating words but by ignoring them and comparing anatomy directly — a physician and a historian must be shown they study the same thing. It takes an anatomical signature (e.g. the scapegoat ritual: exiling one of its own to preserve group coherence) and shows where it is active, about to activate, or so familiar it has gone invisible; the Central Park Five are that ritual running at national, family and psyche scales at once. Owner's words: 'the power is not that it tells you what you already know in fancier language — it makes visible patterns you were structurally unable to see before, patterns that existing vocabulary actively disguises.'
-
-## The instrument's defining power is mapping a pattern's direction of travel across scales and its feedback closure — not just that a wound exists at many rungs, but which way it flows and how it loops back.
-
-Quotes the owner pulled out and endorsed: 'Does the wound at the family level feed the dysfunction at the institutional level, or does the institutional violence create the family fracture? The answer, fractally, is both.' The law's shadow descends to family/child, the fractured family then produces the conditions for the next police action and the next law — a closed loop. He calls mapping the loops 'very cool' and wants it in the vision: loops visualized animated with velocity (how quickly the law fractures downward), load (where the greatest mass of suffering collects), and brittleness (where the smallest intervention flips the structure).
 
 ## A civic structure is not an institution but the living act of a people answering 'how do we hold together?' — crystallized norms, rituals, laws and practices of exclusion.
 
