@@ -2224,8 +2224,10 @@ async function worksFromAnswer(userId, text) {
   if (result.error) return null;
   const list = firstJson(result.text)?.works;
   if (!Array.isArray(list)) return null;
-  if (!list.length) return [];
-  const saved = saveSuggestedWorks(userId || 'antoine', list);
+  // "the memoir" is how the answer refers to a book, not a title.
+  const clean = list.filter((w) => !/^(the\s+)?(book|memoir|novel|film|movie|series|documentary|essay|report)s?$/i.test(String(w?.title || '').trim()));
+  if (!clean.length) return [];
+  const saved = saveSuggestedWorks(userId || 'antoine', clean);
   if (!saved.length) return [];
   if (saved.some(w => w.added)) broadcastAll('recommendations:updated', {});
   // Where each cover hangs: the words of the answer that speak of the work. An
@@ -2235,8 +2237,8 @@ async function worksFromAnswer(userId, text) {
   const fold = (t) => String(t || '').replace(/[*_`]/g, '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').toLowerCase().trim();
   const flat = fold(text);
   const whereOf = (w) => {
-    const hit = list.find((x) => String(x?.kind) === w.kind && String(x?.title || '').toLowerCase().trim() === String(w.title || '').toLowerCase().trim())
-      || list.find((x) => String(x?.title || '').toLowerCase().trim() === String(w.title || '').toLowerCase().trim());
+    const hit = clean.find((x) => String(x?.kind) === w.kind && String(x?.title || '').toLowerCase().trim() === String(w.title || '').toLowerCase().trim())
+      || clean.find((x) => String(x?.title || '').toLowerCase().trim() === String(w.title || '').toLowerCase().trim());
     const at = fold(hit?.where).slice(0, 120);
     return at.split(' ').length >= 2 && flat.includes(at) ? at : '';
   };
