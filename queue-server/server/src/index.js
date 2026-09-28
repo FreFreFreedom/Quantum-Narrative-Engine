@@ -66,6 +66,7 @@ import { bindPassagesDb } from './services/passages.js';
 import { bindDocExtractionDb } from './services/docExtraction.js';
 import { mindRoutes } from './routes/mind.js';
 import { bindChaptersDb } from './services/chapters.js';
+import { bindConvoLogDb } from './services/convoLog.js';
 import { bindMindDb } from './services/mind.js';
 import { bindConnections } from './services/connections.js';
 import { bindWordLookup } from './services/wordLookup.js';
@@ -144,6 +145,7 @@ bindMindDb(db);
 bindConnections(db);
 bindWordLookup(db);
 bindChaptersDb(db);
+bindConvoLogDb(db);
 bindDashboardDb(db);
 bindTagCommunitiesDb(db);
 

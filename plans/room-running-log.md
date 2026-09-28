@@ -1,6 +1,6 @@
 # Room running log: a short, dated record of each conversation, so he never repeats himself mid-thread
 
-**Status: PLANNED** (2026-09-28). Not a green light: Antoine asked for the plan only. Implement only when he says so by name.
+**Status: DONE** (2026-09-28). Built as planned; the columns live in `convoLog.js#bindConvoLogDb` (the chapters.js pattern) rather than schema.js.
 
 
 ## Context

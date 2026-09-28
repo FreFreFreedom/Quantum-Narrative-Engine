@@ -1184,3 +1184,6 @@ language to what it is and does — understanding, never the surface of his essa
 "if i point at the moon, dont look at my finger". Never copy the essay's examples, words or
 order into a prompt or answer. Prompt: `queue-server/data-seed/voices/the-lens.md` (not a
 setting). Authority: AGENTS.md "The lens". His essay, verbatim: `fractal_operational_core.md` §22.
+
+## Room running log (2026-09-28)
+Messages that leave the Room's 16-message window are written down in plain lines by `services/convoLog.js` (append-only batches in `convos.log`, one free `summary` call per 4 leaving messages), and `transcriptOf` puts them back as "(earlier in this conversation)". Context only: no instruction rides with it, and the writer leaves out anything about answer shape. Skipped after "Start fresh", which sends everything since the fold anyway. Plan: `plans/room-running-log.md`.

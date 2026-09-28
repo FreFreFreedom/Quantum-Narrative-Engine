@@ -36,6 +36,7 @@ import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTo
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
 import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory, subjectsBlock } from './mind.js';
 import { chapterize } from './chapters.js';
+import { logConversation, logText } from './convoLog.js';
 import { splitByLabels, splitByMarks, parseMarks, MARKS_PROMPT } from './convoImport.js';
 import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
@@ -1850,6 +1851,10 @@ function transcriptOf(convo, msgs, windowSize, { full } = {}) {
   const visible = msgs.slice(-windowSize).filter((m) => m.kind === 'chat');
   const lines = [];
   if (convo.recap) lines.push(`(folded earlier context)\n${convo.recap}`);
+  // What left the window, as the running log wrote it down (services/convoLog.js).
+  // Plain conversation under a bare heading — no instruction rides with it.
+  const log = full ? '' : logText(convo);
+  if (log) lines.push(`(earlier in this conversation)\n${log}`);
   for (const m of visible) lines.push(`${m.role === 'user' ? 'OWNER' : 'YOU'}: ${m.text}`);
   return lines.join('\n\n');
 }
@@ -2400,6 +2405,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people ? { people } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
+  logConversation(convoId, CONVO_HISTORY_WINDOW);
   void mentionedWorks(convoId, userId); // fire-and-forget: titles he typed go to the Library
   chapterize(convoId); // and re-read where the subject changed, same discipline
   recommendationChanged(convoId);
@@ -2460,6 +2466,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(works ? { works } : {}), ...(people ? { people } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
+  logConversation(convoId, CONVO_HISTORY_WINDOW);
   void mentionedWorks(convoId, userId); // fire-and-forget: titles he typed go to the Library
   chapterize(convoId); // and re-read where the subject changed, same discipline
   recommendationChanged(convoId);
@@ -2530,6 +2537,7 @@ async function runAnswerNowTurn(convoId, { onToken = null, onStatus = null, sign
   setClarificationMode(convoId, 'normal');
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  logConversation(convoId, CONVO_HISTORY_WINDOW);
   chapterize(convoId);
   recommendationChanged(convoId);
   roomWorldLook(convoId);
@@ -2558,6 +2566,7 @@ async function runCodeReadTurn(convoId, turn) {
   saveAssistantTurn(convoId, result.text, { lane: 'claude', intent: 'code_read' });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  logConversation(convoId, CONVO_HISTORY_WINDOW);
   chapterize(convoId);
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
@@ -2638,6 +2647,7 @@ async function runCheckTurn(convoId) {
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: 'check', checked: originalTag });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  logConversation(convoId, CONVO_HISTORY_WINDOW);
   chapterize(convoId);
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
@@ -2672,6 +2682,7 @@ async function runSecondTurn(convoId) {
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: 'second', answered: originalTag });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  logConversation(convoId, CONVO_HISTORY_WINDOW);
   chapterize(convoId);
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)

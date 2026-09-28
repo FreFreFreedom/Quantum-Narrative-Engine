@@ -1,6 +1,6 @@
 # Plan Backlog
 
-- [Room running log](room-running-log.md) — **PLANNED**, 2026-09-28. Messages that leave the 16-message window are logged in plain words, append-only and dated, and shown to the model as more of the conversation. Context only: no rule or instruction reaches the answer.
+- [Room running log](room-running-log.md) — **DONE**, 2026-09-28. Messages that leave the 16-message window are logged in plain words, append-only and dated, and shown to the model as more of the conversation. Context only: no rule or instruction reaches the answer.
 
 - [Room connections](room-connections.md) — **PLANNED**, 2026-09-24. Outside sources the Room can reach (Kindle, YouTube, Zotero, Drive…), suggested once from the conversation itself via the Mind harvest; a Connections list in Settings and rows in the ＋ menu. Ships with every connection off — Antoine picks which to wire.
 
