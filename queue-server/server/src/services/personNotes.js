@@ -11,8 +11,8 @@ import { generateText } from './ai/text.js';
 
 let db = null;
 export const KINDS = new Set(['real', 'fictional', 'myth', 'place', 'archetype', 'institution']);
-// Bumped when a kind is added, so answers read before it are read once more (v4: countries and states count as places again).
-export const PEOPLE_V = 4;
+// Bumped when a kind is added, so answers read before it are read once more (v5: countries and states are places; reads that failed are redone).
+export const PEOPLE_V = 5;
 // A long answer names many places and offices in passing; only a few are worth a card.
 const PER_KIND = { place: 8, institution: 6, archetype: 4 };
 // Ten used to be the cap, and a long answer's list stopped there: Astraea and

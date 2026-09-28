@@ -28868,7 +28868,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (Array.isArray(meta.attachments)) out.attachments = meta.attachments;
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
         // Read again when a kind was added since (v2 places, archetypes, institutions; v3 tighter).
-        if (Array.isArray(meta.people)) { out.peopleRead = (Number(meta.peopleV) || 0) >= 4; if (meta.people.length) out.people = meta.people; }
+        if (Array.isArray(meta.people)) { out.peopleRead = (Number(meta.peopleV) || 0) >= 5; if (meta.people.length) out.people = meta.people; }
       }
       return out;
     });
