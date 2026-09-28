@@ -9,6 +9,7 @@ import * as shelf from '../services/bookShelf.js';
 import * as screen from '../services/screenFacts.js';
 import { bookContents } from '../services/bookContents.js';
 import { workNote } from '../services/workNotes.js';
+import { personCard } from '../services/personNotes.js';
 import * as bookFacts from '../services/bookFacts.js';
 import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
@@ -162,6 +163,15 @@ export function conversationsRoutes() {
       : (await screen.screenFactsFor(owner, [it])).x || {};
     const note = await workNote(req.params.id, { ...it, year: facts.year || it.year, overview: facts.overview || '' }, { refresh: req.query.refresh === '1' });
     res.json({ ...facts, note: note.text });
+  }));
+
+  // The card a person's name opens in a Room answer: their years, the main pattern
+  // they live out, and why they matter to this conversation (services/personNotes.js).
+  router.get('/:id/person-card', asyncHandler(async (req, res) => {
+    const p = { name: String(req.query.name || '').slice(0, 80), full: String(req.query.full || '').slice(0, 120),
+      kind: req.query.kind === 'fictional' ? 'fictional' : 'real', from: String(req.query.from || '').slice(0, 120) };
+    if (!(p.full || p.name).trim()) return res.status(400).json({ error: 'name required' });
+    res.json(await personCard(req.params.id, p, { refresh: req.query.refresh === '1' }));
   }));
 
   // A book's table of contents, from the catalogues in turn (services/bookContents.js).

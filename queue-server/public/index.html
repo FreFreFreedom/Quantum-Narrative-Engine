@@ -2790,6 +2790,13 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .bk-cover { flex:none; width:56px; height:84px; border-radius:4px; background:var(--c-surface-2) center/cover no-repeat; box-shadow:0 6px 16px rgba(0,0,0,.28); }
 .bk-id { flex:1; min-width:0; }
 .bk-id .se-card-title { padding-right:0; font-size:26px; }
+/* A person named in an answer: the name itself, quietly underlined, opens their card. */
+.se-person { display:inline; padding:0; margin:0; border:0; background:none; font:inherit; color:inherit; cursor:pointer;
+  text-decoration:underline dotted color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 70%, transparent); text-decoration-thickness:1.5px; text-underline-offset:3px; }
+.se-person:hover, .se-person:focus-visible { color:var(--c-kept-echo, var(--c-accent)); }
+.bk-cover.is-person { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-read); font-size:28px; color:var(--c-ink-4); background-position:center 20%; }
+.se-card-pattern { margin:18px 0 0; font-family:var(--font-read); font-style:italic; font-size:21px; line-height:1.45; color:var(--c-ink); }
 .bk-out { position:relative; flex:none; align-self:flex-start; }
 .bk-out-btn { width:32px; height:32px; border-radius:50%; border:1px solid color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, transparent); background:none;
   color:var(--c-kept-echo, var(--c-accent)); font-size:15px; line-height:1; cursor:pointer; }
@@ -28816,6 +28823,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) out.attachments = meta.attachments;
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
+        if (Array.isArray(meta.people) && meta.people.length) out.people = meta.people;
       }
       return out;
     });
@@ -28958,7 +28966,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var arrivedWhole = !e.stream;
           // id carried straight from the save, so the answer he is reading can be
           // marked as a chapter right away instead of only after a reload.
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0, works: d.works || null });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0, works: d.works || null, people: d.people || null });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           // /interview, /grill-me and "answer now" all report the mode they left the
           // conversation in, so the toggle and the composer reflect it at once — no
@@ -29044,7 +29052,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           e.note = d.message || 'Could not answer now — try again.';
         } else if(d.text){
           var arrivedWhole = !e.stream;
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, works: d.works || null });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, works: d.works || null, people: d.people || null });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           e.clarify = d.mode || 'normal';
           if(e.type === 'open' && onDone) onDone();
@@ -32426,6 +32434,34 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     });
     return '<div class="se-covered">' + box.innerHTML + '</div>';
   }
+  // The people an answer names, real or fictional, marked where each is first
+  // named (his ask, 2026-09-28): the name itself becomes the button, like a cover
+  // but inside the line. Headings, links and covers are passed over, so the mark
+  // lands on the first mention in the running text.
+  function seMarkPeople(html, people, convoId){
+    var box = document.createElement('div'); box.innerHTML = html;
+    people.forEach(function(p){
+      var name = String((p && p.name) || ''); if(name.length < 2) return;
+      var re = new RegExp('(^|[^\\p{L}])(' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![\\p{L}])', 'u');
+      var walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, {
+        acceptNode: function(n){ return n.parentElement.closest('.se-cover, .se-person, a, code, pre, h1, h2, h3, h4') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+      });
+      var node, m;
+      while((node = walker.nextNode())){
+        if(!(m = re.exec(node.nodeValue))) continue;
+        var word = node.splitText(m.index + m[1].length); word.splitText(name.length);
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'se-person';
+        btn.dataset.pName = name; btn.dataset.pFull = p.full || name;
+        btn.dataset.pKind = p.kind === 'fictional' ? 'fictional' : 'real';
+        btn.dataset.pFrom = p.from || ''; btn.dataset.convo = convoId || '';
+        btn.title = (p.full || name) + (p.from ? ' — ' + p.from : '');
+        word.parentNode.replaceChild(btn, word); btn.appendChild(word);
+        break;
+      }
+    });
+    return box.innerHTML;
+  }
   // Put `el` at character `pos` of block's text (whitespace folded as in
   // seCoverNorm), splitting the text node there. Covers already placed are skipped
   // when counting, since their text is not part of the answer.
@@ -32508,6 +32544,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (!seCard || !anchor.isConnected) return;
     var r = anchor.getBoundingClientRect(), w = seCard.offsetWidth, h = seCard.offsetHeight;
     var vw = window.innerWidth, vh = window.innerHeight;
+    // A name sits inside the line, so its card opens under it (over it when the
+    // window has no room below), never across the words to its left.
+    if (anchor.classList.contains('se-person')) {
+      var pl = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, vw - w - 8));
+      var pt = r.bottom + 10 + h <= vh - 8 ? r.bottom + 10 : Math.max(8, r.top - 10 - h);
+      seCard.style.left = pl + 'px'; seCard.style.top = pt + 'px';
+      return;
+    }
     var left = r.left - w - 14 >= 8 ? r.left - w - 14 : Math.min(r.right + 14, vw - w - 8);
     if (vw < 560) left = Math.max(8, (vw - w) / 2);
     left = Math.max(8, Math.min(left, vw - w - 8));   // never past either edge of the window
@@ -32600,7 +32644,66 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       } else paint(cardData);
     }
   }
+  // ---------- The card a person's name opens ----------
+  // Who they are, the main pattern they live out, and why they matter here,
+  // with searches out for books by or about them and for videos.
+  var sePeopleArt = {};
+  function sePersonArt(d){
+    var who = d.pFull || d.pName;
+    if (who in sePeopleArt) return Promise.resolve();
+    sePeopleArt[who] = '';
+    return fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(who.replace(/ /g, '_')))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        if (!j || j.type === 'disambiguation') return;
+        // A portrait only when the page is the same kind of person: "Hamlet" the
+        // play is not Hamlet the prince.
+        var fictional = /\b(character|fictional|mytholog\w*|deity|god|goddess)\b/i.test(String(j.description || ''));
+        if ((d.pKind === 'fictional') !== fictional) return;
+        sePeopleArt[who] = (j.thumbnail && j.thumbnail.source) || '';
+      }).catch(function(){});
+  }
+  function sePersonHtml(d, card){
+    var f = card || {}, who = d.pFull || d.pName, fic = d.pKind === 'fictional';
+    var art = sePeopleArt[who] || '';
+    var q = who + (fic && d.pFrom ? ' ' + d.pFrom : '');
+    var links = [
+      { label: 'Amazon', url: 'https://www.amazon.com/s?i=stripbooks&k=' + encodeURIComponent(q) },
+      { label: 'YouTube', url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q) },
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/w/index.php?search=' + encodeURIComponent(who) }];
+    var meta = fic ? [f.life || d.pFrom] : [d.pFrom, f.life];
+    meta = meta.filter(Boolean);
+    var body = !card ? waitHtml('searching', 'Looking it up', 'p', 'se-card-wait')
+      : (f.pattern ? '<p class="se-card-pattern">' + qEsc(f.pattern) + '</p>' : '')
+        + (f.here ? '<p class="se-card-note">' + qEsc(f.here) + '</p>' : '');
+    return '<div class="bk-head"><span class="bk-cover is-person"' + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)">' : '>' + qEsc(who.charAt(0)))
+      + '</span><div class="bk-id"><b class="se-card-title">' + qEsc(who) + '</b>'
+      + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '') + '</div>'
+      + bookOutMenu(links) + '</div>' + body;
+  }
+  function sePersonOpen(btn){
+    var d = btn.dataset, id = 'p|' + (d.pFull || d.pName);
+    if (seCardFor === id) { seCardClose(); return; }
+    seCardClose();
+    seCard = document.createElement('div'); seCard.className = 'se-card'; seCard.setAttribute('role', 'dialog');
+    seCardFor = id; seCardAnchor = btn;
+    document.body.appendChild(seCard);
+    var card = null;
+    var paint = function(){
+      if (!seCard || seCardFor !== id) return;
+      seCard.innerHTML = sePersonHtml(d, card); seCardPlace(btn);
+    };
+    paint();
+    sePersonArt(d).then(paint);
+    if (!d.convo) { card = {}; paint(); return; }
+    api('/api/convos/' + encodeURIComponent(d.convo) + '/person-card?name=' + encodeURIComponent(d.pName) + '&full=' + encodeURIComponent(d.pFull || '')
+      + '&kind=' + encodeURIComponent(d.pKind) + '&from=' + encodeURIComponent(d.pFrom || ''))
+      .then(function(c){ card = c || {}; }).catch(function(){ card = {}; })
+      .then(paint);
+  }
   document.addEventListener('click', function(ev){
+    var pb = ev.target.closest && ev.target.closest('.se-person');
+    if (pb) { ev.preventDefault(); sePersonOpen(pb); return; }
     var btn = ev.target.closest && ev.target.closest('.se-cover');
     if (btn) { ev.preventDefault(); seCardOpen(btn); return; }
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
@@ -32704,6 +32807,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var renderedBody = plan ? qEsc(m.text) : fmtBody(you ? shown : seProseFromList(shown), !you, m.id || null);
       if(!you && !plan) renderedBody = srcStripHtml(renderedBody);
       if(!you && !plan && m.works && m.works.length) renderedBody = seHangCovers(renderedBody, m.works, e.convoId);
+      if(!you && !plan && m.people && m.people.length) renderedBody = seMarkPeople(renderedBody, m.people, e.convoId);
       var showWordCount = !you && !plan && (e.type === 'open' || e.type === 'side');
       var wordCountHtml = '';
       if(showWordCount){

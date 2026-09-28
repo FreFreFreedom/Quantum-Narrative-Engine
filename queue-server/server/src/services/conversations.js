@@ -47,12 +47,13 @@ import { bindScreenFacts } from './screenFacts.js';
 import { bindBookFacts } from './bookFacts.js';
 import { bindBookContents } from './bookContents.js';
 import { bindWorkNotes } from './workNotes.js';
+import { bindPersonNotes, namedPeople } from './personNotes.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
 
 let db = null;
-export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); bindBookFacts(database); bindBookContents(database); bindWorkNotes(database); }
+export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); bindBookFacts(database); bindBookContents(database); bindWorkNotes(database); bindPersonNotes(database); }
 
 // Plans live in knowledge_docs under the `Plan: ` prefix (seeded by
 // bootstrapData.js#seedPlans from the project-docs/plans/ mirror). This returns
@@ -2394,8 +2395,9 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // The id travels back with the answer. Without it the just-arrived turn has no
   // anchor on screen until the conversation is reloaded, and Chapter — which needs
   // a message to point at — is hidden on exactly the answer he is reading.
-  const works = await suggestedWorks(convoId, userId, result.text);
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}) });
+  // The people it names are found alongside, so the marks cost no extra wait.
+  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => null)]);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people ? { people } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   void mentionedWorks(convoId, userId); // fire-and-forget: titles he typed go to the Library
@@ -2403,7 +2405,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, cost: spentUsd, works };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, cost: spentUsd, works, people };
 }
 
 // The non-streaming twin. Reached only when the client does not ask for NDJSON,
@@ -2453,8 +2455,9 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   // The id travels back with the answer. Without it the just-arrived turn has no
   // anchor on screen until the conversation is reloaded, and Chapter — which needs
   // a message to point at — is hidden on exactly the answer he is reading.
-  const works = await suggestedWorks(convoId, userId, result.text);
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(works ? { works } : {}) });
+  // The people it names are found alongside, so the marks cost no extra wait.
+  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => null)]);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(works ? { works } : {}), ...(people ? { people } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   void mentionedWorks(convoId, userId); // fire-and-forget: titles he typed go to the Library
@@ -2462,7 +2465,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, works };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, works, people };
 }
 
 // Start (or re-enter) Interview mode and ask the first question right away,
