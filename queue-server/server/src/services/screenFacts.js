@@ -105,15 +105,18 @@ async function sourceBook(imdbId) {
 // year is the thing an answer most often gets wrong.
 const stripArticle = (t) => String(t).replace(/^(the|a|an|le|la|les|un|une)\s+/i, '').trim();
 function titleTries(title) {
-  const t = String(title || '').trim();
+  const t = String(title || '').replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').trim();
   const out = [t];
+  // "The People vs. O. J. Simpson" is filed as "The People v. O. J. Simpson".
+  const vee = t.replace(/\bvs\.?\b/gi, 'v.').replace(/\bv\.\s/g, 'v. ');
+  if (vee !== t) out.push(vee);
   const cut = t.split(/\s*[:–—]\s*/)[0].trim();
   if (cut && cut.length >= 3) out.push(cut);
   const noPar = t.replace(/\s*\([^)]*\)\s*$/, '').trim();
   if (noPar && noPar !== t) out.push(noPar);
   const bare = stripArticle(cut || t);
   if (bare && bare.length >= 4) out.push(bare);
-  return out.filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 3);
+  return out.filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 4);
 }
 async function searchScreen(mediaType, query, y) {
   const path = mediaType === 'tv' ? '/search/tv' : '/search/movie';
