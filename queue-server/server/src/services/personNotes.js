@@ -10,6 +10,9 @@ import { generateText } from './ai/text.js';
 
 let db = null;
 export const KINDS = new Set(['real', 'fictional', 'myth']);
+// Ten used to be the cap, and a long answer's list stopped there: Astraea and
+// Ma'at, named after ten lawyers, were never marked (2026-09-28).
+const MAX_PEOPLE = 25;
 export function bindPersonNotes(database) {
   db = database;
   db.exec(`CREATE TABLE IF NOT EXISTS person_notes (
@@ -40,9 +43,9 @@ export async function namedPeople(answer) {
   const text = String(answer || '');
   if (text.length < 80 || !NAME_HINT.test(text)) return null;
   const result = await generateText({
-    feature: 'summary', maxTokens: 700, label: 'room:people', timeoutMs: 20_000, maxAttempts: 2,
+    feature: 'summary', maxTokens: 2000, label: 'room:people', timeoutMs: 20_000, maxAttempts: 2,
     prompt: 'Below is an answer. List the beings it names: real people (living or historical), fictional characters from books, films and series, and beings of myth, religion or folklore (gods, goddesses, titans, spirits, angels, demons, legendary heroes, saints). Skip the reader and the writer of the answer, skip groups, peoples and places, and skip a name used only inside a book or film title.\n'
-      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"full name","kind":"real"|"fictional"|"myth","from":"fictional: the work it comes from; myth: the tradition and what it is, 3 to 6 words (Greek goddess of justice); real: who they are in 3 to 6 words"}]}. {"people":[]} if there are none. At most 10, in order of first mention.\n\n'
+      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"full name","kind":"real"|"fictional"|"myth","from":"fictional: the work it comes from; myth: the tradition and what it is, 3 to 6 words (Greek goddess of justice); real: who they are in 3 to 6 words"}]}. {"people":[]} if there are none. At most 25, in order of first mention; never leave out a being of myth or religion to make room.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 12000),
   });
   if (result.error) return null;
@@ -58,7 +61,7 @@ export async function namedPeople(answer) {
     if (!new RegExp('(^|[^\\p{L}])' + esc + '(?![\\p{L}])', 'u').test(flat)) continue;
     seen.add(name);
     out.push({ name, full: plain(p?.full || name).slice(0, 120), kind: KINDS.has(p?.kind) ? p.kind : 'real', from: plain(p?.from).slice(0, 120) });
-    if (out.length >= 10) break;
+    if (out.length >= MAX_PEOPLE) break;
   }
   return out.length ? out : null;
 }
@@ -111,7 +114,8 @@ export async function scanPeople(convoId, { limit = 12 } = {}) {
   const rows = db.prepare(`SELECT id, text, meta FROM convo_messages WHERE convo_id=? AND role='assistant' AND kind='chat' ORDER BY created_at DESC, rowid DESC`).all(convoId);
   const unread = rows.filter((r) => {
     let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch { meta = {}; }
-    return !meta.failed && !Array.isArray(meta.people) && !scanning.has(r.id) && String(r.text || '').trim();
+    const cut = Array.isArray(meta.people) && meta.people.length >= 10 && !meta.peopleFull;   // read under the old cap of ten
+    return !meta.failed && (!Array.isArray(meta.people) || cut) && !scanning.has(r.id) && String(r.text || '').trim();
   });
   const todo = unread.slice(0, limit);
   const found = {};
@@ -123,6 +127,7 @@ export async function scanPeople(convoId, { limit = 12 } = {}) {
         const fresh = db.prepare('SELECT meta FROM convo_messages WHERE id=?').get(r.id);
         let meta = {}; try { meta = fresh?.meta ? JSON.parse(fresh.meta) || {} : {}; } catch {}
         meta.people = people || [];
+        meta.peopleFull = 1;
         db.prepare('UPDATE convo_messages SET meta=? WHERE id=?').run(JSON.stringify(meta), r.id);
         found[r.id] = meta.people;
       } finally { scanning.delete(r.id); }

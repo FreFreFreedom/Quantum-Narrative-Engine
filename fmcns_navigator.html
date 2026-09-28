@@ -28863,7 +28863,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) out.attachments = meta.attachments;
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
-        if (Array.isArray(meta.people)) { out.peopleRead = true; if (meta.people.length) out.people = meta.people; }
+        // A list of ten or more read under the old cap is read again, whole.
+        if (Array.isArray(meta.people)) { out.peopleRead = !(meta.people.length >= 10 && !meta.peopleFull); if (meta.people.length) out.people = meta.people; }
       }
       return out;
     });
