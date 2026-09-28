@@ -2746,7 +2746,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    Headings take the reading face at the sizes the answer's own hierarchy needs, not the
    browser's defaults — an h1 inside a conversation is a section, not a title page. */
 .se-body.md { white-space:normal; }
-.se-covered::after { content:''; display:block; clear:both; }
+.se-covered::after, .se-body.md::after { content:''; display:block; clear:both; }
 .se-cover { width:min(190px, 34%); padding:0; border:0; background:none; cursor:pointer; margin:6px 0 12px; }
 /* A new section always starts below any cover, never beside it: a heading running
    up next to the last section's cover made the answer look scrambled (2026-09-27). */
@@ -2761,6 +2761,14 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
   font:var(--fs-xs)/1.25 var(--font-ui); color:var(--c-ink-5); text-align:center; padding:8px; overflow:hidden;
   transition:transform .25s ease, box-shadow .25s ease; }
 .se-cover:hover > span, .se-cover:focus-visible > span { transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.34); }
+/* A face beside the words: narrower than a cover and taller than it is wide, with
+   the name under it. A place or a building keeps a wider frame. */
+.se-face { width:min(150px, 28%); }
+.se-face > span:first-child { aspect-ratio:4/5; border-radius:3px; background-position:center top; }
+.se-face.is-thing > span:first-child { aspect-ratio:4/3; background-position:center; }
+.se-face-name { display:block; width:auto; aspect-ratio:auto; background:none; box-shadow:none; transform:none !important;
+  margin-top:6px; padding:0; font:var(--fs-xs)/1.3 var(--font-ui); color:var(--c-ink-4); text-align:center; }
+@media (max-width:520px) { .se-face { width:110px; } }
 @media (max-width:520px) { .se-cover { width:130px; } .se-cover > span { width:130px; height:195px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } .se-cover-row { width:200px; margin-left:14px; } .se-cover-row > .se-cover, .se-cover-row > .se-cover > span { width:100%; height:auto; } .se-cover-row > .se-cover { width:calc(50% - 5px); } }
 .se-card { position:fixed; z-index:var(--z-popover); width:min(560px, calc(100vw - 16px)); max-height:min(720px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
@@ -31820,6 +31828,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(streamShell !== null){ var sb = log.querySelectorAll('.se-turn > .se-body.md'); if(sb.length) sb[sb.length - 1].setAttribute('data-se-streaming', '1'); }
         seLoadCovers(log);
         seTidyCovers(log);
+        sePortraits(log);
         // A write of the same place still breaks off a scroll in progress; only move when it must.
         if(atBottom) log.scrollTop = log.scrollHeight;
         else if(Math.abs(log.scrollTop - was) > 1) log.scrollTop = was;
@@ -32593,7 +32602,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // cover hangs much lower, the heading wraps beside it instead: waiting would
   // leave a hole in the page (the "Trauma" answer, 2026-09-28).
   function seTidyCovers(root){
-    (root || document).querySelectorAll('.se-covered').forEach(function(box){
+    Array.prototype.slice.call((root || document).querySelectorAll('.se-covered, .se-body.md')).forEach(function(box){
+      // An answer with no covers is not wrapped in .se-covered; its faces hang in
+      // the body itself, and headings must step round them the same way.
+      if(box.classList.contains('se-body') && box.querySelector('.se-covered')) return;
       var heads = box.querySelectorAll('h1, h2, h3, h4, hr');
       if(!heads.length || !box.querySelector('.se-cover')) return;
       heads.forEach(function(h){ h.classList.add('se-wrap-by'); });
@@ -32623,6 +32635,97 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           roomFindMediaArt({ kind: d.coverKind, title: d.coverTitle, creator: d.coverCreator, year: d.coverYear })
             .then(function(u){ sePaintArt(key, u); });
         });
+    });
+  }
+
+  // ---------- Faces in the answer ----------
+  // A name the answer leans on gets its picture beside the words, in the same right
+  // column as the covers (his ask, 2026-09-28). Kept deliberately rare: a photo by
+  // every paragraph reads as a gallery, not an answer. So there is a ceiling — at
+  // most three faces per answer, five floats in all counting covers — and when more
+  // names have a picture than there are places, the ones the answer leans on most
+  // win: a name that heads a section, then how often it is said, then who it is
+  // (a person before a place), then where it comes first.
+  var SE_FACE_MAX = 3, SE_FLOAT_MAX = 5, SE_FACE_WORDS = 40, SE_FACE_LOOK = 8;
+  function seBlockOf(el, blocks){
+    var b = el.closest('p, li, h1, h2, h3, h4, blockquote');
+    while (b && blocks.indexOf(b) < 0) b = b.parentElement && b.parentElement.closest('p, li, h1, h2, h3, h4, blockquote');
+    return b || null;
+  }
+  function sePortraits(root){
+    Array.prototype.slice.call((root || document).querySelectorAll('.se-body.md')).forEach(function(body){
+      if (body.dataset.facesDone) return;
+      body.dataset.facesDone = '1';
+      var names = Array.prototype.slice.call(body.querySelectorAll('.se-person'));
+      if (!names.length) return;
+      var blocks = Array.prototype.slice.call(body.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'))
+        .filter(function(b){ return !b.parentElement.closest('li, blockquote'); });
+      if (blocks.length < 2) return;
+      // Where a float already hangs, and how many there are.
+      var taken = {}, floats = 0;
+      Array.prototype.slice.call(body.querySelectorAll('.se-cover-row, .se-cover')).forEach(function(f){
+        if (f.parentElement && f.parentElement.closest('.se-cover-row')) return;
+        floats++;
+        var b = seBlockOf(f, blocks) || (f.nextElementSibling && blocks.indexOf(f.nextElementSibling) >= 0 ? f.nextElementSibling : null);
+        if (b) taken[blocks.indexOf(b)] = true;
+      });
+      if (floats >= SE_FLOAT_MAX) return;
+      var flat = ' ' + body.textContent.toLowerCase().replace(/\s+/g, ' ') + ' ';
+      var seen = {}, cands = [];
+      names.forEach(function(btn){
+        var d = btn.dataset, who = d.pFull || d.pName;
+        if (!who || d.pKind === 'archetype' || seen[who]) return;
+        seen[who] = true;
+        var block = seBlockOf(btn, blocks);
+        if (!block) return;
+        var bi = blocks.indexOf(block), head = /^H[1-4]$/.test(block.tagName);
+        // A name in a heading belongs to the paragraph under it.
+        var ti = bi;
+        while (head && ti < blocks.length && /^H[1-4]$/.test(blocks[ti].tagName)) ti++;
+        if (ti >= blocks.length) return;
+        var said = (flat.split(who.toLowerCase()).length - 1) + (flat.split(String(d.pName).toLowerCase()).length - 1);
+        var kind = (d.pKind === 'real' || d.pKind === 'fictional') ? 2 : d.pKind === 'myth' ? 1 : 0;
+        cands.push({ btn: btn, who: who, ti: ti, bi: bi,
+          score: (head ? 6 : 0) + Math.min(said, 4) + kind });
+      });
+      if (!cands.length) return;
+      cands.sort(function(a, b){ return b.score - a.score || a.bi - b.bi; });
+      cands = cands.slice(0, SE_FACE_LOOK);
+      // Look for the pictures one after another, then hang the ones found in
+      // reading order, so the column never jumps about as answers come back.
+      var step = function(i, got){
+        if (i >= cands.length) return Promise.resolve(got);
+        var c = cands[i], d = c.btn.dataset;
+        return sePersonArt({ pName: d.pName, pFull: d.pFull, pKind: d.pKind, pFrom: d.pFrom }).then(function(){
+          if (sePeopleArt[c.who]) got.push(c);
+          return got.length >= SE_FACE_MAX + 2 ? got : step(i + 1, got);
+        });
+      };
+      step(0, []).then(function(got){
+        if (!body.isConnected || !got.length) return;
+        got.sort(function(a, b){ return a.ti - b.ti; });
+        var placed = [], hung = 0;
+        got.forEach(function(c){
+          if (hung >= SE_FACE_MAX || floats + hung >= SE_FLOAT_MAX) return;
+          var block = blocks[c.ti];
+          if (!block || !block.isConnected || taken[c.ti]) return;
+          // Only beside words enough to carry it, and never right under another float.
+          if (block.textContent.split(/\s+/).length < SE_FACE_WORDS) return;
+          if (placed.some(function(p){ return Math.abs(p - c.ti) < 2; })) return;
+          var d = c.btn.dataset, art = sePeopleArt[c.who];
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'se-cover se-face is-right' + (d.pKind === 'place' || d.pKind === 'institution' ? ' is-thing' : '');
+          btn.title = c.who + (d.pFrom ? ' — ' + d.pFrom : '');
+          btn.dataset.pName = d.pName; btn.dataset.pFull = d.pFull || d.pName;
+          btn.dataset.pKind = d.pKind; btn.dataset.pFrom = d.pFrom || ''; btn.dataset.convo = d.convo || '';
+          btn.innerHTML = '<span style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"></span>'
+            + '<span class="se-face-name">' + qEsc(c.who) + '</span>';
+          block.insertBefore(btn, block.firstChild);
+          placed.push(c.ti); hung++;
+        });
+        if (hung) seTidyCovers(body);
+      });
     });
   }
 
@@ -32864,6 +32967,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (ib) { ev.preventDefault(); ev.stopPropagation(); seImgOpen(ib); return; }
     var pb = ev.target.closest && ev.target.closest('.se-person');
     if (pb) { ev.preventDefault(); sePersonOpen(pb); return; }
+    var fb = ev.target.closest && ev.target.closest('.se-face');
+    if (fb) { ev.preventDefault(); sePersonOpen(fb); return; }
     var btn = ev.target.closest && ev.target.closest('.se-cover');
     if (btn) { ev.preventDefault(); seCardOpen(btn); return; }
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();

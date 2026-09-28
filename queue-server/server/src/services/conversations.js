@@ -2198,9 +2198,18 @@ const studioDispatch = (convoId) => (name, input) => name === LINKED_CONVERSATIO
 // turn whose question asked for something to read or watch — any failure just
 // means no covers, never a lost answer.
 const WORKS_ASK = /\b(recommend\w*|suggest\w*|books?|novels?|reads?|reading|films?|movies?|watch\w*|documentar\w*|series|shows?|livres?|romans?|lire|lectures?|recommand\w*|sugg[eè]r\w*|regarder)\b/i;
+// The answer can put a work forward when the question never asked for one — a line
+// opening "Book:" or "Film:", or titles in italics. Those got no cover and no card
+// at all (his screenshot, 2026-09-28), since only his own words were read.
+const WORKS_OFFERED = /^[\s>*_-]*(?:\*\*|__)?\s*(?:books?|films?|movies?|series|watch|read|reading|documentary|livres?)\b[^\n:]{0,24}:/im;
+const ITALIC_TITLE = /(?:^|[^*])\*([A-Z][^*\n]{3,70})\*(?!\*)/g;
+function answerOffersWorks(text) {
+  if (WORKS_OFFERED.test(text)) return true;
+  return (String(text).match(ITALIC_TITLE) || []).length >= 2;
+}
 async function suggestedWorks(convoId, userId, answer) {
   const text = String(answer || '');
-  if (text.length < 80 || !WORKS_ASK.test(lastUserText(convoId))) return null;
+  if (text.length < 80 || !(WORKS_ASK.test(lastUserText(convoId)) || answerOffersWorks(text))) return null;
   const result = await generateText({
     feature: 'summary', maxTokens: 900, label: 'conversations:works', timeoutMs: 20_000, maxAttempts: 2,
     prompt: 'Below is an answer from a reading-and-film advisor. List every book, film and TV series the answer recommends or puts forward as a suggestion. Skip works it only mentions in passing as background.\n'
