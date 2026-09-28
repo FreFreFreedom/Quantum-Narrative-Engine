@@ -11,6 +11,14 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The judge is society's living organ of discernment: the pivot point holding the tension between exclusion and belonging, order and mercy.
+
+Strip away robes and gavels, and the judge is a living portal where the urge to exclude and the cry to belong are brought into dialogue under the weight of time, memory, grief, and possibility. The nerve center that listens to all arguments—state, accused, future, past—holding contradiction without collapse and refusing pure exclusion or pure chaos.
+
+## The true prosecutor is the immune wisdom of the collective: boundary, memory, and repair that acts against contagion without destroying or exiling for its own sake.
+
+Strip out dead routines and see the living root: the mature prosecutor is the entity's capacity to name, notice, and act against what would eat it alive, but only to the degree needed to renew order, not to destroy or exile for its own sake. A healthy prosecutor is fiercely honest, unseducable by power, intolerant of lazy violence, and a champion of rehabilitation. Justice as medicine, not as blade.
+
 ## Connection versus freedom is the fundamental axis of relationship dynamics across all scales, where any repressed pole is projected outward onto others.
 
 Connection versus freedom (rebellion versus conformity) is the candidate for THE one fundamental pattern, reducing all entity behavior and relationship dynamics to a single primordial axis. Every entity sits at a unique balance—a specific degree of integration and of repression of each pole—and whatever is repressed is subconsciously projected outward onto the people it meets, self-similarly across every scale.
