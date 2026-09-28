@@ -2201,11 +2201,35 @@ const WORKS_ASK = /\b(recommend\w*|suggest\w*|books?|novels?|reads?|reading|film
 // The answer can put a work forward when the question never asked for one — a line
 // opening "Book:" or "Film:", or titles in italics. Those got no cover and no card
 // at all (his screenshot, 2026-09-28), since only his own words were read.
-const WORKS_OFFERED = /^[\s>*_-]*(?:\*\*|__)?\s*(?:books?|films?|movies?|series|watch|read|reading|documentary|livres?)\b[^\n:]{0,24}:/im;
-const ITALIC_TITLE = /(?:^|[^*])\*([A-Z][^*\n]{3,70})\*(?!\*)/g;
+const WORKS_OFFERED = /^[\s>*_#-]*(?:\*\*|__)?\s*(?:books?|films?|movies?|series|watch|read|reading|documentary|livres?)\b[^\n:]{0,24}:/im;
+// A title is set apart from the prose around it: italics, bold, or quotes. Only
+// single-asterisk italics were read before, so every answer that writes its titles
+// `_like this_`, `**like this**` or "like this" — most of them — looked as if it
+// named no work at all, and a dozen answers full of books carry none (checked live,
+// 2026-09-28). Every mark is read now, and a run only counts as a title when it
+// reads like one: short, starting with a capital, mostly capitalised words, or a
+// single word with its author right after it.
+const MARKED_RUN = /\*\*([^*\n]{3,90})\*\*|__([^_\n]{3,90})__|(?:^|[^*\w])\*([^*\n]{3,90})\*(?![*\w])|(?:^|[^_\w])_([^_\n]{3,90})_(?![_\w])|[“"]([^”"\n]{3,90})[”"]/g;
+const AUTHOR_AFTER = /^\s*(?:\(|,?\s*(?:by|de|par)\s+[A-Z“"']|\s*[—–-]\s*[A-Z])/;
+function titleLike(run, after) {
+  const t = String(run || '').trim().replace(/^[*_"“”'\s]+|[*_"“”'\s]+$/g, '').replace(/[.,;:!?]+$/, '');
+  if (t.length < 3 || t.length > 90 || !/^[A-Z0-9]/.test(t)) return false;
+  const words = t.split(/\s+/).filter(Boolean);
+  if (words.length > 14) return false;
+  if (words.length === 1) return AUTHOR_AFTER.test(after || '');
+  const caps = words.filter((w) => /^[A-Z0-9(]/.test(w)).length;
+  return caps >= Math.max(2, Math.ceil(words.length * 0.55)) || AUTHOR_AFTER.test(after || '');
+}
 function answerOffersWorks(text) {
-  if (WORKS_OFFERED.test(text)) return true;
-  return (String(text).match(ITALIC_TITLE) || []).length >= 2;
+  const s = String(text || '');
+  if (WORKS_OFFERED.test(s)) return true;
+  let hits = 0, m;
+  MARKED_RUN.lastIndex = 0;
+  while ((m = MARKED_RUN.exec(s))) {
+    const run = m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5];
+    if (titleLike(run, s.slice(m.index + m[0].length, m.index + m[0].length + 24)) && ++hits >= 2) return true;
+  }
+  return false;
 }
 async function suggestedWorks(convoId, userId, answer) {
   const text = String(answer || '');
@@ -2216,10 +2240,14 @@ async function suggestedWorks(convoId, userId, answer) {
 // an empty list means it was read and puts no work forward.
 async function worksFromAnswer(userId, text) {
   const result = await generateText({
-    feature: 'summary', maxTokens: 900, label: 'conversations:works', timeoutMs: 20_000, maxAttempts: 2,
+    // 1600 tokens and 20k characters of answer, not 900 and 12k: a long answer
+    // naming a dozen books was cut in half before it was read, and the list that
+    // came back was cut off mid-JSON — which reads as a failure, so nothing was
+    // saved at all. (2026-09-28)
+    feature: 'summary', maxTokens: 1600, label: 'conversations:works', timeoutMs: 30_000, maxAttempts: 2,
     prompt: 'Below is an answer from a reading-and-film advisor. List every book, film and TV series the answer recommends or puts forward as a suggestion. Skip works it only mentions in passing as background.\n'
       + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series","title":"exact title, no subtitle","creator":"author for a book, director for a film, creator for a series","year":"year if known","where":"4 to 8 words copied letter for letter from the answer, where it first speaks of this work — by title, or as \'the memoir\', \'on screen\', its author\'s name"}]}. {"works":[]} if there are none.\n\n'
-      + '=== ANSWER ===\n' + text.slice(0, 12000),
+      + '=== ANSWER ===\n' + text.slice(0, 20000),
   });
   if (result.error) return null;
   const list = firstJson(result.text)?.works;
@@ -2277,12 +2305,26 @@ async function mentionedWorks(convoId, userId) {
 // "Book: Thurgood Marshall: American Revolutionary" with nothing to click). They are
 // read once, the first time their conversation is opened, exactly as names are.
 // An answer that puts no work forward costs nothing: it is marked read without a call.
-export const WORKS_V = 1;
+// 2 since 2026-09-28: the shapes an answer writes its titles in were read too
+// narrowly, so answers full of books were marked read with nothing found. Raising
+// the number sends those back to be read again — an answer that already found
+// works is left alone, so nothing is re-read for nothing.
+export const WORKS_V = 2;
 const worksScanning = new Set();
 const worksFailures = new Map();
 export async function scanWorks(convoId, { limit = 8, userId = 'antoine' } = {}) {
   if (!db || !convoId) return {};
-  const rows = db.prepare(`SELECT id, text, meta FROM convo_messages WHERE convo_id=? AND role='assistant' AND kind='chat' ORDER BY created_at DESC, rowid DESC`).all(convoId);
+  // The question that was asked counts too, exactly as it does on a live turn: an
+  // answer to "give me the best books about this" is offering books whatever its
+  // typography looks like.
+  const all = db.prepare(`SELECT id, role, text, meta FROM convo_messages WHERE convo_id=? AND kind='chat' ORDER BY created_at, rowid`).all(convoId);
+  const asked = new Map();
+  let lastAsk = '';
+  for (const r of all) {
+    if (r.role === 'user') lastAsk = String(r.text || '');
+    else if (r.role === 'assistant') asked.set(r.id, lastAsk);
+  }
+  const rows = all.filter((r) => r.role === 'assistant').reverse();
   const unread = rows.filter((r) => {
     let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch { meta = {}; }
     return !meta.failed && (Number(meta.worksV) || 0) < WORKS_V && !worksScanning.has(r.id)
@@ -2301,7 +2343,8 @@ export async function scanWorks(convoId, { limit = 8, userId = 'antoine' } = {})
   for (const r of todo) {
     let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch {}
     if (Array.isArray(meta.works) && meta.works.length) { mark(r.id, meta.works); continue; }
-    if (!answerOffersWorks(String(r.text || ''))) { mark(r.id, []); continue; }
+    const text = String(r.text || '');
+    if (text.length < 80 || !(WORKS_ASK.test(asked.get(r.id) || '') || answerOffersWorks(text))) { mark(r.id, []); continue; }
     worksScanning.add(r.id);
     try {
       const works = await worksFromAnswer(userId, String(r.text || ''));

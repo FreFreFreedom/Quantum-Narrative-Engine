@@ -28896,7 +28896,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) { out.attachments = meta.attachments; if (meta.body && !out.body) out.body = meta.body; }
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
-        out.worksRead = (Number(meta.worksV) || 0) >= 1;
+        // 2 since 2026-09-28: answers whose titles were written in a shape the old
+        // reader passed over are read again, so their books get their covers.
+        out.worksRead = (Number(meta.worksV) || 0) >= 2;
         // Read again when a kind was added since (v2 places, archetypes, institutions; v3 tighter).
         if (Array.isArray(meta.people)) { out.peopleRead = (Number(meta.peopleV) || 0) >= 7; if (meta.people.length) out.people = meta.people; }
       }
@@ -32481,16 +32483,29 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // A section headed by the work is its home, over the first passing mention:
       // an opening line that names all four works used to stack all four covers
       // there, and every heading below waited under the column (2026-09-28).
-      var mark = (name.match(/[a-z']{5,}/) || [''])[0];
-      for(var hi = 0; hi < blocks.length; hi++){
+      // The heading has to really name it — its whole title, or the first two words
+      // of it. One long word out of the title was enough before, so "Judge Frank M.
+      // Johnson Jr. and Human Rights in Alabama" answered to a heading reading "The
+      // Holistic Nature of the Judge", hung its cover six sections above the book,
+      // and scored too low to survive the ceiling: no cover and no card anywhere on
+      // the page (his screenshot, 2026-09-28).
+      var STOP = { the: 1, a: 1, an: 1, and: 1, of: 1, in: 1, on: 1, at: 1, for: 1, with: 1, to: 1, from: 1 };
+      var parts = name.split(/[^a-z0-9']+/).filter(function(x){ return x && !STOP[x]; });
+      var lead = parts.length >= 2 ? parts.slice(0, 2).join(' ') : '';
+      var head = null;
+      for(var hi = 0; hi < blocks.length && !head; hi++){
         if(!/^H[1-4]$/.test(blocks[hi].tagName)) continue;
         var ht = texts[hi];
-        if(!((name && ht.indexOf(name) >= 0) || (mark && new RegExp('\\b' + mark + '\\b').test(ht)))) continue;
+        if(!((name.length >= 6 && ht.indexOf(name) >= 0) || (lead && ht.indexOf(lead) >= 0))) continue;
         var body = hi + 1;
         while(body < blocks.length && /^H[1-4]$/.test(blocks[body].tagName)) body++;
-        if(body < blocks.length){ used[body] = true; return { w: w, i: i, bi: body, at: 0, score: 14 }; }
+        if(body < blocks.length) head = { score: 14, bi: body, at: 0 };
       }
-      var best = null;
+      // The heading is a candidate like any other, not the last word: a line that
+      // names the work, its author and its kind all at once (an answer's own
+      // "Book: …" line) says more about where the cover belongs than the section
+      // it sits in, and used to be overruled by it.
+      var best = head;
       for(var bi = 0; bi < blocks.length; bi++){
         var t = texts[bi], score = 0, at = -1, k;
         if(where && (k = t.indexOf(where)) >= 0){ score += 12; at = k; }
@@ -32511,13 +32526,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       return { w: w, i: i, bi: best.bi, at: best.at, score: best.score || 0 };
     });
     // A ceiling on how many covers one answer can hang (his ask, 2026-09-28): an
-    // answer naming nine works turned into a wall of pictures. The ones the answer
-    // really speaks of — a work under its own heading, then one named by title —
-    // keep their cover; the rest are still in the Library, just not on the page.
-    if(placed.length > SE_FLOAT_MAX){
-      var keep = placed.slice().sort(function(x, y){ return (y.score || 0) - (x.score || 0) || x.i - y.i; }).slice(0, SE_FLOAT_MAX);
-      placed = placed.filter(function(pl){ return keep.indexOf(pl) >= 0; });
-    }
+    // answer naming nine works turned into a wall of pictures. But five for the
+    // whole answer also dropped books the answer names outright, line by line, one
+    // per section — which is the opposite complaint, the same day. So the ceiling
+    // now falls on guesswork only: a work the answer's own words point at (its
+    // title, its author, its own "Book:" line) keeps its cover wherever it is
+    // named, up to ten; covers hung on nothing better than a hunch still share the
+    // old five places between them. The rest are in the Library either way.
+    var byScore = function(x, y){ return (y.score || 0) - (x.score || 0) || x.i - y.i; };
+    var named = placed.filter(function(pl){ return (pl.score || 0) >= 12; }).sort(byScore).slice(0, SE_COVER_MAX);
+    var guessed = placed.filter(function(pl){ return (pl.score || 0) < 12; }).sort(byScore)
+      .slice(0, Math.max(0, SE_FLOAT_MAX - named.length));
+    placed = placed.filter(function(pl){ return named.indexOf(pl) >= 0 || guessed.indexOf(pl) >= 0; });
     placed.sort(function(x, y){ return x.bi - y.bi || x.at - y.at || x.i - y.i; });
     // Two works named in the same sentence share its start; the later one steps to
     // the next sentence so they do not open on the same line.
@@ -32673,7 +32693,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // names have a picture than there are places, the ones the answer leans on most
   // win: a name that heads a section, then how often it is said, then who it is
   // (a person before a place), then where it comes first.
-  var SE_FACE_MAX = 3, SE_FLOAT_MAX = 5, SE_FACE_WORDS = 40, SE_FACE_LOOK = 8;
+  // SE_COVER_MAX is the ceiling for a work the answer names outright; SE_FLOAT_MAX
+  // is what a cover hung on a guess, and a face, still share.
+  var SE_FACE_MAX = 3, SE_FLOAT_MAX = 5, SE_COVER_MAX = 10, SE_FACE_WORDS = 40, SE_FACE_LOOK = 8;
   function seBlockOf(el, blocks){
     var b = el.closest('p, li, h1, h2, h3, h4, blockquote');
     while (b && blocks.indexOf(b) < 0) b = b.parentElement && b.parentElement.closest('p, li, h1, h2, h3, h4, blockquote');
@@ -32696,7 +32718,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var b = seBlockOf(f, blocks) || (f.nextElementSibling && blocks.indexOf(f.nextElementSibling) >= 0 ? f.nextElementSibling : null);
         if (b) taken[blocks.indexOf(b)] = true;
       });
-      if (floats >= SE_FLOAT_MAX) return;
+      // An answer that names many books now keeps their covers, so a flat five
+      // would have meant no faces at all on exactly the answers he reads longest.
+      if (floats >= SE_FLOAT_MAX + SE_FACE_MAX) return;
       var flat = ' ' + body.textContent.toLowerCase().replace(/\s+/g, ' ') + ' ';
       var seen = {}, cands = [];
       names.forEach(function(btn){
@@ -32733,7 +32757,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         got.sort(function(a, b){ return a.ti - b.ti; });
         var placed = [], hung = 0;
         got.forEach(function(c){
-          if (hung >= SE_FACE_MAX || floats + hung >= SE_FLOAT_MAX) return;
+          if (hung >= SE_FACE_MAX || floats + hung >= SE_FLOAT_MAX + SE_FACE_MAX) return;
           var block = blocks[c.ti];
           if (!block || !block.isConnected || taken[c.ti]) return;
           // Only beside words enough to carry it, and never right under another float.

@@ -44,7 +44,7 @@ export function bindBookFacts(database) {
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
-const MATCHER = 7;
+const MATCHER = 8;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
@@ -97,18 +97,26 @@ function scoreCandidate(cand, fullTitle, who) {
 
   const sn = surname(who);
   const authors = norm((cand.authors || []).join(' '));
-  let clipped = false;
+  let clipped = false, wrongWho = false;
   if (sn) {
     if (!authors) return 0;                        // an author we can't check is not a match
     const toks = authors.split(' ');
     if (!toks.includes(sn)) {
       // A name cut off at the edge of a screenshot ("Herb Boy" for Herb Boyd) still
       // counts, but only as the start of a real surname and never below 3 letters.
-      if (!(sn.length >= 3 && toks.some((t) => t.length > sn.length && t.startsWith(sn)))) return 0;
-      clipped = true;
+      if (sn.length >= 3 && toks.some((t) => t.length > sn.length && t.startsWith(sn))) clipped = true;
+      // A long title that matches whole is the book even when the name beside it is
+      // wrong. A model naming a real book often puts the wrong author to it — "Judge
+      // Frank M. Johnson Jr. and Human Rights in Alabama" is Tinsley Yarbrough's, not
+      // T. K. Wetherell's — and that book had no cover and no card at all (his
+      // screenshot, 2026-09-28). Four telling words are too many to be a coincidence;
+      // a short title still has to bring its author, and a match whose author does
+      // agree always ranks above this one.
+      else if (head.length >= 4) wrongWho = true;
+      else return 0;
     }
   }
-  return 4 + tailHit + (sn ? (clipped ? 2 : 4) : 0) + (norm(cand.title) === norm(fullTitle) ? 3 : 0);
+  return 4 + tailHit + (sn ? (wrongWho ? 0 : clipped ? 2 : 4) : 0) + (norm(cand.title) === norm(fullTitle) ? 3 : 0);
 }
 
 // Google's "no cover" art and the generic library-binding scans are real images of
@@ -150,7 +158,14 @@ export async function lookupBook(title, creator) {
   const main = mainTitle(title), who = personName(creator);
   const cands = [];
 
-  const queries = [main + (who ? ' ' + who : ''), String(title).slice(0, 140), main];
+  // The last query is the title stripped to its telling words — no initials, no
+  // "Jr.", no punctuation. A catalogue answers nothing at all to a title carrying a
+  // middle initial the cover does not ("Judge Frank M. Johnson Jr. and Human Rights
+  // in Alabama" is filed without the M. and the Jr.), so there was no candidate to
+  // score and the book went without a cover (2026-09-28).
+  const bare = words(title).join(' ');
+  const queries = [main + (who ? ' ' + who : ''), String(title).slice(0, 140), main,
+    bare !== norm(main) ? bare : ''];
   const seen = new Set();
   for (const q of queries) {
     if (!q || seen.has(q)) continue;
