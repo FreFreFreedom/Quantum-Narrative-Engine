@@ -544,6 +544,14 @@ thing you are looking at is the thing you would hit.
 **No explaining inside the app.** Ship the control, not the paragraph. Helper text
 belongs in a `title` tooltip or nowhere.
 
+**A mark in an answer is for the thing, never for where it came from (hard, Antoine
+2026-09-29).** An answer listing SWAT series underlined CBS, Cinemax and FX — inside the
+very headings that named the works — and left *S.W.A.T.*, *The Shield* and *Sicario*
+dead on the page. Exactly backwards. A film, a series, a book, a person, a place is an
+entity and earns its card; the network, streamer, studio, publisher or label that
+carried it is a shelf, not a thing on it. Whenever a new kind of mark is added, ask
+which of the two it is before writing the prompt that finds it.
+
 **Every sidebar is draggable, and comes back exactly as it was left (hard, Antoine
 2026-09-11).** His words: *"whenever we have a sidebar, I want it to be adjustable and
 this setting saved — so if we adjust it and come back later, that's the same adjustment

@@ -11,8 +11,8 @@ import { generateText } from './ai/text.js';
 
 let db = null;
 export const KINDS = new Set(['real', 'fictional', 'myth', 'place', 'archetype', 'institution']);
-// Bumped when a kind is added, so answers read before it are read once more (v7: whole names, even when the answer writes only a part).
-export const PEOPLE_V = 7;
+// Bumped when a kind is added, so answers read before it are read once more (v8: a channel is not an institution).
+export const PEOPLE_V = 8;
 // Bumped when a card asks for something new, so cards written before it are written again (v2: the whole name).
 const CARD_V = 3;
 // A long answer names many places and offices in passing; only a few are worth a card.
@@ -47,6 +47,17 @@ const NOT_A_BEING = /^(jim crow|uncle sam|uncle tom|john doe|jane doe)\b/;
 // A job or a crowd, not a figure of the psyche.
 const NOT_AN_ARCHETYPE = /\b(defender|defense|attorney|lawyer|police|officer|people|public|machine|system|state|court)\b/;
 
+// Where a work aired is not an entity worth a card (his ask, 2026-09-29): an answer
+// listing series and films marked CBS, Cinemax and FX inside the headings and left the
+// titles themselves unmarked — exactly backwards. A broadcaster, a streamer or a studio
+// is the shelf, not the thing on it; the work carries the card now. Two nets, because
+// the model names the kind in different places: what it says the thing IS, and, for the
+// ones it describes only as a company, the name itself.
+const NOT_AN_INSTITUTION = /\b(networks?|channels?|broadcasters?|broadcasting|streaming|streamers?|cable|studios?|labels?|imprints?|distributors?)\b/i;
+// Matched against the normalised name, so no punctuation: "Canal+" reads "canal",
+// "Apple TV+" reads "apple tv".
+const A_CHANNEL = /^(cbs|nbc|abc|fox|fx|fxx|hbo|hbo max|cinemax|showtime|amc|starz|epix|tnt|tbs|bravo|syfy|bbc|itv|sky|arte|canal|netflix|hulu|max|prime video|amazon prime video|apple tv|disney|paramount|peacock|crave|cbc|ctv|pbs|cw|mubi|criterion channel|adult swim|nickelodeon|mtv|espn|cnn|msnbc|zdf|ard|tf1|globo|a24|miramax|lionsgate)( networks?| studios?| pictures| films?| television| tv)?$/;
+
 const NAME_HINT = /[a-z,;:]\s+[A-Z][a-zà-ÿ]/;
 
 // The people an answer names, each kept only when its name really is in the text
@@ -61,7 +72,7 @@ export async function namedPeople(answer) {
       + '- fictional: characters from books, films and series\n'
       + '- myth: beings of myth, religion or folklore (gods, goddesses, titans, spirits, angels, demons, legendary heroes, saints). Only a being itself: never a law, an era or a system named after a figure (Jim Crow, Uncle Sam)\n'
       + '- place: any named place the answer gives weight to — a country, a state or region, a city, a neighbourhood, a prison or court building, a sacred or mythic site (South Africa, Alabama, Attica, Eleusis, Atlantis). The place\'s own name, never an adjective made from it (not Parisian, American, Appalachian). Not a place named only in a date or an address line\n'
-      + '- institution: a named organisation the answer discusses, not one it only mentions in passing — a court, an office, an agency, a church, a company\n'
+      + '- institution: a named organisation the answer discusses, not one it only mentions in passing — a court, an office, an agency, a church, a company. Never where a work was made or shown: no television network, channel, streaming service, studio, publisher or record label (CBS, HBO, FX, Netflix, A24, Penguin), even when the answer names it beside a title\n'
       + '- archetype: a figure of the psyche or of myth that recurs across stories, used by name (the Shadow, the Trickster, the scapegoat, the Great Mother, the Wounded Healer); it may be written in lower case. Never a role or job (a public defender), never a group (the people)\n'
       + 'Skip the reader and the writer of the answer, skip groups and peoples, and skip a name used only inside a book or film title.\n'
       + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"its whole name as the world knows it, even when the answer writes only a part of it (Sutton -> Jeffrey S. Sutton)","kind":"real"|"fictional"|"myth"|"place"|"institution"|"archetype","from":"3 to 6 words on what it is — real: who they are; fictional: the work it comes from; myth: the tradition and what it is (Greek goddess of justice); place: where, and what it is; institution: what it is and where; archetype: the tradition that names it"}]}. {"people":[]} if there are none. At most 25, in order of first mention; never leave out a being of myth, a place or an archetype to make room.\n\n'
@@ -86,6 +97,7 @@ export async function namedPeople(answer) {
     const kind = KINDS.has(p?.kind) ? p.kind : 'real';
     if (kind === 'myth' && NOT_A_BEING.test(same)) continue;
     if (kind === 'archetype' && NOT_AN_ARCHETYPE.test(same)) continue;
+    if (kind === 'institution' && (A_CHANNEL.test(same) || NOT_AN_INSTITUTION.test(plain(p?.from)))) continue;
     if (PER_KIND[kind] && out.filter((x) => x.kind === kind).length >= PER_KIND[kind]) continue;
     seen.add(name); seen.add('~' + same);
     out.push({ name, full: plain(p?.full || name).slice(0, 120), kind: KINDS.has(p?.kind) ? p.kind : 'real', from: plain(p?.from).slice(0, 120) });

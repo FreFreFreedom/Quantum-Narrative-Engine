@@ -2803,10 +2803,12 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .bk-cover { flex:none; width:56px; height:84px; border-radius:4px; background:var(--c-surface-2) center/cover no-repeat; box-shadow:0 6px 16px rgba(0,0,0,.28); }
 .bk-id { flex:1; min-width:0; }
 .bk-id .se-card-title { padding-right:0; font-size:26px; }
-/* A person named in an answer: the name itself, quietly underlined, opens their card. */
-.se-person { display:inline; padding:0; margin:0; border:0; background:none; font:inherit; color:inherit; cursor:pointer;
+/* A person named in an answer, and a work it names: the words themselves, quietly
+   underlined, open the card. A channel is not one of them (his ask, 2026-09-29). */
+.se-person, .se-work { display:inline; padding:0; margin:0; border:0; background:none; font:inherit; color:inherit; cursor:pointer;
   text-decoration:underline dotted color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 70%, transparent); text-decoration-thickness:1.5px; text-underline-offset:3px; }
-.se-person:hover, .se-person:focus-visible { color:var(--c-kept-echo, var(--c-accent)); }
+.se-person:hover, .se-person:focus-visible, .se-work:hover, .se-work:focus-visible { color:var(--c-kept-echo, var(--c-accent)); }
+.se-work > span { display:inline; background:none; }
 .bk-cover.is-person { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center;
   font-family:var(--font-read); font-size:28px; color:var(--c-ink-4); background-position:center 20%; }
 .bk-cover.is-thing { border-radius:10px; }
@@ -32587,7 +32589,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var forms = [String(p.full || ''), name].filter(function(f, i, a){ return f.length >= 2 && a.indexOf(f) === i; });
       var res = forms.map(function(f){ return new RegExp('(^|[^\\p{L}])(' + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![\\p{L}])', 'u'); });
       var walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, {
-        acceptNode: function(n){ return n.parentElement.closest('.se-cover, .se-person, a, code, pre') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+        acceptNode: function(n){ return n.parentElement.closest('.se-cover, .se-person, .se-work, a, code, pre') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
       });
       var node, m;
       while((node = walker.nextNode())){
@@ -32602,6 +32604,47 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         btn.dataset.pFrom = p.from || ''; btn.dataset.convo = convoId || '';
         btn.title = (p.full || name) + (p.from ? ' — ' + p.from : '');
         word.parentNode.replaceChild(btn, word); btn.appendChild(word);
+        break;
+      }
+    });
+    return box.innerHTML;
+  }
+  // The works an answer names, marked where each is first named (his ask,
+  // 2026-09-29). An answer listing series and films underlined CBS, Cinemax and FX
+  // inside its own headings and left the titles themselves dead — the wrong way
+  // round. A film or a series is an entity; the channel that aired it is a shelf.
+  // The cover is the picture, this is the name, and both open the same card.
+  //
+  // Longest titles first, so "S.W.A.T.: Under Siege" claims its heading before
+  // "S.W.A.T." goes looking for one.
+  function seMarkWorks(html, works, convoId){
+    var box = document.createElement('div'); box.innerHTML = html;
+    var order = works.slice().sort(function(a, b){ return String(b.title || '').length - String(a.title || '').length; });
+    order.forEach(function(w){
+      var title = String((w && w.title) || ''); if(title.length < 2) return;
+      var forms = [title, libShortTitle(title)].filter(function(f, i, a){ return f && f.length >= 2 && a.indexOf(f) === i; });
+      var res = forms.map(function(f){ return new RegExp('(^|[^\\p{L}\\p{N}])(' + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![\\p{L}\\p{N}])', 'ui'); });
+      var walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, {
+        acceptNode: function(n){ return n.parentElement.closest('.se-cover, .se-person, .se-work, a, code, pre') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+      });
+      var node, m;
+      while((node = walker.nextNode())){
+        m = null;
+        for(var k = 0; k < res.length && !m; k++) m = res[k].exec(node.nodeValue);
+        if(!m) continue;
+        var word = node.splitText(m.index + m[1].length); word.splitText(m[2].length);
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'se-work';
+        btn.title = w.title + (w.creator ? ' \u2014 ' + w.creator : '');
+        btn.dataset.convo = convoId || '';
+        // The same dataset a cover carries, so the card that opens is the same card.
+        var span = document.createElement('span');
+        span.dataset.coverArt = roomMediaArtKey(w);
+        span.dataset.coverKind = w.kind || 'film';
+        span.dataset.coverTitle = w.title;
+        span.dataset.coverCreator = w.creator || '';
+        span.dataset.coverYear = w.year || '';
+        word.parentNode.replaceChild(btn, word); span.appendChild(word); btn.appendChild(span);
         break;
       }
     });
@@ -32642,6 +32685,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!u) return;
     roomMediaArtCache.set(key, u);
     document.querySelectorAll('[data-cover-art="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]').forEach(function(el){
+      // A marked title carries the same key as its cover; it is words, not a frame
+      // to paint, so the picture would erase the very name it hangs on.
+      if (el.closest('.se-work')) return;
       el.style.backgroundImage = 'url("' + u.replace(/"/g, '%22') + '")'; el.textContent = '';
     });
   }
@@ -32668,7 +32714,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   if(!window.__seTidyWired){ window.__seTidyWired = true; window.addEventListener('resize', function(){ clearTimeout(window.__seTidyT); window.__seTidyT = setTimeout(function(){ seTidyCovers(document); }, 200); }); }
   function seLoadCovers(root){
-    root.querySelectorAll('.se-cover [data-cover-art]').forEach(function(el){
+    root.querySelectorAll('.se-cover [data-cover-art], .se-work [data-cover-art]').forEach(function(el){
       var key = el.dataset.coverArt, d = el.dataset;
       if (seOutFacts[key]) return;
       seOutFacts[key] = { pending: true };
@@ -32789,7 +32835,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var vw = window.innerWidth, vh = window.innerHeight;
     // A name sits inside the line, so its card opens under it (over it when the
     // window has no room below), never across the words to its left.
-    if (anchor.classList.contains('se-person')) {
+    if (anchor.classList.contains('se-person') || anchor.classList.contains('se-work')) {
       var pl = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, vw - w - 8));
       var pt = r.bottom + 10 + h <= vh - 8 ? r.bottom + 10 : Math.max(8, r.top - 10 - h);
       seCard.style.left = pl + 'px'; seCard.style.top = pt + 'px';
@@ -33034,7 +33080,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (pb) { ev.preventDefault(); sePersonOpen(pb); return; }
     var fb = ev.target.closest && ev.target.closest('.se-face');
     if (fb) { ev.preventDefault(); sePersonOpen(fb); return; }
-    var btn = ev.target.closest && ev.target.closest('.se-cover');
+    var btn = ev.target.closest && ev.target.closest('.se-cover, .se-work');
     if (btn) { ev.preventDefault(); seCardOpen(btn); return; }
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
   });
@@ -33170,6 +33216,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var renderedBody = plan ? qEsc(m.text) : fmtBody(you ? shown : seProseFromList(shown), !you, m.id || null);
       if(!you && !plan) renderedBody = srcStripHtml(renderedBody);
       if(!you && !plan && m.works && m.works.length) renderedBody = seHangCovers(renderedBody, m.works, e.convoId);
+      if(!you && !plan && m.works && m.works.length) renderedBody = seMarkWorks(renderedBody, m.works, e.convoId);
       if(!you && !plan && m.people && m.people.length) renderedBody = seMarkPeople(renderedBody, m.people, e.convoId);
       var showWordCount = !you && !plan && (e.type === 'open' || e.type === 'side');
       var wordCountHtml = '';
