@@ -12,6 +12,10 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## About Antoine
 
+- He wants to build the mental capacity to recognize operational opportunities across any domain. — What is done
+What is being worked on
+What could be done
+Purpose: to build a vision for operations anywhere and develop cognitive muscle for spotting opportunities
 - He struggles with personal boundaries, often feeling like a people‑pleaser and codependent, and identifies with the conspiracy‑nut archetype. — He reports chronic bullying, difficulty asserting limits, and a tendency to isolate himself. He sees his conspiracy mindset as a projection of early authority dynamics, linking personal pain to broader institutional distrust.
 - Dorothy Roberts' work on child welfare exposes 'family policing' as a mechanism that criminalizes poverty and destabilizes marginalized families. — In 'Shattered Bonds' and 'Torn Apart', Roberts demonstrates that the child welfare system operates not as a humanitarian rescue apparatus, but as a state surveillance and removal operation. By conflating material deprivation (caused by structural neglect and lack of basic welfare) with parental moral failure, the state substitutes cash assistance and housing support with the violence of family separation.
 - Systematic stripping of judicial discretion refers to laws that remove a judge’s ability to tailor sentences to individual circumstances. — Through mandatory minimums, three‑strikes laws, and rigid sentencing guidelines, legislatures shift sentencing power from the bench to prosecutors, converting courts into automated processing plants where statutes dictate outcomes before full facts are heard.
