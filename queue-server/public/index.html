@@ -28736,12 +28736,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // above it grouped by maker, with the thinking dial under the model in use.
   var LANE_POP_GROUPS = [
     ['Anthropic', ['claude-code', 'claude-side']],
-    ['Google', ['google-ai-studio']],
-    ['OpenAI', ['codex-pro', 'codex', 'openai']],
-    ['OpenCode', ['opencode']],
-    ['Blank', ['blank-google', 'blank-openai']]
+    ['Google', ['google-ai-studio', 'blank-google']],
+    ['OpenAI', ['codex-pro', 'codex', 'openai', 'blank-openai']],
+    ['OpenCode', ['opencode']]
   ];
-  var LANE_SHORT = { 'claude-code': 'Claude', 'claude-side': 'Claude · 2nd', 'google-ai-studio': 'Gemini', 'codex-pro': 'Pro account', codex: 'Plus account', openai: 'Billed per use', opencode: 'OpenCode', 'blank-google': 'Gemini', 'blank-openai': 'ChatGPT' };
+  var LANE_SHORT = { 'claude-code': 'Claude', 'claude-side': 'Claude · 2nd', 'google-ai-studio': 'Gemini', 'codex-pro': 'Pro account', codex: 'Plus account', openai: 'Billed per use', opencode: 'OpenCode', 'blank-google': 'Blank', 'blank-openai': 'Blank' };
   // "groq/llama-3.1-8b-instant" → "Llama 3.1 8B Instant": the maker's prefix goes to
   // its own sub-heading, and what is left reads as a name, not an id.
   var LANE_WORD_CASE = { gpt: 'GPT', oss: 'OSS', ai: 'AI', exp: 'exp', preview: 'preview', instant: 'Instant', versatile: 'Versatile', lite: 'Lite', flash: 'Flash', pro: 'Pro', mini: 'Mini', nano: 'Nano', turbo: 'Turbo', vision: 'Vision', latest: '' };
