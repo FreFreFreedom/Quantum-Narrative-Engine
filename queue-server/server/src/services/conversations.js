@@ -294,7 +294,7 @@ function smartTitleSoon(convoId) {
 
 // The gist of a side talk, or of one message in it, to carry into the main thread
 // (the Room's "bring" menu, 2026-09-30). The free summary lane; a click, so it waits.
-const GIST_PROMPT = `Distil what follows into what the main conversation needs to carry on from it: the ideas themselves, not a report on the exchange. Three to six short lines, plain words, no heading, no preamble. Keep the strongest image or phrase if there is one. Never write "the conversation", "the user" or "the assistant".`;
+const GIST_PROMPT = `Carry what follows into a larger conversation that will build on it. Write the ideas themselves, not a report about an exchange: each distinction, name, mechanism, example and open question worth keeping, in the text's own strongest words and images where they are good. Six to twelve short lines, one idea per line, plain words, no heading, no preamble, no closing line. Never write "the conversation", "the user", "the assistant", "he asked" or "the answer".`;
 export async function gistConvo(convoId, messageId) {
   if (!db) return { error: 'no_db' };
   if (!getConvo(convoId)) return { error: 'not_found' };
@@ -304,10 +304,12 @@ export async function gistConvo(convoId, messageId) {
   const line = (m) => (messageId ? '' : `${m.role === 'user' ? 'He asked' : 'The answer'}: `) + String(m.text).slice(0, messageId ? 12000 : 3000);
   const out = await generateText({
     prompt: `${GIST_PROMPT}\n\n=== TEXT ===\n${msgs.slice(-24).map(line).join('\n\n')}`,
-    feature: 'summary',
+    // The Room's own lane: this text is read by him and carried into his thread, so
+    // the cheap summary lane (which came back with a few words) is not good enough.
+    feature: 'studio',
     label: 'conversations:bring-gist',
     maxTokens: 1500,
-    timeoutMs: 60_000,
+    timeoutMs: 120_000,
   });
   const text = String(out?.text || '').trim();
   if (!text) return { error: 'no_gist', message: 'No gist came back — try again in a moment.' };
