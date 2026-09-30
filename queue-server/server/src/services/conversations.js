@@ -2301,7 +2301,8 @@ async function worksFromAnswer(userId, text) {
   // The same work named twice in one answer hung two identical covers (seen live
   // on a side talk, 2026-09-30).
   const seen = new Set();
-  for (let i = clean.length - 1; i >= 0; i--) { const k = (clean[i]?.kind || '') + '|' + String(clean[i]?.title || '').trim().toLowerCase(); if (seen.has(k)) clean.splice(i, 1); else seen.add(k); }
+  const once = clean.filter((w) => { const k = (w?.kind || '') + '|' + String(w?.title || '').trim().toLowerCase(); return !seen.has(k) && seen.add(k); });
+  clean.length = 0; clean.push(...once);
   if (!clean.length) return [];
   const saved = saveSuggestedWorks(userId || 'antoine', clean);
   if (!saved.length) return [];
