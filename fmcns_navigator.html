@@ -29631,6 +29631,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // the sentence carrying on. Narrow on purpose — an ordinary numbered list item
         // has no dash run after it and is left alone.
         safe = safe.replace(/^((?:[IVXLCM]{1,7}|\d{1,2})\.[ \t]+\S[^\n]{0,90}?)[ \t]*[\u2013\u2014-]{3,}[ \t]*/gm, '## $1\n\n');
+        // The commonest form of all: a title written as a whole bold line — "**1. The
+        // Obstacle Walls**" — with its paragraph starting on the very next line. Markdown
+        // glues the two together, so the answer arrives as one run-on block with the
+        // numbers buried inside it. A line that is nothing but bold, short, and not a
+        // sentence is a title, and is drawn as one.
+        safe = safe.replace(/^[ \t]*\*\*([^*\n][^\n]{0,88}?)\*\*[ \t]*$/gm, function(all, title){
+          return /[.?!]$/.test(title) ? all : '## ' + title + '\n';
+        });
         var out = seTimelines(marked.parse(safe, { breaks: false, gfm: true }));
         if (cacheKey) {
           if (mdCache.size > 300) mdCache.clear();   // a whole conversation fits; a year of them does not
