@@ -632,6 +632,13 @@ rail slid the button away from the pointer reaching for it. Every button in a
 collapsible bar keeps the same spot in both states; if the open state has more room,
 it spends it on labels beside the icons, never on rearranging them.
 
+**The Room's main chat and its side chat are one feature set** (2026-09-30).
+Anything added to one — a button, a menu, a display like the word count, a
+behaviour — goes to the other in the same change, unless it truly makes no sense
+there (say so when skipping). Both run the same embed; divergence comes from CSS
+scoped to `#roomConvo` or `#roomSideEmbed` alone, and from `document.querySelector('#roomConvo …')`
+in JS. Scope new rules as `:is(#roomConvo, #roomSideEmbed)`.
+
 ### Don't leave published pages behind (added 2026-09-09)
 
 A visual Antoine only has to **look at once** — mockups, palette comparisons, a chart to

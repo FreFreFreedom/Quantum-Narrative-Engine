@@ -3151,7 +3151,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   font-family:var(--font-read); font-size:15px; letter-spacing:0; text-transform:none; color:var(--c-ink-3); }
 .room-side-pop .room-side-row.on { color:var(--c-kept-echo, var(--c-accent)); }
 .room-side-open { border-top:none; padding-top:0; }
-#roomSideEmbed .se-head, #roomSideEmbed .se-spend, #roomSideEmbed .se-wordcount { display:none !important; }
+#roomSideEmbed .se-head, #roomSideEmbed .se-spend { display:none !important; }
 #roomSideEmbed .se-turn { border-top:none; padding:12px 4px; }
 #roomSideEmbed .se-turn.you { display:flex; flex-direction:column; align-items:flex-end; }
 #roomSideEmbed .se-turn.you .se-who { display:none; }
@@ -4223,13 +4223,13 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
 .se-turnbring.is-done { color:var(--c-kept-echo, var(--c-accent)) !important; }
 :is(#roomConvo, #roomSideEmbed) .se-quoted-text { font-family:var(--font-read); font-style:italic; font-size:15px; line-height:1.4; }
 :is(#roomConvo, #roomSideEmbed) .se-quoted button { position:absolute; top:6px; right:8px; margin:0; font-size:13px; }
-#roomConvo .se-quotes-clear { align-self:center; padding:0 4px; font:500 11.5px 'Cinzel', var(--font-read); letter-spacing:.16em; text-transform:uppercase; }
-#roomConvo .se-filechip { position:relative; flex:0 0 auto; max-width:220px; gap:10px; padding:8px 28px 8px 8px; border:1px solid var(--c-border);
+:is(#roomConvo, #roomSideEmbed) .se-quotes-clear { align-self:center; padding:0 4px; font:500 11.5px 'Cinzel', var(--font-read); letter-spacing:.16em; text-transform:uppercase; }
+:is(#roomConvo, #roomSideEmbed) .se-filechip { position:relative; flex:0 0 auto; max-width:220px; gap:10px; padding:8px 28px 8px 8px; border:1px solid var(--c-border);
   border-radius:12px; background:var(--c-bg); color:var(--c-ink-4); font-size:12px; }
-#roomConvo .se-filechip img { width:36px; height:36px; border-radius:6px; }
-#roomConvo .se-filechip::after { content:attr(data-kind); position:absolute; left:54px; top:8px; font:500 11px/1.2 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
-#roomConvo .se-filechip > span { padding-top:17px; }
-#roomConvo .se-filechip button { position:absolute; top:6px; right:8px; font-size:13px; }
+:is(#roomConvo, #roomSideEmbed) .se-filechip img { width:36px; height:36px; border-radius:6px; }
+:is(#roomConvo, #roomSideEmbed) .se-filechip::after { content:attr(data-kind); position:absolute; left:54px; top:8px; font:500 11px/1.2 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+:is(#roomConvo, #roomSideEmbed) .se-filechip > span { padding-top:17px; }
+:is(#roomConvo, #roomSideEmbed) .se-filechip button { position:absolute; top:6px; right:8px; font-size:13px; }
 #roomConvo .se-interestbar { flex:1 1 180px; align-self:center; text-align:right; }
 #roomConvo .se-interestbar:empty { display:none; }
 #roomConvo .interest-import { justify-content:flex-end; padding:0; font-size:12px; color:var(--c-ink-5); }
