@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Large institutional bodies and rigid systems scale up and replicate the defensive postures of individuals.
+
+The passage shows that collective organizations are not separate from personal psychology, but rather mirror individual behavioral patterns on a massive scale.
+
 ## The fractal cross‑domain engine maps the direction and feedback loops of patterns across scales, turning institutional language barriers into anatomical signatures that reveal how archetypes travel from macro to micro.
 
 Merges the concept that the fractal cross‑domain engine is a new organ of perception that dissolves institutional‑language barriers by comparing anatomy directly across domains (mf_9be72013) with the idea that the instrument’s power lies in mapping a pattern’s travel direction and its feedback closure, showing whether wounds flow upward or downward and how loops form (mf_dea07b4c). Retains details: focus on structural signatures, direction of flow, feedback loops, multi‑scale tracing, and the replacement of word‑level translation with anatomical comparison.
