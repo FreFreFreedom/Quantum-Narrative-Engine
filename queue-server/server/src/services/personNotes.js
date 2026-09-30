@@ -1,5 +1,7 @@
-// People in a Room answer — real, fictional or of myth — and, since the same day,
-// the places, archetypes and institutions it gives weight to, each with its card.
+// People in a Room answer — real, fictional or of myth — each with its card.
+// Places, institutions and archetypes were marked too for a day and it was too much
+// (his ask, 2026-09-29): a country or "the Shadow" is not someone, and a card on every
+// one of them buries the few names worth opening. A card is for a being now, nothing else.
 // Antoine's ask (2026-09-28): a name in an answer marked like a book cover is, so a
 // click tells him who this is, the main pattern the person shows, and why they
 // matter to this conversation through the paradigm, with searches out to Amazon
@@ -10,13 +12,12 @@
 import { generateText } from './ai/text.js';
 
 let db = null;
-export const KINDS = new Set(['real', 'fictional', 'myth', 'place', 'archetype', 'institution']);
-// Bumped when a kind is added, so answers read before it are read once more (v8: a channel is not an institution).
-export const PEOPLE_V = 8;
+export const KINDS = new Set(['real', 'fictional', 'myth']);
+// Bumped when the kinds change, so answers read before it are read once more
+// (v9: places, institutions and archetypes are no longer marked).
+export const PEOPLE_V = 9;
 // Bumped when a card asks for something new, so cards written before it are written again (v2: the whole name).
 const CARD_V = 3;
-// A long answer names many places and offices in passing; only a few are worth a card.
-const PER_KIND = { place: 8, institution: 6, archetype: 4 };
 // Ten used to be the cap, and a long answer's list stopped there: Astraea and
 // Ma'at, named after ten lawyers, were never marked (2026-09-28).
 const MAX_PEOPLE = 25;
@@ -44,20 +45,6 @@ function firstJson(text) {
 // answer with none is not worth a call.
 // Named after a figure, but a law or an era, not a being of myth.
 const NOT_A_BEING = /^(jim crow|uncle sam|uncle tom|john doe|jane doe)\b/;
-// A job or a crowd, not a figure of the psyche.
-const NOT_AN_ARCHETYPE = /\b(defender|defense|attorney|lawyer|police|officer|people|public|machine|system|state|court)\b/;
-
-// Where a work aired is not an entity worth a card (his ask, 2026-09-29): an answer
-// listing series and films marked CBS, Cinemax and FX inside the headings and left the
-// titles themselves unmarked — exactly backwards. A broadcaster, a streamer or a studio
-// is the shelf, not the thing on it; the work carries the card now. Two nets, because
-// the model names the kind in different places: what it says the thing IS, and, for the
-// ones it describes only as a company, the name itself.
-const NOT_AN_INSTITUTION = /\b(networks?|channels?|broadcasters?|broadcasting|streaming|streamers?|cable|studios?|labels?|imprints?|distributors?)\b/i;
-// Matched against the normalised name, so no punctuation: "Canal+" reads "canal",
-// "Apple TV+" reads "apple tv".
-const A_CHANNEL = /^(cbs|nbc|abc|fox|fx|fxx|hbo|hbo max|cinemax|showtime|amc|starz|epix|tnt|tbs|bravo|syfy|bbc|itv|sky|arte|canal|netflix|hulu|max|prime video|amazon prime video|apple tv|disney|paramount|peacock|crave|cbc|ctv|pbs|cw|mubi|criterion channel|adult swim|nickelodeon|mtv|espn|cnn|msnbc|zdf|ard|tf1|globo|a24|miramax|lionsgate)( networks?| studios?| pictures| films?| television| tv)?$/;
-
 const NAME_HINT = /[a-z,;:]\s+[A-Z][a-zà-ÿ]/;
 
 // The people an answer names, each kept only when its name really is in the text
@@ -67,15 +54,13 @@ export async function namedPeople(answer) {
   if (text.length < 80 || !NAME_HINT.test(text)) return null;
   const result = await generateText({
     feature: 'summary', maxTokens: 3500, label: 'room:people', timeoutMs: 45_000, maxAttempts: 2,
-    prompt: 'Below is an answer. List what it names, of six kinds:\n'
+    prompt: 'Below is an answer. List the beings it names, of three kinds:\n'
       + '- real: real people, living or historical\n'
       + '- fictional: characters from books, films and series\n'
       + '- myth: beings of myth, religion or folklore (gods, goddesses, titans, spirits, angels, demons, legendary heroes, saints). Only a being itself: never a law, an era or a system named after a figure (Jim Crow, Uncle Sam)\n'
-      + '- place: any named place the answer gives weight to — a country, a state or region, a city, a neighbourhood, a prison or court building, a sacred or mythic site (South Africa, Alabama, Attica, Eleusis, Atlantis). The place\'s own name, never an adjective made from it (not Parisian, American, Appalachian). Not a place named only in a date or an address line\n'
-      + '- institution: a named organisation the answer discusses, not one it only mentions in passing — a court, an office, an agency, a church, a company. Never where a work was made or shown: no television network, channel, streaming service, studio, publisher or record label (CBS, HBO, FX, Netflix, A24, Penguin), even when the answer names it beside a title\n'
-      + '- archetype: a figure of the psyche or of myth that recurs across stories, used by name (the Shadow, the Trickster, the scapegoat, the Great Mother, the Wounded Healer); it may be written in lower case. Never a role or job (a public defender), never a group (the people)\n'
+      + 'Only someone — a person or a being. Never a place, a country, a city, an organisation, a court, a company, a network or a studio, and never an idea or a figure of the psyche (the Shadow, the Trickster, the scapegoat).\n'
       + 'Skip the reader and the writer of the answer, skip groups and peoples, and skip a name used only inside a book or film title.\n'
-      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"its whole name as the world knows it, even when the answer writes only a part of it (Sutton -> Jeffrey S. Sutton)","kind":"real"|"fictional"|"myth"|"place"|"institution"|"archetype","from":"3 to 6 words on what it is — real: who they are; fictional: the work it comes from; myth: the tradition and what it is (Greek goddess of justice); place: where, and what it is; institution: what it is and where; archetype: the tradition that names it"}]}. {"people":[]} if there are none. At most 25, in order of first mention; never leave out a being of myth, a place or an archetype to make room.\n\n'
+      + 'Reply with JSON only: {"people":[{"name":"the name exactly as written in the answer, letter for letter, the shortest form it uses","full":"its whole name as the world knows it, even when the answer writes only a part of it (Sutton -> Jeffrey S. Sutton)","kind":"real"|"fictional"|"myth","from":"3 to 6 words on what it is — real: who they are; fictional: the work it comes from; myth: the tradition and what it is (Greek goddess of justice)"}]}. {"people":[]} if there are none. At most 25, in order of first mention; never leave out a being of myth to make room.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 12000),
   });
   // A failed or cut-off reply is not "no names": it throws, so the answer is read again.
@@ -87,18 +72,15 @@ export async function namedPeople(answer) {
   const out = [];
   for (const p of list) {
     const name = plain(p?.name).slice(0, 80);
-    // A proper name starts with a capital; an archetype may not ("the scapegoat").
-    if (name.length < 2 || (p?.kind !== 'archetype' && !/[A-ZÀ-Þ]/.test(name[0])) || seen.has(name)) continue;
+    // A proper name starts with a capital.
+    if (name.length < 2 || !/[A-ZÀ-Þ]/.test(name[0]) || seen.has(name)) continue;
     const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (!new RegExp('(^|[^\\p{L}])' + esc + '(?![\\p{L}])', 'u').test(flat)) continue;
-    // "the shadow", "Shadow" and "the Shadow" are one archetype: marked once.
+    // "Shadow" and "the Shadow" are one name: marked once.
     const same = norm(plain(p?.full || name)).replace(/^(the|a|an) /, '');
     if (seen.has('~' + same)) continue;
     const kind = KINDS.has(p?.kind) ? p.kind : 'real';
     if (kind === 'myth' && NOT_A_BEING.test(same)) continue;
-    if (kind === 'archetype' && NOT_AN_ARCHETYPE.test(same)) continue;
-    if (kind === 'institution' && (A_CHANNEL.test(same) || NOT_AN_INSTITUTION.test(plain(p?.from)))) continue;
-    if (PER_KIND[kind] && out.filter((x) => x.kind === kind).length >= PER_KIND[kind]) continue;
     seen.add(name); seen.add('~' + same);
     out.push({ name, full: plain(p?.full || name).slice(0, 120), kind: KINDS.has(p?.kind) ? p.kind : 'real', from: plain(p?.from).slice(0, 120) });
     if (out.length >= MAX_PEOPLE) break;
@@ -110,16 +92,13 @@ export async function namedPeople(answer) {
 const LENS = 'The lens is his paradigm: every self-maintaining thing — a cell, a person, a family, a nation — holds a boundary against its own dissolution, is split inside itself, and the same inner conflict echoes from one scale to the next; what heals it is integration, what hides it is shadow.';
 
 // The model sometimes repeats the instruction's own label ("a being of myth: Greek…").
-const bareLife = (t) => String(t || '').replace(/^\s*(a real person|a character|a being of myth|a place|an institution|an archetype)\s*:\s*/i, '');
+const bareLife = (t) => String(t || '').replace(/^\s*(a real person|a character|a being of myth)\s*:\s*/i, '');
 
-// What each kind's card asks for. `echoes` only for an archetype: who lives it.
+// What each kind's card asks for.
 const CARD = {
   real: { what: (w, f) => `${w}${f ? ` (${f})` : ''}`, life: 'birth–death years, or born YEAR', pattern: 'the main pattern this person lives out', screen: 'about this person' },
   fictional: { what: (w, f) => `the fictional character ${w}${f ? ` (${f})` : ''}`, life: 'the work it comes from and its year', pattern: 'the main pattern this character lives out' },
   myth: { what: (w, f) => `${w}, a being of myth, religion or folklore${f ? ` (${f})` : ''}`, life: 'the tradition and its oldest source', pattern: 'the main pattern this being carries' },
-  place: { what: (w, f) => `the place ${w}${f ? ` (${f})` : ''}`, life: 'where it is and the era that matters, or the myth or book it comes from', pattern: 'the pattern this place holds — what its walls keep in, or keep out' },
-  institution: { what: (w, f) => `the institution ${w}${f ? ` (${f})` : ''}`, life: 'founded YEAR, and where', pattern: 'how it keeps itself alive, and what it splits off to do so', screen: 'about this institution' },
-  archetype: { what: (w, f) => `the archetype ${w}${f ? ` (${f})` : ''}`, life: 'the traditions it appears in', pattern: 'what this archetype does, as a movement', echoes: true },
 };
 
 export async function personCard(convoId, { name = '', full = '', kind = 'real', from = '' } = {}, { refresh = false } = {}) {
@@ -138,7 +117,6 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
       `Write a short card about ${what}, for the conversation below.`,
       LENS,
       'Reply with JSON only: {"whole":"its whole name as the world knows it — the answer may write only a part of it (Sutton -> Jeffrey S. Sutton, Motley -> Constance Baker Motley); repeat the given name unchanged if you are not sure","life":"' + spec.life + '","pattern":"' + spec.pattern + ', 4 to 10 words, no name in it","here":"50 to 70 words: why it matters HERE — which idea of this conversation it shows, and how, read through the lens. Use the conversation\'s own ideas. Plain simple words, no jargon, no preamble, all sentences finished."'
-        + (spec.echoes ? ',"echoes":["three names only, no explanation: who lives this archetype — real, fictional or of myth — at different scales if you can (a person, a character, a nation)"]' : '')
         // Films and series about the person or the institution (his ask, 2026-09-28).
         // Named wrongly they are worse than none, so the model is told to leave the
         // list empty unless it is sure the work exists and is really about this.
@@ -159,7 +137,6 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
   const whole = plain(j.whole).slice(0, 120);
   const card = { v: CARD_V, ...(whole && norm(whole) !== norm(who) && norm(whole).includes(norm(who).split(' ').pop()) ? { whole } : {}),
     life: lifeRaw.length > 110 ? lifeRaw.slice(0, 110).replace(/\s+\S*$/, '') + '…' : lifeRaw, pattern: plain(j.pattern).replace(/[.]$/, '').slice(0, 120), here,
-    ...(spec.echoes && Array.isArray(j.echoes) ? { echoes: j.echoes.map((x) => plain(x).split(/\s+[–—-]\s+|[:(,]/)[0].trim().slice(0, 60)).filter(Boolean).slice(0, 3) } : {}),
     ...(spec.screen && Array.isArray(j.screen) ? { screen: j.screen.map((x) => ({
       title: plain(x?.title).slice(0, 80),
       kind: String(x?.kind) === 'series' ? 'series' : 'film',

@@ -32788,6 +32788,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var box = document.createElement('div'); box.innerHTML = html;
     people.forEach(function(p){
       var name = String((p && p.name) || ''); if(name.length < 2) return;
+      // Only beings are marked. Answers read before 2026-09-29 also carry places,
+      // institutions and archetypes; they are dropped here too, so nothing shows one
+      // while the answer waits to be read again.
+      if(/^(place|institution|archetype)$/.test(String((p && p.kind) || ''))) return;
       // The full name where the answer writes it ("Constance Baker Motley"), else the short one ("Motley").
       var forms = [String(p.full || ''), name].filter(function(f, i, a){ return f.length >= 2 && a.indexOf(f) === i; });
       var res = forms.map(function(f){ return new RegExp('(^|[^\\p{L}])(' + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![\\p{L}])', 'u'); });
@@ -32803,7 +32807,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var btn = document.createElement('button');
         btn.type = 'button'; btn.className = 'se-person';
         btn.dataset.pName = name; btn.dataset.pFull = p.full || name;
-        btn.dataset.pKind = /^(fictional|myth|place|institution|archetype)$/.test(p.kind || '') ? p.kind : 'real';
+        btn.dataset.pKind = /^(fictional|myth)$/.test(p.kind || '') ? p.kind : 'real';
         btn.dataset.pFrom = p.from || ''; btn.dataset.convo = convoId || '';
         btn.title = (p.full || name) + (p.from ? ' — ' + p.from : '');
         word.parentNode.replaceChild(btn, word); btn.appendChild(word);
