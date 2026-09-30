@@ -965,6 +965,8 @@ KEEP ITS SHAPE. What he asks to keep is often not one idea but a structure: seve
 - "detail" holds the full shape in plain words: every part he named, how the parts connect, the range, the purpose, what he wants to become able to do. Required whenever he said more than one thing; up to 1200 characters. Plain lines, one part per line, are fine.
 - Several distinct things → several items (up to 6). One layered thing → one item with a rich detail. Never drop a part he said.
 - His own words for his subject are his, not the passage's: keep them ("essential operations", "cognitive muscle") — the rule below is about the passage.
+- When he points ("this", "this type of", "these"), say what he points AT: name the concept from the passage in plain words. The object of his interest is the heart of what he teaches — never keep only his purpose and lose what it is about.
+- An exploration he wants (other forms of something across worlds, what exists, what is in progress, what is still missing) is an "idea" or "about" item about THAT, not a "how" about answer style — unless he says it is about how answers are written.
 
 THE OTHER RULE — point at the moon, not at the finger. Future answers will read what you save and copy any concrete thing in it. So save the UNDERSTANDING in your own plain words: never quote him, never quote or paraphrase the passage, never carry over its images, metaphors, names or distinctive words (a "subject" item's name is the only exception).
 - Keep the subject HE named, by its name. If he says "about the nature of policing", the idea says "policing" — never widen it into "institutions" or "systems" in general. The moon rule is about the passage's images, not about his subject.
