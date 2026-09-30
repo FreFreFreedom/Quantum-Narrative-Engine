@@ -494,6 +494,11 @@ headings before any content. One tab row with counts says the same and shows one
 pane at a time. Put the count on the tab so a shut pane still says it holds
 something.
 
+**A panel shown on hover is still that panel — its edge drags too.** The thread list's
+resize edge only existed when the list was kept open; the hover version he actually
+uses had none, and "I can't resize it" came back three times while each fix tested
+the kept-open state. Test a panel in every state it can be on screen.
+
 **Rare actions go behind one `⋯`; dangerous ones never sit beside common ones.**
 Delete was a pixel from Fork in a row of five icons.
 
