@@ -2719,6 +2719,12 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-toolbar .room-turns { margin-right:auto; padding-left:2px; }
 .room-titlechev { flex:none; font-size:var(--fs-2xs); color:var(--c-ink-5); }
 .room-titlebtn:hover .room-titlechev { color:var(--c-ink-3); }
+/* Copy the title: a faint mark that shows only while the pointer is on the title. */
+.room-titlecopy { flex:none; margin-left:4px; padding:0 3px; font-size:13px; line-height:1; color:var(--c-ink-5);
+  opacity:0; transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.room-titlebtn:hover .room-titlecopy, .room-titlecopy.is-done { opacity:.7; }
+.room-titlecopy:hover { opacity:1; color:var(--c-ink); }
+.room-titlebtn:disabled .room-titlecopy { display:none; }
 .room-toolbar .room-turns { white-space:nowrap; }
 .room-toolbar .arch-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .room-toolacts { display:flex; align-items:center; gap:2px; flex:none; }
@@ -5902,6 +5908,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" class="room-titlebtn" id="roomTitleBtn" aria-haspopup="menu" title="Everything about this conversation">
             <span class="arch-title" id="roomTitle"></span>
             <span class="room-titlechev" aria-hidden="true">▾</span>
+            <span class="room-titlecopy" role="button" title="Copy the title" aria-label="Copy the title">⧉</span>
           </button>
           <input class="room-renamebox" id="roomRenameBox" hidden aria-label="Thread name" autocomplete="off">
           <span class="room-turns" id="roomTurns"></span>
@@ -14859,6 +14866,15 @@ function initRoom() {
   // names it, instead of five identical icons in a row.
   document.getElementById('roomTitleBtn').onclick = (ev) => {
     ev.stopPropagation();
+    const copy = ev.target.closest && ev.target.closest('.room-titlecopy');
+    if (copy) {
+      const text = document.getElementById('roomTitle').textContent || '';
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => {
+        copy.textContent = '✓'; copy.classList.add('is-done');
+        setTimeout(() => { copy.textContent = '⧉'; copy.classList.remove('is-done'); }, 1200);
+      }, () => {});
+      return;
+    }
     openRoomMoreMenu(ev.currentTarget);
   };
   applyRoomType();
