@@ -13,7 +13,11 @@ export const PROVIDER_CAPABILITIES = {
     // CLI path for text generation (subscription quota)
     hasCliText: true,
     // Fable on the main account only — his call, 2026-09-25.
-    cliModels: ['sonnet', 'haiku', 'opus', 'fable'],
+    // Both shapes are accepted: the tier aliases (always the newest of that tier)
+    // and the named Claude 5 models the main account's own catalogue lists, which
+    // is what the Room's picker now sends. `claude --model` takes either.
+    cliModels: ['sonnet', 'haiku', 'opus', 'fable',
+      'claude-opus-5-5', 'claude-fable-5-1', 'claude-sonnet-5-5', 'claude-haiku-4-5-20251001'],
     // API path (pay-per-token)
     hasApiText: true,
     apiModels: ['claude-sonnet-4-5', 'claude-3-5-haiku', 'claude-3-opus'],

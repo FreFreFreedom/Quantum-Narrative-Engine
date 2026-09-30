@@ -1412,9 +1412,9 @@ const TOOL_PHRASES = {
 // dashes, no slashes, no "latest". The same rule the Room's model menu uses.
 const WORD_CASE = { gpt: 'GPT', oss: 'OSS', ai: 'AI', gemma: 'Gemma', llama: 'Llama', qwen: 'Qwen', glm: 'GLM', kimi: 'Kimi', deepseek: 'DeepSeek', mini: 'Mini', pro: 'Pro', flash: 'Flash', lite: 'Lite', sonnet: 'Sonnet', opus: 'Opus', haiku: 'Haiku', fable: 'Fable' };
 export function prettyModel(model) {
-  const tail = String(model || '').split('/').pop().replace(/[-_]latest$/i, '').replace(/[-_]preview(?:[-_]\d+)?$/i, '');
+  const tail = String(model || '').split('/').pop().replace(/[-_]latest$/i, '').replace(/[-_]preview(?:[-_]\d+)?$/i, '').replace(/[-_]\d{8}$/, '');
   // "claude-opus-5-5" → "Opus 5.5": the maker is already said, and two version digits are one version.
-  const t2 = tail.replace(/^claude[-_]/i, '').replace(/(\d)[-_](\d)(?![\d.])/g, '$1.$2');
+  const t2 = tail.replace(/^claude[-_]/i, '').replace(/(\d)[-_](\d)(?![\d.a-z])/g, '$1.$2');
   return t2.split(/[-_ ]+/).filter(Boolean).map((w) => {
     const lw = w.toLowerCase();
     if (WORD_CASE[lw]) return WORD_CASE[lw];
