@@ -178,13 +178,21 @@ Rules:
 - His voice, not yours: lowercase, plain words, no jargon, no flourish.
 - Continue where HE was going. Do not answer the question, do not change the subject, do not add a second question.
 - If his sentence is already finished and nothing natural follows, return an empty string.
+- Never label your answer and never echo a heading. No "continuation:", no "his input", no asterisks, no bold. The very first character you return is the next character of his sentence.
 
 WHAT HE HAS TYPED SO FAR:
 ${draft}`;
 }
 
+// A small model shown a prompt full of headings sometimes answers with one. Live,
+// 2026-09-29, it handed back "His current input:** " — which as grey text behind
+// the caret reads as the app talking to itself. Anything wearing a label is thrown
+// away rather than cleaned up: a tail is only worth showing if it is his sentence.
+const LABEL_RE = /\*\*|^\s*[A-Za-z][A-Za-z ']{0,30}:\s|(^|\s)(his|the|your)\s+(current\s+)?(input|draft|message|prompt|continuation|answer)\b/i;
+
 function cleanTail(text, draft) {
   let t = String(text || '').replace(/^```[a-z]*\n?/i, '').replace(/```$/,'').trim();
+  if (LABEL_RE.test(t)) return '';
   // The model sometimes hands back the whole sentence. Keep only the new part.
   const d = draft.trim();
   if (d && t.toLowerCase().startsWith(d.toLowerCase())) t = t.slice(d.length);
