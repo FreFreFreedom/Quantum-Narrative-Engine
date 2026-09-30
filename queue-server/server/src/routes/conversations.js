@@ -557,7 +557,7 @@ export function conversationsRoutes() {
     // side 'b' is the second model of a pair (plan two-models-side-by-side); the
     // body is otherwise identical, so one route serves both picks.
     const side = req.body?.side === 'b' ? 'b' : 'a';
-    const lane = convos.setChatLane(req.params.id, provider ? { provider, model: req.body?.model || null, account: req.body?.account || null, effort: req.body?.effort || null } : null, side);
+    const lane = convos.setChatLane(req.params.id, provider ? { provider, model: req.body?.model || null, account: req.body?.account || null, effort: req.body?.effort || null, blank: !!req.body?.blank } : null, side);
     res.json(side === 'b' ? { chat_override_b: lane } : { chat_override: lane });
   });
 
@@ -730,7 +730,7 @@ export function conversationsRoutes() {
     const override = bodyOverride === undefined
       ? undefined
       : (bodyOverride?.provider && VALID_LANE_PROVIDERS.has(bodyOverride.provider)
-        ? { provider: bodyOverride.provider, model: bodyOverride.model || null, account: bodyOverride.account || null, effort: bodyOverride.effort || null }
+        ? { provider: bodyOverride.provider, model: bodyOverride.model || null, account: bodyOverride.account || null, effort: bodyOverride.effort || null, blank: !!bodyOverride.blank }
         : null);
     // The second model, when this send is a pair. Same validation, same meaning of
     // undefined (use what the conversation is pinned to) and null (one answer only).
@@ -738,7 +738,7 @@ export function conversationsRoutes() {
     const overrideB = bodyOverrideB === undefined
       ? undefined
       : (bodyOverrideB?.provider && VALID_LANE_PROVIDERS.has(bodyOverrideB.provider)
-        ? { provider: bodyOverrideB.provider, model: bodyOverrideB.model || null, account: bodyOverrideB.account || null, effort: bodyOverrideB.effort || null }
+        ? { provider: bodyOverrideB.provider, model: bodyOverrideB.model || null, account: bodyOverrideB.account || null, effort: bodyOverrideB.effort || null, blank: !!bodyOverrideB.blank }
         : null);
 
     if (!wantsStream) {
@@ -806,7 +806,7 @@ export function conversationsRoutes() {
   router.post('/:id/messages/:messageId/beside', asyncHandler(async (req, res) => {
     const bodyOverride = req.body?.override;
     const lane = bodyOverride?.provider && VALID_LANE_PROVIDERS.has(bodyOverride.provider)
-      ? { provider: bodyOverride.provider, model: bodyOverride.model || null, account: bodyOverride.account || null, effort: bodyOverride.effort || null }
+      ? { provider: bodyOverride.provider, model: bodyOverride.model || null, account: bodyOverride.account || null, effort: bodyOverride.effort || null, blank: !!bodyOverride.blank }
       : null;
     const wantsStream = /application\/x-ndjson/i.test(String(req.headers.accept || ''));
     if (!wantsStream) {

@@ -122,9 +122,18 @@ export function buildRunCommand({ bin, taskId, promptPath, logPath, codePath, mo
 // which has to be able to check the code before answering instead of guessing.
 // Omit it and the flags stay byte-identical to before — the model-policy judge
 // and summary generation must keep getting no tools at all.
-export function runToolless({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000, cwd, bin = resolveBin(), env, allowedTools = null, effort = null }) {
+// `clean`: answer the prompt and nothing else (2026-09-30). Without it a text job
+// run on the Mac read Claude Code's own coding-agent system prompt, the user-wide
+// CLAUDE.md ("short, bullets, fragments, no headings"), a hook that stamps
+// "ANSWER STYLE (Antoine, always)" onto every message, and — from the repo — the
+// project's CLAUDE.md and auto-memory. Every Room answer on Claude carried all of
+// it. The user setting source is where the hook and the global CLAUDE.md live; the
+// caller also runs from an empty folder so there is no project to read.
+export const CLEAN_SYSTEM_PROMPT = 'You are Claude, an AI assistant made by Anthropic.';
+export function runToolless({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000, cwd, bin = resolveBin(), env, allowedTools = null, effort = null, clean = false }) {
   return new Promise((resolveP) => {
     const toolFlags = allowedTools ? ['--allowedTools', allowedTools] : ['--tools', ''];
+    if (clean) toolFlags.push('--setting-sources', 'project,local', '--system-prompt', CLEAN_SYSTEM_PROMPT);
     // --tools '' does not reach MCP servers: the user-wide Playwright server kept
     // loading into these background calls, and a model now and then used it —
     // a real Edge window flashing open on the Mac with nobody at the keyboard.

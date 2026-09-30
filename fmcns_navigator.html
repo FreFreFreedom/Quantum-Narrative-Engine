@@ -28648,22 +28648,27 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       : '';
     return path ? '<svg class="se-lane-mark" viewBox="0 0 24 24" aria-hidden="true">' + path + '</svg>' : '';
   }
-  var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google', openai: 'ChatGPT (billed)', codex: 'ChatGPT', 'codex-pro': 'ChatGPT Pro' };
+  var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google', openai: 'ChatGPT (billed)', codex: 'ChatGPT', 'codex-pro': 'ChatGPT Pro', 'blank-google': 'Gemini · blank', 'blank-openai': 'ChatGPT · blank' };
+  // Blank (his ask, 2026-09-30): Gemini or GPT-4.1 with nothing attached but the
+  // conversation — no portrait, no memory, no rules. A pick carries blank:true.
+  var BLANK_KEYS = { 'blank-google': 'google-ai-studio', 'blank-openai': 'openai' };
   // The two ChatGPT subscriptions are one lane with two logins, not two lanes: the
   // picker shows them apart, everything below carries {provider:'codex', account}.
   // 'codex-pro' exists only in this dropdown (his ask, 2026-09-21).
   function laneKeyOf(lane){
     if(!lane) return '';
+    if(lane.blank) return lane.provider === 'openai' ? 'blank-openai' : 'blank-google';
     return lane.provider === 'codex' && lane.account === 'second' ? 'codex-pro' : lane.provider;
   }
   function laneFromKey(key){
     if(key === 'codex-pro') return { provider: 'codex', account: 'second' };
+    if(BLANK_KEYS[key]) return { provider: BLANK_KEYS[key], account: null, blank: true };
     // Naming the Plus account is now deliberate: unnamed ChatGPT work goes to Pro,
     // since Plus is nearly out of allowance (2026-09-21).
     if(key === 'codex') return { provider: 'codex', account: 'main' };
     return { provider: key, account: null };
   }
-  function laneBaseProvider(key){ return key === 'codex-pro' ? 'codex' : key; }
+  function laneBaseProvider(key){ return key === 'codex-pro' ? 'codex' : (BLANK_KEYS[key] || key); }
   var GOOGLE_LANE_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
   // Codex's models, from the CLI's own list (2026-09-13). Same set the queue offers.
   var CODEX_LANE_MODELS = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-reserve'];
@@ -28724,9 +28729,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     ['Anthropic', ['claude-code', 'claude-side']],
     ['Google', ['google-ai-studio']],
     ['OpenAI', ['codex-pro', 'codex', 'openai']],
-    ['OpenCode', ['opencode']]
+    ['OpenCode', ['opencode']],
+    ['Blank', ['blank-google', 'blank-openai']]
   ];
-  var LANE_SHORT = { 'claude-code': 'Claude', 'claude-side': 'Claude · 2nd', 'google-ai-studio': 'Gemini', 'codex-pro': 'Pro account', codex: 'Plus account', openai: 'Billed per use', opencode: 'OpenCode' };
+  var LANE_SHORT = { 'claude-code': 'Claude', 'claude-side': 'Claude · 2nd', 'google-ai-studio': 'Gemini', 'codex-pro': 'Pro account', codex: 'Plus account', openai: 'Billed per use', opencode: 'OpenCode', 'blank-google': 'Gemini', 'blank-openai': 'ChatGPT' };
   // "groq/llama-3.1-8b-instant" → "Llama 3.1 8B Instant": the maker's prefix goes to
   // its own sub-heading, and what is left reads as a name, not an id.
   var LANE_WORD_CASE = { gpt: 'GPT', oss: 'OSS', ai: 'AI', exp: 'exp', preview: 'preview', instant: 'Instant', versatile: 'Versatile', lite: 'Lite', flash: 'Flash', pro: 'Pro', mini: 'Mini', nano: 'Nano', turbo: 'Turbo', vision: 'Vision', latest: '' };
@@ -28757,7 +28763,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function laneLabelOf(lane){
     if(!lane || !lane.provider) return 'Auto';
     var key = laneKeyOf(lane);
-    return lane.model ? laneModelShort(lane.model) : seLaneName(lane.tag || LANE_LABELS[key] || key);
+    return (lane.model ? laneModelShort(lane.model) : seLaneName(lane.tag || LANE_LABELS[key] || key)) + (lane.blank ? ' · blank' : '');
   }
   function laneBtnHtml(e){
     if(!e.lane) return '<span>Auto</span><span class="chev">▾</span>';
@@ -28767,6 +28773,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var eff = e.lane.effort ? String(LANE_EFFORT_LABELS[e.lane.effort] || e.lane.effort).split(' ')[0] : '';
     // The model's own name is enough on the line; the maker is in the list.
     return '<span>' + qEsc(m || name) + '</span>'
+      + (e.lane.blank ? '<span class="dot">·</span><span>blank</span>' : '')
       + (eff ? '<span class="dot">·</span><span>' + qEsc(eff) + '</span>' : '') + '<span class="chev">▾</span>';
   }
   // Which maker is unfolded in the list. Only one at a time: the one in use when the
@@ -29181,9 +29188,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var lane = laneOverride !== undefined ? laneOverride : e.lane;
         // The second model rides in its own key; null means "one answer only,
         // just this once" and is what a re-ask on a single model sends.
-        payload.overrideB = laneB ? { provider: laneB.provider, model: laneB.model || null, account: laneB.account || null, effort: laneB.effort || null } : null;
+        payload.overrideB = laneB ? { provider: laneB.provider, model: laneB.model || null, account: laneB.account || null, effort: laneB.effort || null, blank: !!laneB.blank } : null;
         if(laneOverride === undefined && e.lane === undefined) return payload;
-        payload.override = lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null } : null;
+        payload.override = lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null, blank: !!lane.blank } : null;
         return payload;
       })()),
     })
@@ -30560,14 +30567,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             lanePop.innerHTML = lanePopHtml(e, side); lanePopPlace(openerFor(), lanePop); return;
           }
           if(b.hasAttribute('data-effort')){
-            if(cur) cur = { provider: cur.provider, account: cur.account || null, model: cur.model || null, effort: b.getAttribute('data-effort') || null, tag: cur.tag };
+            if(cur) cur = { provider: cur.provider, account: cur.account || null, model: cur.model || null, effort: b.getAttribute('data-effort') || null, tag: cur.tag, blank: !!cur.blank };
           } else {
             var key = b.getAttribute('data-lane');
             if(!key) cur = null;
             else {
               var picked = laneFromKey(key), model = b.getAttribute('data-model') || null;
               var keep = cur && laneKeyOf(cur) === key && cur.effort && laneEffortLevels(key, model).indexOf(cur.effort) >= 0 ? cur.effort : null;
-              cur = { provider: picked.provider, account: picked.account, model: model, effort: keep, tag: laneTagFor(key, model) };
+              cur = { provider: picked.provider, account: picked.account, model: model, effort: keep, tag: laneTagFor(key, model), blank: !!picked.blank };
             }
           }
           if(side === 'b') e.laneB = cur; else e.lane = cur;
@@ -30616,7 +30623,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function persistLane(e, lane, side){
     if(!e.convoId) return;
     var body = lane
-      ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null }
+      ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null, blank: !!lane.blank }
       : { provider: null };
     if(side === 'b') body.side = 'b';
     apiWrite('/api/convos/' + e.convoId + '/lane', 'POST', body).catch(function(){});
@@ -30634,6 +30641,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(provider === 'google-ai-studio') {
       var googleModels = ((catalog && catalog.google && catalog.google.models) || []).map(function(m){ return (m && m.id) || m; }).filter(Boolean);
       return googleModels.length ? googleModels : GOOGLE_LANE_MODELS.slice();
+    }
+    if(providerKey === 'blank-openai'){
+      var oa = ((catalog && catalog.openai && catalog.openai.models) || []).map(function(m){ return m.id; }).filter(function(id){ return /^gpt-4\.1/.test(id); });
+      return oa.length ? oa : ['gpt-4.1'];
     }
     if(provider === 'openai') return ((catalog && catalog.openai && catalog.openai.models) || []).map(function(m){ return m.id; });
     // Codex runs through the Mac, so the server has no list to hand over — the same
@@ -31031,7 +31042,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     fetch(API_BASE + '/api/convos/' + encodeURIComponent(e.convoId) + '/messages/' + encodeURIComponent(answerId) + '/beside', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/x-ndjson' },
-      body: JSON.stringify({ override: lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null } : null }),
+      body: JSON.stringify({ override: lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null, blank: !!lane.blank } : null }),
     })
       .then(function(r){ return readTurn(r, e, repaint); })
       .then(function(d){

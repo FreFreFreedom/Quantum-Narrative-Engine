@@ -199,7 +199,9 @@ export async function resolveTurn({ convoId, text, lastAssistantText, override =
         account: override.account || null,
         // How hard the model may think — only the lanes with a dial read it.
         effort: override.effort || null,
-        tag: override.tag || override.provider,
+        // Blank: nothing attached but the conversation (conversations.js, runBlankTurn).
+        ...(override.blank ? { blank: true } : {}),
+        tag: override.tag || (override.blank ? `${override.provider} · blank` : override.provider),
         forcedQuestion: trimmed,
       },
       repoFacts: await readRepoFacts(),

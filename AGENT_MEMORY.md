@@ -1203,3 +1203,9 @@ setting). Authority: AGENTS.md "The lens". His essay, verbatim: `fractal_operati
 
 ## Room running log (2026-09-28)
 Messages that leave the Room's 16-message window are written down in plain lines by `services/convoLog.js` (append-only batches in `convos.log`, one free `summary` call per 4 leaving messages), and `transcriptOf` puts them back as "(earlier in this conversation)". Context only: no instruction rides with it, and the writer leaves out anything about answer shape. Skipped after "Start fresh", which sends everything since the fold anyway. Plan: `plans/room-running-log.md`.
+
+- **2026-09-30 — the Room's hidden rules, audited and closed; Blank models added.** He still
+  preferred a fresh model with no rules. Five back doors found (Mac CLI setup incl. a user
+  hook and `~/.claude/CLAUDE.md`, harvested memory, random subjects, shelf/library dumps, tool
+  descriptions) — see AGENTS.md "Where the rules kept hiding". New "Blank" group in the
+  picker: Gemini / GPT-4.1 with only the conversation, as real turns.

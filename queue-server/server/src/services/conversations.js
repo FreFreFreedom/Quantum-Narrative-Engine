@@ -42,9 +42,9 @@ import { splitByLabels, splitByMarks, parseMarks, MARKS_PROMPT } from './convoIm
 import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
-import { bindInterestLibrary, interestContext, INTEREST_TOOLS, interestTool, saveSuggestedWorks } from './interestLibrary.js';
+import { bindInterestLibrary, interestContext, INTEREST_POINTED, INTEREST_TOOLS, interestTool, saveSuggestedWorks } from './interestLibrary.js';
 import { referenceQuote, REFERENCE_TOOLS, referenceTool } from './referenceLibrary.js';
-import { bindBookShelf, shelfContext, BOOK_TOOLS, bookTool } from './bookShelf.js';
+import { bindBookShelf, shelfContext, namesShelfBook, BOOK_TOOLS, bookTool } from './bookShelf.js';
 import { bindScreenFacts } from './screenFacts.js';
 import { bindBookFacts } from './bookFacts.js';
 import { bindBookContents } from './bookContents.js';
@@ -382,7 +382,8 @@ export function getChatLane(convoId, side = 'a') {
     const tag = parsed.provider === 'codex' && parsed.account === 'second'
       ? 'chatgpt pro'
       : (OVERRIDE_TAGS[parsed.provider] || parsed.provider);
-    return { provider: parsed.provider, model: parsed.model || null, account: parsed.account || null, effort: parsed.effort || null, tag };
+    const blank = !!parsed.blank && BLANK_PROVIDERS.has(parsed.provider);
+    return { provider: parsed.provider, model: parsed.model || null, account: parsed.account || null, effort: parsed.effort || null, ...(blank ? { blank: true } : {}), tag: blank ? `${tag} · blank` : tag };
   } catch { return null; }
 }
 
@@ -396,7 +397,7 @@ export function setChatLane(convoId, override, side = 'a') {
   if (!convo) return { error: 'not_found' };
   const col = side === 'b' ? 'chat_override_b' : 'chat_override';
   const json = override?.provider
-    ? JSON.stringify({ provider: override.provider, model: override.model || null, account: override.account || null, effort: override.effort || null })
+    ? JSON.stringify({ provider: override.provider, model: override.model || null, account: override.account || null, effort: override.effort || null, ...(override.blank && BLANK_PROVIDERS.has(override.provider) ? { blank: true } : {}) })
     : null;
   db.prepare(`UPDATE convos SET ${col}=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(json, convoId);
   broadcastAll('convos:updated', { convoId });
@@ -2098,10 +2099,13 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     ROOM_PASSAGES_LINE,
     convo.reach ? REACH_BLOCK : '',
     talk(historyWindow),
-    mindBlock(lastUserText(convo.id), { exclude: repoFacts ? ['style'] : ['style', 'decision', 'project'] }),
-    interestContext(convo.created_by, lastUserText(convo.id)),
-    shelfContext(convo.created_by, lastUserText(convo.id)),
-    subjectsBlock(3),
+    // What rides after the conversation is only what HE brought to it: a book he
+    // named, his saved things when he points at them. The harvested memory (its
+    // "taste" lines read "adopt a poetic tone in all future responses"), the whole
+    // shelf list and three random "subjects he is drawn to" used to ride on every
+    // answer and were rules in all but name (2026-09-30).
+    interestContext(convo.created_by, lastUserText(convo.id), { onlyExplicit: true }),
+    shelfContext(convo.created_by, lastUserText(convo.id), { onlyNamed: true }),
     repoBlock,
     // What he told it to remember, after what it merely knows, so his own standing
     // words outrank it — but before the task, so what he says now still wins.
@@ -2448,11 +2452,81 @@ function afterTurn(convoId, userId, convo) {
 // (plan two-models-side-by-side); `opts.followUps === false` leaves the after-turn
 // work (title, mind harvest, log, chapters, world/analogy looks) to the kept side,
 // so a pair costs one set of those, not two.
+// The lookup tools ride only on a question about his app or his things. Their
+// descriptions are pages of the paradigm's own vocabulary (rungs of the scale
+// ladder, integration, falsifiers), and handed to the model on every turn they
+// framed every answer — the rules came back in through the tool list (2026-09-30).
+const LOOKUP_ASK = /\b(?:my (?:library|shelf|notes?|notebook|seeds?|ideas|saved|books|films|queue|app|memory)|the app|in the app|look (?:it |that |this )?up|search (?:my|the)|what (?:did|have) i (?:say|said|save|saved)|notebook|seeds?|queue)\b/i;
+function roomWantsLookups(convo, turn) {
+  if (turn?.repoFacts) return true;
+  const said = lastUserText(convo.id) || '';
+  return LOOKUP_ASK.test(said) || INTEREST_POINTED.test(said) || namesShelfBook(convo.created_by, said);
+}
+
+// ─── Blank: a model with nothing attached (his ask, 2026-09-30) ─────────────
+// "Give me an option to select these models that will have no memory attached, or
+// at least no rules." The conversation goes over as real turns — his words and the
+// answers, exactly as a fresh chat on the model's own site would send them — with
+// no portrait, no memory, no tools, no headings and no instruction of any kind.
+// No fallback either: a blank pick that quietly became another lane would not be
+// blank. Gemini and GPT-4.1 only.
+const BLANK_PROVIDERS = new Set(['google-ai-studio', 'openai']);
+export function blankMessages(msgs, recap = null, maxChars = null) {
+  // A turn that failed is the app's own error line, not something a model said.
+  const turns = msgs.filter((m) => m.kind === 'chat' && m.text && (m.role === 'user' || m.role === 'assistant') && !/"failed":true/.test(m.meta || ''))
+    .map((m) => ({ role: m.role, content: String(m.text) }));
+  if (recap) turns.unshift({ role: 'user', content: String(recap) }, { role: 'assistant', content: 'OK.' });
+  // Over the lane's ceiling: the oldest turns go first, his newest message never.
+  const size = () => turns.reduce((n, t) => n + t.content.length, 0);
+  while (maxChars && turns.length > 1 && size() > maxChars) turns.shift();
+  while (turns.length && turns[0].role !== 'user') turns.shift();
+  return turns;
+}
+async function runBlankTurn(convoId, userId, convo, turn, { onToken, onStatus, signal, images, opts }) {
+  const lane = turn.lane;
+  if (!BLANK_PROVIDERS.has(lane.provider)) return { error: 'blank_unsupported' };
+  const maxTokens = turnMaxTokens(convoId);
+  const since = convo.compacted_at ? threadMessages(convoId).filter((m) => m.created_at > convo.compacted_at) : threadMessages(convoId);
+  const messages = blankMessages(since, convo.compacted_at ? convo.recap : null,
+    promptCharBudget({ feature: 'studio', provider: lane.provider, maxTokens }));
+  if (!messages.length) return { error: 'empty_message' };
+  let spentUsd = 0, spentIn = 0, spentOut = 0;
+  const onUsage = (usage, where) => {
+    if (where?.providerId && isMeteredProvider(where.providerId)) {
+      spentUsd += costOf(where.model, usage, where.providerId);
+      spentIn += Number(usage?.prompt_tokens || 0);
+      spentOut += Number(usage?.completion_tokens || 0);
+    }
+  };
+  const ask = () => generateTextStream({
+    prompt: messages[messages.length - 1].content, messages,
+    feature: 'studio', model: lane.model || (lane.provider === 'openai' ? 'gpt-4.1' : 'gemini-flash-latest'), provider: lane.provider,
+    label: 'conversations:blank', maxTokens, allowLongOutput: true, timeoutMs: 150_000,
+    onToken, onStatus, strictModel: true, cacheKey: convoId, onUsage,
+    images, requireVision: !!images?.length,
+  });
+  let result = await ask();
+  // Gemini's "high demand" passes in seconds; one quiet second try before saying so.
+  if (result.error && /overloaded/.test(result.message || '') && !signal?.aborted) {
+    await new Promise((r) => setTimeout(r, 3000));
+    result = await ask();
+  }
+  if (signal?.aborted) return { error: 'cancelled' };
+  if (result.error) return saveFailedTurn(convoId, result, turn, pairMeta(opts));
+  const laneTag = computeLaneTag(turn.intent, lane, result.via);
+  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false)]);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn.intent, blank: true, ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }), ...pairMeta(opts) });
+  if (opts.followUps !== false) afterTurn(convoId, userId, convo);
+  return { text: result.text, via: result.via, laneTag, intent: turn.intent, messageId: savedId, cost: spentUsd, works, people, ...(opts.pair ? { pair: opts.pair.id, side: opts.pair.side, kept: !!opts.pair.kept } : {}) };
+}
+
 async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = null, signal = null, images = null, opts = {}) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
+  if (turn?.lane?.blank) return runBlankTurn(convoId, userId, convo, turn, { onToken, onStatus, signal, images, opts });
   const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
+  const lookups = roomWantsLookups(convo, turn);
 
   // How long the answer may be decides how much room is left for the question on
   // a lane that counts both against one ceiling — so the budget is worked out
@@ -2462,7 +2536,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // one question, don't answer yet); any other mode is the normal turn.
   const clarifyMode = convo.clarification_mode === 'interview' ? 'interview' : 'normal';
   const prompt = buildTurnPrompt({
-    convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null,
+    convo, ctx, brevity: false, tools: lookups, repoFacts: turn?.repoFacts || null,
     instruction: clarifyMode === 'interview' ? INTERVIEW_INSTRUCTION : null,
     maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
   });
@@ -2498,10 +2572,9 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     account: turn?.lane?.account || null,
     effort: turn?.lane?.effort || null,
     label: 'conversations:chat', tailReminder: voiceTailReminder(convo),
-    // The lookup tools (plan "roaming-conversations-backend" §2). Only the chat
-    // turn gets them: it is the one that answers a question, and the one whose
-    // prompt now claims it can look things up.
-    tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
+    // The lookup tools (plan "roaming-conversations-backend" §2), only when the
+    // question is about his app or his things — see roomWantsLookups.
+    tools: lookups ? studioTools(convoId) : null, dispatchTool: lookups ? studioDispatch(convoId) : null,
     // 4000, not 450 and not 1200. Both smaller numbers were brevity caps: 450
     // because nothing streamed and the whole answer had to be written before any
     // of it showed, 1200 because that was the timid first step away from it.
@@ -2661,13 +2734,15 @@ export function keepPairSide(convoId, messageId) {
 async function runChatTurn(convoId, userId, turn, images = null) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
+  if (turn?.lane?.blank) return runBlankTurn(convoId, userId, convo, turn, { onToken: null, onStatus: null, signal: null, images, opts: {} });
   const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
+  const lookups = roomWantsLookups(convo, turn);
 
   const maxTokens = turnMaxTokens(convoId);
   const clarifyMode = convo.clarification_mode === 'interview' ? 'interview' : 'normal';
   const prompt = buildTurnPrompt({
-    convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null,
+    convo, ctx, brevity: false, tools: lookups, repoFacts: turn?.repoFacts || null,
     instruction: clarifyMode === 'interview' ? INTERVIEW_INSTRUCTION : null,
     maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
   });
@@ -2678,7 +2753,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
     effort: turn?.lane?.effort || null,
-    tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
+    tools: lookups ? studioTools(convoId) : null, dispatchTool: lookups ? studioDispatch(convoId) : null,
     maxTokens,
     label: 'conversations:chat', tailReminder: voiceTailReminder(convo),
     allowLongOutput: true, timeoutMs: 150_000,

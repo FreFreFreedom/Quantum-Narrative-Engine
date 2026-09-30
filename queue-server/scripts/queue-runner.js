@@ -27,7 +27,7 @@ import { loadEnvFile } from '../server/src/lib/loadEnvFile.js';
 loadEnvFile(new URL('../.env', import.meta.url));
 
 import { spawn } from 'node:child_process';
-import { mkdtempSync, existsSync, readFileSync, writeFileSync, unlinkSync, copyFileSync, statSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, existsSync, readFileSync, writeFileSync, unlinkSync, copyFileSync, statSync } from 'node:fs';
 import { tmpdir, homedir, hostname } from 'node:os';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -670,6 +670,16 @@ async function opencodeModelsForReport() {
 // nowhere else — never on Railway, never committed. Absent is a supported state:
 // the job simply runs on the main account instead of failing.
 const SIDE_TOKEN = process.env.CLAUDE_SIDE_OAUTH_TOKEN || '';
+
+// An empty folder for text jobs, so the CLI finds no CLAUDE.md, AGENTS.md or
+// project memory to read before it answers. Made once, outside every repo.
+let cleanRoom = null;
+function cleanRoomDir() {
+  if (cleanRoom && existsSync(cleanRoom)) return cleanRoom;
+  cleanRoom = join(tmpdir(), 'qne-clean-room');
+  try { mkdirSync(cleanRoom, { recursive: true }); } catch {}
+  return cleanRoom;
+}
 let sideTokenWarned = false;
 function warnSideTokenMissingOnce() {
   if (sideTokenWarned) return;
@@ -780,7 +790,9 @@ async function runHelperJobs() {
         effort: job.effort || null,
         account: cxAccount,
         timeoutMs: Number.isFinite(job.timeout_ms) && job.timeout_ms > 0 ? Math.min(job.timeout_ms, 1_200_000) : 120_000,
-        cwd: RUNNER_REPO,
+        // Never the repo: from there Codex reads AGENTS.md and answers the Room by
+        // the coding agents' rules (2026-09-30).
+        cwd: cleanRoomDir(),
       });
     } catch (e) {
       out = { code: -1, text: '', error: e.message };
@@ -858,9 +870,12 @@ async function runHelperJobs() {
       model,
       effort: job.effort || null,
       timeoutMs,
-      cwd: RUNNER_REPO,
+      // A job with no tool grant is answered from its prompt alone, in a clean
+      // room: no project folder, no user-wide rules or hooks (claudeCode.js, `clean`).
+      cwd: tools ? RUNNER_REPO : cleanRoomDir(),
       env: claudeCli.spawnEnv(side ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}),
       allowedTools: tools,
+      clean: !tools,
     });
   } catch (e) {
     out = { code: -1, text: '', error: e.message };

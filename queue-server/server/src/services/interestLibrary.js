@@ -463,10 +463,16 @@ export function changeInterest(owner, id, input, remove = false) {
     .run(c.kind,c.title,c.creator,c.year,identity,state,id,owner);
   return { ok: true };
 }
-export function interestContext(owner, text) {
+// `onlyExplicit`: the Room's full answers (2026-09-30) read his saved things only
+// when he points at them ("my library", "what I saved"). Matching every long word
+// of every question against the library pulled a dozen saved titles into answers
+// that never asked for them.
+export const INTEREST_POINTED = /\b(?:my (?:library|interests|saved|screenshots?|list)|saved|i (?:have )?saved|screenshots?)\b/i;
+export function interestContext(owner, text, { onlyExplicit = false } = {}) {
   if (!db || !owner) return '';
   const kind = /\bbooks?\b/i.test(text) ? 'book' : /\b(films?|movies?)\b/i.test(text) ? 'film' : /\b(series|shows?|tv)\b/i.test(text) ? 'series' : '';
   const explicit = /\b(my|saved|interest|library|screenshots?)\b/i.test(text);
+  if (onlyExplicit && !INTEREST_POINTED.test(text)) return '';
   const terms = norm(text).split(' ').filter(w => w.length > 3 && !['that','this','what','with','from','about','have','could','would','please','books','films','movies','series','show','tell','them','these'].includes(w)).slice(-25);
   let rows = [];
   for (const term of terms) rows.push(...listInterests(owner, { query: term, kind, limit: 6 }));

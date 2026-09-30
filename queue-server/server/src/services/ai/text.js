@@ -1485,6 +1485,9 @@ export async function generateTextStream({
   // subscriptions and Codex). Null means the engine's own default. Picked per
   // conversation in the Room beside the model itself (2026-09-21).
   effort = null,
+  // Real turns instead of one prompt (the Room's blank lane, 2026-09-30): sent as
+  // they are, on the streaming path, whether the lane is paid or free.
+  messages: presetMessages = null,
 }) {
   // A hand-picked paid OpenAI model can see the image too. This has to happen
   // before the general vision fork below: that fork deliberately defaults every
@@ -1541,7 +1544,7 @@ export async function generateTextStream({
 
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
-  if (!isMeteredProvider(providerId)) {
+  if (!isMeteredProvider(providerId) && !presetMessages) {
     const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs, strictModel, effort });
     if (r?.text && onToken) onToken(r.text);
     return r;
@@ -1550,7 +1553,9 @@ export async function generateTextStream({
   // From here on the feature IS configured to spend money, so any deviation is
   // something Antoine needs told.
   const fallback = async (notice) => {
-    if (strictModel) return { error: 'selected_model_unavailable', message: notice };
+    // A pick that must not change lanes did not change lanes, so the notice must not
+    // say it did.
+    if (strictModel) return { error: 'selected_model_unavailable', message: String(notice).replace(/,? (?:— )?so this (?:answer )?came from (?:a|the) free (?:model|lane) instead$/, '') };
     console.warn(`[${label}] paid lane unavailable — ${notice}`);
     if (onStatus) { try { onStatus('The paid lane is unavailable — answering on the free lane…'); } catch {} }
     const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs, effort });
@@ -1558,13 +1563,14 @@ export async function generateTextStream({
     return r?.text ? { ...r, notice } : { error: r?.error || 'generation_failed', message: r?.message, notice };
   };
 
-  const why = openAiStudioBlockReason();
-  if (why || !openAiStudioEnabled()) return fallback(`the paid OpenAI lane is switched off (${why || 'not enabled'}), so this answer came from the free lane instead`);
+  const metered = isMeteredProvider(providerId);
+  const why = metered ? openAiStudioBlockReason() : null;
+  if (metered && (why || !openAiStudioEnabled())) return fallback(`the paid OpenAI lane is switched off (${why || 'not enabled'}), so this answer came from the free lane instead`);
 
   // The monthly ceiling. Synchronous on purpose — a conversation turn must not
   // wait on a network call to OpenAI's cost API before it can start, and
   // capStateSync() is never lower than what we already know locally.
-  const cap = capStateSync();
+  const cap = metered ? capStateSync() : { blocked: false };
   if (cap.blocked) {
     // A cap under a cent still has to print as a real number — "$0.00 budget is
     // used up" reads as a bug rather than a ceiling.
@@ -1582,7 +1588,7 @@ export async function generateTextStream({
   // no Anthropic round trip to translate. The array GROWS across tool rounds:
   // assistant(tool_calls) then one role:'tool' message per call, which is what
   // lets round N+1 see what round N looked up.
-  const messages = [{ role: 'user', content: prompt }];
+  const messages = presetMessages ? presetMessages.map((m) => ({ ...m })) : [{ role: 'user', content: prompt }];
 
   let text = '';
   let toolCallsMade = 0;
@@ -1608,7 +1614,8 @@ export async function generateTextStream({
       }
       // Said in words, never as the provider's raw JSON (2026-09-26).
       const raw = String(stream.message || stream.error || '');
-      const why = /too large|tokens per min|TPM/i.test(raw) ? 'this turn was more text than it takes in a minute'
+      const why = /high demand|UNAVAILABLE|overloaded|\b503\b/i.test(raw) ? 'its servers are overloaded right now'
+        : /too large|tokens per min|TPM/i.test(raw) ? 'this turn was more text than it takes in a minute'
         : /rate.?limit|429/i.test(raw) ? 'it was asked too often in the last minute'
         : /quota|billing|insufficient/i.test(raw) ? 'its account is out of credit'
         : 'it did not answer';
@@ -1708,6 +1715,7 @@ export async function generateTextStream({
 
   if (!text.trim()) return fallback('the paid model returned an empty answer, so this answer came from the free lane instead');
 
-  recordSideCall();
+  if (metered) recordSideCall();
+  else recordLaneCall(providerId, model, true, label);
   return { text: text.trim(), via: providerId, provider: providerId, model, toolCalls: toolCallsMade };
 }

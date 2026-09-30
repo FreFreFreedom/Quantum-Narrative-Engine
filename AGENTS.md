@@ -305,6 +305,32 @@ and must not be written back into the Room's prompt. Code: `ROOM_LINE` and `room
 `services/conversations.js`. The two memory blocks that ride along say what he asked and what
 he is drawn to, never "follow", "outrank" or "never force" (2026-09-26).
 
+**Where the rules kept hiding (audit 2026-09-30 — he still preferred a fresh model).** Five
+back doors, all closed; do not reopen any of them:
+- **The Mac's own Claude setup.** Room answers on either Claude account run through the
+  runner, which spawned the CLI from the repo with no system prompt of its own — so every
+  answer read Claude Code's coding-agent prompt, `~/.claude/CLAUDE.md` ("short, bullets,
+  fragments, no headings"), a user hook stamping "ANSWER STYLE (Antoine, always)", the repo
+  CLAUDE.md and auto-memory. Toolless helper jobs now run `clean` (`claudeCode.js`
+  `runToolless`: `--setting-sources project,local` + a one-line `--system-prompt`) from an
+  empty folder (`queue-runner.js#cleanRoomDir`). Codex text jobs run from that folder too —
+  from the repo it read AGENTS.md.
+- **The harvested memory.** `mindBlock` sent "taste" and "vision" facts on every answer, and
+  the harvest writes them as rules ("the desired move is to adopt a poetic tone in all future
+  responses"). Full Room answers no longer carry `mindBlock` at all; what he explicitly told
+  it to remember (`directInstructionsBlock`) still rides.
+- **Three random "subjects he is drawn to"** on every turn — gone from full answers.
+- **The shelf and the library.** The whole book list plus a how-to-quote paragraph rode on
+  every answer, and every long word matched against his saved interests; now only a book he
+  names, or his saved things when he points at them.
+- **The tool list.** Tool descriptions are pages of the paradigm's vocabulary; they now ride
+  only on a question about his app or his things (`roomWantsLookups`).
+
+**Blank models (his ask, 2026-09-30).** The picker's "Blank" group — Gemini and GPT-4.1 —
+sends the conversation as real turns and nothing else: no portrait, no memory, no tools, no
+headings, no instruction, no fallback lane (`runBlankTurn`, lane flag `blank`). It is the
+fresh-model baseline he compares the Room against; never attach anything to it.
+
 **Depth: meaning, not a recital (hard, his call 2026-09-25).** He sent one question to GPT-4.1
 on miniapps.ai and to the Room, and preferred the miniapps answer by far — and said what he
 valued most was not its layout but "the metaphors and how it talks about things, because in
