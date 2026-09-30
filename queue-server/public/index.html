@@ -30284,7 +30284,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // is the right failure — a helper that quietly fell back to a Claude lane would
   // spend a subscription on typing. Neither ever writes to the conversation.
   //
-  //   Tab   takes the grey continuation sitting behind the caret.
   //   ⌥ ⏎   reads the whole draft back as a diff, each edit accepted on its own.
   function wirePromptHelp(host, e, input){
     var compose = host.querySelector('.se-compose');
@@ -30438,7 +30437,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       };
     }
 
-    input.addEventListener('input', schedule);
+    // The grey continuation behind the caret is switched off: he found the model
+    // finishing his sentences more distracting than useful. schedule() stays for a revert.
     input.addEventListener('blur', dropGhost);
     input.addEventListener('scroll', function(){ if(e.ghost) paintGhost(e.ghost); });
     input.addEventListener('keydown', function(ev){
