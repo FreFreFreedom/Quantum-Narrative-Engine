@@ -64,7 +64,7 @@ export const QUESTION_MARKER = '=== USER QUESTION ===';
 const SUMMARY_SECTION_INSTRUCTION = [
   'Then you MUST end your reply with a section delimited EXACTLY like this:\n',
   SUMMARY_SECTION_MARKER, '\n',
-  'Followed by a short summary for the user who filed this, in plain language, no jargon, ',
+  'Followed by a short summary for the user who filed this, in plain language, ',
   'no file names. Scale the length to the complexity of the change. ',
   'Explain what changed, how to see it, and anything worth flagging.',
 ].join('');

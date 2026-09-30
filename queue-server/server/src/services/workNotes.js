@@ -58,7 +58,7 @@ export async function workNote(convoId, { kind = 'film', title = '', creator = '
     prompt: [
       `Write ${MAX_WORDS - 10} to ${MAX_WORDS + 5} words about the ${what} "${title}"${creator ? ` (${creator}${year ? ', ' + year : ''})` : year ? ` (${year})` : ''} for the conversation below.`,
       'Not a catalogue synopsis. Say, in one short clause, what happens in it — then spend most of the words on why it matters HERE: which idea of this conversation it shows, and how (a scene, a mechanism, a character). Use the conversation\'s own ideas and words.',
-      'Plain simple words, no jargon, no preamble, no quotation marks, never the ending. Three or four sentences, all finished. If you do not know the work, say so in five words.',
+      'Plain simple words, no preamble, no quotation marks, never the ending. Three or four sentences, all finished. If you do not know the work, say so in five words.',
       overview ? `Catalogue synopsis (for facts only): ${String(overview).slice(0, 1200)}` : '',
       '=== THE CONVERSATION (latest turns) ===', msgs.slice(-6000),
     ].filter(Boolean).join('\n\n'),

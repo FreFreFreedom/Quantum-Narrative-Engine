@@ -306,7 +306,7 @@ ${subjectsLine(4)}
 ${instruction ? `He directly asked: "${instruction}" — honor exactly what this names (domain, form, or count).` : 'No direct request was made this time — use the precedence above on your own.'}
 ${avoided ? `Do not repeat any of these, in any form:\n${avoided}\n` : ''}
 ${HARD_RULES}
-- Plain, short words. No jargon.
+- Plain, short words.
 
 Propose ${poolSize} candidates — cast a wide net, the strongest ones will be picked from these.${askCount ? ' Also work out how many he actually wants: a bare number ("twelve", "17") IS a count; a number that is part of a name or established structure (e.g. "five-act structure", "the seven deadly sins") is NOT a request for that many — it is part of the subject. If no count is stated, the default is ' + DEFAULT_COUNT + '.' : ''}
 
@@ -343,7 +343,6 @@ Reject a candidate if:
 - it is a generic social trope with nothing specific holding it up
 - it reverses power, authority or dependence
 - it invents a factual detail that was not given
-- it uses jargon
 - it is a near-duplicate of another candidate, or of one already accepted (exact match or same relation restated)
 - it opens no new question
 - (with no domain requested) it is scientific rather than social

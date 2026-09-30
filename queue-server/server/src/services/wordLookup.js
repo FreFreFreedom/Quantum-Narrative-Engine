@@ -39,7 +39,7 @@ function messageText(convoId, messageId) {
 const PROMPT = `You are a dictionary that knows where the reader is. He is reading an answer in a
 long conversation and selected ONE word. Write, for him, what that word means as it is used
 in THIS sentence, with the shade it carries here that the plain word would miss. Plain
-English — it is his second language. No jargon, no etymology, no other senses, no list,
+English — it is his second language. No etymology, no other senses, no list,
 no numbering, no heading, no markdown, no quotation marks around the word. ONE sentence
 of prose, about 15 words — never more than 18 — and nothing after it. Do not begin with the word itself, and do
 not begin with "In this context".`;
@@ -49,13 +49,12 @@ not begin with "In this context".`;
 const PHRASE_PROMPT = `You are a dictionary that knows where the reader is. He is reading an answer in a
 long conversation and selected a PHRASE. Write, for him, what this phrase means as it is used
 here — the idea it carries, including any shade or image a plain reading would miss. Plain
-English — it is his second language. No jargon, no list, no heading, no markdown, no quotation
+English — it is his second language. No list, no heading, no markdown, no quotation
 marks around the phrase. ONE sentence of prose, about 20 words — never more than 26 — and
 nothing after it. Do not begin by repeating the phrase, and do not begin with "In this context".`;
 const PASSAGE_PROMPT = `You are a reading companion who knows where the reader is. He is reading an answer in
 a long conversation and selected a PASSAGE. Say plainly what it is really saying here — the idea
-under the words, unpacked, not repeated. Plain English — it is his second language. No jargon,
-no list, no heading, no markdown. One or two short sentences, at most 45 words in all, and
+under the words, unpacked, not repeated. Plain English — it is his second language. No list, no heading, no markdown. One or two short sentences, at most 45 words in all, and
 nothing after them. Do not begin by repeating the passage, and do not begin with "This passage".`;
 
 function firstSentences(raw, n) {
@@ -138,7 +137,7 @@ conversation. The reader's first language is French; he reads English well but n
 word. From the CANDIDATE WORDS, choose up to 14 that he may not know, or that carry a
 special shade in this answer. For each, write what it means as used here, with the shade
 the plain word would miss: ONE sentence of plain prose, about 15 words — never more than
-18 — no jargon, no etymology, no other senses. Do not begin with the word itself.
+18 — no etymology, no other senses. Do not begin with the word itself.
 Answer with JSON only, no markdown fence: {"words":[{"word":"…","text":"…"}]}`;
 
 function candidateWords(text) {

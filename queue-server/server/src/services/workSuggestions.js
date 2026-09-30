@@ -276,7 +276,7 @@ Here's a summary of the current state:
 
 ${digest}
 
-Propose up to ${MAX_NEW_PER_RUN} concrete work items ("chantiers") that would move ${t ? `the ${t.label} part of the app` : 'the app'} forward — features, fixes, data cleanup, etc. Each item must be a real, actionable prompt, not just a vague idea. The title and rationale are read by the app's owner, who is not a programmer: never use internal ids, technical component names or jargon — say what it changes for him, in simple words.
+Propose up to ${MAX_NEW_PER_RUN} concrete work items ("chantiers") that would move ${t ? `the ${t.label} part of the app` : 'the app'} forward — features, fixes, data cleanup, etc. Each item must be a real, actionable prompt, not just a vague idea. The title and rationale are read by the app's owner, who is not a programmer: never use internal ids or technical component names — say what it changes for him, in simple words.
 
 ${focus}
 
@@ -347,7 +347,7 @@ Here's the state of external integrations:
 
 ${digest}
 
-Propose up to ${MAX_NEW_INTEGRATIONS_PER_RUN} concrete external integrations that would enrich the research (new data sources, APIs, tools) — not internal tasks. The title and rationale are read by the owner, who is not a programmer: never use technical jargon or internal terms — say what it brings him, in simple words.
+Propose up to ${MAX_NEW_INTEGRATIONS_PER_RUN} concrete external integrations that would enrich the research (new data sources, APIs, tools) — not internal tasks. The title and rationale are read by the owner, who is not a programmer: never use internal terms — say what it brings him, in simple words.
 
 ${USER_FACING_STYLE}
 

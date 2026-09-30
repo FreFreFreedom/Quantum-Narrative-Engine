@@ -704,7 +704,7 @@ export async function vulgarizeExistingTexts(db) {
 
   if (suggestions.length) {
     const out = await generateText({
-      prompt: `Rewrite these suggestion titles and rationales so a non-programmer understands them instantly. Plain English, everyday words, no technical jargon, no internal names or ids — say what it would change for the person using the app. Keep each title short (under 8 words) and each rationale one short sentence. Return ONLY a JSON array with every input id exactly once: [{"id":"...","title":"...","rationale":"..."}]\n${JSON.stringify(suggestions)}`,
+      prompt: `Rewrite these suggestion titles and rationales so a non-programmer understands them instantly. Plain English, everyday words, no internal names or ids — say what it would change for the person using the app. Keep each title short (under 8 words) and each rationale one short sentence. Return ONLY a JSON array with every input id exactly once: [{"id":"...","title":"...","rationale":"..."}]\n${JSON.stringify(suggestions)}`,
       feature: 'studio', maxTokens: 1200, label: 'vulgarize-suggestions',
     });
     if (!out.error) {

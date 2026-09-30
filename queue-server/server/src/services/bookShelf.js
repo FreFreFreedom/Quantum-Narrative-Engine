@@ -273,7 +273,7 @@ async function writeRelevance(row, blurb) {
     blurb ? `WHAT ITS PUBLISHER SAYS:\n${blurb.slice(0, 1200)}` : '',
     mindBlock(`${row.title} ${row.author || ''} ${String(blurb || '').slice(0, 600)}`),
     `Say what this book gives HIM — the thinking it feeds, where it bites on what he is working on, and what he would reach into it for. ${NOTE_WORDS}.`,
-    'Plain words, no jargon, no equations, no hedging, no preamble, no bullet list, and never a summary of the plot. If you do not know the book, say what it is likely to carry and mark that as a guess in four words. Write prose, nothing else.',
+    'Plain words, no equations, no hedging, no preamble, no bullet list, and never a summary of the plot. If you do not know the book, say what it is likely to carry and mark that as a guess in four words. Write prose, nothing else.',
   ].filter(Boolean).join('\n\n');
   let raw = '';
   for (let tries = 0; tries < 2 && (looksCut(raw) || tooShort(raw)); tries += 1) {

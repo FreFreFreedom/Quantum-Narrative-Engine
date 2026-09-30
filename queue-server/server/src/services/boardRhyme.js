@@ -105,7 +105,7 @@ Hard rules:
 - Quote the line of the conversation, word for word, that this image answers. Do not paraphrase it.
 - Never describe what is IN the picture, never name the film, the artist, or say what the picture "shows" or "depicts" — that is a description, not a reason, and it is banned. Two real answers that are exactly what NOT to write: "The image depicts the bird of the city mentioned in the text." and "This picture shows a character from Top Boy, which is the exact show the user asked to contrast with Snowfall." Both name the picture instead of saying why it was kept — never write anything shaped like them.
 - The "why" is one short sentence about what holds between the line and what is actually happening in the frame — a gesture, the distance between two bodies, who is turned away, what the light is doing — never what either one looks like or is titled.
-- Plain, short words. No jargon.
+- Plain, short words.
 
 Answer in exactly two lines, nothing before or after:
 LINE: the quoted line from the conversation

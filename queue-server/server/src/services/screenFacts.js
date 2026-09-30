@@ -295,7 +295,7 @@ export async function screenRelevance(owner, item, { refresh = false } = {}) {
     row?.overview ? `WHAT IT IS ABOUT:\n${row.overview.slice(0, 900)}` : '',
     mindBlock(`${item.title} ${String(row?.overview || '').slice(0, 600)}`),
     `Say what this gives HIM — the thinking it feeds, the scene or mechanism it shows that his written sources argue in the abstract. ${NOTE_WORDS}.`,
-    'Plain words, no jargon, no plot summary, no preamble, no bullets. Prose only. If you do not know it, say what it is likely to carry and mark that as a guess in four words.',
+    'Plain words, no plot summary, no preamble, no bullets. Prose only. If you do not know it, say what it is likely to carry and mark that as a guess in four words.',
   ].filter(Boolean).join('\n\n');
   let raw = '';
   for (let tries = 0; tries < 2 && (looksCut(raw) || tooShort(raw)); tries += 1) {
