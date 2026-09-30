@@ -288,10 +288,15 @@ export async function screenRelevance(owner, item, { refresh = false } = {}) {
     if (about) db.prepare('UPDATE screen_facts SET about=? WHERE key=?').run(about, keyOf(kind, item.title, item.year));
   }
   const overview = about || row?.overview || '';
-  if (row?.relevance && !refresh && !looksCut(row.relevance) && !tooShort(row.relevance)) return { relevance: row.relevance, overview };
+  // One episode gets its own note, kept on its Library entry: the series' note
+  // is about the whole run, not the hour he pointed at.
+  const ep = String(item.episode || '').trim();
+  if (ep && item.episode_note && !refresh) return { relevance: item.episode_note, overview };
+  if (!ep && row?.relevance && !refresh && !looksCut(row.relevance) && !tooShort(row.relevance)) return { relevance: row.relevance, overview };
   const prompt = [
     `A ${kind} saved in a research tool its owner uses to think with.`,
     `${kind === 'series' ? 'SERIES' : 'FILM'}: "${item.title}"${row?.year ? ` (${row.year})` : ''}`,
+    ep ? `ONE EPISODE OF IT: ${ep} — speak of this episode, not the whole series.` : '',
     row?.overview ? `WHAT IT IS ABOUT:\n${row.overview.slice(0, 900)}` : '',
     mindBlock(`${item.title} ${String(row?.overview || '').slice(0, 600)}`),
     `Say what this gives HIM — the thinking it feeds, the scene or mechanism it shows that his written sources argue in the abstract. ${NOTE_WORDS}.`,
@@ -303,6 +308,7 @@ export async function screenRelevance(owner, item, { refresh = false } = {}) {
     raw = String(out?.text || '').trim();
   }
   const text = wholeSentences(raw.slice(0, 1000));
-  if (text && row) db.prepare('UPDATE screen_facts SET relevance=? WHERE key=?').run(text, keyOf(kind, item.title, item.year));
+  if (text && ep && item.id) db.prepare('UPDATE interest_works SET episode_note=? WHERE id=?').run(text, item.id);
+  else if (text && row) db.prepare('UPDATE screen_facts SET relevance=? WHERE key=?').run(text, keyOf(kind, item.title, item.year));
   return { relevance: text, overview };
 }

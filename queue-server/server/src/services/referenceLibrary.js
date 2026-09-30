@@ -62,7 +62,7 @@ export function saveReference(owner, ref) {
   if(item.type==='passage'||item.type==='saved')return item;
   // Already in the Library under another spelling: that copy is the one kept.
   const fp=workFingerprint(item);
-  if(fp)for(const w of db.prepare('SELECT id,kind,title,creator,year FROM interest_works WHERE owner=?').all(owner))
+  if(fp)for(const w of db.prepare('SELECT id,kind,title,creator,year,episode FROM interest_works WHERE owner=?').all(owner))
     if(workFingerprint(w)===fp&&sameEntry(w,item))db.prepare('UPDATE interest_works SET kept=1 WHERE id=?').run(w.id);
   db.prepare('INSERT OR IGNORE INTO reference_saves(id,owner,identity,source_id,snapshot) VALUES(?,?,?,?,?)')
     .run(randomUUID(),owner,item.identity,item.id,JSON.stringify(item));
@@ -76,7 +76,7 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
   // timestamp formats live in these tables ('YYYY-MM-DD HH:MM:SS' and ISO), so each
   // row carries one comparable number.
   const addedMs=(t)=>{if(!t)return 0;const v=String(t).replace(' ','T');const n=Date.parse(/[zZ]$|[+-]\d\d:?\d\d$/.test(v)?v:v+'Z');return Number.isNaN(n)?0:n;};
-  const media=db.prepare('SELECT id,kind,title,creator,year,state,created_at FROM interest_works WHERE owner=?').all(owner).map(({created_at,...r})=>({...r,type:'media',added:addedMs(created_at)}));
+  const media=db.prepare('SELECT id,kind,title,creator,year,state,episode,created_at FROM interest_works WHERE owner=?').all(owner).map(({created_at,...r})=>({...r,type:'media',added:addedMs(created_at)}));
   // A passage kept from a conversation carries no source line; only one from a
   // book or a document names where it came from.
   const passages=db.prepare('SELECT id,text,source_title,convo_id,message_id,created_at FROM saved_passages WHERE created_by=? AND deleted_at IS NULL').all(owner)

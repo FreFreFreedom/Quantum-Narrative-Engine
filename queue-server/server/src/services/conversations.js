@@ -166,7 +166,7 @@ export function mediaItemsByIds(owner, ids = []) {
   if (!db || !ids.length) return [];
   const marks = ids.map(() => '?').join(',');
   try {
-    return db.prepare(`SELECT id, kind, title, creator, year FROM interest_works
+    return db.prepare(`SELECT id, kind, title, creator, year, episode, episode_note FROM interest_works
                        WHERE owner=? AND id IN (${marks}) AND kind IN ('film','series','book')`).all(owner, ...ids);
   } catch (err) { return []; }
 }
@@ -2289,8 +2289,9 @@ async function worksFromAnswer(userId, text) {
     // came back was cut off mid-JSON — which reads as a failure, so nothing was
     // saved at all. (2026-09-28)
     feature: 'summary', maxTokens: 1600, label: 'conversations:works', timeoutMs: 30_000, maxAttempts: 2,
-    prompt: 'Below is an answer from a reading-and-film advisor. List every book, film and TV series the answer recommends or puts forward as a suggestion. Skip works it only mentions in passing as background.\n'
-      + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series","title":"exact title, no subtitle","creator":"author for a book, director for a film, creator for a series","year":"year if known","where":"4 to 8 words copied letter for letter from the answer, where it first speaks of this work — by title, or as \'the memoir\', \'on screen\', its author\'s name"}]}. {"works":[]} if there are none.\n\n'
+    prompt: 'Below is an answer from a reading-and-film advisor. List every book, film and TV series the answer recommends or puts forward as a suggestion, and every single episode of a series it points to. Skip works it only mentions in passing as background.\n'
+      + 'An episode is its own entry: kind "episode", title = the series title, episode = the episode as the answer names it (season and number, and its name if known, e.g. "S3E11 — Middle Ground").\n'
+      + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series"|"episode","title":"exact title, no subtitle","episode":"only for an episode","creator":"author for a book, director for a film, creator for a series","year":"year if known","where":"4 to 8 words copied letter for letter from the answer, where it first speaks of this work — by title, or as \'the memoir\', \'on screen\', its author\'s name"}]}. {"works":[]} if there are none.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 20000),
   });
   if (result.error) return null;
@@ -2301,7 +2302,7 @@ async function worksFromAnswer(userId, text) {
   // The same work named twice in one answer hung two identical covers (seen live
   // on a side talk, 2026-09-30).
   const seen = new Set();
-  const once = clean.filter((w) => { const k = (w?.kind || '') + '|' + String(w?.title || '').trim().toLowerCase(); return !seen.has(k) && seen.add(k); });
+  const once = clean.filter((w) => { const k = (w?.kind || '') + '|' + String(w?.title || '').trim().toLowerCase() + '|' + String(w?.episode || '').trim().toLowerCase(); return !seen.has(k) && seen.add(k); });
   clean.length = 0; clean.push(...once);
   if (!clean.length) return [];
   const saved = saveSuggestedWorks(userId || 'antoine', clean);
@@ -2314,12 +2315,14 @@ async function worksFromAnswer(userId, text) {
   const fold = (t) => String(t || '').replace(/[*_`]/g, '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').toLowerCase().trim();
   const flat = fold(text);
   const whereOf = (w) => {
-    const hit = clean.find((x) => String(x?.kind) === w.kind && String(x?.title || '').toLowerCase().trim() === String(w.title || '').toLowerCase().trim())
+    const same = (x) => String(x?.title || '').toLowerCase().trim() === String(w.title || '').toLowerCase().trim();
+    const hit = (w.episode && clean.find((x) => same(x) && String(x?.episode || '').trim() === w.episode))
+      || clean.find((x) => String(x?.kind) === w.kind && same(x))
       || clean.find((x) => String(x?.title || '').toLowerCase().trim() === String(w.title || '').toLowerCase().trim());
     const at = fold(hit?.where).slice(0, 120);
     return at.split(' ').length >= 2 && flat.includes(at) ? at : '';
   };
-  return saved.map((w) => ({ kind: w.kind, title: w.title, creator: w.creator, year: w.year, where: whereOf(w) }));
+  return saved.map((w) => ({ kind: w.kind, title: w.title, creator: w.creator, year: w.year, ...(w.episode ? { episode: w.episode } : {}), where: whereOf(w) }));
 }
 
 // Works he names himself go into the Library too — his rule (2026-09-25): a book or
@@ -2337,8 +2340,8 @@ async function mentionedWorks(convoId, userId) {
   try {
     const result = await generateText({
       feature: 'summary', maxTokens: 600, label: 'conversations:mentioned-works', timeoutMs: 20_000, maxAttempts: 2,
-      prompt: 'Below is a message someone typed. List every book, film and TV series they name by its title. Correct an obvious misspelling of a well-known title. Skip a work referred to only vaguely ("these two books", "that film") and skip a person named without a title. Only include a work when you are sure it is a real book, film or series and sure which of the three it is.\n'
-        + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series","title":"exact title, no subtitle","creator":"author for a book, director for a film, creator for a series","year":"year if known"}]}. {"works":[]} if there are none.\n\n'
+      prompt: 'Below is a message someone typed. List every book, film and TV series they name by its title. Correct an obvious misspelling of a well-known title. Skip a work referred to only vaguely ("these two books", "that film") and skip a person named without a title. Only include a work when you are sure it is a real book, film or series and sure which of the three it is. A single episode of a series they name is its own entry: kind "episode", title = the series, episode = season, number and name as far as known.\n'
+        + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series"|"episode","title":"exact title, no subtitle","episode":"only for an episode","creator":"author for a book, director for a film, creator for a series","year":"year if known"}]}. {"works":[]} if there are none.\n\n'
         + '=== MESSAGE ===\n' + text.slice(0, 6000),
     });
     if (result.error) return;

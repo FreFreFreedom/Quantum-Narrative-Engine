@@ -159,7 +159,8 @@ export function conversationsRoutes() {
   router.get('/:id/work-card', asyncHandler(async (req, res) => {
     const owner = req.user?.id || 'antoine';
     const it = { id: 'x', kind: String(req.query.kind || 'film'), title: String(req.query.title || '').slice(0, 300),
-      creator: String(req.query.creator || '').slice(0, 200), year: String(req.query.year || '').slice(0, 8) };
+      creator: String(req.query.creator || '').slice(0, 200), year: String(req.query.year || '').slice(0, 8),
+      episode: String(req.query.kind || '') === 'series' ? String(req.query.episode || '').slice(0, 160) : '' };
     if (!it.title.trim()) return res.status(400).json({ error: 'title required' });
     const facts = it.kind === 'book'
       ? (await bookFacts.bookFactsFor(owner, [it])).x || {}

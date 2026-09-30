@@ -45,14 +45,14 @@ function forty(text) {
   return end > 200 ? cut.slice(0, end + 1) : cut.replace(/[,;:]$/, '') + '…';
 }
 
-export async function workNote(convoId, { kind = 'film', title = '', creator = '', year = '', overview = '' } = {}, { refresh = false } = {}) {
+export async function workNote(convoId, { kind = 'film', title = '', creator = '', year = '', overview = '', episode = '' } = {}, { refresh = false } = {}) {
   if (!db || !convoId || !norm(title)) return { text: '' };
-  const key = `${kind}|${norm(title)}`;
+  const key = `${kind}|${norm(title)}` + (episode ? `|ep ${norm(episode)}` : '');
   const row = db.prepare('SELECT text FROM work_notes WHERE convo_id=? AND key=? AND v>=?').get(convoId, key, NOTE_V);
   if (row && !refresh) return { text: plain(row.text) };
   const msgs = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' ORDER BY created_at DESC, rowid DESC LIMIT 6`)
     .all(convoId).reverse().map((m) => (m.role === 'user' ? 'HIM: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1200)).join('\n\n');
-  const what = kind === 'book' ? 'book' : kind === 'series' ? 'TV series' : 'film';
+  const what = kind === 'book' ? 'book' : kind === 'series' ? (episode ? `episode ${episode} of the TV series` : 'TV series') : 'film';
   const out = await generateText({
     feature: 'summary', maxTokens: 1000, label: 'room:work-note', timeoutMs: 30_000, maxAttempts: 2,
     prompt: [

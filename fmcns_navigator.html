@@ -4267,6 +4267,12 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
   border-style:solid; border-color:transparent; }
 .se-ghost-tail { color:var(--c-ink-5); opacity:.85; }
 .se-compose .se-input { position:relative; z-index:1; }
+.se-fold { display:none; }
+.room-convo .se-compose.is-tall .se-fold { display:flex; align-items:center; justify-content:center; position:absolute; z-index:2; top:0; right:2px;
+  width:26px; height:26px; padding:0; border:0; border-radius:50%; background:none; cursor:pointer; color:var(--c-ink-4); }
+.room-convo .se-compose.is-tall .se-fold:hover { color:var(--c-ink-2); background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
+.se-fold::before { content:''; width:7px; height:7px; border:solid currentColor; border-width:0 1.5px 1.5px 0; transform:translateY(-2px) rotate(45deg); }
+.se-compose.is-folded .se-fold::before { transform:translateY(2px) rotate(-135deg); }
 
 /* Sharpening, shown as a diff inside his own sentence. Each piece is accepted or
    refused on its own — he never swallows a rewrite whole. */
@@ -18894,7 +18900,7 @@ function libCard(it) {
     + '<button type="button" class="shelf-open" data-open aria-label="' + qEscAttr(it.title) + '">' + art
     + (facts && facts.rating ? '<span class="lib-badge">' + facts.rating.toFixed(1) + '</span>' : '')
     + (libIsScreen(it.raw) ? '<span class="lib-kind">' + (it.raw.kind === 'series' ? '◗' : '▶') + '</span>' : '')
-    + '<span class="shelf-name">' + qEsc(libShortTitle(it.title)) + (it.creator ? ' · ' + qEsc(it.creator) : '') + '</span></button>'
+    + '<span class="shelf-name">' + qEsc(libShortTitle(it.title)) + (it.raw && it.raw.episode ? ' · ' + qEsc(it.raw.episode) : '') + (it.creator ? ' · ' + qEsc(it.creator) : '') + '</span></button>'
     + (it.type === 'shelf'
       ? '<i class="shelf-dot" title="The whole book is here"></i>'
         + '<button type="button" data-drop title="Take it off the shelf" aria-label="Take it off the shelf">✕</button>'
@@ -18929,6 +18935,7 @@ function libScreenPanel(w) {
     return '<div class="shelf-panel">'
       + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
       + '<div><b title="' + qEscAttr(w.title) + '">' + qEsc(libShortTitle(w.title)) + '</b>'
+      + (w.episode ? '<small>Episode · ' + qEsc(w.episode) + '</small>' : '')
       + (w.creator ? '<small>' + qEsc(w.creator) + '</small>' : '')
       + ((f.year || w.year) ? '<div class="shelf-facts"><span>' + qEsc(f.year || w.year) + '</span></div>' : '') + '</div>'
       + bookOutMenu(bookLinks(w, f))
@@ -30258,6 +30265,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
               ? '<button type="button" class="se-attach" title="Add an image, PDF or text file" aria-label="Add an image, PDF or text file"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-upload"/></svg></button><input type="file" class="se-file-input" hidden multiple accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.md,.txt,.csv,.json,.js,.mjs,.cjs,.ts,.tsx,.jsx,.html,.css,.xml,.yaml,.yml,.log,.srt">'
               : '')
         +     '<textarea class="se-input" rows="1" placeholder="…"></textarea><span class="se-quill" aria-hidden="true"></span>'
+        +     '<button type="button" class="se-fold" title="Shrink the box" aria-label="Shrink the box" aria-expanded="true"></button>'
         +     '<span class="se-spend" hidden></span>'
         +     '<button type="button" class="se-miccancel" title="Cancel dictation" aria-label="Cancel dictation"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button><canvas class="se-micwave" aria-hidden="true"></canvas><button type="button" class="se-mic" hidden title="Dictate" aria-label="Dictate"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.6" y="1.8" width="4.8" height="8" rx="2.4"/><path d="M3.4 7.6a4.6 4.6 0 0 0 9.2 0M8 12.2v2"/></svg></button><button type="button" class="se-talk" hidden title="Talk" aria-label="Talk"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.8v2.4M5.25 4.8v6.4M8 2.5v11M10.75 4.8v6.4M13.5 6.8v2.4"/></svg></button>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
@@ -30512,6 +30520,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     input.value = e.draft || '';
     // Typing anywhere leaves the history behind and makes this the live draft again.
     input.oninput = function(){ e.histList = null; e.histAt = -1; e.draft = input.value; saveDraft(e); grow(input); };
+    var fold = host.querySelector('.se-fold');
+    if(fold) fold.onclick = function(ev){
+      ev.preventDefault();
+      var c = input.closest('.se-compose'); if(!c) return;
+      c.classList.toggle('is-folded'); grow(input);
+      if(!c.classList.contains('is-folded')) input.focus();
+    };
     var putInBox = function(text){
       input.value = text; e.draft = text; saveDraft(e); grow(input);
       try { input.setSelectionRange(text.length, text.length); } catch(err) {}
@@ -32313,7 +32328,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
 
   // The Room's box grows to almost half the window, so a long prompt can be read
   // whole before it goes (his ask, 2026-09-26: only two lines showed).
-  function grow(el){ var cap = el.closest && el.closest('.room-convo') ? Math.max(110, Math.round(window.innerHeight * 0.45)) : 110; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, cap) + 'px'; }
+  // A long draft can be folded down to two lines to read the thread above it
+  // before sending (his ask, 2026-09-30); it opens again on the same button, and
+  // an empty box is never left folded.
+  function grow(el){
+    var cap = el.closest && el.closest('.room-convo') ? Math.max(110, Math.round(window.innerHeight * 0.45)) : 110;
+    var c = el.closest && el.closest('.se-compose');
+    if(c && !el.value) c.classList.remove('is-folded');
+    var folded = !!(c && c.classList.contains('is-folded'));
+    if(folded) cap = 62;
+    el.style.height = 'auto';
+    var full = el.scrollHeight;
+    el.style.height = Math.min(full, cap) + 'px';
+    if(!c) return;
+    c.classList.toggle('is-tall', folded || full > 150);
+    var b = c.querySelector('.se-fold');
+    if(b){ b.title = folded ? 'Open the box' : 'Shrink the box'; b.setAttribute('aria-label', b.title); b.setAttribute('aria-expanded', folded ? 'false' : 'true'); }
+  }
 
   // Everything that changes between repaints, written into a scaffold that stays
   // put — so the composer keeps the caret, the selection and any IME state while
@@ -33397,9 +33428,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // Always on the right (his ask, 2026-09-27): covers alternating sides, next to
       // bullets, read as chaos. One column of covers, the text in order beside it.
       btn.type = 'button'; btn.className = 'se-cover is-right';
-      btn.title = w.title + (w.creator ? ' — ' + w.creator : '');
+      btn.title = w.title + (w.episode ? ' · ' + w.episode : '') + (w.creator ? ' — ' + w.creator : '');
       btn.dataset.convo = convoId || '';
-      btn.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '"'
+      btn.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '" data-cover-episode="' + qEscAttr(w.episode || '') + '"'
         + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"' : '') + '>' + (art ? '' : qEsc(libShortTitle(w.title))) + '</span>';
       if(pl.bi >= blocks.length){ var last = blocks[blocks.length - 1]; last.parentNode.insertBefore(btn, last.nextSibling); return; }
       // Two or more covers for one paragraph sit side by side in one small float,
@@ -33494,6 +33525,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         span.dataset.coverTitle = w.title;
         span.dataset.coverCreator = w.creator || '';
         span.dataset.coverYear = w.year || '';
+        span.dataset.coverEpisode = w.episode || '';
         word.parentNode.replaceChild(btn, word); span.appendChild(word); btn.appendChild(span);
         break;
       }
@@ -33729,6 +33761,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }
     var html = '<button type="button" class="se-card-x" data-card-close aria-label="Close">✕</button>'
       + '<b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
+      + (d.coverEpisode ? '<div class="se-card-by">Episode · ' + qEsc(d.coverEpisode) + '</div>' : '')
       + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '');
     if (!book) {
       if (f.by) html += '<div class="se-card-by">' + (kind === 'series' ? 'Created by ' : 'Directed by ') + qEsc(f.by) + '</div>';
@@ -33772,7 +33805,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var cardData = null;
     if (btn.dataset.convo) {
       api('/api/convos/' + encodeURIComponent(btn.dataset.convo) + '/work-card?kind=' + encodeURIComponent(d.coverKind) + '&title=' + encodeURIComponent(d.coverTitle)
-        + '&creator=' + encodeURIComponent(d.coverCreator) + '&year=' + encodeURIComponent(d.coverYear || ''))
+        + '&creator=' + encodeURIComponent(d.coverCreator) + '&year=' + encodeURIComponent(d.coverYear || '') + (d.coverEpisode ? '&episode=' + encodeURIComponent(d.coverEpisode) : ''))
         .then(function(card){ cardData = card || {}; }).catch(function(){ cardData = {}; })
         .then(function(){ paint(cardData); });
     }

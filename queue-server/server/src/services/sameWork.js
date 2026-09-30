@@ -30,8 +30,10 @@ export function sameMaker(a, b) {
 
 // Two Library entries that are the same thing: same family, same main title, and
 // nothing that tells them apart (the author for a book, the year for a screen work).
+// A series and one of its episodes are two entries; two episodes are two too.
+export const sameEpisode = (a, b) => norm(a) === norm(b);
 export function sameEntry(a, b) {
-  if (!a || !b || kindGroup(a.kind) !== kindGroup(b.kind) || !sameWork(a.title, b.title)) return false;
+  if (!a || !b || kindGroup(a.kind) !== kindGroup(b.kind) || !sameWork(a.title, b.title) || !sameEpisode(a.episode, b.episode)) return false;
   if (kindGroup(a.kind) === 'screen') {
     const ya = String(a.year || '').match(/\d{4}/)?.[0], yb = String(b.year || '').match(/\d{4}/)?.[0];
     return !ya || !yb || ya === yb;
@@ -43,5 +45,5 @@ export function sameEntry(a, b) {
 export function workFingerprint(item) {
   if (!item || !['book', 'film', 'series'].includes(item.kind)) return null;
   const k = workKey(item.title);
-  return k ? kindGroup(item.kind) + '|' + k : null;
+  return k ? kindGroup(item.kind) + '|' + k + (item.episode ? '|ep ' + norm(item.episode) : '') : null;
 }

@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readInterestScreenshot } from './interestScreenshot.js';
 import { canonicalBook, bookKnown } from './bookFacts.js';
-import { workKey, sameWork, kindGroup, sameMaker, sameEntry, workFingerprint } from './sameWork.js';
+import { workKey, sameWork, kindGroup, sameMaker, sameEntry, workFingerprint, sameEpisode } from './sameWork.js';
 
 let db;
 const requestTimes = new Map();
@@ -73,6 +73,10 @@ export function bindInterestLibrary(database) {
   try { db.exec('ALTER TABLE interest_works ADD COLUMN checked INTEGER NOT NULL DEFAULT 0'); } catch {}
   // 1 once a book has been compared with the other books by the same author.
   try { db.exec('ALTER TABLE interest_works ADD COLUMN twin_checked INTEGER NOT NULL DEFAULT 0'); } catch {}
+  // One episode of a series is its own entry: title is the series (so its cover
+  // and facts are found), episode names which one (his ask, 2026-09-30).
+  try { db.exec("ALTER TABLE interest_works ADD COLUMN episode TEXT NOT NULL DEFAULT ''"); } catch {}
+  try { db.exec('ALTER TABLE interest_works ADD COLUMN episode_note TEXT'); } catch {}
   try { mergeDoubles(); } catch (err) { console.warn('[interests] merging doubles failed:', err.message); }
   // One server owns this SQLite queue; resume interrupted reads after boot.
   db.prepare("UPDATE interest_imports SET status='queued',retry_at=NULL WHERE status='reading'").run();
@@ -284,25 +288,26 @@ export function createInterestImport(owner, convoId, input) {
 }
 
 function candidate(raw) {
-  return { kind: kinds.has(raw?.kind) ? raw.kind : '', title: clean(raw?.title), creator: clean(raw?.creator), year: clean(raw?.year, 20) };
+  const kind = raw?.kind === 'episode' ? 'series' : kinds.has(raw?.kind) ? raw.kind : '';
+  return { kind, title: clean(raw?.title), creator: clean(raw?.creator), year: clean(raw?.year, 20), episode: kind === 'series' ? clean(raw?.episode, 160) : '' };
 }
 function saveWork(owner, c, explicit = false) {
   const titleKey = norm(c.title);
   if (!titleKey || !kinds.has(c.kind)) return null;
   const same = db.prepare('SELECT * FROM interest_works WHERE owner=? AND kind=?').all(owner, c.kind)
     .filter(w => norm(w.title) === titleKey);
-  const identity = [c.kind, titleKey, norm(c.kind === 'book' ? c.creator : c.year)].join('|');
+  const identity = [c.kind, titleKey, norm(c.kind === 'book' ? c.creator : c.year)].join('|') + (c.episode ? '|ep ' + norm(c.episode) : '');
   const exact = same.find(w => w.identity === identity);
   if (exact) return { id: exact.id, added: false };
   // The same book with or without its subtitle is one book, not two.
   // A film saved once as a series is the same work too.
-  const alike = db.prepare('SELECT id,kind,title FROM interest_works WHERE owner=?').all(owner).find(w => kindGroup(w.kind) === kindGroup(c.kind) && sameWork(w.title, c.title));
+  const alike = db.prepare('SELECT id,kind,title,episode FROM interest_works WHERE owner=?').all(owner).find(w => kindGroup(w.kind) === kindGroup(c.kind) && sameWork(w.title, c.title) && sameEpisode(w.episode, c.episode));
   if (alike) return { id: alike.id, added: false };
   // Missing disambiguators must not silently merge two possible works.
   if (same.length && !explicit && same.some(w => c.kind === 'book' ? !c.creator || !w.creator : !c.year || !w.year)) return null;
   const id = randomUUID();
-  db.prepare('INSERT INTO interest_works(id,owner,kind,title,creator,year,identity) VALUES(?,?,?,?,?,?,?)')
-    .run(id, owner, c.kind, c.title, c.creator, c.year, identity);
+  db.prepare('INSERT INTO interest_works(id,owner,kind,title,creator,year,identity,episode) VALUES(?,?,?,?,?,?,?,?)')
+    .run(id, owner, c.kind, c.title, c.creator, c.year, identity, c.episode || '');
   return { id, added: true };
 }
 // Up to three screenshots are read at once — several dropped together used to wait
@@ -412,8 +417,8 @@ export function saveSuggestedWorks(owner, works = []) {
     // "The" or not, saved as a film when it is a series — or already on the shelf
     // as a whole book: reuse it, never add a second copy (his rule, 2026-09-23).
     const screen = c.kind === 'film' || c.kind === 'series';
-    const have = db.prepare('SELECT id,kind,title,creator,year FROM interest_works WHERE owner=?').all(owner)
-      .find(w => (w.kind === c.kind || (screen && (w.kind === 'film' || w.kind === 'series'))) && sameWork(w.title, c.title));
+    const have = db.prepare('SELECT id,kind,title,creator,year,episode FROM interest_works WHERE owner=?').all(owner)
+      .find(w => (w.kind === c.kind || (screen && (w.kind === 'film' || w.kind === 'series'))) && sameWork(w.title, c.title) && sameEpisode(w.episode, c.episode));
     if (have) { out.push({ ...c, kind: have.kind, creator: have.creator || c.creator, year: have.year || c.year, id: have.id, added: false }); continue; }
     if (c.kind === 'book') {
       let shelf = null;
@@ -437,11 +442,11 @@ export function listInterests(owner, { query = '', kind = '', limit = 100, offse
   if (kinds.has(kind)) { filters.push('kind=?'); args.push(kind); }
   for (const word of words) { filters.push("lower(title || ' ' || creator) LIKE ?"); args.push('%' + word + '%'); }
   const cap = Math.max(1, Math.min(100, Number(limit) || 20));
-  return db.prepare(`SELECT id,kind,title,creator,year,state FROM interest_works WHERE ${filters.join(' AND ')} ORDER BY created_at DESC,rowid DESC LIMIT ? OFFSET ?`)
+  return db.prepare(`SELECT id,kind,title,creator,year,state,episode FROM interest_works WHERE ${filters.join(' AND ')} ORDER BY created_at DESC,rowid DESC LIMIT ? OFFSET ?`)
     .all(...args, cap, Math.max(0, Number(offset) || 0));
 }
 export function readInterest(owner, id) {
-  const w = db.prepare('SELECT id,kind,title,creator,year,state FROM interest_works WHERE id=? AND owner=?').get(id, owner);
+  const w = db.prepare('SELECT id,kind,title,creator,year,state,episode FROM interest_works WHERE id=? AND owner=?').get(id, owner);
   if (!w) return { error: 'not_found' };
   return { ...w, certainty: 'Screenshot transcription, not a verified catalogue match.', sources: db.prepare('SELECT e.observed,b.filename,b.convo_id FROM interest_entries e JOIN interest_imports b ON b.id=e.batch_id WHERE e.work_id=? AND e.owner=? LIMIT 5').all(id, owner) };
 }
