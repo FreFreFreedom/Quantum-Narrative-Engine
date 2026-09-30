@@ -269,7 +269,7 @@ function relevanceTo(fact, contextWords) {
 }
 
 const DETAIL_FACTS = 3;     // how many facts arrive with their reasoning attached
-const DETAIL_CHARS = 900;   // per fact
+const DETAIL_CHARS = 1200;  // per fact — room for a taught idea's whole shape
 const RELEVANCE_PULL = 6;   // how hard the current subject outranks plain recency
 
 // The block injected into every conversation turn. Empty string when there are no
@@ -951,7 +951,7 @@ export function subjectsBlock(n = 3) {
 const TEACH_KINDS = ['how', 'subject', 'idea', 'about'];
 
 function teachPrompt({ passage, turns, avoid }) {
-  const convo = turns.map((t) => `${t.role === 'ai' ? 'YOU' : 'HIM'}: ${String(t.text || '').slice(0, 800)}`).join('\n');
+  const convo = turns.map((t) => `${t.role === 'ai' ? 'YOU' : 'HIM'}: ${String(t.text || '').slice(0, 4000)}`).join('\n');
   return `You are the memory of a personal thinking app with one user. He selected a passage in an answer and is telling you, in his own words, what to keep from it. English is his second language: read what he MEANS.
 
 Work out what he wants kept. It is one or more of:
@@ -960,14 +960,20 @@ Work out what he wants kept. It is one or more of:
 - "idea": an understanding about the world or about the paradigm (what something really is, how it works, what it does) — the thing itself, as a claim.
 - "about": a fact about him.
 
-THE MOST IMPORTANT RULE — point at the moon, not at the finger. Future answers will read what you save and copy any concrete thing in it. So save the UNDERSTANDING in your own plain words: never quote him, never quote or paraphrase the passage, never carry over its images, metaphors, names or distinctive words (a "subject" item's name is the only exception).
+KEEP ITS SHAPE. What he asks to keep is often not one idea but a structure: several parts, a range (what is done, what is being worked on, what could be done), a purpose behind it (why he wants it), a practice he is building. Never flatten that into one generic line — a reduced version is a wrong one.
+- "text" is the headline: the whole of it in one sentence, specific, in his own terms.
+- "detail" holds the full shape in plain words: every part he named, how the parts connect, the range, the purpose, what he wants to become able to do. Required whenever he said more than one thing; up to 1200 characters. Plain lines, one part per line, are fine.
+- Several distinct things → several items (up to 6). One layered thing → one item with a rich detail. Never drop a part he said.
+- His own words for his subject are his, not the passage's: keep them ("essential operations", "cognitive muscle") — the rule below is about the passage.
+
+THE OTHER RULE — point at the moon, not at the finger. Future answers will read what you save and copy any concrete thing in it. So save the UNDERSTANDING in your own plain words: never quote him, never quote or paraphrase the passage, never carry over its images, metaphors, names or distinctive words (a "subject" item's name is the only exception).
 - Keep the subject HE named, by its name. If he says "about the nature of policing", the idea says "policing" — never widen it into "institutions" or "systems" in general. The moon rule is about the passage's images, not about his subject.
 - A "how" item names the MOVE, never a kind of imagery, and never names any field or source of comparison at all — no body, medicine, biology, nature, machines, war, law or any other domain, and not "an institution" either. Not "use biological metaphors" (that sends every answer to biology) but what the move does — e.g. finding a comparison in a far, unexpected place that makes the thing's hidden behaviour suddenly visible.${avoid.length ? `\nYour last attempt lifted these from the passage — say it without them: ${avoid.join(', ')}.` : ''}
 
 If you understand him, propose the items and say in "reply" one short plain line of what you will keep — "I'll keep…", never "saved": nothing is saved until he presses Save. If something real is unclear — which of two things he means, or how wide it should go — ask ONE question with 2 to 4 short choices instead (items may then hold your best guess, or be empty). Never ask when it is clear. But when his words do not say WHAT to keep — "this", "keep it", "save", "yes", a single vague word — always ask, with choices built from what the passage actually offers (the idea in it, the way it is said, a subject it names, or all of them).
 
 Return ONLY JSON, no fence:
-{"reply": "<one short line to him>", "items": [{"kind": "how|subject|idea|about", "text": "<one complete sentence, at most 180 characters>", "detail": "<optional, at most 500 characters, the reasoning in your own words>"}], "question": null or {"text": "<the question>", "options": ["<short choice>", "<short choice>"]}}
+{"reply": "<one short line to him>", "items": [{"kind": "how|subject|idea|about", "text": "<one complete sentence, at most 180 characters>", "detail": "<the full shape, at most 1200 characters — empty only when he said one simple thing>"}], "question": null or {"text": "<the question>", "options": ["<short choice>", "<short choice>"]}}
 
 THE PASSAGE HE SELECTED:
 ${passage || '(none — he is writing without a passage)'}
@@ -982,8 +988,8 @@ function parseTeach(text) {
   let o; try { o = JSON.parse(m[0]); } catch { return null; }
   const items = (Array.isArray(o.items) ? o.items : [])
     .filter((it) => it && TEACH_KINDS.includes(it.kind) && String(it.text || '').trim())
-    .slice(0, 4)
-    .map((it) => ({ kind: it.kind, text: String(it.text).trim().slice(0, 240), detail: String(it.detail || '').trim().slice(0, 500) || null }));
+    .slice(0, 6)
+    .map((it) => ({ kind: it.kind, text: String(it.text).trim().slice(0, 240), detail: String(it.detail || '').trim().slice(0, 1400) || null }));
   const q = o.question && String(o.question.text || '').trim()
     ? { text: String(o.question.text).trim().slice(0, 200), options: (Array.isArray(o.question.options) ? o.question.options : []).map((x) => String(x || '').trim().slice(0, 90)).filter(Boolean).slice(0, 4) }
     : null;
@@ -996,11 +1002,15 @@ export async function teachTurn({ passage = '', turns = [] } = {}) {
   if (!t.length) return { error: 'empty' };
   let avoid = [];
   for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await generateText({ feature: 'summary', maxTokens: 1500, label: 'mind:teach', prompt: teachPrompt({ passage: p, turns: t, avoid }) });
+    // The Room's own lane: the cheap summary model flattened a layered ask into one line (2026-09-30).
+    const res = await generateText({ feature: 'studio', maxTokens: 3000, timeoutMs: 120_000, label: 'mind:teach', prompt: teachPrompt({ passage: p, turns: t, avoid }) });
     if (res.error) return { error: res.error };
     const out = parseTeach(res.text);
     if (!out) continue;
-    const leaks = p ? tasteLeaks(out.items.filter((i) => i.kind !== 'subject').map((i) => `${i.text} ${i.detail || ''}`).join(' '), [p]) : [];
+    // Words he wrote himself are his to keep, even when the passage used them too.
+    const his = ` ${t.filter((x) => x.role !== 'ai').map((x) => String(x.text).toLowerCase()).join(' ')} `;
+    const leaks = (p ? tasteLeaks(out.items.filter((i) => i.kind !== 'subject').map((i) => `${i.text} ${i.detail || ''}`).join(' '), [p]) : [])
+      .filter((l) => !his.includes(l.replace(/"/g, '')));
     if (leaks.length && attempt < 2) { avoid = leaks.slice(0, 12); continue; }
     return { ok: true, ...out };
   }
@@ -1013,7 +1023,7 @@ export async function teachTurn({ passage = '', turns = [] } = {}) {
 // him to the Mind's facts.
 export function teachSave({ items = [], passage = '', convoId = null, messageId = null } = {}) {
   const saved = [];
-  for (const it of (Array.isArray(items) ? items : []).slice(0, 4)) {
+  for (const it of (Array.isArray(items) ? items : []).slice(0, 6)) {
     const text = String(it?.text || '').trim().slice(0, 240);
     if (!text || !TEACH_KINDS.includes(it.kind)) continue;
     if (it.kind === 'subject') {
