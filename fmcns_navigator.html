@@ -3118,6 +3118,12 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 /* The open aside's name, his pick A (2026-09-30): the main title's gold capitals, but
    the whole name, up to two lines, sized off the panel's own width so it tightens as
    he drags the panel narrower and breathes as he widens it. The copy mark shows on hover. */
+/* While an aside is open, the tab strip folds away and only its name stays (his ask,
+   2026-09-30); the strip comes back when the pointer reaches the very top of the panel,
+   and lingers a moment after it leaves so it never flickers. */
+.room-cards:has(#roomSide.is-active .room-side-title) .room-tabs { max-height:120px; transition:max-height .22s ease, opacity .18s ease, margin .22s ease; transition-delay:.05s; }
+.room-cards:has(#roomSide.is-active .room-side-title) .room-tabs:not(:hover):not(:focus-within):not(:has([aria-expanded="true"])) {
+  max-height:10px; opacity:0; overflow:hidden; margin-bottom:0; transition-delay:.45s; }
 .room-side-title { flex:none; position:relative; display:flex; align-items:center; justify-content:center; gap:clamp(3px, .8cqw, 6px);
   width:100%; margin:0 0 clamp(2px, 1cqw, 6px); padding:clamp(2px, .8cqw, 5px) clamp(6px, 4cqw, 28px) clamp(9px, 1.6cqw, 12px);
   border:0; border-radius:var(--r-sm); background:none; cursor:pointer; }
