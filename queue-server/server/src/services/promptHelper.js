@@ -36,8 +36,13 @@ export function bindPromptHelperDb(database) {
   } catch (e) { console.error('[prompt] taste table:', e?.message || e); }
 }
 
-const RECENT_MESSAGES = 6;     // of the thread, for context
-const RECENT_CHARS = 700;      // of each one
+// Flash Lite is a small model and long context makes it lazy rather than wise —
+// with the whole memory block in front of it, it answered "nothing to change" to a
+// draft that plainly had four things to change. Everything it is shown is cut to
+// what it can actually hold in mind.
+const RECENT_MESSAGES = 4;     // of the thread, for context
+const RECENT_CHARS = 450;      // of each one
+const MEMORY_CHARS = 1600;     // of what the Room remembers
 const MIN_CHARS = 18;          // below this there is nothing to help with
 const MAX_PROMPT = 4000;       // of his own draft that we send
 const MAX_EDITS = 4;
@@ -135,7 +140,7 @@ function threadText(convoId) {
 function context(convoId, draft) {
   const thread = threadText(convoId);
   let memory = '';
-  try { memory = mindBlock(draft) || ''; } catch { memory = ''; }
+  try { memory = (mindBlock(draft) || '').slice(0, MEMORY_CHARS); } catch { memory = ''; }
   return (thread ? `WHAT WAS SAID JUST BEFORE, IN THIS CONVERSATION:\n${thread}\n\n` : '')
     + (memory ? `WHAT IS ALREADY KNOWN ABOUT HIM:\n${memory}\n\n` : '');
 }
@@ -169,7 +174,7 @@ function buildCompletePrompt(convoId, draft) {
 ${context(convoId, draft)}Return ONLY the continuation — the exact characters that come after what he has typed, and nothing else. No quotes, no prose about it, no repeat of his words. Begin with a space if a space belongs there.
 
 Rules:
-- At most 25 words. One thought, finished.
+- Between five and twenty-five words. Never one or two — finish the thought, do not just add the next word.
 - His voice, not yours: lowercase, plain words, no jargon, no flourish.
 - Continue where HE was going. Do not answer the question, do not change the subject, do not add a second question.
 - If his sentence is already finished and nothing natural follows, return an empty string.
@@ -199,7 +204,11 @@ export async function completeDraft({ convoId, draft }) {
     maxTokens: 120, label: 'prompt:complete',
   });
   if (r.error) return { tail: '', error: r.error, message: r.message };
-  return { tail: cleanTail(r.text, text) };
+  const tail = cleanTail(r.text, text);
+  // One or two words is the model finishing his WORD rather than his thought, and
+  // a two-character grey smudge behind the caret is worse than nothing at all.
+  if (tail.trim().split(/\s+/).filter(Boolean).length < 3) return { tail: '' };
+  return { tail };
 }
 
 // ------------------------------------------------------------------- the diff
@@ -220,7 +229,7 @@ Hard rules about "find":
 - Keep it short — the few words that actually change, never a whole sentence you are rewriting wholesale.
 - "" means append to the end of the draft; then "replace" must begin with a space or a dash.
 
-At most ${MAX_EDITS} edits, and fewer is better. A draft that is already sharp gets an empty array, and that is a correct answer.
+Two or three edits is the usual answer, ${MAX_EDITS} at the very most. An empty array only for a draft that is already exactly right, which is rare — do not reach for it because the draft reads well, only because there is genuinely nothing that would change the answer he gets.
 
 What an edit is FOR. Each one does exactly one of these, and carries that name as its "kind":
 ${allowed.map((k) => `- ${k}: ${KINDS[k]}`).join('\n')}
