@@ -17,7 +17,7 @@ import * as board from '../services/board.js';
 import { rhymeSoon } from '../services/boardRhyme.js';
 import { proposeRemember, saveRemembered } from '../services/mind.js';
 import { listChapters, chapterize, recaseChapters } from '../services/chapters.js';
-import { completeDraft, sharpenDraft, recordTaste } from '../services/promptHelper.js';
+import { completeDraft, sharpenDraft, recordTaste, recordTail, helperStats } from '../services/promptHelper.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import * as interests from '../services/interestLibrary.js';
@@ -924,9 +924,20 @@ export function conversationsRoutes() {
   }));
 
   // What he did with the edits he was offered. Two refusals of a kind he has never
-  // once taken, and that kind stops being offered at all.
+  // once taken, and that kind stops being offered — in that situation. The
+  // situation comes back from the browser as it was when the edits were proposed.
   router.post('/:id/prompt/taste', (req, res) => {
-    res.json(recordTaste(req.body?.items || []));
+    res.json(recordTaste(req.body?.items || [], req.body?.situation));
+  });
+
+  // What happened to the grey tail. Counted, and nothing more: it gates nothing.
+  router.post('/:id/prompt/tail', (req, res) => {
+    res.json(recordTail(!!req.body?.taken));
+  });
+
+  // The counts, readable without opening the database. No UI reads this.
+  router.get('/prompt/helper-stats', (req, res) => {
+    res.json(helperStats());
   });
 
   // Put the capitals back in chapter names written all lowercase.

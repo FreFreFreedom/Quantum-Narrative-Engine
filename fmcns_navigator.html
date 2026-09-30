@@ -29970,7 +29970,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       g.innerHTML = '<span>' + qEsc(input.value) + '</span><span class="se-ghost-tail">' + qEsc(tail) + '</span>';
       g.scrollTop = input.scrollTop;
     }
-    function dropGhost(){ if(e.ghost){ e.ghost = ''; paintGhost(''); } }
+    // One shown tail produces exactly one answer: taken with Tab, or typed over.
+    // Counted on the server and nothing else — it changes no behaviour here.
+    var told = true;
+    function tellTail(taken){
+      if(told || !e.convoId) return;
+      told = true;
+      apiWrite('/api/convos/' + e.convoId + '/prompt/tail', 'POST', { taken: !!taken })
+        .catch(function(){ /* a lost count is not worth an error */ });
+    }
+    function dropGhost(){ if(e.ghost){ tellTail(false); e.ghost = ''; paintGhost(''); } }
 
     function schedule(){
       clearTimeout(timer); dropGhost();
@@ -29988,7 +29997,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             // He kept typing while it was thinking: the tail is about a sentence
             // that no longer exists.
             if(input.value !== v || !d || !d.tail) return;
-            e.ghost = d.tail; paintGhost(d.tail);
+            e.ghost = d.tail; told = false; paintGhost(d.tail);
           })
           .catch(function(){ /* no tail is the correct failure */ });
       }, 1100);
@@ -30016,17 +30025,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       apiWrite('/api/convos/' + e.convoId + '/prompt/sharpen', 'POST', { draft: draft })
         .then(function(d){
           var edits = (d && d.edits) || [];
+          var sit = (d && d.situation) || '';
           if(!edits.length){
             say(p, d && d.error === 'gemini_resting' ? 'Both Gemini models are resting.'
               : (d && d.error ? (d.message || 'Could not read it.') : 'Nothing to sharpen.'));
             fade(p); return;
           }
-          paintSharpen(p, draft, edits);
+          paintSharpen(p, draft, edits, sit);
         })
         .catch(function(){ say(p, 'Could not read it.'); fade(p); });
     }
 
-    function paintSharpen(p, draft, edits){
+    function paintSharpen(p, draft, edits, sit){
       var html = '', at = 0;
       edits.forEach(function(ed, i){
         var start = ed.find === '' ? draft.length : ed.at;
@@ -30058,7 +30068,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var items = edits.map(function(ed, i){ return { kind: ed.kind, taken: !!on[i] }; })
           .filter(function(it){ return it.kind; });
         if(!items.length) return;
-        apiWrite('/api/convos/' + e.convoId + '/prompt/taste', 'POST', { items: items })
+        apiWrite('/api/convos/' + e.convoId + '/prompt/taste', 'POST', { items: items, situation: sit })
           .catch(function(){ /* forgetting one answer is not worth an error */ });
       }
       p.querySelector('.se-sharpen-cancel').onclick = function(){
@@ -30090,7 +30100,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(ev.key === 'Tab' && e.ghost && !ev.shiftKey){
         ev.preventDefault();
         var t = input.value + e.ghost;
-        dropGhost(); clearTimeout(timer);
+        tellTail(true); dropGhost(); clearTimeout(timer);
         input.value = t; e.draft = t; saveDraft(e); grow(input); asked = t;
         try { input.setSelectionRange(t.length, t.length); } catch(err) {}
         return;

@@ -15,10 +15,14 @@
 //
 // What makes the suggestions worth reading is not the model, it is what the model is
 // shown: the conversation above the box, what the Room remembers about him and why
-// (the mind block, ranked against what he is typing right now), and his standing
-// rules as a checklist to fail the prompt against. "Improve this prompt" produces
-// the generic answer every prompt tool produces; "here is how he thinks, here is
-// what he already said, here is the failure mode he hates" produces his answer.
+// (the mind block, ranked against what he is typing right now), and one cheap line
+// saying what answer his draft would get back. Context, never a checklist — the
+// sharpen pass used to carry six standing rules to score the draft against, and a
+// small model handed a checklist stops noticing and starts satisfying: it picks a
+// rule, then hunts his sentence for something that can wear it. Removed 2026-09-30,
+// along with the menu of kinds. The kinds are still named, but the name is filed
+// AFTER the edit is decided, and it exists only so that turning one down twice can
+// be counted.
 
 import { generateText, geminiModel } from './ai/text.js';
 import { mindBlock } from './mind.js';
@@ -27,13 +31,49 @@ let db = null;
 export function bindPromptHelperDb(database) {
   db = database;
   try {
+    // v1. Kept, unread, as history: SQLite cannot grow a primary key in place and
+    // three columns of his past answers are not worth dropping.
     db.exec(`CREATE TABLE IF NOT EXISTS prompt_helper_taste (
       kind TEXT PRIMARY KEY,
       taken INTEGER NOT NULL DEFAULT 0,
       refused INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )`);
+    // v2 counts the same thing per situation. A kind he refuses on a one-line
+    // question may be exactly the one he wants on a long draft.
+    db.exec(`CREATE TABLE IF NOT EXISTS prompt_helper_taste_v2 (
+      kind TEXT NOT NULL,
+      situation TEXT NOT NULL,
+      taken INTEGER NOT NULL DEFAULT 0,
+      refused INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      PRIMARY KEY (kind, situation)
+    )`);
+    // What happens to the grey tail, counted and nothing more. It gates nothing:
+    // an automatic rule about when to stop offering one is exactly the kind of
+    // thing this file no longer does.
+    db.exec(`CREATE TABLE IF NOT EXISTS prompt_helper_tail (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      shown INTEGER NOT NULL DEFAULT 0,
+      taken INTEGER NOT NULL DEFAULT 0,
+      dropped INTEGER NOT NULL DEFAULT 0
+    )`);
+    db.exec(`INSERT OR IGNORE INTO prompt_helper_tail (id) VALUES (1)`);
+    carryOverTaste();
   } catch (e) { console.error('[prompt] taste table:', e?.message || e); }
+}
+
+// His old counts were gathered before there were situations to gather them into,
+// so they belong to both. Runs once — after the first boot v2 is no longer empty.
+function carryOverTaste() {
+  const n = db.prepare('SELECT COUNT(*) AS n FROM prompt_helper_taste_v2').get()?.n || 0;
+  if (n) return;
+  const rows = db.prepare('SELECT kind, taken, refused FROM prompt_helper_taste').all();
+  const ins = db.prepare(
+    `INSERT OR IGNORE INTO prompt_helper_taste_v2 (kind, situation, taken, refused)
+     VALUES (?, ?, ?, ?)`,
+  );
+  for (const r of rows) for (const sit of SITUATIONS) ins.run(r.kind, sit, r.taken, r.refused);
 }
 
 // Flash Lite is a small model and long context makes it lazy rather than wise —
@@ -51,6 +91,13 @@ const MAX_EDITS = 4;
 // the helper reading him wrong, and once he has said so twice there is nothing more
 // to learn from asking a third time.
 const MUTE_AT = 2;
+// Two buckets, and only two: three and none of them fills fast enough to ever
+// reach two refusals.
+const LONG_DRAFT = 180;
+const SITUATIONS = ['short', 'long'];
+export function situation(draft) {
+  return String(draft || '').trim().length < LONG_DRAFT ? 'short' : 'long';
+}
 
 // The closed list of things an edit is allowed to be. Closed because the muting
 // only works if the same idea comes back under the same name — free-form labels
@@ -66,55 +113,87 @@ const KINDS = {
   anchor: 'ask for who is building this now, rather than a name from the past',
   far_jump: 'point at the same shape somewhere he did not think to look',
   contradiction: 'he has said the opposite of this before; make the prompt carry both',
+  other: 'none of these — the edit is worth making anyway',
 };
-
-// What he wants every time and should not have to type every time. This is the
-// checklist the sharpen pass scores against — the reason its suggestions are his
-// and not a prompt tool's. Kept here rather than in the prompt string so it reads
-// as a list and can grow.
-const HOUSE_RULES = [
-  'Name which layer of the paradigm the question lives at — ontological, semantic or analogical.',
-  'Anchor to who is building this now, never to a historical thinker who thought of it first.',
-  'Ask for one mechanism followed down, never a survey of a field.',
-  'Ask at a named scale, and say whether the question also belongs one scale up or down.',
-  'Ask for a real case, never an invented finding.',
-  'Say whether he wants the instrument, or the reading the instrument gives.',
-];
+// A bucket, not a kind. It is never muted and never counted: muting "none of the
+// above" would mute everything nobody thought of in advance, and an edit that does
+// not fit a name is the interesting one.
+const OTHER = 'other';
 
 // What he has turned down twice and never once taken. A kind he has ever accepted
 // is never muted — one yes outweighs any number of noes, because the noes may only
 // have meant "not in that sentence".
-export function mutedKinds() {
+// With a situation, what is muted in that situation. Without one, everything muted
+// anywhere — only the stats route asks that.
+export function mutedKinds(sit) {
   if (!db) return [];
   try {
-    return db.prepare(
-      `SELECT kind FROM prompt_helper_taste WHERE taken = 0 AND refused >= ?`,
-    ).all(MUTE_AT).map((r) => r.kind).filter((k) => KINDS[k]);
+    const rows = sit
+      ? db.prepare(
+        `SELECT kind FROM prompt_helper_taste_v2
+         WHERE situation = ? AND taken = 0 AND refused >= ?`,
+      ).all(SITUATIONS.includes(sit) ? sit : 'long', MUTE_AT)
+      : db.prepare(
+        `SELECT kind FROM prompt_helper_taste_v2
+         WHERE taken = 0 AND refused >= ? GROUP BY kind`,
+      ).all(MUTE_AT);
+    return rows.map((r) => r.kind).filter((k) => KINDS[k] && k !== OTHER);
   } catch { return []; }
 }
 
 // Called once, after he has decided about a whole set: each edit either went into
 // his sentence or it did not. "Leave it" refuses all of them, which is the truest
 // reading of that button.
-export function recordTaste(items = []) {
+export function recordTaste(items = [], sit = 'long') {
   if (!db) return { ok: false };
+  // The situation the edits were PROPOSED for, sent back by the browser rather than
+  // re-derived from a draft he has since changed under his own hand.
+  const where = SITUATIONS.includes(sit) ? sit : 'long';
   let seen = 0;
   try {
     const up = db.prepare(
-      `INSERT INTO prompt_helper_taste (kind, taken, refused) VALUES (?, ?, ?)
-       ON CONFLICT(kind) DO UPDATE SET
+      `INSERT INTO prompt_helper_taste_v2 (kind, situation, taken, refused) VALUES (?, ?, ?, ?)
+       ON CONFLICT(kind, situation) DO UPDATE SET
          taken = taken + excluded.taken,
          refused = refused + excluded.refused,
          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`,
     );
     for (const it of items) {
       const kind = String(it?.kind || '');
-      if (!KINDS[kind]) continue;
-      up.run(kind, it?.taken ? 1 : 0, it?.taken ? 0 : 1);
+      if (!KINDS[kind] || kind === OTHER) continue;
+      up.run(kind, where, it?.taken ? 1 : 0, it?.taken ? 0 : 1);
       seen += 1;
     }
   } catch (e) { return { error: e?.message || 'taste_failed' }; }
-  return { ok: true, recorded: seen, muted: mutedKinds() };
+  return { ok: true, recorded: seen, muted: mutedKinds(where) };
+}
+
+// The tail, counted. Shown once, then either taken with Tab or typed over.
+function bumpTailShown() {
+  try { db?.prepare('UPDATE prompt_helper_tail SET shown = shown + 1 WHERE id = 1').run(); } catch { /* a lost count is not an error */ }
+}
+
+export function recordTail(taken) {
+  if (!db) return { ok: false };
+  const col = taken ? 'taken' : 'dropped';
+  try {
+    db.prepare(`UPDATE prompt_helper_tail SET ${col} = ${col} + 1 WHERE id = 1`).run();
+  } catch (e) { return { error: e?.message || 'tail_failed' }; }
+  return { ok: true };
+}
+
+// The numbers, readable without opening the database. Nothing reads them but him.
+export function helperStats() {
+  if (!db) return { tail: null, taste: [], muted: [] };
+  try {
+    return {
+      tail: db.prepare('SELECT shown, taken, dropped FROM prompt_helper_tail WHERE id = 1').get() || null,
+      taste: db.prepare(
+        'SELECT kind, situation, taken, refused FROM prompt_helper_taste_v2 ORDER BY kind, situation',
+      ).all(),
+      muted: mutedKinds(),
+    };
+  } catch (e) { return { error: e?.message || 'stats_failed' }; }
 }
 
 function recent(convoId) {
@@ -216,21 +295,48 @@ export async function completeDraft({ convoId, draft }) {
   // One or two words is the model finishing his WORD rather than his thought, and
   // a two-character grey smudge behind the caret is worse than nothing at all.
   if (tail.trim().split(/\s+/).filter(Boolean).length < 3) return { tail: '' };
+  bumpTailShown();
   return { tail };
 }
 
 // ------------------------------------------------------------------- the diff
 
-function buildSharpenPrompt(convoId, draft) {
-  const muted = mutedKinds();
-  const allowed = Object.keys(KINDS).filter((k) => !muted.includes(k));
+// One cheap line saying what his draft would get back. The sharpen pass then has
+// the outcome in front of it rather than only the sentence, which is what he
+// actually cares about — and it is context, not another thing to check. Every
+// failure is silent and total: no line, and the sharpen call runs exactly as it
+// did before. A helper that can strand a keystroke is worse than none.
+function buildShapePrompt(convoId, draft) {
+  return `A man is about to send this message to an AI he thinks with. Do not answer it.
+
+${context(convoId, draft)}In ONE sentence, say what kind of answer this message would get back — the shape of the answer, not the answer itself. Plain words. No label, no preamble, no markdown.
+
+HIS DRAFT:
+${draft}`;
+}
+
+async function answerShape(convoId, draft) {
+  const r = await ask({
+    prompt: buildShapePrompt(convoId, draft), maxTokens: 90, label: 'prompt:shape',
+  });
+  if (r.error) return '';
+  const t = String(r.text || '')
+    .replace(/^```[a-z]*\n?/i, '').replace(/```$/, '')
+    .replace(/\s+/g, ' ').trim();
+  if (!t || t.length > 300 || t.includes('**')) return '';
+  return t;
+}
+
+function buildSharpenPrompt(convoId, draft, shape) {
+  const muted = mutedKinds(situation(draft));
+  const allowed = Object.keys(KINDS).filter((k) => !muted.includes(k) && k !== OTHER);
   const muteLine = muted.length
     ? `\n\nHe has already turned these down and does not want them again, in any wording: ${muted.join(', ')}. Say nothing of that sort.`
     : '';
   return `A man is about to send this message to an AI he thinks with. Before he sends it, propose a small number of precise edits to it.
 
 ${context(convoId, draft)}Return ONLY a JSON array (no prose, no markdown fence):
-  [{"find": "<text copied EXACTLY from his draft, or \\"\\" to add at the end>", "replace": "<what it becomes, or \\"\\" to cut it>", "kind": "<one name from the list below>", "why": "<six words or fewer>"}]
+  [{"find": "<text copied EXACTLY from his draft, or \\"\\" to add at the end>", "replace": "<what it becomes, or \\"\\" to cut it>", "why": "<six words or fewer>", "kind": "<a name from the list below>"}]
 
 Hard rules about "find":
 - It must appear in his draft CHARACTER FOR CHARACTER, and appear only once. If a phrase repeats, extend it until it is unique.
@@ -239,17 +345,14 @@ Hard rules about "find":
 
 Two or three edits is the usual answer, ${MAX_EDITS} at the very most. An empty array only for a draft that is already exactly right, which is rare — do not reach for it because the draft reads well, only because there is genuinely nothing that would change the answer he gets.
 
-What an edit is FOR. Each one does exactly one of these, and carries that name as its "kind":
+Work out what would actually change the answer he gets, and write "find", "replace" and "why" first. THEN, once the edit is decided, file it under whichever of these names it turns out to fit. The names are a filing cabinet, not a menu to choose from before you think — never start from a name and go looking for something in his sentence that could wear it:
 ${allowed.map((k) => `- ${k}: ${KINDS[k]}`).join('\n')}
-An edit whose kind is not on that list is thrown away.${muteLine}
-
-Score his draft against how he works:
-${HOUSE_RULES.map((r) => `- ${r}`).join('\n')}
-Do NOT propose an edit for every rule. Propose one only where the draft actually fails and the failure would change the answer he gets.
+- ${OTHER}: ${KINDS[OTHER]}
+An edit that fits none of the names is filed under "${OTHER}", and that is an ordinary answer, not a failure.${muteLine}
 
 Never make it longer for the sake of it, never make it polite, never make it formal, never add a greeting or a thank you, never turn his lowercase into sentence case. His voice stays his.
 
-HIS DRAFT:
+${shape ? `WHAT THIS DRAFT WOULD GET BACK:\n${shape}\n\n` : ''}HIS DRAFT:
 ${draft}`;
 }
 
@@ -277,9 +380,12 @@ function usableEdits(items, draft, muted = []) {
     const why = String(it?.why ?? '').replace(/\s+/g, ' ').trim().slice(0, 60);
     const kind = String(it?.kind ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
     if (find === replace) continue;
-    // An unnamed or muted kind is dropped here as well as in the prompt. The
-    // prompt is an instruction; this is the guarantee.
-    if (!KINDS[kind] || muted.includes(kind)) continue;
+    // An edit wearing a name nobody thought of is filed, not thrown away — the
+    // list used to punish the model for having an idea outside it. A muted kind
+    // is still dropped here as well as in the prompt: the prompt is an
+    // instruction, this is the guarantee.
+    const named = KINDS[kind] ? kind : OTHER;
+    if (muted.includes(named)) continue;
     let at = -1;
     if (find === '') {
       if (!replace.trim()) continue;
@@ -292,7 +398,7 @@ function usableEdits(items, draft, muted = []) {
       if (used.some((u) => at < u.end && at + find.length > u.start)) continue;
       used.push({ start: at, end: at + find.length });
     }
-    out.push({ at, find, replace, kind, why });
+    out.push({ at, find, replace, kind: named, why });
     if (out.length >= MAX_EDITS) break;
   }
   // In the order they occur in his sentence, so the diff reads left to right.
@@ -301,15 +407,20 @@ function usableEdits(items, draft, muted = []) {
 
 export async function sharpenDraft({ convoId, draft }) {
   const text = String(draft || '');
-  if (text.trim().length < MIN_CHARS) return { edits: [] };
+  // The bucket travels out with the edits and comes back with his answer about
+  // them, so a draft he edits afterwards cannot move the count to the wrong side.
+  const sit = situation(text);
+  if (text.trim().length < MIN_CHARS) return { edits: [], situation: sit };
+  const cut = text.slice(0, MAX_PROMPT);
+  const shape = await answerShape(convoId, cut);
   const r = await ask({
-    prompt: buildSharpenPrompt(convoId, text.slice(0, MAX_PROMPT)),
+    prompt: buildSharpenPrompt(convoId, cut, shape),
     maxTokens: 700, label: 'prompt:sharpen',
   });
-  if (r.error) return { edits: [], error: r.error, message: r.message };
+  if (r.error) return { edits: [], situation: sit, error: r.error, message: r.message };
   const items = parseEdits(r.text);
-  if (!items) return { edits: [], error: 'unreadable' };
-  return { edits: usableEdits(items, text, mutedKinds()) };
+  if (!items) return { edits: [], situation: sit, error: 'unreadable' };
+  return { edits: usableEdits(items, text, mutedKinds(sit)), situation: sit };
 }
 
-export const _internals = { cleanTail, usableEdits, parseEdits, HOUSE_RULES, KINDS, MUTE_AT };
+export const _internals = { cleanTail, usableEdits, parseEdits, situation, KINDS, MUTE_AT, OTHER };
