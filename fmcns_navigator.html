@@ -2465,7 +2465,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .side-resize--right { right:-3px; }   /* panel on the left, handle on its right edge */
 .side-resize--left  { left:-3px; }    /* panel on the right, handle on its left edge */
 /* The thread list clips sideways, which cut the outer half of a -3px handle off. */
-.room-threads > .side-resize--right { right:0; }
+.room-threads > .side-resize--right { right:0; width:10px; }
 .side-resize:hover, .side-resize.is-dragging { background:var(--c-border-2); }
 /* A panel's width is animated so that opening and closing glides. Under a drag that
    same transition makes the edge lag the mouse and rubber-band toward it, which feels
@@ -2473,6 +2473,8 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    and gets its glide back the moment it is let go. */
 .is-resizing { transition:none !important; }
 .collapsed > .side-resize { display:none; }
+/* A peek is folded but on screen: its edge drags too (his third ask, 2026-09-30). */
+.collapsed.peek > .side-resize { display:block; }
 /* Content's two panels are a 44px spine until they are pinned, and only the pinned
    state is a real column with an edge worth dragging. Unpinned, the handle would sit
    on the spine's edge and resize something that is not on screen. */
@@ -14770,7 +14772,8 @@ function initSideResize({ panel, handle, prop, key, min, max, grows }) {
   panel.addEventListener('scroll', () => { handle.style.transform = panel.scrollTop ? `translateY(${panel.scrollTop}px)` : ''; }, { passive: true });
   let dragging = false, startX = 0, startW = 0, live = 0;
   handle.addEventListener('mousedown', (e) => {
-    if (!wide() || panel.classList.contains('collapsed')) return;
+    // A peeked panel is folded but on screen, and its edge drags like a kept one.
+    if (!wide() || (panel.classList.contains('collapsed') && !panel.classList.contains('peek'))) return;
     dragging = true;
     startX = e.clientX;
     startW = live = panel.getBoundingClientRect().width;
@@ -15055,7 +15058,7 @@ function initRoom() {
     if (el) return false;
     return z.panel.matches(':hover') || z.btn.matches(':hover');
   };
-  const peekHeld = (z) => peekHeldByTyping(z)
+  const peekHeld = (z) => peekHeldByTyping(z) || z.panel.classList.contains('is-resizing')
     || (menuIsOpen() && openMenuNow && z.panel.contains(openMenuNow.anchor));
   const unpeekSoon = (z, ev) => {
     if (!z.panel.classList.contains('peek')) return;
