@@ -50,9 +50,15 @@ function queryHash(q) {
   return 'adhoc_' + createHash('sha1').update(String(q).trim().toLowerCase()).digest('hex').slice(0, 16);
 }
 
+// A token that has expired is worse than no token at all: GitHub refuses every
+// search outright, where an anonymous one would have been served at a slower rate.
+// The token is a courtesy here — it only buys a higher limit — so the first refusal
+// drops it for the life of the process and the shelf keeps filling (2026-09-29,
+// after GitHub warned the fine-grained token was a week from expiry).
+let tokenDead = false;
 async function searchGithub(query) {
   const headers = { 'User-Agent': 'fmcns-discovery', Accept: 'application/vnd.github+json' };
-  if (GITHUB_TOKEN) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
+  if (GITHUB_TOKEN && !tokenDead) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
   const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=5`;
   const attempt = async () => {
     let resp;
@@ -60,6 +66,18 @@ async function searchGithub(query) {
       resp = await fetch(url, { headers });
     } catch (e) {
       return { error: 'network_error', message: e.message };
+    }
+    // 401 is always the credential; a 403 that names it is one too (a rate limit
+    // wears the same status and must not cost the token).
+    if (headers.Authorization && (resp.status === 401 || resp.status === 403)) {
+      let body = '';
+      try { body = (await resp.clone().text()).slice(0, 300); } catch {}
+      if (resp.status === 401 || /bad credentials|token.*(expired|revoked)/i.test(body)) {
+        console.warn('[discovery] GITHUB_TOKEN refused — searching anonymously from here on');
+        tokenDead = true;
+        delete headers.Authorization;
+        return await attempt();
+      }
     }
     if (!resp.ok) {
       let detail = '';
