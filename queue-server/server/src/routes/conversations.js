@@ -17,6 +17,7 @@ import * as board from '../services/board.js';
 import { rhymeSoon } from '../services/boardRhyme.js';
 import { proposeRemember, saveRemembered } from '../services/mind.js';
 import { listChapters, chapterize, recaseChapters } from '../services/chapters.js';
+import { completeDraft, sharpenDraft, recordTaste } from '../services/promptHelper.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import * as interests from '../services/interestLibrary.js';
@@ -908,6 +909,24 @@ export function conversationsRoutes() {
   // Read the thread again now, whatever the "has it grown enough?" rule says.
   router.post('/:id/chapters/rebuild', (req, res) => {
     res.json(chapterize(req.params.id, { force: true }));
+  });
+
+  // The composer's two helpers. Both read the thread above the box and what the
+  // Room remembers, both answer on Gemini only, and both are allowed to return
+  // nothing — an empty tail and an empty edit list are ordinary answers, not
+  // failures. Neither ever touches the conversation.
+  router.post('/:id/prompt/complete', asyncHandler(async (req, res) => {
+    res.json(await completeDraft({ convoId: req.params.id, draft: req.body?.draft || '' }));
+  }));
+
+  router.post('/:id/prompt/sharpen', asyncHandler(async (req, res) => {
+    res.json(await sharpenDraft({ convoId: req.params.id, draft: req.body?.draft || '' }));
+  }));
+
+  // What he did with the edits he was offered. Two refusals of a kind he has never
+  // once taken, and that kind stops being offered at all.
+  router.post('/:id/prompt/taste', (req, res) => {
+    res.json(recordTaste(req.body?.items || []));
   });
 
   // Put the capitals back in chapter names written all lowercase.

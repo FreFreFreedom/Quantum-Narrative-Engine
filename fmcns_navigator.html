@@ -4127,6 +4127,35 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
 .se-about button { appearance:none; border:0; background:transparent; color:var(--c-ink-4); cursor:pointer;
   font:inherit; line-height:1; padding:2px 3px; border-radius:var(--r-xs); }
 .se-about button:hover { color:var(--c-ink); background:var(--c-hover-wash); }
+/* The grey tail. A mirror of the textarea sitting exactly under it: what he typed
+   drawn in nothing at all, what could come next drawn in grey. The textarea itself
+   is transparent and on top, so his caret and his selection stay real. */
+.se-ghost { position:absolute; z-index:0; pointer-events:none; overflow:hidden;
+  white-space:pre-wrap; overflow-wrap:break-word; color:transparent;
+  border-style:solid; border-color:transparent; }
+.se-ghost-tail { color:var(--c-ink-5); opacity:.85; }
+.se-compose .se-input { position:relative; z-index:1; }
+
+/* Sharpening, shown as a diff inside his own sentence. Each piece is accepted or
+   refused on its own — he never swallows a rewrite whole. */
+.se-sharpen { border-top:1px solid var(--c-border); margin-top:6px; padding:9px 2px 2px;
+  font-size:var(--fs-sm); line-height:1.9; color:var(--c-ink-2); }
+.se-sharpen[hidden] { display:none; }
+.se-hunk { border-radius:var(--r-xs); }
+.se-hunk .se-ins { color:var(--c-brand); background:color-mix(in srgb, var(--c-brand) 14%, transparent); border-radius:var(--r-xs); padding:0 1px; }
+.se-hunk .se-del { color:var(--c-ink-4); text-decoration:line-through; }
+.se-hunk.is-off .se-ins { display:none; }
+.se-hunk.is-off .se-del { text-decoration:none; color:inherit; }
+.se-yn { display:inline-flex; gap:2px; vertical-align:1px; margin:0 3px; }
+.se-yn button { width:17px; height:17px; line-height:1; padding:0; border-radius:var(--r-xs);
+  border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-5);
+  font-size:9px; cursor:pointer; }
+.se-yn button:hover { color:var(--c-ink); border-color:var(--c-ink-4); }
+.se-hunk.is-on .se-yn .se-y { background:var(--c-brand); border-color:transparent; color:var(--c-surface); }
+.se-hunk.is-off .se-yn .se-n { background:var(--c-surface-3); color:var(--c-ink-2); }
+.se-sharpen-acts { display:flex; gap:6px; justify-content:flex-end; align-items:center; margin-top:9px; }
+.se-sharpen-note { font-size:var(--fs-xs); color:var(--c-ink-5); }
+.se-sharpen-acts .se-sharpen-note { flex:1; }
 .se-input { flex:1; min-width:0; max-height:110px; background:transparent; border:none; border-bottom:1px solid var(--c-border-2); border-radius:0; padding:5px 1px; font-family:var(--room-font); font-size:var(--room-size); font-weight:var(--room-weight,400); line-height:1.5; color:var(--c-ink); resize:none; }
 .se-input:focus { outline:none; border-bottom-color:var(--c-ink-4); }
 .se-input::placeholder { color:var(--c-ink-5); }
@@ -29900,6 +29929,173 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       + '<span class="se-teaser-chev">▸</span></button>';
   }
 
+  // Two helpers on the composer, and deliberately no third (2026-09-29). Both
+  // answer on Gemini alone: when neither free model is awake nothing happens, which
+  // is the right failure — a helper that quietly fell back to a Claude lane would
+  // spend a subscription on typing. Neither ever writes to the conversation.
+  //
+  //   Tab   takes the grey continuation sitting behind the caret.
+  //   ⌥ ⏎   reads the whole draft back as a diff, each edit accepted on its own.
+  function wirePromptHelp(host, e, input){
+    var compose = host.querySelector('.se-compose');
+    var draftbox = host.querySelector('.se-draftbox');
+    if(!compose || !draftbox) return;
+    var timer = null, asked = '';
+
+    // The mirror is measured off the textarea every time rather than styled to
+    // match it, because the Room's font, size and weight are all his to change and
+    // a tail one pixel out of line is worse than no tail.
+    function paintGhost(tail){
+      var g = compose.querySelector('.se-ghost');
+      if(!tail){ if(g) g.style.display = 'none'; return; }
+      if(!g){
+        g = document.createElement('div');
+        g.className = 'se-ghost'; g.setAttribute('aria-hidden', 'true');
+        compose.insertBefore(g, compose.firstChild);
+      }
+      var cs = getComputedStyle(input);
+      ['fontFamily','fontSize','fontWeight','fontStyle','lineHeight','letterSpacing','textIndent',
+       'paddingTop','paddingRight','paddingBottom','paddingLeft',
+       'borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth'].forEach(function(k){ g.style[k] = cs[k]; });
+      g.style.display = 'block';
+      g.style.left = input.offsetLeft + 'px';
+      g.style.top = input.offsetTop + 'px';
+      g.style.width = input.offsetWidth + 'px';
+      g.style.height = input.offsetHeight + 'px';
+      g.innerHTML = '<span>' + qEsc(input.value) + '</span><span class="se-ghost-tail">' + qEsc(tail) + '</span>';
+      g.scrollTop = input.scrollTop;
+    }
+    function dropGhost(){ if(e.ghost){ e.ghost = ''; paintGhost(''); } }
+
+    function schedule(){
+      clearTimeout(timer); dropGhost();
+      var v = input.value;
+      if(!e.convoId || e.busy) return;
+      if(v.trim().length < 18) return;
+      // Only ever behind the caret, never in the middle of a sentence he is fixing.
+      if(input.selectionStart !== v.length) return;
+      if(v === asked) return;
+      timer = setTimeout(function(){
+        if(input.value !== v) return;
+        asked = v;
+        apiWrite('/api/convos/' + e.convoId + '/prompt/complete', 'POST', { draft: v })
+          .then(function(d){
+            // He kept typing while it was thinking: the tail is about a sentence
+            // that no longer exists.
+            if(input.value !== v || !d || !d.tail) return;
+            e.ghost = d.tail; paintGhost(d.tail);
+          })
+          .catch(function(){ /* no tail is the correct failure */ });
+      }, 1100);
+    }
+
+    function panel(){
+      var p = draftbox.querySelector('.se-sharpen');
+      if(!p){
+        p = document.createElement('div');
+        p.className = 'se-sharpen'; p.hidden = true;
+        draftbox.insertBefore(p, compose);
+      }
+      return p;
+    }
+    function say(p, msg){
+      p.hidden = false;
+      p.innerHTML = '<div class="se-sharpen-note">' + qEsc(msg) + '</div>';
+    }
+    function fade(p){ setTimeout(function(){ p.hidden = true; }, 2600); }
+
+    function sharpen(){
+      var p = panel(), draft = input.value;
+      if(!e.convoId || draft.trim().length < 18) return;
+      say(p, 'Reading it…');
+      apiWrite('/api/convos/' + e.convoId + '/prompt/sharpen', 'POST', { draft: draft })
+        .then(function(d){
+          var edits = (d && d.edits) || [];
+          if(!edits.length){
+            say(p, d && d.error === 'gemini_resting' ? 'Both Gemini models are resting.'
+              : (d && d.error ? 'Could not read it.' : 'Nothing to sharpen.'));
+            fade(p); return;
+          }
+          paintSharpen(p, draft, edits);
+        })
+        .catch(function(){ say(p, 'Could not read it.'); fade(p); });
+    }
+
+    function paintSharpen(p, draft, edits){
+      var html = '', at = 0;
+      edits.forEach(function(ed, i){
+        var start = ed.find === '' ? draft.length : ed.at;
+        html += qEsc(draft.slice(at, start));
+        html += '<span class="se-hunk is-on" data-h="' + i + '"'
+          + (ed.why ? ' title="' + qEscAttr(ed.why) + '"' : '') + '>'
+          + (ed.find ? '<span class="se-del">' + qEsc(ed.find) + '</span>' : '')
+          + (ed.replace ? '<span class="se-ins">' + qEsc(ed.replace) + '</span>' : '')
+          + '<span class="se-yn"><button type="button" class="se-y" aria-label="Keep this change">✓</button>'
+          + '<button type="button" class="se-n" aria-label="Leave this one alone">✕</button></span></span>';
+        at = start + ed.find.length;
+      });
+      html += qEsc(draft.slice(at));
+      p.hidden = false;
+      p.innerHTML = '<div class="se-sharpen-text">' + html + '</div>'
+        + '<div class="se-sharpen-acts"><span class="se-sharpen-note"></span>'
+        + '<button type="button" class="se-send se-sharpen-cancel">Leave it</button>'
+        + '<button type="button" class="se-send se-sharpen-use">Use this</button></div>';
+
+      var on = edits.map(function(){ return true; });
+      p.querySelectorAll('.se-hunk').forEach(function(h){
+        var i = +h.dataset.h;
+        h.querySelector('.se-y').onclick = function(){ on[i] = true; h.classList.add('is-on'); h.classList.remove('is-off'); };
+        h.querySelector('.se-n').onclick = function(){ on[i] = false; h.classList.add('is-off'); h.classList.remove('is-on'); };
+      });
+      // Both buttons are an answer about every edit on screen, so both report.
+      // Turning a kind down twice, with no yes anywhere behind it, retires it.
+      function tell(){
+        var items = edits.map(function(ed, i){ return { kind: ed.kind, taken: !!on[i] }; })
+          .filter(function(it){ return it.kind; });
+        if(!items.length) return;
+        apiWrite('/api/convos/' + e.convoId + '/prompt/taste', 'POST', { items: items })
+          .catch(function(){ /* forgetting one answer is not worth an error */ });
+      }
+      p.querySelector('.se-sharpen-cancel').onclick = function(){
+        on = edits.map(function(){ return false; });
+        tell();
+        p.hidden = true; input.focus();
+      };
+      p.querySelector('.se-sharpen-use').onclick = function(){
+        var out = '', k = 0;
+        edits.forEach(function(ed, i){
+          var start = ed.find === '' ? draft.length : ed.at;
+          out += draft.slice(k, start);
+          out += on[i] ? ed.replace : ed.find;
+          k = start + ed.find.length;
+        });
+        out += draft.slice(k);
+        tell();
+        input.value = out; e.draft = out; saveDraft(e); grow(input);
+        asked = out;
+        p.hidden = true; input.focus();
+        try { input.setSelectionRange(out.length, out.length); } catch(err) {}
+      };
+    }
+
+    input.addEventListener('input', schedule);
+    input.addEventListener('blur', dropGhost);
+    input.addEventListener('scroll', function(){ if(e.ghost) paintGhost(e.ghost); });
+    input.addEventListener('keydown', function(ev){
+      if(ev.key === 'Tab' && e.ghost && !ev.shiftKey){
+        ev.preventDefault();
+        var t = input.value + e.ghost;
+        dropGhost(); clearTimeout(timer);
+        input.value = t; e.draft = t; saveDraft(e); grow(input); asked = t;
+        try { input.setSelectionRange(t.length, t.length); } catch(err) {}
+        return;
+      }
+      if(ev.key === 'Enter' && ev.altKey){ ev.preventDefault(); dropGhost(); clearTimeout(timer); sharpen(); return; }
+      if(ev.key === 'Escape' && e.ghost){ ev.preventDefault(); ev.stopPropagation(); dropGhost(); clearTimeout(timer); return; }
+      if(e.ghost && ['Shift','Meta','Control','Alt','CapsLock'].indexOf(ev.key) === -1) dropGhost();
+    });
+  }
+
   function wireEmbed(host, e, opts, repaint){
     var input = host.querySelector('.se-input');
     var send = host.querySelector('.se-send');
@@ -29948,7 +30144,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       putInBox(back);
     };
     input.onkeydown = function(ev){
-      if(ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); say(input.value); }
+      if(ev.key === 'Enter' && !ev.shiftKey && !ev.altKey){ ev.preventDefault(); say(input.value); }
       if(ev.key === 'Escape'){
         if(browsing()){ ev.preventDefault(); leaveHistory(); return; }
         if(e.busy){ ev.preventDefault(); stopTurn(e); }
@@ -29977,6 +30173,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         putInBox(e.histList[e.histAt]);
       }
     };
+    wirePromptHelp(host, e, input);
+
     // One button, two jobs: send while idle, stop while an answer is on its way.
     send.onclick = function(){ if(e.busy) stopTurn(e); else say(input.value); };
     // Dictate everywhere the browser can hear; Talk in the Room.

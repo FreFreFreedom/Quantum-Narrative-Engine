@@ -790,6 +790,19 @@ function benched(providerId, model = '') {
   return !router.mayProbe(providerId, model);
 }
 
+// Which Gemini is awake. The Room's prompt helper wants Google specifically (his
+// pick, 2026-09-29) and there are exactly two free models: Flash, then Flash Lite
+// behind it. Same shape as the vision pick above — the stronger one first, the
+// 500-a-day one when the stronger is resting, null when neither can answer.
+export function geminiModel(prefer = 'gemini-flash-latest') {
+  if (!process.env.GOOGLE_AI_STUDIO_API_KEY) return null;
+  const pair = prefer === 'gemini-flash-lite-latest'
+    ? ['gemini-flash-lite-latest', 'gemini-flash-latest']
+    : ['gemini-flash-latest', 'gemini-flash-lite-latest'];
+  for (const m of pair) if (!benched('google-ai-studio', m)) return m;
+  return null;
+}
+
 export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null, images = null, requireVision = false, strictModel = false, effort = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
