@@ -2464,6 +2464,8 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
   transition:background var(--t-fast) var(--ease); }
 .side-resize--right { right:-3px; }   /* panel on the left, handle on its right edge */
 .side-resize--left  { left:-3px; }    /* panel on the right, handle on its left edge */
+/* The thread list clips sideways, which cut the outer half of a -3px handle off. */
+.room-threads > .side-resize--right { right:0; }
 .side-resize:hover, .side-resize.is-dragging { background:var(--c-border-2); }
 /* A panel's width is animated so that opening and closing glides. Under a drag that
    same transition makes the edge lag the mouse and rubber-band toward it, which feels
@@ -3100,8 +3102,10 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 #roomSideEmbed .se-log { padding-top:8px; }
 #roomSideEmbed .se-turn { max-width:var(--room-reading-width); margin-left:auto; margin-right:auto; }
 @media (min-width:821px) {
-  .room-threads:not(.collapsed) { width:min(var(--threads-w,300px),25cqw); }
-  .ws-room:has(.room-threads:not(.collapsed)) { --room-thread-space:25cqw; }
+  /* The cap used to be 25% of the Room, which on most windows was already the default
+     width — so dragging the edge moved nothing. */
+  .room-threads:not(.collapsed) { width:min(var(--threads-w,300px),40cqw); }
+  .ws-room:has(.room-threads:not(.collapsed)) { --room-thread-space:min(var(--threads-w,300px),40cqw); }
   .room-cards:not(.collapsed) { width:min(var(--cards-w,340px),max(250px,calc(100cqw - var(--room-thread-space,0px) - 320px))); }
   .room-cards.side-layout:not(.collapsed) { width:min(var(--cards-w,44cqw),max(250px,calc(100cqw - var(--room-thread-space,0px) - 320px))); }
   .room-cards.side-layout.collapsed.peek { width:min(var(--cards-w,44cqw),80cqw); }
@@ -14721,6 +14725,8 @@ function initSideResize({ panel, handle, prop, key, min, max, grows }) {
     if (!wide() || !(w >= min && w <= max)) panel.style.removeProperty(prop);
     else panel.style.setProperty(prop, w + 'px');
   };
+  // The handle sits inside the panel, so a scrolled list carried it up out of sight.
+  panel.addEventListener('scroll', () => { handle.style.transform = panel.scrollTop ? `translateY(${panel.scrollTop}px)` : ''; }, { passive: true });
   let dragging = false, startX = 0, startW = 0, live = 0;
   handle.addEventListener('mousedown', (e) => {
     if (!wide() || panel.classList.contains('collapsed')) return;
@@ -14772,7 +14778,7 @@ function initSidebarWidths() {
   });
   initSideResize({
     panel: el('roomThreads'), handle: el('roomThreadsResize'),
-    prop: '--threads-w', key: 'fmcns_room_threads_width', min: 200, max: 420, grows: 'right',
+    prop: '--threads-w', key: 'fmcns_room_threads_width', min: 200, max: 560, grows: 'right',
   });
   initSideResize({
     panel: q('.left'), handle: el('filtersResize'),
