@@ -955,6 +955,14 @@ export function conversationsRoutes() {
 
   // POST /api/convos/:id/retitle — name it again, properly. Waits for the model:
   // it is a click, and a click that changes nothing on screen reads as broken.
+  // POST /api/convos/:id/gist — body: { messageId? }. The short version of a side
+  // talk, or of one message, for the Room's "bring" menu.
+  router.post('/:id/gist', asyncHandler(async (req, res) => {
+    const out = await convos.gistConvo(req.params.id, req.body?.messageId || null);
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
+
   router.post('/:id/retitle', asyncHandler(async (req, res) => {
     const out = await convos.retitleConvo(req.params.id);
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);

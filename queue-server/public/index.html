@@ -3113,9 +3113,6 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    aside and opens the list — and the talk reads like the main Room: his prompt to the
    right beside a gold line with no "You", answers in the reading ink with a gold capital,
    the buttons only on hover. Text size untouched. */
-.room-tabs .room-side-bring { margin-left:auto; color:var(--c-ink-5); }
-.room-tabs .room-side-bring:hover { color:var(--c-ink); }
-.room-tabs:not(:has([data-room-primary="side"].active)) .room-side-bring { display:none; }
 .room-side-tabname { max-width:14em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #roomSideHost { position:relative; }
 .room-side-rename { width:100%; margin:0 0 6px; font-family:var(--font-read); font-size:15px; }
@@ -3394,11 +3391,11 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-tl .tl-b1 { fill:var(--c-surface-2); } .se-tl .tl-b2 { fill:var(--c-surface-3); }
 .se-tl-pending { height:0; padding:0; border-bottom:none; }
 .se-turndel.is-armed { color:var(--c-danger) !important; background:color-mix(in srgb, var(--c-danger) 12%, transparent) !important; }
-.se-turnfork, .se-turnredo, .se-turnrewind, .se-turncopy, .se-turndel { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
+.se-turnfork, .se-turnredo, .se-turnrewind, .se-turncopy, .se-turnbring, .se-turndel { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
   font-family:var(--font-ui); font-size:var(--fs-sm); line-height:1; width:24px; height:24px;
   display:inline-flex; align-items:center; justify-content:center; border-radius:var(--r-sm);
   transition:color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
-.se-turnfork:hover, .se-turnredo:hover, .se-turnrewind:hover, .se-turncopy:hover, .se-turndel:hover { color:var(--c-ink); background:var(--c-surface-2); }
+.se-turnfork:hover, .se-turnredo:hover, .se-turnrewind:hover, .se-turncopy:hover, .se-turnbring:hover, .se-turndel:hover { color:var(--c-ink); background:var(--c-surface-2); }
 /* Which model should answer it again. Same fixed-position treatment as the quote
    popover, and closed by the same page-level mousedown. */
 /* The lane picker and the ⋯ menu are on the shared .umenu now; these four rules were
@@ -5933,7 +5930,6 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
           <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
-          <button type="button" class="room-side-bring" data-side-bring="1" hidden title="Bring this aside into the main thread" aria-label="Bring this aside into the main thread">↑</button>
         </div>
         <div class="room-pane room-attached is-active" id="roomAttached">
           <div class="room-pane-acts">
@@ -16968,8 +16964,6 @@ function roomSideSyncTab(open) {
     + '<svg class="lib-tabchev' + (roomSideMenuOpen ? ' open' : '') + '" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 7l3 3 3-3"/></svg>';
   tab.setAttribute('aria-haspopup', 'menu');
   tab.setAttribute('aria-expanded', String(roomSideMenuOpen));
-  const bring = document.querySelector('#roomTabs [data-side-bring]');
-  if (bring) bring.hidden = !open;
 }
 let roomSideRenaming = false;
 let roomSideMenuShutAt = 0;
@@ -17070,15 +17064,20 @@ async function roomSideCreate({ mode = 'empty', throughMessageId = null, prefill
 // Carry the open side talk's last answer (or, with nothing to point at yet,
 // the whole thing) into the MAIN composer — a chip naming where it came from,
 // the answer itself as the editable draft. Never sent on his behalf.
-function roomSideBring() {
+window.roomSideBring = roomSideBring;
+function roomSideBring(text, how) {
   const side = roomSides.find(s => s.id === roomSideOpenId);
   const main = roomThreads.find(t => t.id === roomSel);
   if (!side || !main || !window.studioLend || !window.studioLend.carry) return;
-  const e = window.studioLend.entry('side', side.subject_id);
-  const last = (e.msgs || []).slice().reverse().find(m => m.role === 'assistant');
-  const draft = last ? last.text : '';
-  window.studioLend.carry('open', main.subject_id,
-    { text: (side.title || 'Side talk') + (last ? ' — ' + last.text.slice(0, 80) : ''), msgId: null }, draft);
+  if (typeof text !== 'string') {
+    const e = window.studioLend.entry('side', side.subject_id);
+    const last = (e.msgs || []).slice().reverse().find(m => m.role === 'assistant');
+    text = last ? last.text : '';
+  }
+  if (how === 'quote') window.studioLend.carry('open', main.subject_id, { text: text, msgId: null }, '');
+  else if (how === 'draft') window.studioLend.carry('open', main.subject_id, null, text);
+  else window.studioLend.carry('open', main.subject_id,
+    { text: (side.title || 'Side talk') + (text ? ' — ' + text.slice(0, 80) : ''), msgId: null }, text);
   renderRoomConvo();
   const box = document.querySelector('#roomConvo .se-input');
   if (box) box.focus();
@@ -17160,8 +17159,6 @@ function renderRoomSide() {
       loadRoomSides();
     };
   });
-  const bring = document.querySelector('#roomTabs [data-side-bring]');
-  if (bring) bring.onclick = roomSideBring;
 
   if (open) {
     const embedHost = document.getElementById('roomSideEmbed');
@@ -32607,6 +32604,31 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           .catch(function(){ e.loaded = false; e.note = 'Could not keep that one — reloaded the thread as it is.'; return fetchConvo(e, function(){ if(host.isConnected) fillEmbed(host, e, opts); }); });
       };
     });
+    log.querySelectorAll('[data-se-bring]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        var m = e.msgs[Number(b.getAttribute('data-se-bring'))];
+        var text = m ? String((m.role === 'user' && m.body) ? m.body : seStripTimelines(m.text || '')) : '';
+        var bring = window.roomSideBring;
+        if(!text || typeof bring !== 'function' || typeof openMenu !== 'function') return;
+        // A choice of what to carry, not one fixed thing (his ask, 2026-09-30).
+        var gist = function(messageId){
+          b.innerHTML = orbHtml('composing', 12);
+          b.disabled = true;
+          apiWrite('/api/convos/' + encodeURIComponent(e.convoId) + '/gist', 'POST', messageId ? { messageId: messageId } : {})
+            .then(function(out){ if(out && out.text) bring(out.text, 'draft'); })
+            .catch(function(){ b.title = 'No gist came back — try again'; })
+            .then(function(){ b.disabled = false; b.textContent = '\u2191'; });
+        };
+        openMenu(b, [
+          { label: 'As a quote', icon: 'quote', title: 'Attached above the box — you write your own question about it', on: function(){ bring(text, 'quote'); } },
+          { label: 'Its words, to edit', icon: 'pencil', title: 'Put into the box as it is', on: function(){ bring(text, 'draft'); } },
+          m.id && m.role !== 'user' ? { label: 'Its gist', icon: 'spark', title: 'A few lines that carry the idea', on: function(){ gist(m.id); } } : null,
+          e.convoId ? { sep: true } : null,
+          e.convoId ? { label: 'The whole aside, in short', icon: 'layers', title: 'What this side talk arrived at, in a few lines', on: function(){ gist(null); } } : null,
+        ], { align: 'left' });
+      };
+    });
     log.querySelectorAll('[data-se-copy]').forEach(function(b){
       b.onclick = function(ev){
         ev.stopPropagation();
@@ -33879,6 +33901,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
                  // plain text (2026-09-21). First in the row because it is the one
                  // action that changes nothing.
                  + ((m.text || m.body) ? '<button type="button" class="se-turncopy" data-se-copy="' + qEsc(String(idx)) + '" title="Copy the text">\u29c9</button>' : '')
+                 // In a side talk: carry this very message into the main thread's box
+                 // (his ask, 2026-09-30 — "bring" belongs on what it brings).
+                 + (e.type === 'side' && (m.text || m.body) ? '<button type="button" class="se-turnbring" data-se-bring="' + qEsc(String(idx)) + '" title="Bring this into the main thread">\u2191</button>' : '')
                  + (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
                  + (you && m.id ? '<button type="button" class="se-turnrewind" data-se-rewind="' + qEsc(m.id) + '" title="Rewind to here — this and everything after is removed, and the words come back to the box to change and ask again">↶</button>' : '')
                  + (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
