@@ -3115,6 +3115,21 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    the buttons only on hover. Text size untouched. */
 .room-side-tabname { max-width:14em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #roomSideHost { position:relative; }
+/* The open aside's name, his pick A (2026-09-30): the main title's gold capitals, but
+   the whole name, up to two lines, sized off the panel's own width so it tightens as
+   he drags the panel narrower and breathes as he widens it. The copy mark shows on hover. */
+.room-side-title { flex:none; position:relative; display:flex; align-items:center; justify-content:center; gap:clamp(3px, .8cqw, 6px);
+  width:100%; margin:0 0 clamp(2px, 1cqw, 6px); padding:clamp(2px, .8cqw, 5px) clamp(6px, 4cqw, 28px) clamp(9px, 1.6cqw, 12px);
+  border:0; border-radius:var(--r-sm); background:none; cursor:pointer; }
+.room-side-title:hover { background:color-mix(in srgb, var(--c-ink) 5%, transparent); }
+.room-side-title::after { content:''; position:absolute; left:50%; bottom:3px; width:clamp(28px, 8cqw, 44px); height:1px; transform:translateX(-50%);
+  background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, transparent); }
+.room-side-titletext { min-width:0; text-align:center; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  font:500 clamp(12px, 3.1cqw, 16px)/1.35 'Cinzel', var(--font-read); letter-spacing:clamp(.05em, .45cqw, .12em); text-transform:uppercase;
+  color:var(--c-kept-echo, var(--c-accent)); overflow-wrap:anywhere; }
+.room-side-title .room-titlecopy { margin-left:0; }
+.room-side-title:hover .room-titlecopy { opacity:.7; }
+.room-side-title .room-titlecopy:hover { opacity:1; }
 .room-side-rename { width:100%; margin:0 0 6px; font-family:var(--font-read); font-size:15px; }
 .room-side-pop { width:260px; max-height:60%; overflow-y:auto; }
 .room-side-pop.is-static { position:static; box-shadow:none; }
@@ -16959,7 +16974,9 @@ function roomSideSyncTab(open) {
   const tab = document.querySelector('#roomTabs [data-room-primary="side"]');
   if (!tab) return;
   const i = open ? roomSides.indexOf(open) : -1;
-  tab.innerHTML = (open ? '<span class="room-side-tabname">' + qEsc(roomSideName(open, i)) + '</span>' : 'Side talks')
+  // The open aside's name has its own line above the talk (his pick A, 2026-09-30), so
+  // the tab only says what kind of pane this is — the name is never drawn twice.
+  tab.innerHTML = (open ? 'Aside' : 'Side talks')
     + (roomSides.length > 1 || !open ? ' <span class="room-tabcount" id="roomSideCount">' + (roomSides.length || '') + '</span>' : '')
     + '<svg class="lib-tabchev' + (roomSideMenuOpen ? ' open' : '') + '" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 7l3 3 3-3"/></svg>';
   tab.setAttribute('aria-haspopup', 'menu');
@@ -17103,6 +17120,12 @@ function renderRoomSide() {
   let html = '';
   if (roomSideRenaming && open) {
     html += '<input class="room-side-rename searchbox" maxlength="120" aria-label="Name this aside">';
+  } else if (open) {
+    const name = roomSideName(open, roomSides.indexOf(open));
+    html += '<button type="button" class="room-side-title" aria-haspopup="menu" title="' + qEscAttr(name) + '">'
+      + '<span class="room-side-titletext">' + qEsc(name) + '</span>'
+      + '<span class="room-titlecopy" role="button" title="Copy the title" aria-label="Copy the title">⧉</span>'
+      + '</button>';
   }
   if (!open) {
     html += '<div class="lib-kindpop room-side-pop is-static" role="menu">'
@@ -17122,6 +17145,17 @@ function renderRoomSide() {
   host.innerHTML = html;
   if (reuse) host.querySelector('#roomSideEmbed').replaceWith(previous);
 
+  const titleBtn = host.querySelector('.room-side-title');
+  if (titleBtn) titleBtn.onclick = (ev) => {
+    ev.stopPropagation();
+    const copy = ev.target.closest('.room-titlecopy');
+    if (!copy) { openRoomSideMenu(titleBtn); return; }
+    const text = titleBtn.querySelector('.room-side-titletext').textContent || '';
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => {
+      copy.textContent = '✓'; copy.classList.add('is-done');
+      setTimeout(() => { copy.textContent = '⧉'; copy.classList.remove('is-done'); }, 1200);
+    }, () => {});
+  };
   const newBtn = host.querySelector('[data-side-new]');
   if (newBtn) newBtn.onclick = () => { roomSideMenuOpen = false; roomSideCreate({ mode: 'empty' }); };
   const renameBox = host.querySelector('.room-side-rename');
