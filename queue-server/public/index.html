@@ -17058,7 +17058,9 @@ function renderRoomSide() {
         + '<button type="button" class="room-side-drop" data-side-drop="' + qEscAttr(s.id) + '" title="Throw this aside away" aria-label="Throw this aside away">✕</button>'
         + '</div>'
       )).join('')
-      + '<div class="lib-kindpop-foot"><button type="button" role="menuitem" data-side-new="1">＋ New aside</button></div>'
+      + '<div class="lib-kindpop-foot"><button type="button" role="menuitem" data-side-new="1">＋ New aside</button>'
+      + (open ? '<button type="button" role="menuitem" data-side-compact="1" title="Fold what was said so far into a short recap">⟳ Compact</button>' : '')
+      + '</div>'
       + '</div>';
   }
   if (open) html += '<div class="room-side-open room-convo" id="roomSideEmbed"></div>';
@@ -17067,6 +17069,13 @@ function renderRoomSide() {
 
   const newBtn = host.querySelector('[data-side-new]');
   if (newBtn) newBtn.onclick = () => { roomSideMenuOpen = false; roomSideCreate({ mode: 'empty' }); };
+  const compactBtn = host.querySelector('[data-side-compact]');
+  if (compactBtn) compactBtn.onclick = () => {
+    roomSideMenuOpen = false;
+    const reset = host.querySelector('#roomSideEmbed [data-se-act="reset"]');
+    renderRoomSide();
+    if (reset) reset.click();
+  };
   host.querySelectorAll('[data-side-pick]').forEach(b => {
     b.onclick = () => { roomSideMenuOpen = false; roomSideOpen(b.getAttribute('data-side-pick')); };
   });
