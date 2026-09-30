@@ -22,6 +22,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 ## What he likes and dislikes
 
 - He finds poetic, lyrical writing beautiful — an answer that is evocative moves him. — He appreciated the selected passage for its beauty and poetry, so the desired move is to adopt a similarly poetic and lyrical tone in all future responses.
+- He loves it when an answer shows how the exact same structural pattern is mirrored simultaneously within a person, between people, and across the wider world.
 - He loves it when a description achieves high precision and poetic weight through extreme brevity.
 - He loves it when an answer traces a direct line of continuity between private formative experiences and massive societal structures. — He appreciates the stylistic move of showing how a foundational flaw at the root level inevitably scales up to echo in large-scale human systems.
 - He loves it when writing blends precise phrasing with a sharp conceptual insight to create a powerful rhythm. — The user appreciates the specific stylistic combination of words used to deliver an analytical idea.

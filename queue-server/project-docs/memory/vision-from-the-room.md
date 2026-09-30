@@ -11,6 +11,8 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Human internal experience, interpersonal dynamics, and the external world often share the exact same recurring structural pattern.
+
 ## Large institutional bodies and rigid systems scale up and replicate the defensive postures of individuals.
 
 The passage shows that collective organizations are not separate from personal psychology, but rather mirror individual behavioral patterns on a massive scale.
