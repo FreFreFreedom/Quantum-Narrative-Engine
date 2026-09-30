@@ -3101,6 +3101,38 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 #roomSideEmbed .se-head-title { display:none; }
 #roomSideEmbed .se-log { padding-top:8px; }
 #roomSideEmbed .se-turn { max-width:var(--room-reading-width); margin-left:auto; margin-right:auto; }
+/* Side talk, his pick E (2026-09-30): no rows above the talk — the tab names the open
+   aside and opens the list — and the talk reads like the main Room: his prompt to the
+   right beside a gold line with no "You", answers in the reading ink with a gold capital,
+   the buttons only on hover. Text size untouched. */
+.room-tabs .room-side-bring { margin-left:auto; color:var(--c-ink-5); }
+.room-tabs .room-side-bring:hover { color:var(--c-ink); }
+.room-tabs:not(:has([data-room-primary="side"].active)) .room-side-bring { display:none; }
+.room-side-tabname { max-width:14em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#roomSideHost { position:relative; }
+.room-side-pop { width:260px; max-height:60%; overflow-y:auto; }
+.room-side-pop.is-static { position:static; box-shadow:none; }
+.room-side-pop .room-side-item { display:flex; align-items:center; }
+.room-side-pop .room-side-row { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; display:block;
+  font-family:var(--font-read); font-size:15px; letter-spacing:0; text-transform:none; color:var(--c-ink-3); }
+.room-side-pop .room-side-row.on { color:var(--c-kept-echo, var(--c-accent)); }
+.room-side-open { border-top:none; padding-top:0; }
+#roomSideEmbed .se-head, #roomSideEmbed .se-spend, #roomSideEmbed .se-wordcount { display:none !important; }
+#roomSideEmbed .se-turn { border-top:none; padding:12px 4px; }
+#roomSideEmbed .se-turn.you { display:flex; flex-direction:column; align-items:flex-end; }
+#roomSideEmbed .se-turn.you .se-who { display:none; }
+#roomSideEmbed .se-turn.you .se-who:has(.se-lane) { display:flex; }
+#roomSideEmbed .se-turn.you .se-body { max-width:82%; background:none; border:none; border-radius:0; padding:2px 14px 2px 0; text-align:right;
+  border-right:1.5px solid color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, transparent);
+  font-size:calc(var(--room-size) * .9); color:var(--c-ink-2); }
+#roomSideEmbed .se-turn:not(.you) .se-body { color:var(--c-read, var(--c-ink-2)); }
+#roomSideEmbed .se-turn:not(.you):not(.plan) .se-body > p:first-child::first-letter {
+  float:left; font-size:3.2em; line-height:.86; padding:.06em .12em 0 0; font-weight:400; color:var(--c-kept-echo, var(--c-accent)); }
+#roomSideEmbed .se-turnacts { opacity:0; }
+#roomSideEmbed .se-turn:hover .se-turnacts, #roomSideEmbed .se-turnacts:focus-within { opacity:1; }
+#roomSideEmbed .se-log { padding-top:4px;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+          mask-image:linear-gradient(to bottom, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%); }
 @media (min-width:821px) {
   /* The cap used to be 25% of the Room, which on most windows was already the default
      width — so dragging the edge moved nothing. */
@@ -5891,6 +5923,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
           <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
+          <button type="button" class="room-side-bring" data-side-bring="1" hidden title="Bring this aside into the main thread" aria-label="Bring this aside into the main thread">↑</button>
         </div>
         <div class="room-pane room-attached is-active" id="roomAttached">
           <div class="room-pane-acts">
@@ -15153,6 +15186,11 @@ function initRoom() {
           renderInterestLibrary({ quiet: true });
           return;
         }
+        if (key === 'side' && pane === 'side') {
+          roomSideMenuOpen = !roomSideMenuOpen;
+          renderRoomSide();
+          return;
+        }
         pane = key === 'side' ? 'side' : 'interests';
         if (key === 'discover' || key === 'library') recSave('library.mode', key === 'discover' ? 'discover' : 'saved');
         try { localStorage.setItem(ROOM_PANE_KEY, pane); } catch (e) {}
@@ -16900,7 +16938,24 @@ function renderRoomAnalogies() {
 let roomSides = [];
 let roomSideOpenId = null;
 const roomSidePositions = new Map();
-let roomSideListCollapsed = (function () { try { return localStorage.getItem('fmcns.roomSideListCollapsed') === '1'; } catch (e) { return false; } })();
+let roomSideMenuOpen = false;
+function roomSideName(s, i) { return s.title && s.title !== 'Side talk' ? s.title : 'Aside ' + (i + 1); }
+function roomSideSyncTab(open) {
+  const tab = document.querySelector('#roomTabs [data-room-primary="side"]');
+  if (!tab) return;
+  const i = open ? roomSides.indexOf(open) : -1;
+  tab.innerHTML = (open ? '<span class="room-side-tabname">' + qEsc(roomSideName(open, i)) + '</span>' : 'Side talks')
+    + (roomSides.length > 1 || !open ? ' <span class="room-tabcount" id="roomSideCount">' + (roomSides.length || '') + '</span>' : '')
+    + '<svg class="lib-tabchev' + (roomSideMenuOpen ? ' open' : '') + '" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 7l3 3 3-3"/></svg>';
+  tab.setAttribute('aria-haspopup', 'menu');
+  tab.setAttribute('aria-expanded', String(roomSideMenuOpen));
+  const bring = document.querySelector('#roomTabs [data-side-bring]');
+  if (bring) bring.hidden = !open;
+}
+document.addEventListener('mousedown', (ev) => {
+  if (!roomSideMenuOpen || (ev.target.closest && ev.target.closest('.room-side-pop, [data-room-primary="side"]'))) return;
+  roomSideMenuOpen = false; renderRoomSide();
+}, true);
 
 async function loadRoomSides() {
   const want = roomSel;
@@ -16979,7 +17034,7 @@ function renderRoomSide() {
   const host = document.getElementById('roomSideHost');
   if (!host) return;
   setRoomTabCount('roomSideCount', roomSides.length);
-  if (!roomSel) { host.innerHTML = ''; return; }
+  if (!roomSel) { host.innerHTML = ''; roomSideSyncTab(null); return; }
 
   const open = roomSides.find(s => s.id === roomSideOpenId) || null;
   // Keep the live conversation node (selection, draft and reading position) on
@@ -16989,40 +17044,31 @@ function renderRoomSide() {
   if (previousLog && previous.dataset.sideId) roomSidePositions.set(previous.dataset.sideId, previousLog.scrollTop);
   const reuse = previous && open && previous.dataset.sideId === open.id;
   if (reuse) previous.remove();
-  const listCollapsed = roomSideListCollapsed && roomSides.length > 0;
-  let html = '<div class="room-ana-acts room-side-new">'
-    + '<button type="button" data-side-new="1">+ Aside</button>'
-    + (roomSides.length ? '<button type="button" class="room-side-fold" data-side-fold="1" title="' + (listCollapsed ? 'Show the list' : 'Hide the list') + '" aria-label="' + (listCollapsed ? 'Show the list' : 'Hide the list') + '">' + (listCollapsed ? '▸' : '▾') + ' ' + roomSides.length + '</button>' : '')
-    + '</div>';
-
-  if (!listCollapsed) {
-    html += '<div class="room-side-list">' + roomSides.map((s, i) => (
-      '<div class="room-side-item">'
-      + '<button type="button" class="room-side-row' + (s.id === roomSideOpenId ? ' is-open' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
-      + qEsc(s.title && s.title !== 'Side talk' ? s.title : 'Aside ' + (i + 1))
-      + '</button>'
-      + '<button type="button" class="room-side-drop" data-side-drop="' + qEscAttr(s.id) + '" title="Throw this aside away" aria-label="Throw this aside away">✕</button>'
-      + '</div>'
-    )).join('') + (!roomSides.length ? '<div class="tv-empty">Nothing yet. Select a passage and choose Aside, or start one here.</div>' : '') + '</div>';
+  // His pick E (2026-09-30): no rows above the talk. The tab itself names the open
+  // aside and opens the list; "bring" sits at the end of the tab row.
+  roomSideSyncTab(open);
+  let html = '';
+  if (roomSideMenuOpen || !open) {
+    html += '<div class="lib-kindpop room-side-pop' + (open ? '' : ' is-static') + '" role="menu">'
+      + roomSides.map((s, i) => (
+        '<div class="room-side-item">'
+        + '<button type="button" role="menuitem" class="room-side-row' + (s.id === roomSideOpenId ? ' on' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
+        + qEsc(roomSideName(s, i))
+        + '</button>'
+        + '<button type="button" class="room-side-drop" data-side-drop="' + qEscAttr(s.id) + '" title="Throw this aside away" aria-label="Throw this aside away">✕</button>'
+        + '</div>'
+      )).join('')
+      + '<div class="lib-kindpop-foot"><button type="button" role="menuitem" data-side-new="1">＋ New aside</button></div>'
+      + '</div>';
   }
-
-  if (open) {
-    html += '<div class="room-side-open room-convo" id="roomSideEmbed"></div>'
-      + '<div class="room-ana-acts"><button type="button" data-side-bring="1">↑ bring</button></div>';
-  }
+  if (open) html += '<div class="room-side-open room-convo" id="roomSideEmbed"></div>';
   host.innerHTML = html;
   if (reuse) host.querySelector('#roomSideEmbed').replaceWith(previous);
 
   const newBtn = host.querySelector('[data-side-new]');
-  if (newBtn) newBtn.onclick = () => roomSideCreate({ mode: 'empty' });
-  const foldBtn = host.querySelector('[data-side-fold]');
-  if (foldBtn) foldBtn.onclick = () => {
-    roomSideListCollapsed = !roomSideListCollapsed;
-    try { localStorage.setItem('fmcns.roomSideListCollapsed', roomSideListCollapsed ? '1' : '0'); } catch (e) {}
-    renderRoomSide();
-  };
+  if (newBtn) newBtn.onclick = () => { roomSideMenuOpen = false; roomSideCreate({ mode: 'empty' }); };
   host.querySelectorAll('[data-side-pick]').forEach(b => {
-    b.onclick = () => roomSideOpen(b.getAttribute('data-side-pick'));
+    b.onclick = () => { roomSideMenuOpen = false; roomSideOpen(b.getAttribute('data-side-pick')); };
   });
   host.querySelectorAll('[data-side-drop]').forEach(b => {
     b.onclick = async (ev) => {
@@ -17034,7 +17080,7 @@ function renderRoomSide() {
       loadRoomSides();
     };
   });
-  const bring = host.querySelector('[data-side-bring]');
+  const bring = document.querySelector('#roomTabs [data-side-bring]');
   if (bring) bring.onclick = roomSideBring;
 
   if (open) {
