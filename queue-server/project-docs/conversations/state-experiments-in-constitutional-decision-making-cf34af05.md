@@ -1,6 +1,6 @@
 # State Experiments in Constitutional Decision‑Making
 
-Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 144 turns · last said 2026-09-30T03:50:12.080Z
+Thread cf34af05-5c3b-4aab-b7a3-1af907c9f105 · 144 turns · last said 2026-09-30T03:59:56.790Z
 
 ## you
 
