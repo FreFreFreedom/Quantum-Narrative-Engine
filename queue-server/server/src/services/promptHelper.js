@@ -141,7 +141,13 @@ function context(convoId, draft) {
 }
 
 async function ask({ prompt, maxTokens, label }) {
-  const model = geminiModel();
+  // Flash Lite first, and that is not a quality compromise — it is the only model
+  // with an allowance that can carry typing. Google gives Flash twenty calls a day
+  // and Flash Lite five hundred, and the Room's own answers already hold a reserve
+  // on whichever model they run on. A helper that fired on Flash would spend his
+  // day's answers on half-finished sentences, so Flash is only the backup, for when
+  // Lite is the one resting.
+  const model = geminiModel('gemini-flash-lite-latest');
   // Neither Gemini is answering. Say so plainly and do nothing — never quietly
   // spend a Claude lane on a keystroke.
   if (!model) return { error: 'gemini_resting' };
@@ -149,7 +155,9 @@ async function ask({ prompt, maxTokens, label }) {
     prompt, feature: 'prompt-helper', label, maxTokens,
     provider: 'google-ai-studio', model, strictModel: true, timeoutMs: 20_000,
   });
-  if (r.error) return { error: r.error };
+  // The reason travels with the refusal. "Every free lane is resting" is a true
+  // and useful thing to read under the box; a bare code is not.
+  if (r.error) return { error: r.error, message: r.message || '' };
   return { text: String(r.text || '') };
 }
 
@@ -190,7 +198,7 @@ export async function completeDraft({ convoId, draft }) {
     prompt: buildCompletePrompt(convoId, text.slice(-MAX_PROMPT)),
     maxTokens: 120, label: 'prompt:complete',
   });
-  if (r.error) return { tail: '', error: r.error };
+  if (r.error) return { tail: '', error: r.error, message: r.message };
   return { tail: cleanTail(r.text, text) };
 }
 
@@ -281,7 +289,7 @@ export async function sharpenDraft({ convoId, draft }) {
     prompt: buildSharpenPrompt(convoId, text.slice(0, MAX_PROMPT)),
     maxTokens: 700, label: 'prompt:sharpen',
   });
-  if (r.error) return { edits: [], error: r.error };
+  if (r.error) return { edits: [], error: r.error, message: r.message };
   const items = parseEdits(r.text);
   if (!items) return { edits: [], error: 'unreadable' };
   return { edits: usableEdits(items, text, mutedKinds()) };

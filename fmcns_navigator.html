@@ -30013,7 +30013,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var edits = (d && d.edits) || [];
           if(!edits.length){
             say(p, d && d.error === 'gemini_resting' ? 'Both Gemini models are resting.'
-              : (d && d.error ? 'Could not read it.' : 'Nothing to sharpen.'));
+              : (d && d.error ? (d.message || 'Could not read it.') : 'Nothing to sharpen.'));
             fade(p); return;
           }
           paintSharpen(p, draft, edits);
