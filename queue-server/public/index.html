@@ -3124,8 +3124,13 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-cards:has(#roomSide.is-active .room-side-title) .room-tabs { max-height:120px; transition:max-height .22s ease, opacity .18s ease, margin .22s ease; transition-delay:.05s; }
 /* Easy to call back (his ask): the name itself is a reach zone too, and the folded
    strip keeps a band at the top wide enough to land on. */
+/* Folded, it takes no room at all (his ask): the name sits at the very top, and the
+   reach zone is an invisible band over the panel's own top margin, not a row. */
+.room-cards:has(#roomSide.is-active .room-side-title) .room-tabs::before { content:''; position:absolute; left:0; right:0; top:-14px; height:20px; }
+.room-cards:has(#roomSide.is-active .room-side-title):has(.room-side-title:hover) .room-tabs:not(:hover) { transition-delay:.3s; }
 .room-cards:has(#roomSide.is-active .room-side-title):not(:has(.room-side-title:hover)) .room-tabs:not(:hover):not(:focus-within):not(:has([aria-expanded="true"])) {
-  max-height:22px; opacity:0; overflow:hidden; margin-bottom:0; transition-delay:.6s; }
+  max-height:0; opacity:0; overflow:visible; margin-bottom:0; transition-delay:.6s; }
+.room-cards:has(#roomSide.is-active .room-side-title):not(:has(.room-side-title:hover)) .room-tabs:not(:hover):not(:focus-within):not(:has([aria-expanded="true"])) > * { visibility:hidden; }
 .room-side-title { flex:none; position:relative; display:flex; align-items:center; justify-content:center; gap:clamp(3px, .8cqw, 6px);
   width:100%; margin:0 0 clamp(2px, 1cqw, 6px); padding:clamp(2px, .8cqw, 5px) clamp(6px, 4cqw, 28px) clamp(9px, 1.6cqw, 12px);
   border:0; border-radius:var(--r-sm); background:none; cursor:pointer; }
