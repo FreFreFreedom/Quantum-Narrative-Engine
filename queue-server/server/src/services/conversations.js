@@ -306,7 +306,7 @@ export async function gistConvo(convoId, messageId) {
     prompt: `${GIST_PROMPT}\n\n=== TEXT ===\n${msgs.slice(-24).map(line).join('\n\n')}`,
     feature: 'summary',
     label: 'conversations:bring-gist',
-    maxTokens: 400,
+    maxTokens: 1500,
     timeoutMs: 60_000,
   });
   const text = String(out?.text || '').trim();
