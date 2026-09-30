@@ -13,7 +13,7 @@
 // afterwards by services/boardRhyme.js — never by a box he has to answer.
 
 import { randomUUID } from 'node:crypto';
-import { getConvo, listMessages } from './conversations.js';
+import { getConvo, threadMessages } from './conversations.js';
 import { scanText, entityNames } from './entityMentions.js';
 import { getEntity } from './ontologyQuery.js';
 import { getEnrichment } from './filmEnrichment.js';
@@ -29,7 +29,7 @@ const WALL_CAP = 24;
 // ─── The flowing wall ──────────────────────────────────────────────────────────
 
 function recentTranscript(convoId, limit = 20) {
-  return listMessages(convoId)
+  return threadMessages(convoId)
     .filter((m) => m.kind === 'chat')
     .slice(-limit)
     .map((m) => m.text || '')
@@ -179,7 +179,7 @@ export function setCardRhyme(cardId, { passage, rhyme } = {}) {
 // A short window of the conversation for boardRhyme.js to read — same shape as
 // roomAnalogies.js's transcriptFor, capped for the same free-lane reason.
 export function boardTranscriptFor(convoId, limit = 12) {
-  return listMessages(convoId)
+  return threadMessages(convoId)
     .filter((m) => m.kind === 'chat')
     .slice(-limit)
     .map((m) => `${m.role === 'user' ? 'OWNER' : 'QNE'}: ${String(m.text || '').slice(0, 900)}`)

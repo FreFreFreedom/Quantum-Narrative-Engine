@@ -16,6 +16,7 @@
 // lane, which is free in practice (second Claude account first, then free models).
 
 import { randomUUID } from 'node:crypto';
+import { KEPT_SIDE_ONLY_SQL } from './pairSql.js';
 import { generateText } from './ai/text.js';
 import { broadcastAll } from '../realtime.js';
 import { triggerMindMirror } from './mindMirror.js';
@@ -538,7 +539,7 @@ async function runHarvest(convoId, force) {
   // the watermark has always meant and what the trigger counts — but the slice
   // handed to the model runs from his first unseen message to the end, answers
   // included, so the pass sees what the conversation actually worked out.
-  const all = db.prepare(`SELECT id, role, text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant') ORDER BY created_at`).all(convoId);
+  const all = db.prepare(`SELECT id, role, text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant') AND ${KEPT_SIDE_ONLY_SQL} ORDER BY created_at`).all(convoId);
   const userCount = all.filter((m) => m.role === 'user').length;
   const newTurns = unseenTurns(all, convo.mind_seen_turns || 0);
   if (!force && newTurns.filter((m) => m.role === 'user').length < HARVEST_AFTER_TURNS) return;
@@ -1128,7 +1129,7 @@ export function rewindHarvest(convoId) {
 // harvest transcript) are what actually let the model name the concept.
 const REMEMBER_RADIUS = 6;
 function transcriptAround(convoId, messageId) {
-  const all = db.prepare(`SELECT id, role, text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant') ORDER BY created_at`).all(convoId);
+  const all = db.prepare(`SELECT id, role, text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant') AND ${KEPT_SIDE_ONLY_SQL} ORDER BY created_at`).all(convoId);
   const idx = messageId ? all.findIndex((m) => m.id === messageId) : -1;
   const slice = idx >= 0
     ? all.slice(Math.max(0, idx - REMEMBER_RADIUS), idx + REMEMBER_RADIUS + 1)

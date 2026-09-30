@@ -1790,6 +1790,9 @@ export function initConversationsSchema(db) {
   // override of the automatic turn router, {provider, model, account} as JSON, or
   // NULL when the conversation is on Auto. Read by conversations.js#getChatLane.
   try { db.exec(`ALTER TABLE convos ADD COLUMN chat_override TEXT`); } catch {}
+  // The second model of a pair (plan two-models-side-by-side): same JSON shape as
+  // chat_override. Set means every send asks both and draws them in two columns.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN chat_override_b TEXT`); } catch {}
 
   // Starred threads (the Room's thread list): the few conversations he keeps coming
   // back to, held above the date groups instead of sinking as newer ones arrive.

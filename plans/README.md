@@ -1,5 +1,7 @@
 # Plan Backlog
 
+- [Two models, side by side](two-models-side-by-side.md) — **IMPLEMENTED**, 2026-09-30. One question answered by two picked models at once, drawn as two independent-scrolling columns in the Room thread (layout H; no scroll lock, no added structure). One answer is kept and only the kept one carries into later context.
+
 - [Prompt helper: context, not rules](prompt-helper-context-not-rules.md) — **DONE**, 2026-09-30. The composer's sharpen pass loses its six-rule checklist and its menu of kinds; the kind becomes a label written after the edit, one cheap line says what answer the draft would get, muting counts per situation, and the grey tail is counted.
 
 - [Room running log](room-running-log.md) — **DONE**, 2026-09-28. Messages that leave the 16-message window are logged in plain words, append-only and dated, and shown to the model as more of the conversation. Context only: no rule or instruction reaches the answer.

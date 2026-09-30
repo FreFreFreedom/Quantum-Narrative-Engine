@@ -17,6 +17,7 @@
 // by REBUILD_EVERY messages. Opening a conversation never generates anything.
 
 import { randomUUID } from 'node:crypto';
+import { KEPT_SIDE_ONLY_SQL } from './pairSql.js';
 import { generateText } from './ai/text.js';
 import { broadcastAll } from '../realtime.js';
 
@@ -52,6 +53,7 @@ function chatMessages(convoId) {
     return db.prepare(
       `SELECT id, role, text FROM convo_messages
        WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant')
+         AND ${KEPT_SIDE_ONLY_SQL}
        ORDER BY created_at, rowid`,
     ).all(convoId);
   } catch { return []; }

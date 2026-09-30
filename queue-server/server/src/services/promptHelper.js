@@ -25,6 +25,7 @@
 // be counted.
 
 import { generateText, geminiModel } from './ai/text.js';
+import { KEPT_SIDE_ONLY_SQL } from './pairSql.js';
 import { mindBlock } from './mind.js';
 
 let db = null;
@@ -202,6 +203,7 @@ function recent(convoId) {
     return db.prepare(
       `SELECT role, text FROM convo_messages
        WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant')
+         AND ${KEPT_SIDE_ONLY_SQL}
        ORDER BY created_at DESC, rowid DESC LIMIT ?`,
     ).all(convoId, RECENT_MESSAGES).reverse();
   } catch { return []; }

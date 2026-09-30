@@ -26,7 +26,7 @@
 import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
 import { generateText as _generateText } from './ai/text.js';
-import { getConvo, listMessages } from './conversations.js';
+import { getConvo, listMessages, threadMessages } from './conversations.js';
 import { whoHeIsBlock } from './ai/voice.js';
 import { subjectsLine } from './mind.js';
 
@@ -148,7 +148,7 @@ function normalizeContext(parsed, prior) {
 }
 
 function transcriptFor(convoId, limit = 6, charCap = 900) {
-  const msgs = listMessages(convoId).filter((m) => m.kind === 'chat').slice(-limit);
+  const msgs = threadMessages(convoId).filter((m) => m.kind === 'chat').slice(-limit);
   return msgs.map((m) => `${m.role === 'user' ? 'OWNER' : 'QNE'}: ${String(m.text || '').slice(0, charCap)}`).join('\n\n');
 }
 
@@ -397,7 +397,7 @@ async function runGenerateAndCritic({ transcript = null, ctx, instruction = null
 // The last thing HE said — the line an unasked arrival is pinned to in the
 // transcript. Falls back to nothing rather than guessing at an assistant turn.
 function lastUserMessageId(convoId) {
-  const msgs = listMessages(convoId).filter((m) => m.kind === 'chat' && m.role === 'user');
+  const msgs = threadMessages(convoId).filter((m) => m.kind === 'chat' && m.role === 'user');
   return msgs.length ? msgs[msgs.length - 1].id : null;
 }
 

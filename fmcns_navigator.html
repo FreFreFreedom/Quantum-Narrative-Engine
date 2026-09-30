@@ -3281,6 +3281,56 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-turnfoot .se-wordcount, .se-turnfoot .se-turnacts { margin-top:0; }
 .se-turnfoot .se-turnacts { justify-content:flex-start; }
 .se-turndel svg { width:13px; height:13px; display:block; }
+/* Two models answering one question (plan two-models-side-by-side). Two columns
+   in the turn slot a single answer already uses — no new band, nothing drawn
+   twice. Each column scrolls on its own: at 2 000 words a locked scroll ties two
+   texts that do not line up, and his hand loses both at once. */
+.se-pair { padding:9px 0; border-top:1px solid var(--c-border); }
+.se-pair-grid { display:grid; grid-template-columns:1fr 1px 1fr; }
+.se-pair-vr { background:var(--c-border); }
+.se-pair-col { min-width:0; display:flex; flex-direction:column; }
+.se-pair-body { max-height:min(62vh, 680px); overflow-y:auto; padding:0 16px; scrollbar-width:thin; }
+.se-pair-grid > .se-pair-col:first-child .se-pair-body { padding-left:0; }
+.se-pair-grid > .se-pair-col:last-child .se-pair-body { padding-right:0; }
+.se-pair-body::-webkit-scrollbar { width:7px; }
+.se-pair-body::-webkit-scrollbar-thumb { background:var(--c-border-2); border-radius:4px; }
+.se-pair-body > .se-turn, .se-pair-body > .se-turn:first-child { border-top:none; padding-top:0; }
+/* The model's name stays over its own answer, with Keep beside it — otherwise the
+   only way to keep the left one is to scroll two thousand words to its end. */
+.se-pair-body .se-who { position:sticky; top:0; z-index:2; margin:0; padding:7px 0 8px;
+  background:color-mix(in srgb, var(--c-bg) 86%, transparent); backdrop-filter:blur(6px); }
+.se-pair-col.is-kept .se-pair-body { box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--c-accent) 26%, transparent); border-radius:var(--r-sm); }
+.se-pair-keep { margin-left:auto; font-family:var(--font-ui); font-size:var(--fs-2xs); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--c-ink-5); background:none; border:1px solid var(--c-border-2);
+  border-radius:var(--r-sm); padding:3px 9px; cursor:pointer; flex:none;
+  transition:color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
+.se-pair-keep:hover { color:var(--c-ink); border-color:var(--c-ink-4); }
+.se-pair-keep.is-kept { color:var(--c-on-accent); background:var(--c-accent); border-color:transparent; cursor:default; }
+/* Two columns only while there is room for two. The window is not the measure —
+   the thread's own column is, since the chat list and the reference panel take
+   their width out of it: two 170px columns of a 2 000-word answer are unreadable.
+   Under 620px of thread the pair stacks, kept one first, each still its own
+   scroller. */
+.se-log { container-type:inline-size; }
+@container (max-width: 620px) {
+  .se-pair-grid { grid-template-columns:1fr; }
+  .se-pair-vr { height:1px; }
+  .se-pair-body { padding:0; max-height:min(52vh, 520px); }
+  /* Stacked, the one the thread follows reads first. */
+  .se-pair-col.is-kept { order:-1; }
+}
+@media (max-width: 900px) {
+  .se-pair-grid { grid-template-columns:1fr; }
+  .se-pair-vr { height:1px; }
+  .se-pair-body { padding:0; max-height:min(52vh, 520px); }
+}
+/* The second model's pick, beside the first one in the composer. */
+.room-convo .se-lanebtn2 { display:inline-flex; align-items:center; gap:5px; padding:4px 2px; border:0; background:none; cursor:pointer;
+  font-family:'Cinzel',var(--font-read); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase;
+  color:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 35%, var(--c-ink-5)); max-width:170px; }
+.room-convo .se-lanebtn2:hover, .room-convo .se-lanebtn2[aria-expanded="true"], .room-convo .se-lanebtn2.is-set { color:var(--c-kept-echo, var(--c-accent)); }
+.se-lanebtn2 { display:none; }
+
 /* A timeline inside an answer: between two hairlines, in the look's own ink. */
 .se-tl { margin:20px 0 16px; padding:20px 4px 12px; border-top:1px solid var(--c-border); border-bottom:1px solid var(--c-border); }
 .se-tl svg { width:100%; height:auto; display:block; overflow:visible; }
@@ -19601,6 +19651,20 @@ const AI_FEATURES = [
   { key: 'doc-extraction', label: 'Reading documents', note: 'Pulling the text out of a PDF or long attachment' },
 ];
 const AI_CLAUDE_MODELS = ['sonnet', 'haiku', 'opus'];
+// The main account (claudemax, the team login) also answers to its models by name —
+// its own catalogue, read 2026-09-30. The aliases stay above them: they always mean
+// the newest of that tier, which is what most features want.
+const AI_CLAUDE_MAIN_MODELS = ['claude-opus-5-5', 'claude-fable-5-1', 'claude-sonnet-5-5', 'claude-haiku-4-5-20251001'];
+// "claude-opus-5-5" reads as "Opus 5.5": the maker is already said, two version digits
+// are one version, and the build date at the end is not part of the name. The Room's
+// own picker and the server both read a model id by this rule; this script is a
+// separate scope from the Room's, so the rule is repeated rather than shared.
+function aiClaudeModelName(id) {
+  return String(id || '').replace(/^claude-/, '').replace(/-\d{8}$/, '')
+    .replace(/(\d)-(\d)(?![\d.a-z])/g, '$1.$2')
+    .split('-').filter(Boolean)
+    .map(w => /^[a-z]/.test(w) ? w[0].toUpperCase() + w.slice(1) : w).join(' ');
+}
 let aiSettings = null;
 let aiFreeProviders = null;
 // Which of Settings' three panes is showing. Kept per browser, like every other
@@ -19763,7 +19827,12 @@ function aiModelOptions(provider, selected) {
       ? `<option value="${selected}" selected>${selected}</option>`
       : `<option value="">(set outside this panel)</option>`;
   }
-  return AI_CLAUDE_MODELS.map(m => `<option value="${m}"${m === selected ? ' selected' : ''}>${m}</option>`).join('');
+  const claudeModels = provider === 'claude-code'
+    ? AI_CLAUDE_MODELS.concat(['fable'], AI_CLAUDE_MAIN_MODELS)
+    : AI_CLAUDE_MODELS;
+  const unlisted = selected && !claudeModels.includes(selected)
+    ? `<option value="${selected}" selected>${selected}</option>` : '';
+  return claudeModels.map(m => `<option value="${m}"${m === selected ? ' selected' : ''}>${aiClaudeModelName(m)}</option>`).join('') + unlisted;
 }
 
 // "Providers & quota" — read-only view of the free-provider catalogue
@@ -28601,6 +28670,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // The two Claude subscriptions are picked by tier name, not by a catalogue id —
   // the runner turns it into claude:<name> itself. Same three the queue offers.
   var CLAUDE_LANE_MODELS = ['haiku', 'sonnet', 'opus'];
+  // The main account (claudemax, the team login) names its models instead, read from
+  // the CLI's own catalogue 2026-09-30 — an alias always means "the newest", which is
+  // the one thing you cannot ask for when you want a particular one. The second
+  // account keeps the aliases: it is a different subscription with its own lineup.
+  var CLAUDE_MAIN_MODELS = ['claude-opus-5-5', 'claude-fable-5-1', 'claude-sonnet-5-5', 'claude-haiku-4-5-20251001'];
   // How hard the chosen model may think. Only the lanes with a dial have one:
   // Claude takes --effort and stops at high; Codex takes the same words through
   // its own config and goes further on its bigger models (his ask, 2026-09-21).
@@ -28613,14 +28687,31 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     'gpt-6-astra': 'ultra', 'gpt-5.6-sol': 'ultra', 'gpt-5.6-terra': 'ultra',
     'gpt-5.6-luna': 'max', 'gpt-5.5': 'xhigh', 'gpt-reserve': 'max'
   };
-  function laneHasEffort(providerKey){
+  // The named Claude 5 models take the dial all the way to Max, the way the terminal
+  // does; Haiku does no thinking at all, so it gets no dial rather than three levels
+  // it would ignore. A tier alias keeps the old three, since which model answers is
+  // not knowable from here.
+  var CLAUDE_EFFORT_CEILING = {
+    'claude-opus-5-5': 'max', 'claude-fable-5-1': 'max', 'claude-sonnet-5-5': 'max',
+    'claude-haiku-4-5-20251001': ''
+  };
+  function laneHasEffort(providerKey, model){
     var provider = laneBaseProvider(providerKey);
-    return provider === 'claude-code' || provider === 'claude-side' || provider === 'codex';
+    if(provider !== 'claude-code' && provider !== 'claude-side' && provider !== 'codex') return false;
+    return laneEffortLevels(providerKey, model).length > 0;
   }
   function laneEffortLevels(providerKey, model){
-    if(laneBaseProvider(providerKey) !== 'codex') return ['low', 'medium', 'high'];
-    var top = LANE_EFFORT_LADDER.indexOf(CODEX_EFFORT_CEILING[model || 'gpt-6-astra'] || 'high');
-    return LANE_EFFORT_LADDER.slice(0, top + 1);
+    var provider = laneBaseProvider(providerKey);
+    if(provider === 'codex'){
+      var top = LANE_EFFORT_LADDER.indexOf(CODEX_EFFORT_CEILING[model || 'gpt-6-astra'] || 'high');
+      return LANE_EFFORT_LADDER.slice(0, top + 1);
+    }
+    if(provider === 'claude-code' && model && CLAUDE_EFFORT_CEILING.hasOwnProperty(model)){
+      var cap = CLAUDE_EFFORT_CEILING[model];
+      if(!cap) return [];
+      return LANE_EFFORT_LADDER.slice(0, LANE_EFFORT_LADDER.indexOf(cap) + 1);
+    }
+    return ['low', 'medium', 'high'];
   }
 
   function laneTagFor(providerKey, model){
@@ -28642,6 +28733,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function laneModelShort(m){
     var id = String(m || '');
     var name = id.slice(id.lastIndexOf('/') + 1).replace(/^gemini-(?=flash|pro)/, 'gemini-').replace(/^claude-/, '');
+    // "opus-5-5-20251001" is Opus 5.5: two version digits are one version, and the
+    // build date at the end is not part of the name. Same rule the server reads by.
+    name = name.replace(/[-_]\d{8}$/, '').replace(/(\d)[-_](\d)(?![\d.a-z])/g, '$1.$2');
     return name.split(/[-_]+/).filter(Boolean).map(function(w){
       var l = w.toLowerCase();
       if(LANE_WORD_CASE.hasOwnProperty(l)) return LANE_WORD_CASE[l];
@@ -28657,6 +28751,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       return seg.split(/[-_]+/).map(function(w){ var l = w.toLowerCase(); return l === 'ai' ? 'AI' : l === 'opencode' ? 'OpenCode' : l === 'openai' ? 'OpenAI' : l === 'go' ? 'Go' : l.charAt(0).toUpperCase() + l.slice(1); }).join(' ');
     }).join(' · ');
   }
+  // What to call a lane on screen: the model's own short name, or the maker's
+  // when there is no model, or Auto. Used by the two pickers and by the heads of
+  // a pair while its two answers are still being written.
+  function laneLabelOf(lane){
+    if(!lane || !lane.provider) return 'Auto';
+    var key = laneKeyOf(lane);
+    return lane.model ? laneModelShort(lane.model) : seLaneName(lane.tag || LANE_LABELS[key] || key);
+  }
   function laneBtnHtml(e){
     if(!e.lane) return '<span>Auto</span><span class="chev">▾</span>';
     var key = laneKeyOf(e.lane);
@@ -28670,9 +28772,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Which maker is unfolded in the list. Only one at a time: the one in use when the
   // list opens, then whichever heading he touches (too many models otherwise).
   var lanePopGroup = null;
-  function lanePopHtml(e){
-    var cur = laneKeyOf(e.lane);
-    var html = '<button type="button" class="it' + (e.lane ? '' : ' on') + '" data-lane="">Auto <small>the app chooses</small></button><hr>';
+  function lanePopHtml(e, side){
+    var pick = side === 'b' ? e.laneB : e.lane;
+    var cur = laneKeyOf(pick);
+    var html = side === 'b'
+      ? '<button type="button" class="it' + (e.laneB ? '' : ' on') + '" data-lane="">One answer <small>no second model</small></button><hr>'
+      : '<button type="button" class="it' + (e.lane ? '' : ' on') + '" data-lane="">Auto <small>the app chooses</small></button><hr>';
     var groups = LANE_POP_GROUPS.slice();
     freeApiLanes(laneCatalog).forEach(function(p){ groups.push([p.label || p.id, [p.id]]); });
     var curGroup = null;
@@ -28697,16 +28802,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
         var lastMaker = null;
         models.forEach(function(m){
-          var on = cur === key && (e.lane.model || models[0]) === m;
+          var on = cur === key && ((pick && pick.model) || models[0]) === m;
           var maker = laneModelMaker(m);
           if(maker && maker !== lastMaker){ rows += '<div class="sh">' + qEsc(maker) + '</div>'; lastMaker = maker; }
           rows += '<button type="button" class="it' + (on ? ' on' : '') + (maker ? ' in' : '') + '" data-lane="' + qEscAttr(key) + '" data-model="' + qEscAttr(m) + '" title="' + qEscAttr(m) + '"' + (off ? ' disabled title="' + qEscAttr(laneOffReason(key) || '') + '"' : '') + '>'
             + qEsc(laneModelShort(m)) + (sub && !maker ? '<small>' + qEsc(sub) + '</small>' : '') + '</button>';
         });
-        if(cur === key && laneHasEffort(key)){
-          var levels = laneEffortLevels(key, e.lane.model);
-          rows += '<div class="eff"><button type="button" data-effort="" class="' + (e.lane.effort ? '' : 'on') + '">Auto</button>'
-            + levels.map(function(v){ return '<button type="button" data-effort="' + qEscAttr(v) + '" class="' + (e.lane.effort === v ? 'on' : '') + '" title="' + qEscAttr(LANE_EFFORT_LABELS[v] || v) + '">' + qEsc(String(LANE_EFFORT_LABELS[v] || v).split(' ')[0]) + '</button>'; }).join('')
+        if(cur === key && pick && laneHasEffort(key, pick.model)){
+          var levels = laneEffortLevels(key, pick.model);
+          rows += '<div class="eff"><button type="button" data-effort="" class="' + (pick.effort ? '' : 'on') + '">Auto</button>'
+            + levels.map(function(v){ return '<button type="button" data-effort="' + qEscAttr(v) + '" class="' + (pick.effort === v ? 'on' : '') + '" title="' + qEscAttr(LANE_EFFORT_LABELS[v] || v) + '">' + qEsc(String(LANE_EFFORT_LABELS[v] || v).split(' ')[0]) + '</button>'; }).join('')
             + '</div>';
         }
       });
@@ -28929,6 +29034,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (meta.cost) out.cost = meta.cost;
         if (meta.checked) out.checked = meta.checked;
         if (meta.answered) out.answered = meta.answered;
+        // Two models answered this question: which pair, which side, and whether
+        // this is the one the thread follows (plan two-models-side-by-side).
+        if (meta.pair) { out.pair = meta.pair; out.side = meta.side || 'a'; out.pairOf = meta.pair_of || null; out.kept = meta.kept === true; }
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) { out.attachments = meta.attachments; if (meta.body && !out.body) out.body = meta.body; }
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
@@ -28963,6 +29071,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // set from the fetch, never left undefined once loaded, so sendTurn always
         // knows whether to say "use Auto" or "use whatever's already pinned".
         e.lane = data.chat_override || null;
+        // The second model, when this conversation is set to ask two (plan
+        // two-models-side-by-side). null means one answer, as before.
+        e.laneB = data.chat_override_b || null;
         // Interview mode lives on the row, so it survives a refresh and a change of
         // answering model — read straight off the conversation, never guessed.
         e.clarify = (data.convo && data.convo.clarification_mode) || 'normal';
@@ -29007,7 +29118,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // laneOverride: a lane for THIS send only, without disturbing the conversation's
   // sticky pick — what "answer this again on another model" needs. Undefined means
   // the sticky pick, exactly as before; null means Auto for this one turn.
-  function sendTurn(e, text, repaint, onDone, laneOverride, carried){
+  function sendTurn(e, text, repaint, onDone, laneOverride, carried, turnOpts){
     text = String(text || '').trim();
     if(!text || !e.convoId || e.busy) return false;
     e.busy = true; e.draft = ''; e.note = ''; e.phase = '';
@@ -29034,6 +29145,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // this answer is still being written, and every index after it moves.
     var sentMsg = e.msgs[sentAt - 1];
     e.stream = '';
+    // Two models at once (plan two-models-side-by-side): an explicit second pick
+    // on this send, or the one this conversation is set to. A re-ask from the ↻
+    // menu passes pairOff to answer on one model only.
+    var laneB = (turnOpts && turnOpts.single) ? null : (e.laneB || null);
+    e.pairFlight = laneB ? { a: laneLabelOf(laneOverride !== undefined ? laneOverride : e.lane), b: laneLabelOf(laneB) } : null;
+    e.streams = { a: '', b: '' };
     // Changing one's mind right after Enter is ordinary. The stop button aborts
     // this request; the server drops the turn on its side, so the thread stays
     // as if nothing had been asked, and the words go back into the box.
@@ -29062,6 +29179,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             .map(function(a){ return { name: a.name, mimeType: a.mimeType, dataUrl: a.dataUrl }; });
         }
         var lane = laneOverride !== undefined ? laneOverride : e.lane;
+        // The second model rides in its own key; null means "one answer only,
+        // just this once" and is what a re-ask on a single model sends.
+        payload.overrideB = laneB ? { provider: laneB.provider, model: laneB.model || null, account: laneB.account || null, effort: laneB.effort || null } : null;
         if(laneOverride === undefined && e.lane === undefined) return payload;
         payload.override = lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null } : null;
         return payload;
@@ -29097,6 +29217,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             ? 'Already sent — the task is set aside in the Dispatch Queue.'
             : 'Sent — the plan is now a task, set aside in the Dispatch Queue for you to approve.' });
           if(onDone) onDone();
+        } else if(d.pair){
+          // Two answers to one question. Both are pushed in side order, so the
+          // thread holds them the way a reload will: they draw as one pair.
+          ['a', 'b'].forEach(function(side){
+            var r = d[side];
+            if(!r || (!r.text && !r.message)) return;
+            e.msgs.push({ id: r.messageId || null, role: 'assistant', kind: 'chat',
+              text: r.text || r.message || '', laneTag: r.laneTag || null, intent: r.intent || null,
+              cost: r.cost || 0, works: r.works || null, people: r.people || null, peopleRead: r.people !== false,
+              pair: d.pair, side: side, kept: side === 'a' });
+          });
+          if(e.type === 'open' && onDone) onDone();
         } else if(d.text){
           // e.stream only holds anything if readTurn actually saw token events —
           // a lane that answered in one shot (plain JSON, no NDJSON) leaves it
@@ -29125,13 +29257,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // while the Mac was still writing and the answer was saved a minute later
         // (2026-09-21, the thing he could not get past). Fall back to watching the
         // conversation itself, exactly as a dropped connection already does.
-        if(!d || (!d.error && !d.text && !d.prompt)){
-          e.stream = '';
+        if(!d || (!d.error && !d.text && !d.prompt && !d.pair)){
+          e.stream = ''; e.pairFlight = null; e.streams = null;
           return awaitTurn(e, sentMsg, repaint);
         }
         // The answer is now a real message, so the in-flight buffer must go or the
         // same text paints twice.
-        e.stream = '';
+        e.stream = ''; e.pairFlight = null; e.streams = null;
         if(d.via) e.via = d.via;
         if(!d.error && e.referenceFlight){e.referenceFlight=null;saveDraft(e);}
         // Where the answer actually came from, when that is not where it was meant
@@ -29142,7 +29274,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(repaint) repaint();
       })
       .catch(function(){
-        e.stream = '';
+        e.stream = ''; e.pairFlight = null; e.streams = null;
         if(e.referenceFlight){
           e.draft=e.draft||typed;e.draftForce=true;
           e.quotes=[...(carriedQuotes||[]),...(e.quotes||[])].filter((q,i,a)=>a.findIndex(x=>JSON.stringify(x)===JSON.stringify(q))===i);
@@ -29248,6 +29380,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var obj;
       try { obj = JSON.parse(line); } catch(err) { return; }
       if(obj.type === 'token'){
+        // A side only means two columns while two models are writing. A second
+        // answer put beside one already in the thread streams as any single answer
+        // does — the one it joins is already on screen above it.
+        if(obj.side && e.pairFlight){
+          if(!e.streams) e.streams = { a: '', b: '' };
+          e.streams[obj.side] = (e.streams[obj.side] || '') + obj.text;
+          e.phase = '';
+          paintSoon();
+          return;
+        }
         e.stream += obj.text;
         // Words beat a progress line: once the answer is arriving, the phase
         // note has done its job and would only compete with it.
@@ -29894,6 +30036,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +       '<select class="se-laneeffort" style="display:none" title="How hard it may think"></select>'
         +       '<button type="button" class="se-lane-clear" style="display:none" title="Back to Auto">✕</button>'
         +       '<button type="button" class="se-lanebtn" aria-haspopup="listbox" aria-expanded="false" title="Which model answers"></button>'
+        +       '<button type="button" class="se-lanebtn2" aria-haspopup="listbox" aria-expanded="false"></button>'
         +       '<div class="se-lanepop" hidden role="listbox"></div>'
         +     '</span>'
         +     '<button type="button" class="se-interview" title="Ask me questions before you answer">Interview</button>'
@@ -30380,44 +30523,59 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         persistLane(e, null);
         fillEmbed(host, e, opts);
       };
-      var laneBtn = host.querySelector('.se-lanebtn'), lanePop = host.querySelector('.se-lanepop');
+      var laneBtn = host.querySelector('.se-lanebtn'), laneBtn2 = host.querySelector('.se-lanebtn2'), lanePop = host.querySelector('.se-lanepop');
       if(laneBtn && lanePop){
-        var closePop = function(){ lanePop.hidden = true; laneBtn.setAttribute('aria-expanded', 'false'); document.removeEventListener('mousedown', outside, true); document.removeEventListener('keydown', esc, true); };
-        var outside = function(ev){ if(!lanePop.contains(ev.target) && ev.target !== laneBtn) closePop(); };
+        // One popover, two picks: the model that answers, and the second model that
+        // answers the same question beside it (plan two-models-side-by-side).
+        // `lanePopSide` says which pick the list is currently setting.
+        var lanePopSide = 'a';
+        var openerFor = function(){ return lanePopSide === 'b' ? laneBtn2 : laneBtn; };
+        var closePop = function(){ lanePop.hidden = true; laneBtn.setAttribute('aria-expanded', 'false'); if(laneBtn2) laneBtn2.setAttribute('aria-expanded', 'false'); document.removeEventListener('mousedown', outside, true); document.removeEventListener('keydown', esc, true); };
+        var outside = function(ev){ if(!lanePop.contains(ev.target) && ev.target !== laneBtn && ev.target !== laneBtn2) closePop(); };
         var esc = function(ev){ if(ev.key === 'Escape') closePop(); };
-        laneBtn.onclick = function(ev){
-          ev.stopPropagation();
-          if(!lanePop.hidden){ closePop(); return; }
+        var openPop = function(side, btn){
+          if(!lanePop.hidden && lanePopSide === side){ closePop(); return; }
+          lanePopSide = side;
           lanePopGroup = null;
-          ensureLaneCatalog().then(function(){ lanePop.innerHTML = lanePopHtml(e); });
-          lanePop.innerHTML = lanePopHtml(e);
-          lanePop.hidden = false; laneBtn.setAttribute('aria-expanded', 'true');
-          lanePopPlace(laneBtn, lanePop);
+          ensureLaneCatalog().then(function(){ if(!lanePop.hidden) lanePop.innerHTML = lanePopHtml(e, lanePopSide); });
+          lanePop.innerHTML = lanePopHtml(e, side);
+          lanePop.hidden = false; btn.setAttribute('aria-expanded', 'true');
+          lanePopPlace(btn, lanePop);
           document.addEventListener('mousedown', outside, true); document.addEventListener('keydown', esc, true);
+        };
+        laneBtn.onclick = function(ev){ ev.stopPropagation(); openPop('a', laneBtn); };
+        if(laneBtn2) laneBtn2.onclick = function(ev){
+          ev.stopPropagation();
+          // Already set, clicked with the list shut: one click takes the second
+          // model away again, so dropping back to one answer is not a hunt.
+          if(e.laneB && lanePop.hidden && ev.altKey){ e.laneB = null; persistLane(e, null, 'b'); fillEmbed(host, e, opts); return; }
+          openPop('b', laneBtn2);
         };
         lanePop.onclick = function(ev){
           var b = ev.target.closest('button'); if(!b || b.disabled) return;
           ev.stopPropagation();
+          var side = lanePopSide, cur = side === 'b' ? e.laneB : e.lane;
           if(b.hasAttribute('data-group')){
             lanePopGroup = b.classList.contains('is-open') ? '' : b.getAttribute('data-group');
-            lanePop.innerHTML = lanePopHtml(e); lanePopPlace(laneBtn, lanePop); return;
+            lanePop.innerHTML = lanePopHtml(e, side); lanePopPlace(openerFor(), lanePop); return;
           }
           if(b.hasAttribute('data-effort')){
-            if(e.lane) e.lane = { provider: e.lane.provider, account: e.lane.account || null, model: e.lane.model || null, effort: b.getAttribute('data-effort') || null, tag: e.lane.tag };
+            if(cur) cur = { provider: cur.provider, account: cur.account || null, model: cur.model || null, effort: b.getAttribute('data-effort') || null, tag: cur.tag };
           } else {
             var key = b.getAttribute('data-lane');
-            if(!key) e.lane = null;
+            if(!key) cur = null;
             else {
               var picked = laneFromKey(key), model = b.getAttribute('data-model') || null;
-              var keep = e.lane && laneKeyOf(e.lane) === key && e.lane.effort && laneEffortLevels(key, model).indexOf(e.lane.effort) >= 0 ? e.lane.effort : null;
-              e.lane = { provider: picked.provider, account: picked.account, model: model, effort: keep, tag: laneTagFor(key, model) };
+              var keep = cur && laneKeyOf(cur) === key && cur.effort && laneEffortLevels(key, model).indexOf(cur.effort) >= 0 ? cur.effort : null;
+              cur = { provider: picked.provider, account: picked.account, model: model, effort: keep, tag: laneTagFor(key, model) };
             }
           }
-          persistLane(e, e.lane);
+          if(side === 'b') e.laneB = cur; else e.lane = cur;
+          persistLane(e, cur, side);
           // The list stays open after a pick so the dial can be set; the effort pick
           // and Auto close it.
-          if(b.hasAttribute('data-effort') || !e.lane) closePop();
-          else { lanePop.innerHTML = lanePopHtml(e); lanePopPlace(laneBtn, lanePop); }
+          if(b.hasAttribute('data-effort') || !cur) closePop();
+          else { lanePop.innerHTML = lanePopHtml(e, side); lanePopPlace(openerFor(), lanePop); }
           fillEmbed(host, e, opts);
         };
       }
@@ -30455,11 +30613,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
 
   // Manual model picker helpers (plan "chat-model-picker") ---------------------
-  function persistLane(e, lane){
+  function persistLane(e, lane, side){
     if(!e.convoId) return;
-    apiWrite('/api/convos/' + e.convoId + '/lane', 'POST',
-      lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null } : { provider: null }
-    ).catch(function(){});
+    var body = lane
+      ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null }
+      : { provider: null };
+    if(side === 'b') body.side = 'b';
+    apiWrite('/api/convos/' + e.convoId + '/lane', 'POST', body).catch(function(){});
   }
   // The free providers beyond Google that have a key on the server (Cerebras,
   // Groq, and whatever key lands next). Read from the catalog rather than listed
@@ -30483,7 +30643,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       return cx.length ? cx.map(function(m){ return m.id; }) : CODEX_LANE_MODELS.slice();
     }
     // Fable is offered on the main account only (his call, 2026-09-25).
-    if(provider === 'claude-code') return CLAUDE_LANE_MODELS.concat(['fable']);
+    if(provider === 'claude-code') return CLAUDE_MAIN_MODELS.slice();
     if(provider === 'claude-side') return CLAUDE_LANE_MODELS.slice();
     var f = freeApiLane(provider, catalog);
     if(f) return f.models.map(function(m){ return m.id; });
@@ -30860,7 +31020,32 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
      scroll and Escape closes that this used to carry its own copy of. Lanes that
      cannot answer today stay visible and greyed, with the reason in words — hiding
      one makes it look as though the app never had it. */
-  function openLaneMenu(btn, e, text, repaint, carried){
+  // A second model answers the same question as an answer already in the thread,
+  // and the two become a pair (plan two-models-side-by-side). The answer already
+  // there stays the kept one.
+  function pairBeside(e, answerId, lane, repaint){
+    if(!e.convoId || e.busy || !answerId) return;
+    e.busy = true; e.note = ''; e.phase = '';
+    e.stream = '';
+    if(repaint) repaint();
+    fetch(API_BASE + '/api/convos/' + encodeURIComponent(e.convoId) + '/messages/' + encodeURIComponent(answerId) + '/beside', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/x-ndjson' },
+      body: JSON.stringify({ override: lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null, effort: lane.effort || null } : null }),
+    })
+      .then(function(r){ return readTurn(r, e, repaint); })
+      .then(function(d){
+        if(!d || (d.error && !d.ok)) e.note = (d && (d.message || d.error)) ? 'That model did not answer beside it.' : 'That did not go through.';
+        // Both sides now live in the thread, so it is re-read rather than patched:
+        // the answer already there has just become half of a pair.
+        e.loaded = false;
+        return fetchConvo(e, repaint);
+      })
+      .catch(function(){ e.loaded = false; return fetchConvo(e, repaint); })
+      .then(function(){ e.busy = false; e.phase = ''; e.stream = ''; if(repaint) repaint(); });
+  }
+
+  function openLaneMenu(btn, e, text, repaint, carried, besideId){
     var visualRetry = !!(carried && carried.attachments && carried.attachments.some(function(a){ return a.kind === 'image' && a.dataUrl; }));
     if(visualRetry){
       // Only show lanes that can actually receive the image. Both choices are
@@ -30875,7 +31060,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             label: (LANE_LABELS[provider] || provider) + ' · ' + model,
             on: function(){
               if(!e.busy) sendTurn(e, text, repaint, null,
-                { provider: provider, model: model, account: null }, carried);
+                { provider: provider, model: model, account: null }, carried, { single: true });
             }
           });
         });
@@ -30883,7 +31068,35 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       window.openMenu(btn, visionItems);
       return;
     }
-    var items = reaskLanes().map(function(row){
+    // Two ways to use another model on the same question: instead of this answer,
+    // or beside it. "Beside" needs the answer it got, so it only appears when
+    // there is one.
+    var items = [];
+    if(besideId){
+      items.push({ label: 'Beside the answer it got…', on: function(){
+        setTimeout(function(){
+          window.openMenu(btn, reaskLanes().map(function(row){
+            var provider = row[0];
+            var off = provider && !laneAvailable(provider, laneCatalog);
+            return { label: row[1], disabled: !!off, title: off ? laneOffReason(provider) : '', on: function(){
+              if(e.busy) return;
+              var models = provider ? laneModelsFor(provider, laneCatalog) : [];
+              if(models.length > 1){
+                setTimeout(function(){
+                  window.openMenu(btn, models.map(function(model){
+                    return { label: (LANE_LABELS[provider] || row[1]) + ' · ' + model,
+                      on: function(){ pairBeside(e, besideId, { provider: provider, model: model, account: null }, repaint); } };
+                  }));
+                }, 0);
+                return;
+              }
+              pairBeside(e, besideId, provider ? { provider: provider, model: models.length ? models[0] : null, account: null } : null, repaint);
+            } };
+          }));
+        }, 0);
+      } });
+    }
+    items = items.concat(reaskLanes().map(function(row){
       var provider = row[0];
       var off = provider && !laneAvailable(provider, laneCatalog);
       return {
@@ -30902,7 +31115,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
                     label: (LANE_LABELS[provider] || row[1]) + ' · ' + model,
                     on: function(){
                       if(!e.busy) sendTurn(e, text, repaint, null,
-                        { provider: provider, model: model, account: null }, carried);
+                        { provider: provider, model: model, account: null }, carried, { single: true });
                     }
                   };
                 }));
@@ -30911,10 +31124,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             }
             lane = { provider: provider, model: models.length ? models[0] : null, account: null };
           }
-          sendTurn(e, text, repaint, null, lane, carried);
+          sendTurn(e, text, repaint, null, lane, carried, { single: true });
         }
       };
-    });
+    }));
     window.openMenu(btn, items);
   }
 
@@ -32013,6 +32226,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }, { passive: true });
   }
 
+  // The streaming regions of a rendered thread, by name: 'one' for a single
+  // answer, 'a' and 'b' while two models are writing. The shell is everything
+  // around them — unchanged between frames, which is what makes it safe to
+  // replace only the words instead of the whole thread.
+  function seStreamRegions(html){
+    var re = /<!--se-stream:([a-z]+)-->([\s\S]*?)<!--\/se-stream:\1-->/g;
+    var parts = {}, shell = '', last = 0, found = false, m;
+    while((m = re.exec(html))){ found = true; parts[m[1]] = m[2]; shell += html.slice(last, m.index); last = m.index + m[0].length; }
+    shell += html.slice(last);
+    return { shell: found ? shell : null, parts: parts };
+  }
+
   function fillEmbed(host, e, opts){
     persistAttachments(e);
     var log = host.querySelector('.se-log');
@@ -32035,15 +32260,35 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // at the bottom again (2026-09-27, after the follow fix alone did not cure it).
     // When everything around the streaming words is unchanged, only they are
     // replaced, and the scroll position is not touched unless he is following.
-    var streamAt = nextLog.indexOf('<!--se-stream-->'), streamEnd = nextLog.indexOf('<!--/se-stream-->');
-    var streamShell = streamAt !== -1 && streamEnd > streamAt ? nextLog.slice(0, streamAt) + nextLog.slice(streamEnd) : null;
-    var streamBody = log.renderedHtml !== nextLog && streamShell !== null && streamShell === log._streamShell
-      ? log.querySelector('.se-body.md[data-se-streaming]') : null;
-    if(streamBody && !(selecting && (streamBody.contains(selection.anchorNode) || streamBody.contains(selection.focusNode)))){
-      streamBody.innerHTML = nextLog.slice(streamAt + 16, streamEnd);
-      log.renderedHtml = nextLog;
-      if(atBottom) log.scrollTop = log.scrollHeight;
-    } else if(log.renderedHtml!==nextLog){
+    // Two models writing at once means two streaming regions, so the regions are
+    // read by name rather than as the one block this used to assume.
+    var regions = seStreamRegions(nextLog);
+    var streamShell = regions.shell;
+    var keys = Object.keys(regions.parts);
+    var patched = false;
+    if(log.renderedHtml !== nextLog && streamShell !== null && streamShell === log._streamShell && keys.length){
+      var bodies = {};
+      patched = keys.every(function(k){
+        var el = log.querySelector('.se-body.md[data-se-streaming="' + k + '"]');
+        if(!el) return false;
+        if(selecting && (el.contains(selection.anchorNode) || el.contains(selection.focusNode))) return false;
+        bodies[k] = el;
+        return true;
+      });
+      if(patched){
+        keys.forEach(function(k){
+          // A column he has scrolled up in keeps its place; one at its end follows
+          // the words down, exactly as the thread itself does.
+          var col = bodies[k].closest('.se-pair-body');
+          var colBottom = col ? col.scrollHeight - col.scrollTop - col.clientHeight < 40 : false;
+          bodies[k].innerHTML = regions.parts[k];
+          if(col && colBottom) col.scrollTop = col.scrollHeight;
+        });
+        log.renderedHtml = nextLog;
+        if(atBottom) log.scrollTop = log.scrollHeight;
+      }
+    }
+    if(patched){ /* only the streaming words changed */ } else if(log.renderedHtml!==nextLog){
       if(selecting || draggingHere){
         // Keep selected DOM nodes alive. New content waits until the reader has
         // finished selecting/using the passage; unrelated composer updates continue.
@@ -32068,7 +32313,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
         log.innerHTML=nextLog;log.renderedHtml=nextLog;
         log._streamShell = streamShell;
-        if(streamShell !== null){ var sb = log.querySelectorAll('.se-turn > .se-body.md'); if(sb.length) sb[sb.length - 1].setAttribute('data-se-streaming', '1'); }
         seLoadCovers(log);
         seTidyCovers(log);
         sePortraits(log);
@@ -32158,7 +32402,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             var carried = (m.body || (m.retryAttachments && m.retryAttachments.length))
               ? { body: m.body || m.text, quotes: m.quotes || [], attachments: m.retryAttachments || [] }
               : undefined;
-            openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); }, carried);
+            // The answer this question got, if it is still there and not already
+            // half of a pair — what a second model can be put beside.
+            var at = Number(b.getAttribute('data-se-redo')), beside = null;
+            for(var k = at + 1; k < e.msgs.length; k++){
+              var nx = e.msgs[k];
+              if(nx.role === 'user') break;
+              if(nx.role === 'assistant' && nx.kind === 'chat' && nx.id && !nx.pair){ beside = nx.id; break; }
+            }
+            openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); }, carried, beside);
           };
           // Answering again after a reload: fetch the kept images, so the question is not sent without them.
           var kept = (m.attachments || []).filter(function(a){ return a.imageId; });
@@ -32168,6 +32420,20 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             })).then(function(list){ list = list.filter(Boolean); if (list.length) m.retryAttachments = list; go(); });
           } else go();
         }
+      };
+    });
+    // Of two answers to one question, the one the thread follows from here. Shown
+    // at once, then saved; the other side stops being read as the answer.
+    log.querySelectorAll('[data-se-keep]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        var id = b.getAttribute('data-se-keep');
+        var mine = (e.msgs || []).filter(function(m){ return m.id === id; })[0];
+        if(!mine || mine.kept) return;
+        (e.msgs || []).forEach(function(m){ if(m.pair === mine.pair) m.kept = (m.id === id); });
+        fillEmbed(host, e, opts);
+        apiWrite('/api/convos/' + encodeURIComponent(e.convoId) + '/messages/' + encodeURIComponent(id) + '/keep', 'POST', {})
+          .catch(function(){ e.loaded = false; e.note = 'Could not keep that one — reloaded the thread as it is.'; return fetchConvo(e, function(){ if(host.isConnected) fillEmbed(host, e, opts); }); });
       };
     });
     log.querySelectorAll('[data-se-copy]').forEach(function(b){
@@ -32477,7 +32743,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // model, since a smaller Codex model refuses the deepest levels.
       var laneEffortSel = host.querySelector('.se-laneeffort');
       if(laneEffortSel){
-        var wantsEffort = !!(e.lane && laneHasEffort(laneKey));
+        var wantsEffort = !!(e.lane && laneHasEffort(laneKey, e.lane.model));
         if(wantsEffort){
           var levels = laneEffortLevels(laneKey, e.lane.model);
           var key = laneKey + '|' + (e.lane.model || '');
@@ -32499,6 +32765,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       laneClear.style.display = e.lane ? '' : 'none';
       var laneBtnEl = host.querySelector('.se-lanebtn');
       if(laneBtnEl){ laneBtnEl.innerHTML = laneBtnHtml(e); laneBtnEl.classList.toggle('is-set', !!e.lane); }
+      // The second model, when there is one: its name, with a ✕ that takes it away.
+      // Unset it is a bare ＋ — one character, and the row is unchanged without it.
+      var laneBtn2El = host.querySelector('.se-lanebtn2');
+      if(laneBtn2El){
+        laneBtn2El.innerHTML = e.laneB
+          ? '<span>+ ' + qEsc(laneLabelOf(e.laneB)) + '</span>'
+          : '<span>+</span>';
+        laneBtn2El.classList.toggle('is-set', !!e.laneB);
+        laneBtn2El.title = e.laneB
+          ? 'Two models answer, side by side — alt-click to drop the second one'
+          : 'Have a second model answer the same question, side by side';
+      }
     }
 
     // Interview mode's own reflection — independent of the lane picker above it.
@@ -32538,8 +32816,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var sendGlyph = sendBtn.querySelector('.se-send-glyph');
     if(!sendGlyph){ sendBtn.textContent = ''; sendGlyph = document.createElement('span'); sendGlyph.className = 'se-send-glyph'; sendBtn.appendChild(sendGlyph); }
     sendGlyph.textContent = e.busy ? '■' : '↵';
+    sendBtn.classList.toggle('is-pair', !e.busy && !!e.laneB);
     if(window.qneStopBeam && host.closest('.room-convo')) window.qneStopBeam(sendBtn, !!e.busy);
-    sendBtn.title = e.busy ? 'Stop this answer (Esc)' : 'Send (Enter)';
+    sendBtn.title = e.busy ? 'Stop this answer (Esc)' : (e.laneB ? 'Ask both (Enter)' : 'Send (Enter)');
     sendBtn.classList.toggle('is-stop', !!e.busy);
     var attachBtn = host.querySelector('.se-attach');
     if(attachBtn) attachBtn.disabled = !e.convoId || !!e.busy;
@@ -33367,6 +33646,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
            +  '<div class="se-recap-body">' + qEsc(e.recap) + '</div></details>';
     }
     var prevLane = null;
+    // Two models answered one question: their two turns are drawn as two columns
+    // in one turn slot instead of one under the other (plan
+    // two-models-side-by-side). Collected as they come, flushed once both sides
+    // are in hand — the answers themselves are rendered exactly as any other.
+    var pairBuf = {};
+    var pairGrid = function(cols, kept){
+      // A pair that lost its twin — the other side stopped, or was removed — is
+      // an ordinary answer again, not one column beside an empty one.
+      if(!cols.a || !cols.b) return cols.a || cols.b || '';
+      var col = function(side){
+        return '<div class="se-pair-col' + (kept === side ? ' is-kept' : '') + '">'
+             + '<div class="se-pair-body">' + (cols[side] || '') + '</div></div>';
+      };
+      return '<div class="se-turn se-pair">'
+           + '<div class="se-pair-grid">' + col('a') + '<div class="se-pair-vr"></div>' + col('b') + '</div>'
+           + '</div>';
+    };
     e.msgs.forEach(function(m, idx){
       var plan = m.kind === 'plan';
       var you = m.role === 'user';
@@ -33376,7 +33672,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // answers that follow on the same one.
       var laneShown = false;
       if (tag) {
-        laneShown = tag !== prevLane || !!m.checked || !!m.answered;
+        // In a pair both columns name their model, whatever answered before:
+        // which model wrote which answer is the whole point of the pair.
+        laneShown = !!m.pair || tag !== prevLane || !!m.checked || !!m.answered;
         prevLane = tag;
       }
       if (tag && m.checked) tag = tag + ' ↻ ' + m.checked;
@@ -33385,6 +33683,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // The lane tag: clickable. 'git' means a free repo lookup with no model; the
       // others are the model that answered. Clicking re-asks the last question on
       // a different lane (the router's forced path, triggered from here).
+      // Keep this one: the thread follows it from here. In the sticky head, not in
+      // the row of actions at the foot — the foot of a 2 000-word column is a long
+      // way down.
+      var keepHtml = m.pair
+        ? '<button type="button" class="se-pair-keep' + (m.kept ? ' is-kept' : '') + '"'
+          + (m.id ? ' data-se-keep="' + qEscAttr(m.id) + '"' : ' disabled')
+          + (m.kept ? ' title="The thread follows this one"' : ' title="Follow this one from here"')
+          + '>' + (m.kept ? 'Kept' : 'Keep') + '</button>'
+        : '';
       var tagHtml = (tag && laneShown)
         ? '<span class="se-lane se-lane-change" data-lane="' + qEsc(m.laneTag) + '" title="' + qEsc(tag) + ' — click to re-ask on a different lane.">'
           + seLaneMark(tag) + '<span class="se-lane-name">' + qEsc(seLaneName(tag)) + '</span></span>'
@@ -33455,8 +33762,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var inlineAnswerNow = (!you && e.clarify === 'interview' && idx === e.msgs.length - 1 && !e.busy)
         ? '<button type="button" class="se-cmd se-answer-now-inline" data-se-answer-now="1">Answer now</button>'
         : '';
-      html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + (idx === e.freshMsgIdx ? ' data-fresh="1"' : '') + '>'
-           +  ((who || tagHtml) ? '<div class="se-who">' + who + tagHtml + '</div>' : '')
+      var turnHtml = '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + (idx === e.freshMsgIdx ? ' data-fresh="1"' : '') + '>'
+           +  ((who || tagHtml || keepHtml) ? '<div class="se-who">' + who + tagHtml + keepHtml + '</div>' : '')
            +  foldHtml
            +  filesHtml
            +  (plan ? '<pre class="se-plan">' + renderedBody + '</pre>'
@@ -33466,20 +33773,47 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
            +  '</div>';
       // An implement proposal shows three ways forward instead of free text.
       if (!you && m.intent === 'implement') {
-        html += '<div class="se-implement">'
+        turnHtml += '<div class="se-implement">'
              +  '<button type="button" class="se-cmd implement-btn" data-impl="claude-code">Send to Claude Code</button>'
              +  '<button type="button" class="se-cmd implement-btn" data-impl="opencode">Send to OpenCode</button>'
              +  '<button type="button" class="se-cmd implement-btn" data-impl="talk">Just talk about it</button>'
              +  '</div>';
       }
+      if (m.pair) {
+        var buf = pairBuf[m.pair] || (pairBuf[m.pair] = { cols: {}, kept: null, n: 0 });
+        buf.cols[m.side || 'a'] = turnHtml;
+        if (m.kept) buf.kept = m.side || 'a';
+        buf.n += 1;
+        // Drawn when the second side arrives, or — if its twin was removed — when
+        // the thread ends, so a half pair is never lost.
+        if (buf.n >= 2 || idx === e.msgs.length - 1) { html += pairGrid(buf.cols, buf.kept); delete pairBuf[m.pair]; prevLane = null; }
+      } else html += turnHtml;
     });
-    if(e.busy){
+    // Any pair whose second side never arrived (one half removed, say).
+    Object.keys(pairBuf).forEach(function(k){ html += pairGrid(pairBuf[k].cols, pairBuf[k].kept); });
+    if(e.busy && e.pairFlight){
+      // Both models writing at once: the same two columns the finished pair uses,
+      // each filling on its own. A lane that has to wait its turn on the Mac shows
+      // its orb while the other writes — it is never held back for it.
+      var flightCol = function(side){
+        var txt = (e.streams && e.streams[side]) || '';
+        return '<div class="se-pair-col"><div class="se-pair-body">'
+             + '<div class="se-who"><span class="se-lane"><span class="se-lane-name">' + qEsc(e.pairFlight[side] || '') + '</span></span></div>'
+             + (txt
+                 ? '<div class="se-body md" data-se-streaming="' + side + '"><!--se-stream:' + side + '-->' + fmtBody(txt, true) + orbHtml('composing', 30, 'se-cursor-orb') + '<!--/se-stream:' + side + '--></div>'
+                 : '<div class="se-waiting">' + orbHtml(orbForPhase(e.phase), 34) + '</div>')
+             + '</div></div>';
+      };
+      html += '<div class="se-turn se-pair"><div class="se-pair-grid">'
+           +  flightCol('a') + '<div class="se-pair-vr"></div>' + flightCol('b')
+           +  '</div></div>';
+    } else if(e.busy){
       // Once tokens are arriving, they ARE the waiting indicator — the answer
       // writing itself is better than three dots. The dots stay for the gap
       // before the first token, and for lanes that don't stream at all.
       html += '<div class="se-turn">'
            +  (e.stream
-                ? '<div class="se-body md"><!--se-stream-->' + fmtBody(e.stream, true) + orbHtml('composing', 30, 'se-cursor-orb') + '<!--/se-stream--></div>'
+                ? '<div class="se-body md" data-se-streaming="one"><!--se-stream:one-->' + fmtBody(e.stream, true) + orbHtml('composing', 30, 'se-cursor-orb') + '<!--/se-stream:one--></div>'
                 : '<div class="se-waiting">' + orbHtml(orbForPhase(e.phase), 40) + '<span class="se-phase qne-shimmer">' + qEsc(e.phase || 'Thinking') + '</span></div>'
                   // What it is doing while there is nothing to show yet — a lookup,
                   // or a lane that is not answering. Silence for a minute reads as
@@ -33495,7 +33829,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       }).join('');
       html += '<details class="se-before"><summary>What it said before</summary>' + rows + '</details>';
     }
-    if(!e.msgs.length && !e.recap && !e.promptId && !e.busy && !e.stream){
+    if(!e.msgs.length && !e.recap && !e.promptId && !e.busy && !e.stream && !e.pairFlight){
       // A roaming thread has no "this" to push, and the room it lives in is under a
       // standing rule against explaining itself — so there it says only where it is.
       html += '<div class="se-note">' + (e.type === 'open'

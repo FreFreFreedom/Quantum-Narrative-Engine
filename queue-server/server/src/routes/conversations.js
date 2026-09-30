@@ -90,6 +90,7 @@ export function conversationsRoutes() {
     res.json({
       convo: out.convo,
       chat_override: convos.getChatLane(out.convo.id),
+      chat_override_b: convos.getChatLane(out.convo.id, 'b'),
       messages: convos.listMessages(out.convo.id),
       created: out.created,
       acts: convos.writeActsForConvo(out.convo.id),
@@ -347,7 +348,7 @@ export function conversationsRoutes() {
     // chat_override rides on the row as a raw JSON string (or null) — parsed here
     // into { provider, model, account, tag } so the frontend never re-implements
     // the parse, same shape as GET/POST /:id/lane below.
-    res.json({ convo, chat_override: convos.getChatLane(convo.id), messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id), subjects: convos.listConvoSubjects(convo.id), marks: convos.listMarks(convo.id) });
+    res.json({ convo, chat_override: convos.getChatLane(convo.id), chat_override_b: convos.getChatLane(convo.id, 'b'), messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id), subjects: convos.listConvoSubjects(convo.id), marks: convos.listMarks(convo.id) });
   });
 
   // ─── Analogies beside the Room (plan "the analogy engine in the Room") ─────
@@ -553,8 +554,11 @@ export function conversationsRoutes() {
     if (!convo) return res.status(404).json({ error: 'not_found' });
     const provider = req.body?.provider || null;
     if (provider && !VALID_LANE_PROVIDERS.has(provider)) return res.status(400).json({ error: 'unknown_provider' });
-    const lane = convos.setChatLane(req.params.id, provider ? { provider, model: req.body?.model || null, account: req.body?.account || null, effort: req.body?.effort || null } : null);
-    res.json({ chat_override: lane });
+    // side 'b' is the second model of a pair (plan two-models-side-by-side); the
+    // body is otherwise identical, so one route serves both picks.
+    const side = req.body?.side === 'b' ? 'b' : 'a';
+    const lane = convos.setChatLane(req.params.id, provider ? { provider, model: req.body?.model || null, account: req.body?.account || null, effort: req.body?.effort || null } : null, side);
+    res.json(side === 'b' ? { chat_override_b: lane } : { chat_override: lane });
   });
 
   // POST /api/convos/:id/stop — the Stop button, sent just before the browser drops
@@ -728,9 +732,17 @@ export function conversationsRoutes() {
       : (bodyOverride?.provider && VALID_LANE_PROVIDERS.has(bodyOverride.provider)
         ? { provider: bodyOverride.provider, model: bodyOverride.model || null, account: bodyOverride.account || null, effort: bodyOverride.effort || null }
         : null);
+    // The second model, when this send is a pair. Same validation, same meaning of
+    // undefined (use what the conversation is pinned to) and null (one answer only).
+    const bodyOverrideB = req.body?.overrideB;
+    const overrideB = bodyOverrideB === undefined
+      ? undefined
+      : (bodyOverrideB?.provider && VALID_LANE_PROVIDERS.has(bodyOverrideB.provider)
+        ? { provider: bodyOverrideB.provider, model: bodyOverrideB.model || null, account: bodyOverrideB.account || null, effort: bodyOverrideB.effort || null }
+        : null);
 
     if (!wantsStream) {
-      const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id, override, quotes: req.body?.quotes, body: req.body?.body, images: req.body?.images, attachments: req.body?.attachments });
+      const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id, override, overrideB, quotes: req.body?.quotes, body: req.body?.body, images: req.body?.images, attachments: req.body?.attachments });
       if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
       return res.json(out);
     }
@@ -765,6 +777,7 @@ export function conversationsRoutes() {
         text: req.body?.text,
         userId: req.user?.id,
         override,
+        overrideB,
         // Carried passages, kept apart from the words he typed: the model still
         // gets them inside `text`, but the screen draws them as a folded line
         // above his message instead of repeating them inside it.
@@ -773,10 +786,12 @@ export function conversationsRoutes() {
         images: req.body?.images,
         attachments: req.body?.attachments,
         signal: cancel.signal,
-        onToken: (t) => { if (!clientGone()) write({ type: 'token', text: t }); },
+        // `side` is present only when two models are answering at once, so an
+        // older cached frontend never sees a field it does not know.
+        onToken: (t, side) => { if (!clientGone()) write({ type: 'token', text: t, ...(side ? { side } : {}) }); },
         // Progress lines. Same channel as the tokens, different type — an older
         // cached frontend ignores an unknown type, so this cannot break one.
-        onStatus: (m) => { if (!clientGone()) write({ type: 'status', text: String(m || '') }); },
+        onStatus: (m, side) => { if (!clientGone()) write({ type: 'status', text: String(m || ''), ...(side ? { side } : {}) }); },
       });
       write({ type: 'done', ...out });
     } catch (e) {
@@ -784,6 +799,52 @@ export function conversationsRoutes() {
     }
     res.end();
   }));
+
+  // POST /api/convos/:id/messages/:messageId/beside — a second model answers the
+  // same question as an answer already in the thread; the two become a pair. Same
+  // NDJSON shape as /message, and its token lines carry side 'b'.
+  router.post('/:id/messages/:messageId/beside', asyncHandler(async (req, res) => {
+    const bodyOverride = req.body?.override;
+    const lane = bodyOverride?.provider && VALID_LANE_PROVIDERS.has(bodyOverride.provider)
+      ? { provider: bodyOverride.provider, model: bodyOverride.model || null, account: bodyOverride.account || null, effort: bodyOverride.effort || null }
+      : null;
+    const wantsStream = /application\/x-ndjson/i.test(String(req.headers.accept || ''));
+    if (!wantsStream) {
+      const out = await convos.pairAnswerBeside(req.params.id, { messageId: req.params.messageId, lane });
+      if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+      return res.json(out);
+    }
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders?.();
+    const write = (obj) => { try { res.write(JSON.stringify(obj) + '\n'); res.flush?.(); } catch {} };
+    const cancel = new AbortController();
+    const gone = () => cancel.signal.aborted;
+    res.on('close', () => {
+      if (!res.writableFinished && convos.turnCancelledRecently(req.params.id)) cancel.abort();
+    });
+    try {
+      const out = await convos.pairAnswerBeside(req.params.id, {
+        messageId: req.params.messageId, lane, signal: cancel.signal,
+        onToken: (t, side) => { if (!gone()) write({ type: 'token', text: t, side }); },
+        onStatus: (m, side) => { if (!gone()) write({ type: 'status', text: String(m || ''), side }); },
+      });
+      write({ type: 'done', ...out });
+    } catch (e) {
+      write({ type: 'error', error: 'send_failed', message: e.message });
+    }
+    res.end();
+  }));
+
+  // POST /api/convos/:id/messages/:messageId/keep — of two answers to one
+  // question, this is the one the thread follows from here (plan
+  // two-models-side-by-side). The other stays on screen and stops counting.
+  router.post('/:id/messages/:messageId/keep', (req, res) => {
+    const out = convos.keepPairSide(req.params.id, req.params.messageId);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
 
   // POST /api/convos/:id/plan — generate the coder brief (TITLE + BRIEF).
   router.post('/:id/plan', asyncHandler(async (req, res) => {

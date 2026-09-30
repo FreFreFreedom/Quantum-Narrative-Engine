@@ -28,6 +28,20 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-09-30 — Two models can answer one question, side by side.** A second pick beside
+the composer's lane picker (`.se-lanebtn2`, the same popover in side `'b'` mode, stored on
+`convos.chat_override_b`) makes every send a pair: `runPairTurn` runs the ordinary turn twice
+on two lanes at once, ties both answers with one `meta.pair` and a `side`, and the Room draws
+them as two columns in one turn slot — each its own scroller, **never scroll-locked** (his
+explicit no), stacking under 620px of thread width via a container query. Side `a` is kept to
+begin with; **Keep** moves it (`POST /messages/:id/keep`). The ↻ menu's "Beside the answer it
+got…" pairs an answer already in the thread (`POST /messages/:id/beside`). **The rule that
+matters: only the kept side may be read as the thread's answer** — every prompt, note, running
+log, chapter and mind harvest goes through `threadMessages()` (or `KEPT_SIDE_ONLY_SQL` from
+`services/pairSql.js` for raw reads), or the model gets two contradictory answers to the same
+question. Nothing pairs by itself: two answers cost two generations. Plan:
+`plans/two-models-side-by-side.md`.
+
 **2026-09-28 — The Library keeps no doubles.** One rule, `services/sameWork.js` (title without subtitle or article; film and series one family; author or year must not disagree), is used by every save path, the Discover-save listing, the shelf and the wall. Boot and every tidy fold existing doubles into the older row. Same-author books sharing a subject word are checked against Open Library / Google Books (`bookFacts.js#bookKnown`): one in no catalogue folds into the real one (a model had invented "Bob's Boys" beside Meier's "Morgenthau"); both real stay two. A book and its film/series stay two works but share one place on the wall, the poster sliding out on hover (his pick B5). Passages: a line inside a kept one is that one.
 
 **2026-09-28 — People in Room answers are clickable.** Each answer's real people and fictional characters are found in the same cheap pass as its works (`services/personNotes.js#namedPeople`, stored as `meta.people`) and the first mention of each gets a dotted underline (`seMarkPeople`). A click opens a card like a book's: portrait from Wikipedia when the page matches the kind, years, the main pattern, why they matter here through the paradigm (cached per conversation in `person_notes`), and Amazon / YouTube / Wikipedia searches. Kinds: real, fictional, myth, place, institution, archetype (lower-case names allowed; its card adds three Echoes who live it). `PEOPLE_V` in `personNotes.js` is bumped when a kind is added, so old answers are read once more. Older answers are read once when their conversation opens (`POST /:id/people-scan`, the whole conversation, 12 answers per call while `more`); every answer stores `meta.people`, an empty list too, so none is read twice.

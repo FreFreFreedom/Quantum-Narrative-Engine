@@ -1,4 +1,5 @@
 import { recommendationChanged } from './roomRecommendations.js';
+import { isDroppedSide } from './pairSql.js';
 // Idea Studio conversations (plan "universal-conversations-core-architecture",
 // extended by "roaming-conversations-backend").
 // A conversation about one or more subjects (seed / suggestion / arch component /
@@ -299,7 +300,7 @@ async function writeSmartTitle(convoId) {
   // exchanges are the evidence — the opening two are kept only for what it set
   // out from. Naming a long thread off its first six messages named the question
   // he happened to start with, not the thing he stayed on (his complaint).
-  const all = listMessages(convoId).filter((m) => m.kind === 'chat');
+  const all = threadMessages(convoId).filter((m) => m.kind === 'chat');
   if (!all.length) return null;
   const cut = Math.max(2, all.length - 10);
   const head = all.slice(0, Math.min(2, cut));
@@ -369,11 +370,14 @@ const OVERRIDE_TAGS = {
   'google-ai-studio': 'gemini',
 };
 
-export function getChatLane(convoId) {
-  const row = db?.prepare(`SELECT chat_override FROM convos WHERE id=?`).get(convoId);
-  if (!row?.chat_override) return null;
+// side 'b' is the second model of a pair (plan two-models-side-by-side) — same
+// shape, its own column, so one pick can never overwrite the other.
+export function getChatLane(convoId, side = 'a') {
+  const col = side === 'b' ? 'chat_override_b' : 'chat_override';
+  const row = db?.prepare(`SELECT ${col} AS pick FROM convos WHERE id=?`).get(convoId);
+  if (!row?.pick) return null;
   try {
-    const parsed = JSON.parse(row.chat_override);
+    const parsed = JSON.parse(row.pick);
     if (!parsed?.provider) return null;
     const tag = parsed.provider === 'codex' && parsed.account === 'second'
       ? 'chatgpt pro'
@@ -386,16 +390,17 @@ export function getChatLane(convoId) {
 // to Auto). `effort` is how hard the model may think, and only the lanes with a
 // dial read it — the two Claude subscriptions and Codex (2026-09-21, his ask:
 // "whatever the model i select, i can choose which submodel i want… and the effort").
-export function setChatLane(convoId, override) {
+export function setChatLane(convoId, override, side = 'a') {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
+  const col = side === 'b' ? 'chat_override_b' : 'chat_override';
   const json = override?.provider
     ? JSON.stringify({ provider: override.provider, model: override.model || null, account: override.account || null, effort: override.effort || null })
     : null;
-  db.prepare(`UPDATE convos SET chat_override=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(json, convoId);
+  db.prepare(`UPDATE convos SET ${col}=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(json, convoId);
   broadcastAll('convos:updated', { convoId });
-  return getChatLane(convoId);
+  return getChatLane(convoId, side);
 }
 
 // ─── Clarifying questions & Interview mode (plan "room-clarifying-questions-
@@ -455,9 +460,20 @@ export function findConvo(subjectType, subjectId) {
   return db.prepare(`SELECT * FROM convos WHERE subject_type=? AND subject_id=? AND deleted_at IS NULL`).get(subjectType, subjectId) || null;
 }
 
+// Two models answering one question (plan two-models-side-by-side): both sides
+// are returned here — the screen draws both — but everything that reads the
+// thread AS TEXT must use threadMessages() instead, or the model is handed two
+// different answers to the same question.
 export function listMessages(convoId) {
   if (!db) return [];
   return db.prepare(`SELECT * FROM convo_messages WHERE convo_id=? ORDER BY created_at ASC, rowid ASC`).all(convoId);
+}
+
+// The thread as one answer per question: a pair's dropped side stays on screen
+// and in the database, but never enters a prompt, a note, the running log, the
+// chapters or the mind harvest.
+export function threadMessages(convoId) {
+  return listMessages(convoId).filter((m) => !isDroppedSide(m.meta));
 }
 
 // ─── Conversation references and merges ─────────────────────────────────────
@@ -469,7 +485,7 @@ const LINK_DIGEST_CHARS = 8000;
 const LINKS_PROMPT_CHARS = 24000;
 
 function snapshotConversation(convo) {
-  const messages = listMessages(convo.id);
+  const messages = threadMessages(convo.id);
   const last = messages.at(-1) || null;
   const text = messages.map((m) => {
     const who = m.role === 'user' ? 'Antoine' : 'Assistant';
@@ -1080,7 +1096,7 @@ export async function resetConvoContext(id) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(id);
   if (!convo) return { error: 'not_found' };
-  const chat = listMessages(id).filter((m) => m.kind === 'chat');
+  const chat = threadMessages(id).filter((m) => m.kind === 'chat');
   if (chat.length < 2) return { error: 'nothing_to_fold' };
 
   // The last few exchanges are kept verbatim, so the cut is placed before them
@@ -1884,7 +1900,7 @@ export function roomWorldLook(convoId) {
   db.prepare(`UPDATE convos SET world_look_seen_turns=? WHERE id=?`).run(turns, convoId);
   setImmediate(async () => {
     try {
-      const ideaText = transcriptOf(convo, listMessages(convoId), CONVO_HISTORY_WINDOW, { full: true });
+      const ideaText = transcriptOf(convo, threadMessages(convoId), CONVO_HISTORY_WINDOW, { full: true });
       if (ideaText) await runWorldLookGuarded(db, { idea_text: ideaText, source: 'convo', source_id: convoId });
     } catch (e) { console.error('[room] world-look failed:', e?.message || e); }
     finally { _worldLookInFlight.delete(convoId); }
@@ -2041,11 +2057,11 @@ function parentTranscriptFor(convo) {
   if (convo.subject_type !== 'side' || !convo.parent_convo_id) return '';
   const parent = getConvo(convo.parent_convo_id);
   if (!parent) return '';
-  return parentTranscriptBlock(convo, parent, listMessages(parent.id));
+  return parentTranscriptBlock(convo, parent, threadMessages(parent.id));
 }
 
 function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null, maxChars = null }) {
-  const msgs = listMessages(convo.id);
+  const msgs = threadMessages(convo.id);
   const depth = !brevity;
   // Only on a depth turn: the brief turn lands in a small card, where a
   // 1000-word answer would be a bug rather than obedience.
@@ -2376,15 +2392,16 @@ function saveAssistantTurn(convoId, text, meta = null) {
 // the transcript sent with the next turn, which is the honest trade: a model seeing
 // "that model is rate-limited" in the history is better than a user question that
 // appears to have been ignored.
-function saveFailedTurn(convoId, result, turn) {
+function saveFailedTurn(convoId, result, turn, extraMeta = null) {
   const text = String(result?.message || '').trim()
     || 'That answer did not come back. Nothing was lost — send it again.';
-  saveAssistantTurn(convoId, text, {
+  const mid = saveAssistantTurn(convoId, text, {
     failed: true,
     error: result?.error || 'generation_failed',
     lane: computeLaneTag(turn?.intent, turn?.lane, result?.via),
+    ...(extraMeta || {}),
   });
-  return { ...result, text, failed: true };
+  return { ...result, text, failed: true, messageId: mid };
 }
 
 // Streaming sibling of runChatTurn. Same prompt, same single saveAssistantTurn at
@@ -2406,7 +2423,32 @@ function noticeFor(turn, existingNotice) {
 
 // The streaming turn, now laned. `turn` is the resolveTurn() decision; its
 // feature/model drive the generation, and repoFacts (if any) ride in the prompt.
-async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = null, signal = null, images = null) {
+// The meta a paired answer carries: which pair, which side, which question, and
+// whether it is the one the thread follows.
+function pairMeta(opts) {
+  const p = opts?.pair;
+  if (!p) return {};
+  return { pair: p.id, side: p.side, pair_of: p.ofId || null, ...(p.kept ? { kept: true } : {}) };
+}
+
+// Everything a finished answer sets in motion. One function, so a pair can run it
+// once (for the kept side) instead of twice.
+function afterTurn(convoId, userId, convo) {
+  maybeAutoTitleConvo(convo || getConvo(convoId));
+  harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
+  logConversation(convoId, CONVO_HISTORY_WINDOW);
+  void mentionedWorks(convoId, userId); // fire-and-forget: titles he typed go to the Library
+  chapterize(convoId); // and re-read where the subject changed, same discipline
+  recommendationChanged(convoId);
+  roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
+  analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
+}
+
+// `opts.pair` ties this answer to the other model's answer to the same question
+// (plan two-models-side-by-side); `opts.followUps === false` leaves the after-turn
+// work (title, mind harvest, log, chapters, world/analogy looks) to the kept side,
+// so a pair costs one set of those, not two.
+async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = null, signal = null, images = null, opts = {}) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ctx = await convoContext(convo);
@@ -2486,7 +2528,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // ponytail: the model call itself runs to its end; thread `signal` into the
   // provider fetches if a cancelled paid-lane answer ever costs enough to matter.
   if (signal?.aborted) return { error: 'cancelled' };
-  if (result.error) return saveFailedTurn(convoId, result, turn);
+  if (result.error) return saveFailedTurn(convoId, result, turn, pairMeta(opts));
   const askedWords = clarifyMode === 'normal' ? lengthRequest(lastUserText(convoId)) : null;
   const completed = await completeRequestedLength({
     text: result.text, target: askedWords,
@@ -2505,16 +2547,112 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // a message to point at — is hidden on exactly the answer he is reading.
   // The people it names are found alongside, so the marks cost no extra wait.
   const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false)]);
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }) });
-  maybeAutoTitleConvo(convo);
-  harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
-  logConversation(convoId, CONVO_HISTORY_WINDOW);
-  void mentionedWorks(convoId, userId); // fire-and-forget: titles he typed go to the Library
-  chapterize(convoId); // and re-read where the subject changed, same discipline
-  recommendationChanged(convoId);
-  roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
-  analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, cost: spentUsd, works, people };
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }), ...pairMeta(opts) });
+  if (opts.followUps !== false) afterTurn(convoId, userId, convo);
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, cost: spentUsd, works, people, ...(opts.pair ? { pair: opts.pair.id, side: opts.pair.side, kept: !!opts.pair.kept } : {}) };
+}
+
+// ─── Two models, one question (plan two-models-side-by-side) ────────────────
+// Both answers are ordinary turns on the ordinary path — same prompt, same
+// budget, same saving — run at once on two different lanes and tied together by
+// one pair id. Side 'a' is kept to begin with, so the thread is never ambiguous
+// about which answer it follows; Keep moves that.
+//
+// Nothing pairs by itself: two answers cost two generations, and only an explicit
+// second pick in the composer (or "ask another model beside it") gets here.
+async function runPairTurn(convoId, userId, { turn, laneB, onToken, onStatus, signal, images, userMessageId, text }) {
+  const pairId = randomUUID();
+  const turnB = await resolveTurn({ convoId, text, lastAssistantText: lastUserText(convoId), override: laneB });
+  const forSide = (cb, side) => (cb ? (x) => cb(x, side) : null);
+  const runOne = (t, side, kept) => runChatTurnStreaming(
+    convoId, userId, forSide(onToken, side), t, forSide(onStatus, side), signal, images,
+    { pair: { id: pairId, side, ofId: userMessageId, kept }, followUps: kept },
+  ).catch((e) => ({ error: 'send_failed', message: e?.message || String(e) }));
+  // Both at once. A lane that has to queue behind the other (the Mac helper runs
+  // one job at a time) simply lands later — it never holds the first answer back.
+  const [a, b] = await Promise.all([runOne(turn, 'a', true), runOne(turnB, 'b', false)]);
+  if (a?.error === 'cancelled' || b?.error === 'cancelled') return { error: 'cancelled' };
+  // Only a pair where neither side answered is a failed turn; one answer standing
+  // is a turn that happened, with the other column saying what went wrong.
+  if (a?.error && b?.error && !a?.failed && !b?.failed) return a;
+  return {
+    ok: true,
+    pair: pairId,
+    a, b,
+    text: a?.text || b?.text || '',
+    laneTag: a?.laneTag || null,
+    messageId: a?.messageId || null,
+    intent: turn?.intent,
+    works: a?.works || null,
+    people: a?.people ?? null,
+  };
+}
+
+// Pair an answer that is already in the thread with a second model's answer to
+// the same question ("beside it" in the ↻ menu). The answer already there becomes
+// side 'a' and stays the kept one; the new answer is side 'b'.
+export async function pairAnswerBeside(convoId, { messageId, lane = null, onToken = null, onStatus = null, signal = null } = {}) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const row = db.prepare("SELECT id, meta FROM convo_messages WHERE id=? AND convo_id=? AND role='assistant' AND kind='chat'").get(messageId, convoId);
+  if (!row) return { error: 'no_such_message' };
+  const existing = parseMsgMeta(row.meta);
+  if (existing.pair) return { error: 'already_paired' };
+  // The question it answered: the last thing he said before it.
+  const all = listMessages(convoId);
+  const at = all.findIndex((m) => m.id === messageId);
+  let ask = null;
+  for (let i = at - 1; i >= 0; i -= 1) if (all[i].role === 'user') { ask = all[i]; break; }
+  if (!ask) return { error: 'no_question' };
+  const pairId = randomUUID();
+  const before = row.meta;
+  existing.pair = pairId; existing.side = 'a'; existing.pair_of = ask.id; existing.kept = true; existing.kept_once = true;
+  db.prepare('UPDATE convo_messages SET meta=? WHERE id=?').run(JSON.stringify(existing), messageId);
+  const turn = await resolveTurn({ convoId, text: ask.text, lastAssistantText: null, override: lane || null });
+  const out = await runChatTurnStreaming(
+    convoId, convo.created_by || 'antoine',
+    onToken ? (t) => onToken(t, 'b') : null, turn,
+    onStatus ? (m) => onStatus(m, 'b') : null, signal, null,
+    { pair: { id: pairId, side: 'b', ofId: ask.id, kept: false }, followUps: false },
+  );
+  // Nothing came back: the answer that was already there is left exactly as it
+  // was, rather than sitting in a pair with one empty column.
+  if (out?.error === 'cancelled' || (out?.error && !out?.failed)) {
+    db.prepare('UPDATE convo_messages SET meta=? WHERE id=?').run(before, messageId);
+    return out;
+  }
+  broadcastAll('convos:updated', { convoId });
+  return { ok: true, pair: pairId, keptMessageId: messageId, questionId: ask.id, b: out };
+}
+
+// Keep this one: the thread follows it from here, and the other stays on screen
+// without being read as the answer.
+export function keepPairSide(convoId, messageId) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const row = db.prepare('SELECT id, meta FROM convo_messages WHERE id=? AND convo_id=?').get(messageId, convoId);
+  if (!row) return { error: 'no_such_message' };
+  const meta = parseMsgMeta(row.meta);
+  if (!meta.pair) return { error: 'not_paired' };
+  const sides = db.prepare('SELECT id, meta FROM convo_messages WHERE convo_id=?').all(convoId)
+    .filter((r) => parseMsgMeta(r.meta).pair === meta.pair);
+  let firstTime = false;
+  for (const sideRow of sides) {
+    const m = parseMsgMeta(sideRow.meta);
+    if (sideRow.id === messageId) {
+      if (!m.kept_once) { firstTime = true; m.kept_once = true; }
+      m.kept = true;
+    } else delete m.kept;
+    db.prepare('UPDATE convo_messages SET meta=? WHERE id=?').run(JSON.stringify(m), sideRow.id);
+  }
+  // The after-turn work ran for the side that was kept at the time. It runs once
+  // more for a side that has just become the answer for the first time — and never
+  // again, so switching back and forth cannot spend anything.
+  if (firstTime) afterTurn(convoId, convo.created_by || 'antoine', convo);
+  broadcastAll('convos:updated', { convoId });
+  return { ok: true, pair: meta.pair, kept: messageId, sides: sides.map((r) => r.id) };
 }
 
 // The non-streaming twin. Reached only when the client does not ask for NDJSON,
@@ -2698,12 +2836,12 @@ function parseMsgMeta(meta) {
   try { return typeof meta === 'string' ? JSON.parse(meta) : meta; } catch { return {}; }
 }
 function lastUserText(convoId) {
-  const msgs = listMessages(convoId).filter((m) => m.kind === 'chat');
+  const msgs = threadMessages(convoId).filter((m) => m.kind === 'chat');
   for (let i = msgs.length - 1; i >= 0; i--) if (msgs[i].role === 'user') return msgs[i].text;
   return null;
 }
 function lastAssistantMsg(convoId) {
-  const msgs = listMessages(convoId).filter((m) => m.kind === 'chat');
+  const msgs = threadMessages(convoId).filter((m) => m.kind === 'chat');
   for (let i = msgs.length - 1; i >= 0; i--) if (msgs[i].role === 'assistant') return msgs[i];
   return null;
 }
@@ -2799,7 +2937,7 @@ async function runPlanTurn(convoId, userId) {
   const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
-  const msgs = listMessages(convoId);
+  const msgs = threadMessages(convoId);
   const chatText = msgs.filter((m) => m.kind === 'chat')
     .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
     .join('\n\n');
@@ -3070,7 +3208,7 @@ Respond with ONLY this JSON object and nothing else:
   const parsed = !result.error ? firstJson(result.text) : null;
 
   // Capture the FULL conversation, not just the AI summary, so nothing is lost.
-  const msgs = listMessages(convoId);
+  const msgs = threadMessages(convoId);
   const transcript = msgs
     .map((m) => {
       const who = m.role === 'user' ? 'You' : 'Assistant';
@@ -3236,7 +3374,7 @@ Respond with ONLY this JSON object and nothing else:
 // onToken, when supplied by the route, turns the ordinary text turn into a
 // streamed one. Slash commands stay non-streamed: they are structured actions
 // (plan, handoff, fold) whose value is the finished artefact, not the typing.
-export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, onStatus = null, override = undefined, signal = null, quotes = null, body = null, images = null, attachments = null } = {}) {
+export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, onStatus = null, override = undefined, overrideB = undefined, signal = null, quotes = null, body = null, images = null, attachments = null } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
@@ -3279,6 +3417,10 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   // every time. A caller that explicitly passes override (even null, to mean
   // "just this once, Auto") is respected as-is.
   const effectiveOverride = override !== undefined ? override : getChatLane(convoId);
+  // The second model, if there is one. Same sticky rule as the first: undefined
+  // means "whatever this conversation is pinned to", null means "just this once,
+  // one answer only".
+  const pairLane = overrideB !== undefined ? overrideB : getChatLane(convoId, 'b');
 
   // Commands — handled before any model cost.
   const cmd = trimmed.match(/^\/([a-z-]+)/i);
@@ -3387,9 +3529,17 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
       if (n) broadcastAll('connections:updated', { reaches: n });
     }
   } catch (e) { console.error('[connections] reach pre-pass failed:', e?.message || e); }
-  const out = onToken
-    ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus, signal, imageList.map((x) => x.dataUrl))
-    : await runChatTurn(convoId, userId, turn, imageList.map((x) => x.dataUrl));
+  // A second lane pairs this question: two answers, side by side, one of them kept.
+  // Commands, implement proposals and code reads never reach here, so nothing but
+  // an ordinary question can be paired.
+  const out = pairLane?.provider
+    ? await runPairTurn(convoId, userId, {
+      turn, laneB: pairLane, onToken, onStatus, signal,
+      images: imageList.map((x) => x.dataUrl), userMessageId: mid, text: trimmed,
+    })
+    : onToken
+      ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus, signal, imageList.map((x) => x.dataUrl))
+      : await runChatTurn(convoId, userId, turn, imageList.map((x) => x.dataUrl));
   if (out.error === 'cancelled') db.prepare(`DELETE FROM convo_messages WHERE id=?`).run(mid);
   // The question stays stored after a failed answer, so its id goes back too —
   // otherwise it shows without delete, branch or rewind until a reload.

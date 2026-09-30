@@ -18,6 +18,7 @@
 // window. A short thread never calls anything.
 
 import { generateText } from './ai/text.js';
+import { KEPT_SIDE_ONLY_SQL } from './pairSql.js';
 
 let db = null;
 export function bindConvoLogDb(database) {
@@ -66,7 +67,7 @@ async function runLog(convoId, windowSize) {
   // After "Start fresh" the model is sent the recap plus every message since, with
   // no window, so nothing leaves it and there is nothing to log.
   if (!convo || convo.compacted_at) return;
-  const msgs = db.prepare(`SELECT id, role, kind, text, created_at FROM convo_messages WHERE convo_id=? ORDER BY created_at ASC, rowid ASC`).all(convoId);
+  const msgs = db.prepare(`SELECT id, role, kind, text, created_at FROM convo_messages WHERE convo_id=? AND ${KEPT_SIDE_ONLY_SQL} ORDER BY created_at ASC, rowid ASC`).all(convoId);
   // The same cut transcriptOf() makes: the window is the last N messages of any
   // kind, and what the model still sees there needs no log.
   const left = msgs.slice(0, Math.max(0, msgs.length - windowSize))
