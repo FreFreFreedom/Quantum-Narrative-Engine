@@ -2298,6 +2298,10 @@ async function worksFromAnswer(userId, text) {
   if (!Array.isArray(list)) return null;
   // "the memoir" is how the answer refers to a book, not a title.
   const clean = list.filter((w) => !/^(the\s+)?(book|memoir|novel|film|movie|series|documentary|essay|report)s?$/i.test(String(w?.title || '').trim()));
+  // The same work named twice in one answer hung two identical covers (seen live
+  // on a side talk, 2026-09-30).
+  const seen = new Set();
+  for (let i = clean.length - 1; i >= 0; i--) { const k = (clean[i]?.kind || '') + '|' + String(clean[i]?.title || '').trim().toLowerCase(); if (seen.has(k)) clean.splice(i, 1); else seen.add(k); }
   if (!clean.length) return [];
   const saved = saveSuggestedWorks(userId || 'antoine', clean);
   if (!saved.length) return [];
