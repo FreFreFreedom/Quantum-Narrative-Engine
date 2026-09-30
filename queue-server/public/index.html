@@ -30517,6 +30517,31 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(files.length){ ev.preventDefault(); addFiles(files); }
       });
     }
+    // The ＋ menu shuts by itself: a click anywhere else, Escape, or choosing a row
+    // (his ask, 2026-09-30 — he should never have to aim for the ＋ again to close it).
+    if(!window.__seCmdsAutoClose){
+      window.__seCmdsAutoClose = true;
+      var shutCmds = function(keep){
+        document.querySelectorAll('.se-wrap.cmds-open').forEach(function(w){
+          if(keep && w.contains(keep)) return;
+          w.classList.remove('cmds-open');
+          var m = w.querySelector('.se-more'); if(m) m.setAttribute('aria-expanded', 'false');
+        });
+      };
+      document.addEventListener('mousedown', function(ev){
+        var t = ev.target;
+        if(!t || !t.closest) return;
+        if(t.closest('.se-cmds, .se-more')) return;
+        shutCmds(null);
+      }, true);
+      document.addEventListener('click', function(ev){
+        var t = ev.target;
+        if(t && t.closest && t.closest('.se-cmds .se-cmd')) setTimeout(function(){ shutCmds(null); }, 0);
+      }, true);
+      document.addEventListener('keydown', function(ev){
+        if(ev.key === 'Escape' && document.querySelector('.se-wrap.cmds-open')) shutCmds(null);
+      }, true);
+    }
     host.querySelectorAll('[data-se-act]').forEach(function(b){
       b.onclick = function(ev){
         ev.stopPropagation();
