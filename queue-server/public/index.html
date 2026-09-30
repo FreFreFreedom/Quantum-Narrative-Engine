@@ -3110,6 +3110,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-tabs:not(:has([data-room-primary="side"].active)) .room-side-bring { display:none; }
 .room-side-tabname { max-width:14em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #roomSideHost { position:relative; }
+.room-side-rename { width:100%; margin:0 0 6px; font-family:var(--font-read); font-size:15px; }
 .room-side-pop { width:260px; max-height:60%; overflow-y:auto; }
 .room-side-pop.is-static { position:static; box-shadow:none; }
 .room-side-pop .room-side-item { display:flex; align-items:center; }
@@ -15187,8 +15188,7 @@ function initRoom() {
           return;
         }
         if (key === 'side' && pane === 'side') {
-          roomSideMenuOpen = !roomSideMenuOpen;
-          renderRoomSide();
+          openRoomSideMenu(primary);
           return;
         }
         pane = key === 'side' ? 'side' : 'interests';
@@ -16952,10 +16952,45 @@ function roomSideSyncTab(open) {
   const bring = document.querySelector('#roomTabs [data-side-bring]');
   if (bring) bring.hidden = !open;
 }
-document.addEventListener('mousedown', (ev) => {
-  if (!roomSideMenuOpen || (ev.target.closest && ev.target.closest('.room-side-pop, [data-room-primary="side"]'))) return;
-  roomSideMenuOpen = false; renderRoomSide();
-}, true);
+let roomSideRenaming = false;
+let roomSideMenuShutAt = 0;
+// The open aside's menu — the same rows as the main thread's title menu, where they
+// mean something for an aside (his ask, 2026-09-30): the asides to switch to, then
+// Rename, Auto-title, Compact, Reading, Delete.
+function openRoomSideMenu(anchor) {
+  // A click on the tab's own label first shuts the menu on mousedown; that same
+  // click must not open it again.
+  if (Date.now() - roomSideMenuShutAt < 300) return;
+  const open = roomSides.find(s => s.id === roomSideOpenId) || null;
+  const items = roomSides.map((s, i) => ({ label: roomSideName(s, i), checked: s.id === roomSideOpenId,
+    on: () => roomSideOpen(s.id) }));
+  items.push({ label: 'New aside', icon: 'plus', on: () => roomSideCreate({ mode: 'empty' }) });
+  if (open) {
+    items.push({ sep: true },
+      { label: 'Rename', icon: 'pencil', on: () => { roomSideRenaming = true; renderRoomSide(); } },
+      { label: 'Auto-title', icon: 'spark', on: async () => {
+        try { await apiWrite('/api/convos/' + encodeURIComponent(open.id) + '/retitle', 'POST', {}); } catch (e) {}
+        loadRoomSides();
+      } },
+      { label: 'Compact', icon: 'refresh', title: 'What was said is folded into a short recap and the aside carries on', on: () => {
+        const reset = document.querySelector('#roomSideEmbed [data-se-act="reset"]');
+        if (reset) reset.click();
+      } },
+      { sep: true },
+      { label: 'Reading', icon: 'layers', title: 'Font, text size and reading width', hover: (menuItem) => openRoomTypeMenu(menuItem, true, 'right'), on: () => openRoomTypeMenu(anchor) },
+      { sep: true },
+      { label: 'Delete', icon: 'trash', danger: true, on: async () => {
+        if (!confirm('Throw this aside away?')) return;
+        try { await apiWrite('/api/convos/' + encodeURIComponent(open.id), 'DELETE'); } catch (e) {}
+        roomSideOpenId = null;
+        loadRoomSides();
+      } });
+  }
+  roomSideMenuOpen = true;
+  roomSideSyncTab(open);
+  const shut = openMenu(anchor, items, { align: 'left', onClose: () => { roomSideMenuOpen = false; roomSideMenuShutAt = Date.now(); roomSideSyncTab(roomSides.find(s => s.id === roomSideOpenId) || null); } });
+  if (!shut) { roomSideMenuOpen = false; roomSideSyncTab(open); }
+}
 
 async function loadRoomSides() {
   const want = roomSel;
@@ -17048,8 +17083,11 @@ function renderRoomSide() {
   // aside and opens the list; "bring" sits at the end of the tab row.
   roomSideSyncTab(open);
   let html = '';
-  if (roomSideMenuOpen || !open) {
-    html += '<div class="lib-kindpop room-side-pop' + (open ? '' : ' is-static') + '" role="menu">'
+  if (roomSideRenaming && open) {
+    html += '<input class="room-side-rename searchbox" maxlength="120" aria-label="Name this aside">';
+  }
+  if (!open) {
+    html += '<div class="lib-kindpop room-side-pop is-static" role="menu">'
       + roomSides.map((s, i) => (
         '<div class="room-side-item">'
         + '<button type="button" role="menuitem" class="room-side-row' + (s.id === roomSideOpenId ? ' on' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
@@ -17059,7 +17097,6 @@ function renderRoomSide() {
         + '</div>'
       )).join('')
       + '<div class="lib-kindpop-foot"><button type="button" role="menuitem" data-side-new="1">＋ New aside</button>'
-      + (open ? '<button type="button" role="menuitem" data-side-compact="1" title="Fold what was said so far into a short recap">⟳ Compact</button>' : '')
       + '</div>'
       + '</div>';
   }
@@ -17069,13 +17106,28 @@ function renderRoomSide() {
 
   const newBtn = host.querySelector('[data-side-new]');
   if (newBtn) newBtn.onclick = () => { roomSideMenuOpen = false; roomSideCreate({ mode: 'empty' }); };
-  const compactBtn = host.querySelector('[data-side-compact]');
-  if (compactBtn) compactBtn.onclick = () => {
-    roomSideMenuOpen = false;
-    const reset = host.querySelector('#roomSideEmbed [data-se-act="reset"]');
-    renderRoomSide();
-    if (reset) reset.click();
-  };
+  const renameBox = host.querySelector('.room-side-rename');
+  if (renameBox) {
+    renameBox.value = open.title || '';
+    let done = false;
+    const finish = (save) => {
+      if (done) return; done = true;
+      roomSideRenaming = false;
+      const name = renameBox.value.trim();
+      if (save && name && name !== open.title) {
+        apiWrite('/api/convos/' + encodeURIComponent(open.id) + '/rename', 'POST', { title: name })
+          .then(loadRoomSides).catch(() => renderRoomSide());
+        open.title = name;
+      }
+      renderRoomSide();
+    };
+    renameBox.onkeydown = (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+      else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); finish(false); }
+    };
+    renameBox.onblur = () => finish(true);
+    setTimeout(() => { renameBox.focus(); renameBox.select(); }, 0);
+  }
   host.querySelectorAll('[data-side-pick]').forEach(b => {
     b.onclick = () => { roomSideMenuOpen = false; roomSideOpen(b.getAttribute('data-side-pick')); };
   });
