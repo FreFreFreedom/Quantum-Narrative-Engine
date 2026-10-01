@@ -4283,7 +4283,10 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
    a line, and below about 460px they take a line of their own, the ＋, the model
    and the microphone on the line under them — never squeezed into a column. */
 .room-convo .se-draftbox { container-type:inline-size; container-name:draft; }
-.room-convo .se-input { font-size:min(var(--room-size), max(15px, 4.6cqi)); }
+.room-convo .se-input { font-size:min(var(--room-size), max(15px, 5.4cqi)); }
+.room-convo .se-compose.is-multi { flex-wrap:wrap; row-gap:2px; }
+.room-convo .se-compose.is-multi .se-input { order:-1; flex:1 0 100%; width:100%; }
+.room-convo .se-compose.is-multi .se-lanewrap { margin-left:auto; }
 @container draft (max-width: 460px) {
   .room-convo .se-compose { flex-wrap:wrap; row-gap:2px; }
   .room-convo .se-input { order:-1; flex:1 0 100%; width:100%; }
@@ -32356,11 +32359,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function grow(el){
     var cap = el.closest && el.closest('.room-convo') ? Math.max(110, Math.round(window.innerHeight * 0.45)) : 110;
     var c = el.closest && el.closest('.se-compose');
-    if(c && !el.value) c.classList.remove('is-folded');
+    if(c && !el.value) c.classList.remove('is-folded', 'is-multi');
     var folded = !!(c && c.classList.contains('is-folded'));
     if(folded) cap = 62;
     el.style.height = 'auto';
     var full = el.scrollHeight;
+    // Past one line the words take the whole width of the box, the controls the
+    // line under them — beside the model's name they stood in a narrow column with
+    // half the box empty (his screenshot, 2026-09-30). Only an empty box goes back,
+    // so the layout never flickers between the two while he types.
+    if(c && el.closest('.room-convo') && !c.classList.contains('is-multi') && full > (parseFloat(getComputedStyle(el).lineHeight) || 24) * 1.7 + 12){
+      c.classList.add('is-multi'); el.style.height = 'auto'; full = el.scrollHeight;
+    }
     el.style.height = Math.min(full, cap) + 'px';
     if(!c) return;
     c.classList.toggle('is-tall', folded || full > 150);
