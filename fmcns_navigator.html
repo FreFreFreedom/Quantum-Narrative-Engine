@@ -4278,6 +4278,17 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
 #wsRoom .room-side-titletext { display:block; -webkit-line-clamp:unset; overflow:visible; text-wrap:balance; }
 #wsRoom .room-toolbar .arch-title { text-align:center; text-wrap:balance; font-size:clamp(14px, 2.6vw, 19px); }
 #wsRoom .room-side-tabname { max-width:18em; }
+/* The box you write in adapts to its own width, in both chats (his ask,
+   2026-09-30): the words size down with a narrow box instead of standing four to
+   a line, and below about 460px they take a line of their own, the ＋, the model
+   and the microphone on the line under them — never squeezed into a column. */
+.room-convo .se-draftbox { container-type:inline-size; container-name:draft; }
+.room-convo .se-input { font-size:min(var(--room-size), max(15px, 4.6cqi)); }
+@container draft (max-width: 460px) {
+  .room-convo .se-compose { flex-wrap:wrap; row-gap:2px; }
+  .room-convo .se-input { order:-1; flex:1 0 100%; width:100%; }
+  .room-convo .se-lanewrap { margin-left:auto; }
+}
 .se-fold { display:none; }
 .room-convo .se-compose.is-tall .se-fold { display:flex; align-items:center; justify-content:center; position:absolute; z-index:2; top:0; right:2px;
   width:26px; height:26px; padding:0; border:0; border-radius:50%; background:none; cursor:pointer; color:var(--c-ink-4); }
