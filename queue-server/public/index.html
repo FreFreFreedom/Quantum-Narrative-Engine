@@ -3782,6 +3782,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-quote-pop .se-define { order:1; flex:1 1 100%; width:0; min-width:100%; margin:0; padding:13px 18px 14px; border-top:0;
   border-bottom:1px solid color-mix(in srgb, var(--c-on-solid) 16%, transparent);
   font-family:var(--font-read); font-size:20px; line-height:1.35; color:inherit; white-space:normal; }
+.se-define { user-select:text; -webkit-user-select:text; cursor:text; }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
 .se-define .w { font-family:'Cinzel', var(--font-read); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
 .se-define .head + .here { position:relative; padding-top:16px; }
@@ -31142,8 +31143,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var passage = text.replace(/\s+/g, ' ').slice(0, 100000);
         quotePop = document.createElement('div');
         quotePop.className = 'se-quote-pop';
-        quotePop.onpointerdown = function(ev){ ev.preventDefault(); ev.stopPropagation(); };
-        quotePop.onmousedown = function(ev){ ev.preventDefault(); ev.stopPropagation(); };
+        // The bar keeps the answer's selection alive by swallowing mouse-down — except
+        // on the meaning of the word, which he selects to copy (his ask, 2026-10-01).
+        var popGrab = function(ev){ ev.stopPropagation(); if(!(ev.target.closest && ev.target.closest('.se-define'))) ev.preventDefault(); };
+        quotePop.onpointerdown = popGrab;
+        quotePop.onmousedown = popGrab;
         var mk = function(icon, labelText, title, fn){
           var b = document.createElement('button');
           b.type = 'button'; b.title = title;
@@ -31264,6 +31268,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   document.addEventListener('selectionchange', function(){
     if(quotePop && quotePop.contains(document.activeElement))return;
     var sel=window.getSelection();
+    // Selecting inside the bar itself (the meaning, to copy it) keeps the bar.
+    var inPop=sel && sel.anchorNode && quotePop && quotePop.contains(sel.anchorNode);
+    if(inPop)return;
     if(!sel || !String(sel).trim()){clearTimeout(quoteOfferTimer);if(!(quotePop && (quotePop.classList.contains('se-kept-pop') || quotePop.classList.contains('se-like-pop'))))killQuotePop();return;}
     if(mouseDragging)return;
     var node=sel.anchorNode, el=node && (node.nodeType===1?node:node.parentElement);
