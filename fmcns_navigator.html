@@ -31608,8 +31608,20 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // the transcript makes room for the closed rail instead of sitting under it.
     if(log && log.offsetParent){
       var inset = parseFloat(getComputedStyle(log).getPropertyValue('--log-top-inset')) || 0;
-      rail.style.top = (log.offsetTop + 4 + inset) + 'px';
-      rail.style.maxHeight = Math.max(0, log.clientHeight - 8 - inset) + 'px';
+      var top = log.offsetTop + 4 + inset;
+      // The Room's toolbar floats over the top of the main conversation and takes
+      // the mouse before the rail does. A short rail began and ended underneath it,
+      // so the chapters of the main thread could not be opened at all while a side
+      // talk was on screen (his ask, 2026-10-01). Start below the toolbar instead.
+      var column = rail.closest('.room-main');
+      var bar = column && column.querySelector(':scope > .tv-toolbar');
+      var par = rail.offsetParent;
+      if(bar && par){
+        var bb = bar.getBoundingClientRect();
+        if(bb.height) top = Math.max(top, bb.bottom - par.getBoundingClientRect().top + 6);
+      }
+      rail.style.top = top + 'px';
+      rail.style.maxHeight = Math.max(0, log.offsetTop + log.clientHeight - top - 4) + 'px';
     }
     var wrap = rail.closest('.se-wrap');
     if(wrap) wrap.classList.add('has-rail');
