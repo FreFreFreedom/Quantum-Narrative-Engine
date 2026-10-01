@@ -11,6 +11,12 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Global dominance is decided by whose foundational categories become the default grammar of human coordination.
+
+The struggle for power happens through infrastructure like smart cities, cables, and models.
+These deployments spread and entrench specific national frameworks.
+The victor is determined by whose baseline logic shapes how the world coordinates.
+
 ## Complete structural mapping of a person's relational network allows an external system to anticipate their future actions before self-awareness occurs.
 
 - Thorough mapping of personal connections
