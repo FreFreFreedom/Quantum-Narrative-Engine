@@ -18,6 +18,7 @@
 import { randomUUID } from 'node:crypto';
 import { KEPT_SIDE_ONLY_SQL } from './pairSql.js';
 import { generateText } from './ai/text.js';
+import { buildIndex, terms, geminiText, readThinking } from './convoThinking.js';
 import { broadcastAll } from '../realtime.js';
 import { triggerMindMirror } from './mindMirror.js';
 import { triggerMentionScan } from './entityMentions.js';
@@ -955,14 +956,14 @@ function teachPrompt({ passage, turns, avoid }) {
   return `You are the memory of a personal thinking app with one user. He selected a passage in an answer and is telling you, in his own words, what to keep from it. English is his second language: read what he MEANS.
 
 Work out what he wants kept. It is one or more of:
-- "how": what he loves in the way an answer thinks or is written (a move, a stance, a reach, a rhythm), whatever the subject. Write it as a fact about him ("He loves it when…"), never as an order to follow.
-- "subject": a subject he is drawn to — a person, an institution, an idea, a place, a work, a field. Its text is just its usual short name.
+- "how": what he loves in the way an answer thinks or is written (a move, a stance, a reach, a rhythm), whatever the subject. Write it as a fact about him ("He loves it when…"), never as an order to follow — in its detail too: no "should", "must", "always", "adopt", "from now on", "in future answers".
+- "subject": a subject he is drawn to — a person, an institution, an idea, a place, a work, a field. Its text is just its usual short name, at most five words — a name, never a sentence.
 - "idea": an understanding about the world or about the paradigm (what something really is, how it works, what it does) — the thing itself, as a claim.
 - "about": a fact about him.
 
 KEEP ITS SHAPE. What he asks to keep is often not one idea but a structure: several parts, a range (what is done, what is being worked on, what could be done), a purpose behind it (why he wants it), a practice he is building. Never flatten that into one generic line — a reduced version is a wrong one.
 - "text" is the headline: the whole of it in one sentence, specific, in his own terms.
-- "detail" holds the full shape in plain words: every part he named, how the parts connect, the range, the purpose, what he wants to become able to do. Required whenever he said more than one thing; up to 1200 characters. Plain lines, one part per line, are fine.
+- "detail" holds the full shape in plain words: every part he named, how the parts connect, the range, the purpose, what he wants to become able to do, and what in the passage it is about. Required for every item except a subject — a headline alone cannot be used later; up to 1200 characters. Plain lines, one part per line, are fine.
 - Several distinct things → several items (up to 6). One layered thing → one item with a rich detail. Never drop a part he said.
 - His own words for his subject are his, not the passage's: keep them ("essential operations", "cognitive muscle") — the rule below is about the passage.
 - When he points ("this", "this type of", "these"), say what he points AT: name the concept from the passage in plain words. The object of his interest is the heart of what he teaches — never keep only his purpose and lose what it is about.
@@ -975,7 +976,7 @@ THE OTHER RULE — point at the moon, not at the finger. Future answers will rea
 If you understand him, propose the items and say in "reply" one short plain line of what you will keep — "I'll keep…", never "saved": nothing is saved until he presses Save. If something real is unclear — which of two things he means, or how wide it should go — ask ONE question with 2 to 4 short choices instead (items may then hold your best guess, or be empty). Never ask when it is clear. But when his words do not say WHAT to keep — "this", "keep it", "save", "yes", a single vague word — always ask, with choices built from what the passage actually offers (the idea in it, the way it is said, a subject it names, or all of them).
 
 Return ONLY JSON, no fence:
-{"reply": "<one short line to him>", "items": [{"kind": "how|subject|idea|about", "text": "<one complete sentence, at most 180 characters>", "detail": "<the full shape, at most 1200 characters — empty only when he said one simple thing>"}], "question": null or {"text": "<the question>", "options": ["<short choice>", "<short choice>"]}}
+{"reply": "<one short line to him>", "items": [{"kind": "how|subject|idea|about", "text": "<one complete sentence, at most 180 characters>", "detail": "<the full shape, at most 1200 characters — empty only for a subject>"}], "question": null or {"text": "<the question>", "options": ["<short choice>", "<short choice>"]}}
 
 THE PASSAGE HE SELECTED:
 ${passage || '(none — he is writing without a passage)'}
@@ -1004,9 +1005,10 @@ export async function teachTurn({ passage = '', turns = [] } = {}) {
   if (!t.length) return { error: 'empty' };
   let avoid = [];
   for (let attempt = 0; attempt < 3; attempt++) {
-    // The Room's own lane: the cheap summary model flattened a layered ask into one line (2026-09-30).
-    const res = await generateText({ feature: 'studio', maxTokens: 3000, timeoutMs: 120_000, label: 'mind:teach', prompt: teachPrompt({ passage: p, turns: t, avoid }) });
-    if (res.error) return { error: res.error };
+    // Not the cheap summary model: it flattened a layered ask into one line (2026-09-30).
+    // Gemini, always — his pick (2026-10-01), same as the conversation records.
+    const res = await geminiText({ maxTokens: 3000, timeoutMs: 120_000, label: 'mind:teach', prompt: teachPrompt({ passage: p, turns: t, avoid }) });
+    if (!String(res?.text || '').trim()) return { error: res?.error || 'no_answer' };
     const out = parseTeach(res.text);
     if (!out) continue;
     // Words he wrote himself are his to keep, even when the passage used them too.
@@ -1017,6 +1019,130 @@ export async function teachTurn({ passage = '', turns = [] } = {}) {
     return { ok: true, ...out };
   }
   return { error: 'unreadable' };
+}
+
+// A line written as an order. Teach keeps what he loves as a fact about him; a
+// sentence like "adopt a poetic tone in all future responses" is a rule, and the
+// Room carries no rules (AGENTS.md "Where the rules kept hiding").
+export const ORDER_WORDS = /\b(should|must|always|never|from now on|in (?:all )?(?:future|later|every)\b|adopt|make sure|be sure to|the desired move|follow (?:this|it)|going forward)\b/i;
+
+// What he taught, as it reaches a full Room answer (2026-10-01). Before this, Teach
+// wrote into the Mind and no Room answer read the Mind at all.
+//   - what he loves in an answer: always, as facts about him, beside who he is;
+//     never a line written as an order, never its detail (details drift into how-to);
+//   - ideas and facts about him: only when his words share their subject, the same
+//     free match the conversation records use; the conversation each came from is
+//     named so its thinking can come too.
+const TAUGHT_HOW_MAX = 6;
+const TAUGHT_IDEAS_MAX = 4;
+const TAUGHT_MIN_SHARED = 2;
+const TAUGHT_MIN_SCORE = 5.5;
+export function taughtForRoom(said = '') {
+  const none = { how: '', ideas: '', convoIds: [] };
+  if (!db) return none;
+  try {
+    const how = db.prepare(`SELECT text FROM mind_facts WHERE active=1 AND source_note='teach' AND kind='taste' ORDER BY created_at DESC`).all()
+      .map((r) => String(r.text || '').trim()).filter((t) => t && !ORDER_WORDS.test(t)).slice(0, TAUGHT_HOW_MAX);
+    const all = db.prepare(`SELECT id, kind, text, detail, source_note, source_convo_id FROM mind_facts WHERE active=1`).all();
+    let ideas = [];
+    if (String(said).trim()) {
+      // Every fact sets how rare a word is; only taught ideas can be picked.
+      const idx = buildIndex(all.map((f) => ({ id: f.id, title: '', text: `${f.text}\n${f.detail || ''}` })));
+      const q = terms(said);
+      const byId = new Map(all.map((f) => [f.id, f]));
+      ideas = idx.rows.map((r) => {
+        const f = byId.get(r.id);
+        if (f.source_note !== 'teach' || !['vision', 'about'].includes(f.kind)) return null;
+        let score = 0, shared = 0;
+        for (const t of q.keys()) if (r.tf.has(t)) { score += Math.log(1 + idx.n / (idx.df.get(t) || 1)); shared += 1; }
+        return shared >= TAUGHT_MIN_SHARED && score >= TAUGHT_MIN_SCORE ? { f, score } : null;
+      }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, TAUGHT_IDEAS_MAX).map((x) => x.f);
+    }
+    return {
+      how: how.length ? `\n=== WHAT HE HAS LOVED IN ANSWERS ===\n${how.map((t) => `- ${t}`).join('\n')}` : '',
+      ideas: ideas.length
+        ? `\n=== WHAT HE HAS TAUGHT ON THIS ===\n${ideas.map((f) => `- ${String(f.text).trim()}${f.detail ? `\n  ${String(f.detail).trim().replace(/\s*\n\s*/g, ' · ').slice(0, 1200)}` : ''}`).join('\n')}`
+        : '',
+      convoIds: [...new Set(ideas.map((f) => f.source_convo_id).filter(Boolean))],
+    };
+  } catch (e) {
+    console.error('[mind] taught recall failed:', e?.message || e);
+    return none;
+  }
+}
+
+// One pass over what Teach already saved (2026-10-01), written by Gemini from the
+// conversation each item came from: an order becomes a fact about him, a bare
+// headline gets its detail, a subject written as a sentence gets its short name.
+// Grounded in the source record; nothing it does not contain may be added.
+function tidyPrompt(items, source) {
+  return `These are things Antoine taught his thinking app's memory, and the conversation they came from.
+
+=== THE CONVERSATION THEY CAME FROM ===
+${source || '(not available — work from the items alone)'}
+=== END ===
+
+=== THE ITEMS ===
+${items.map((f) => `[${f.id}] (${f.kind === 'taste' ? 'what he loves in an answer' : f.kind === 'vision' ? 'an idea' : 'a fact about him'})\n${f.text}${f.detail ? `\nDETAIL: ${f.detail}` : ''}`).join('\n\n')}
+=== END ===
+
+Rewrite each item so it keeps exactly what he meant:
+- An item about what he loves in an answer is a fact about him ("He loves it when…"), never an instruction — no "should", "must", "always", "adopt", "from now on", "in future answers", in the text or the detail.
+- Every item gets a detail in plain words: the full shape of what he meant and what in the conversation it is about, up to 1000 characters.
+- Use only what the conversation and the item contain. Add no work, person, fact or claim. If the conversation is missing, only remove instructions and keep the rest as it is.
+- Keep the text one sentence, at most 180 characters, in plain words.
+
+Return ONLY JSON, no fence: {"items": [{"id": "<the id>", "text": "<sentence>", "detail": "<detail>"}]}`;
+}
+
+function sourceFor(convoId) {
+  if (!convoId) return '';
+  const rec = readThinking(convoId);
+  if (rec?.thinking) return String(rec.thinking).slice(0, 30000);
+  const msgs = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' AND ${KEPT_SIDE_ONLY_SQL} ORDER BY created_at ASC, rowid ASC`).all(convoId);
+  return msgs.map((m) => `${m.role === 'user' ? 'Antoine' : 'The AI'}: ${m.text}`).join('\n\n').slice(-30000);
+}
+
+export async function tidyTaught() {
+  const facts = db.prepare(`SELECT id, kind, text, detail, source_convo_id FROM mind_facts WHERE active=1 AND source_note='teach'`).all();
+  const groups = new Map();
+  for (const f of facts) groups.set(f.source_convo_id || '', [...(groups.get(f.source_convo_id || '') || []), f]);
+  const revised = [];
+  const failed = [];
+  for (const [convoId, items] of groups) {
+    const res = await geminiText({ label: 'mind:teach-tidy', maxTokens: 6000, timeoutMs: 240_000, prompt: tidyPrompt(items, sourceFor(convoId)) });
+    const m = String(res?.text || '').match(/\{[\s\S]*\}/);
+    let out = null; try { out = m ? JSON.parse(m[0]) : null; } catch {}
+    if (!Array.isArray(out?.items)) { failed.push(convoId || '(none)'); continue; }
+    for (const it of out.items) {
+      const f = items.find((x) => x.id === it.id);
+      const text = String(it.text || '').trim().slice(0, 240);
+      const detail = String(it.detail || '').trim().slice(0, 1400) || null;
+      if (!f || !text) continue;
+      if (f.kind === 'taste' && ORDER_WORDS.test(`${text} ${detail || ''}`)) continue; // still an order: leave it for the guard
+      reviseFact(f.id, { text, detail });
+      revised.push({ id: f.id, before: f.text, text, detail });
+    }
+  }
+  // Subjects written as sentences get their short name.
+  const long = listSubjects().filter((x) => String(x.name).split(/\s+/).length > 5);
+  const renamed = [];
+  if (long.length) {
+    const res = await geminiText({ label: 'mind:subject-names', maxTokens: 1500, timeoutMs: 120_000,
+      prompt: `Each line is a subject Antoine is drawn to, written too long. Give each its usual short name, at most five words, keeping exactly what it is about. Add nothing.\n\n${long.map((x) => `[${x.id}] ${x.name}`).join('\n')}\n\nReturn ONLY JSON, no fence: {"names": [{"id": "<id>", "name": "<short name>"}]}` });
+    const m = String(res?.text || '').match(/\{[\s\S]*\}/);
+    let out = null; try { out = m ? JSON.parse(m[0]) : null; } catch {}
+    for (const it of out?.names || []) {
+      const x = long.find((y) => y.id === it.id);
+      const name = String(it.name || '').trim().replace(/^["'“”]+|["'“”.]+$/g, '').slice(0, 80);
+      if (!x || !name || name.split(/\s+/).length > 6) continue;
+      db.prepare(`UPDATE interest_subjects SET name=? WHERE id=?`).run(name, x.id);
+      renamed.push({ before: x.name, name });
+    }
+    if (renamed.length) broadcastAll('subjects:updated', {});
+  }
+  if (revised.length) { broadcastAll('mind:updated', {}); mirrorOut(); }
+  return { ok: true, revised, renamed, failed };
 }
 
 // His Save. Each item goes where it lives: a subject to the subjects library; a
@@ -1035,7 +1161,9 @@ export function teachSave({ items = [], passage = '', convoId = null, messageId 
     }
     // A 'how' is kept as his taste, not a rule: context, never instruction (2026-09-26).
     const kind = it.kind === 'how' ? 'taste' : it.kind === 'idea' ? 'vision' : 'about';
-    const r = saveFact({ kind, text, detail: it.detail || null, sourceConvoId: convoId, sourceNote: 'teach', central: false });
+    // A "how" detail written as an order is dropped; its headline stays a fact about him.
+    const detail = it.kind === 'how' && ORDER_WORDS.test(String(it.detail || '')) ? null : (it.detail || null);
+    const r = saveFact({ kind, text, detail, sourceConvoId: convoId, sourceNote: 'teach', central: false });
     if (r && !r.error) saved.push({ kind: it.kind, text, id: r.id });
     if (it.kind === 'how' && passage) {
       try { likeLine({ text: passage, convoId, messageId, note: text }); } catch {}

@@ -326,6 +326,12 @@ back doors, all closed; do not reopen any of them:
 - **The tool list.** Tool descriptions are pages of the paradigm's vocabulary; they now ride
   only on a question about his app or his things (`roomWantsLookups`).
 
+**Teach is the exception, by his choice (2026-10-01).** What he taught with Teach rides:
+the "what he loves in an answer" items on every full answer as facts about him, never
+as orders (`mind.js#ORDER_WORDS` drops any that read as one); taught ideas only when his
+message shares their subject. See `plans/conversation-thinking-recall.md`. Harvested
+memory stays out.
+
 **Blank models (his ask, 2026-09-30).** The picker's "Blank" group — Gemini and GPT-4.1 —
 sends the conversation as real turns and nothing else: no portrait, no memory, no tools, no
 headings, no instruction, no fallback lane (`runBlankTurn`, lane flag `blank`). It is the

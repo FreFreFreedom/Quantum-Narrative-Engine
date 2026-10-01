@@ -35,10 +35,10 @@ import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { uniqueTitle } from './knowledgeDocs.js';
-import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory, subjectsBlock } from './mind.js';
+import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory, subjectsBlock, taughtForRoom } from './mind.js';
 import { chapterize } from './chapters.js';
 import { logConversation, logText } from './convoLog.js';
-import { recalledThinkingBlock, thinkingForBring, writeThinking } from './convoThinking.js';
+import { recalledThinkingBlock, thinkingForBring, writeThinking, hisRecentWords } from './convoThinking.js';
 import { splitByLabels, splitByMarks, parseMarks, MARKS_PROMPT } from './convoImport.js';
 import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
@@ -2131,16 +2131,21 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
   // never read them, and they pulled every answer toward the app. Stable blocks
   // come before the conversation and per-turn ones after it, so a long thread's
   // own words stay inside the cached prefix.
+  // What he taught (plan conversation-thinking-recall, Teach part): read once per
+  // prompt, not once per rung of the size ladder below.
+  const taught = depth ? taughtForRoom(hisRecentWords(convo.id)) : null;
   const roomParts = ({ withMap, historyWindow }) => [
     withMap && repoFacts ? projectMapBlock() : '',
     ROOM_LINE,
     studioPersona() ? `\n=== WHO HE IS ===\n${studioPersona()}` : '',
+    taught?.how || '',
     ctx.mode === 'open' ? '' : `\n=== WHAT THIS CONVERSATION IS ABOUT ===\n${ctx.contextText}`,
     parentTranscriptFor(convo),
     linkedConversationsBlock(convo.id),
     // An earlier conversation's thinking, only when his message is on its subject
     // (plan conversation-thinking-recall). Context under a bare heading, no rule.
-    recalledThinkingBlock(convo.id),
+    taught?.ideas || '',
+    recalledThinkingBlock(convo.id, { also: taught?.convoIds || [] }),
     withMap && repoFacts ? liveListsBlock() : '',
     tools ? ROOM_TOOLS_LINE : '',
     ROOM_PASSAGES_LINE,

@@ -195,17 +195,18 @@ const _failedAt = new Map();
 // own reading, not the reading of whichever model a session runs on. Flash first,
 // Flash-Lite when Flash is out of its daily allowance; never another provider.
 const GEMINI_WRITERS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
-async function geminiWrite(prompt) {
+export async function geminiText({ prompt, label, maxTokens = 4000, timeoutMs = 300_000 }) {
   let last = null;
   for (const model of GEMINI_WRITERS) {
     last = await generateText({
       prompt, feature: 'studio', provider: 'google-ai-studio', model, strictModel: true,
-      label: 'conversations:thinking', maxTokens: 16000, allowLongOutput: true, timeoutMs: 300_000,
+      label, maxTokens, allowLongOutput: true, timeoutMs,
     });
     if (String(last?.text || '').trim()) return last;
   }
   return last;
 }
+const geminiWrite = (prompt) => geminiText({ prompt, label: 'conversations:thinking', maxTokens: 16000 });
 
 export async function writeThinking(convoId, { force = false, reset = false } = {}) {
   if (!db) return { error: 'no_db' };
@@ -399,6 +400,13 @@ function index() {
   return recallIndex;
 }
 
+// His last two messages, in his own words — what recall matches against.
+export function hisRecentWords(convoId) {
+  if (!db) return '';
+  return chatMessages(convoId).filter((m) => m.role === 'user').slice(-2)
+    .map((m) => spokenText(m).replace(/^\(on: [^\n]*\)\n/, '')).join('\n');
+}
+
 function family(convo) {
   const out = new Set([convo.id]);
   if (convo.subject_type === 'side' && convo.parent_convo_id) out.add(convo.parent_convo_id);
@@ -407,7 +415,8 @@ function family(convo) {
 
 // What a full Room answer carries: '' unless his message is on an earlier
 // conversation's subject. The recalled ones stay with the thread.
-export function recalledThinkingBlock(convoId) {
+// `also`: conversations a taught idea came from, matched on his words in mind.js.
+export function recalledThinkingBlock(convoId, { also = [] } = {}) {
   if (!db) return '';
   try {
     const convo = convoRow(convoId);
@@ -415,10 +424,11 @@ export function recalledThinkingBlock(convoId) {
     let kept = [];
     try { kept = JSON.parse(convo.recalled || '[]'); } catch {}
     if (!Array.isArray(kept)) kept = [];
-    const his = chatMessages(convoId).filter((m) => m.role === 'user').slice(-2).map((m) => spokenText(m).replace(/^\(on: [^\n]*\)\n/, ''));
-    const said = his.join('\n');
+    const said = hisRecentWords(convoId);
     const exclude = family(convo);
-    const found = said ? scoreQuery(index(), said, { exclude }).map((x) => x.id) : [];
+    const scored = said ? scoreQuery(index(), said, { exclude }).map((x) => x.id) : [];
+    const hasRecord = new Set(index().rows.map((r) => r.id));
+    const found = [...new Set([...scored, ...also.filter((id) => id && !exclude.has(id) && hasRecord.has(id))])];
     let next = [...kept.filter((id) => !exclude.has(id))];
     for (const id of found.slice(0, RECALL_MAX)) {
       if (next.includes(id)) continue;

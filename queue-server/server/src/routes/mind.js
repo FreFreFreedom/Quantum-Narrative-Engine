@@ -99,6 +99,9 @@ export function mindRoutes() {
     if (out.error) return res.status(out.error === 'empty' ? 400 : 502).json(out);
     res.json(out);
   }));
+  router.post('/teach/tidy', asyncHandler(async (req, res) => {
+    res.json(await mind.tidyTaught());
+  }));
   router.post('/teach/save', (req, res) => {
     const b = req.body || {};
     res.json(mind.teachSave({ items: b.items, passage: b.passage, convoId: b.convoId, messageId: b.messageId }));

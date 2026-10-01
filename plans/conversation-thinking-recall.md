@@ -64,6 +64,19 @@ rule about answer shape (AGENTS.md "Where the rules kept hiding"; `ROOM_LINE`).
    rewrites its note; without `text` it writes it now with Gemini (`reset: true` starts it over). Later
    messages are appended by the sweep as usual.
 
+7. **Teach reaches the Room** (added 2026-10-01, after an audit found that since the
+   2026-09-30 rules audit no full Room answer read anything Teach saved).
+   `mind.js#taughtForRoom`: what he loves in an answer (taught `taste` items) rides
+   every full answer as plain facts about him, beside WHO HE IS — headline only, and
+   any line written as an order (`ORDER_WORDS`) is dropped, at save and at render.
+   Taught ideas and facts about him ride only when his last two messages share their
+   rarer words (at least 2 shared, IDF over all facts); the conversation each came
+   from is handed to `recalledThinkingBlock` as `also`, so its record comes too.
+   Teach itself runs on Gemini (`convoThinking.js#geminiText`), every item but a
+   subject now gets a detail, and subjects are short names. `POST /api/mind/teach/tidy`
+   ran once: Gemini rewrote the existing taught items from their source conversation
+   (orders → facts, missing details filled) and shortened subject names.
+
 ## Not done / open
 
 - No mark in the UI saying which earlier conversation was read. `convos.recalled`

@@ -37,7 +37,9 @@ mirror carries every conversation to `project-docs/notes/`. A full Room answer c
 earlier conversation's thinking **only** when his last messages share its rarer words
 (`recalledThinkingBlock`, kept per thread in `convos.recalled`, at most 2) — plain context, no
 instruction. Bring on a whole side talk carries its thinking. `/note` is now "write it now".
-`POST /api/convos/:id/thinking {text}` stores a record written in a terminal. Plan:
+`POST /api/convos/:id/thinking {text}` stores a record written in a terminal. Teach now reaches
+the Room too (`mind.js#taughtForRoom`: taught "how" items always, as facts, never orders;
+taught ideas by subject) and runs on Gemini. Plan:
 `plans/conversation-thinking-recall.md`.
 
 **2026-09-30 — Two models can answer one question, side by side.** A second pick beside
