@@ -11,33 +11,29 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Human internal experience, interpersonal dynamics, and the external world often share the exact same structural pattern.
+
+This is demonstrated when Antoine and the conversation connect the flinch of a child, personal relationship dynamics, and macro-level institutional politics, showing that every wall functions as a fractal repeating across human, interpersonal, and systemic scales.
+
+## Large institutional bodies and rigid systems scale up and replicate the defensive postures of individuals.
+
+This idea emerges from mapping psychological walls across scales, where institutional gatekeeping, bureaucratic hurdles, and systemic gaslighting mirror the personal defense mechanisms and psychological walls enacted by individuals.
+
 ## Control over definitions and reality functions as a continuation of territorial conquest.
 
-How shaping categories and foundational assumptions drives modern geopolitical dominance
-Tracing the historical continuity between physical empire and structural control over meaning
-The mechanisms through which establishing conceptual frameworks achieves the same ends as territorial expansion
+Control over definitions, software standards, and reality functions as a direct continuation of territorial conquest, where exporting a technology stack and shaping conceptual frameworks achieves the same ends as physical empire.
 
 ## Global dominance is decided by whose foundational categories become the default grammar of human coordination.
 
-The struggle for power happens through infrastructure like smart cities, cables, and models.
-These deployments spread and entrench specific national frameworks.
-The victor is determined by whose baseline logic shapes how the world coordinates.
+Global dominance is decided by whose foundational categories become the default grammar of human coordination, enacted through infrastructure like smart cities, subsea cables, and AI models that entrench specific national frameworks.
 
 ## Complete structural mapping of a person's relational network allows an external system to anticipate their future actions before self-awareness occurs.
 
-- Thorough mapping of personal connections
-- Anticipation of upcoming choices by an external system
-- Delay in self-awareness compared to external visibility
+Derived from the discussion on Person of Interest and Palantir, this idea highlights how a thorough relational network mapping allows an external system to anticipate human choices and model future trajectories before the individual attains self-awareness.
 
 ## Software code acts as an artificial grammar that determines what large operational groups are capable of perceiving and doing.
 
 When an institution translates its operations into software, that software sets hard limits on what can be noticed, connected, checked, and acted upon.
-
-## Human internal experience, interpersonal dynamics, and the external world often share the exact same recurring structural pattern.
-
-## Large institutional bodies and rigid systems scale up and replicate the defensive postures of individuals.
-
-The passage shows that collective organizations are not separate from personal psychology, but rather mirror individual behavioral patterns on a massive scale.
 
 ## The fractal cross‑domain engine maps the direction and feedback loops of patterns across scales, turning institutional language barriers into anatomical signatures that reveal how archetypes travel from macro to micro.
 
