@@ -1,5 +1,7 @@
 # Plan Backlog
 
+- [Conversations keep their thinking](conversation-thinking-recall.md) — **DONE**, 2026-10-01. Every Room conversation and side talk is written down by itself when it goes quiet (its thinking, append-only, plus the full transcript); the Room reads an earlier conversation's thinking only when his message is clearly on the same subject; bring carries a side talk's thinking.
+
 - [Two models, side by side](two-models-side-by-side.md) — **IMPLEMENTED**, 2026-09-30. One question answered by two picked models at once, drawn as two independent-scrolling columns in the Room thread (layout H; no scroll lock, no added structure). One answer is kept and only the kept one carries into later context.
 
 - [Prompt helper: context, not rules](prompt-helper-context-not-rules.md) — **DONE**, 2026-09-30. The composer's sharpen pass loses its six-rule checklist and its menu of kinds; the kind becomes a label written after the edit, one cheap line says what answer the draft would get, muting counts per situation, and the grey tail is counted.

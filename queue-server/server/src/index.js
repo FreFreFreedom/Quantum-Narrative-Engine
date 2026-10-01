@@ -68,6 +68,7 @@ import { mindRoutes } from './routes/mind.js';
 import { bindChaptersDb } from './services/chapters.js';
 import { bindPromptHelperDb } from './services/promptHelper.js';
 import { bindConvoLogDb } from './services/convoLog.js';
+import { bindConvoThinkingDb } from './services/convoThinking.js';
 import { bindMindDb } from './services/mind.js';
 import { bindConnections } from './services/connections.js';
 import { bindWordLookup } from './services/wordLookup.js';
@@ -148,6 +149,7 @@ bindWordLookup(db);
 bindChaptersDb(db);
 bindPromptHelperDb(db);
 bindConvoLogDb(db);
+bindConvoThinkingDb(db);
 bindDashboardDb(db);
 bindTagCommunitiesDb(db);
 

@@ -32847,7 +32847,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         openMenu(b, [
           { label: isAnswer ? 'This answer, whole' : 'This question', icon: 'quote', title: 'Carried as it is, as a card on the main thread\'s box', on: function(){ land(text, isAnswer ? 'answer' : 'question'); } },
           m.id && isAnswer ? { label: 'Its essence', icon: 'spark', title: 'The ideas in it, one per line', on: function(){ gist(m.id, 'essence'); } } : null,
-          e.convoId ? { label: 'Everything this aside found', icon: 'layers', title: 'What the whole side talk arrived at, one idea per line', on: function(){ gist(null, 'whole'); } } : null,
+          e.convoId ? { label: 'Everything this aside found', icon: 'layers', title: 'Its thinking, the whole way through', on: function(){ gist(null, 'whole'); } } : null,
         ], { align: 'left' });
       };
     });

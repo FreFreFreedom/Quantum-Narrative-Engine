@@ -5,6 +5,7 @@ import { transcribe } from '../services/dictation.js';
 import { Router } from 'express';
 import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
+import * as thinking from '../services/convoThinking.js';
 import * as shelf from '../services/bookShelf.js';
 import * as screen from '../services/screenFacts.js';
 import { bookContents } from '../services/bookContents.js';
@@ -962,6 +963,20 @@ export function conversationsRoutes() {
     const out = await convos.gistConvo(req.params.id, req.body?.messageId || null);
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
+  }));
+
+  // GET/POST /api/convos/:id/thinking — the conversation's thinking record (plan
+  // conversation-thinking-recall). POST { text } stores a record written elsewhere;
+  // POST with no text writes it now on the Room's lane.
+  router.get('/:id/thinking', (req, res) => {
+    res.json({ thinking: thinking.readThinking(req.params.id) });
+  });
+  router.post('/:id/thinking', asyncHandler(async (req, res) => {
+    const out = req.body?.text
+      ? thinking.setThinking(req.params.id, req.body.text)
+      : await thinking.writeThinking(req.params.id, { force: true });
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+    res.json({ ok: true, doc_title: out.note?.title || null, more: !!out.more });
   }));
 
   router.post('/:id/retitle', asyncHandler(async (req, res) => {

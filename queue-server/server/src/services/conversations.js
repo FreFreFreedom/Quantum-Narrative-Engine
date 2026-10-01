@@ -34,10 +34,11 @@ import { projectMapBlock } from './projectMap.js';
 import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
-import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
+import { uniqueTitle } from './knowledgeDocs.js';
 import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory, subjectsBlock } from './mind.js';
 import { chapterize } from './chapters.js';
 import { logConversation, logText } from './convoLog.js';
+import { recalledThinkingBlock, thinkingForBring, writeThinking } from './convoThinking.js';
 import { splitByLabels, splitByMarks, parseMarks, MARKS_PROMPT } from './convoImport.js';
 import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
@@ -298,6 +299,12 @@ const GIST_PROMPT = `Carry what follows into a larger conversation that will bui
 export async function gistConvo(convoId, messageId) {
   if (!db) return { error: 'no_db' };
   if (!getConvo(convoId)) return { error: 'not_found' };
+  // A whole side talk carries its thinking record — the path it took, not a
+  // dozen lines (plan conversation-thinking-recall). The gist below is the fallback.
+  if (!messageId && getConvo(convoId).subject_type === 'side') {
+    const thinking = await thinkingForBring(convoId).catch(() => '');
+    if (thinking) return { ok: true, text: thinking };
+  }
   let msgs = threadMessages(convoId).filter((m) => m.kind === 'chat');
   if (messageId) msgs = msgs.filter((m) => m.id === messageId);
   if (!msgs.length) return { error: 'empty' };
@@ -2131,6 +2138,9 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     ctx.mode === 'open' ? '' : `\n=== WHAT THIS CONVERSATION IS ABOUT ===\n${ctx.contextText}`,
     parentTranscriptFor(convo),
     linkedConversationsBlock(convo.id),
+    // An earlier conversation's thinking, only when his message is on its subject
+    // (plan conversation-thinking-recall). Context under a bare heading, no rule.
+    recalledThinkingBlock(convo.id),
     withMap && repoFacts ? liveListsBlock() : '',
     tools ? ROOM_TOOLS_LINE : '',
     ROOM_PASSAGES_LINE,
@@ -3311,59 +3321,21 @@ Respond with ONLY this JSON object and nothing else:
 async function runSaveNoteTurn(convoId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const ctx = await convoContext(convo);
-  if (ctx.error) return { error: ctx.error };
-
-  const result = await runRoutedTurn({
-    convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 2400,
-    feature: 'studio', label: 'conversations:note', includeProjectContext: false,
-    instruction: `Write down what this conversation UNDERSTOOD, as a standing document the app will keep and re-read later. Not a plan, not a to-do list, not a transcript — the thinking itself, in its finished form, readable years from now by someone who was not here.
-Keep every distinction the conversation actually earned. Where it changed its mind, say what it moved from and to. Where it stayed unsure, say so.
-Plain English, no file names. Markdown headings are fine.
-Respond with ONLY this JSON object and nothing else:
-{"title":"a short title, a handful of words","description":"one sentence saying what is in it and when someone would want to read it","content":"the document itself"}`,
-  });
-  // The AI summary is a bonus. The note MUST still save the full conversation even
-  // if the model is unavailable or returns something we can't parse.
-  const parsed = !result.error ? firstJson(result.text) : null;
-
-  // Capture the FULL conversation, not just the AI summary, so nothing is lost.
-  const msgs = threadMessages(convoId);
-  const transcript = msgs
-    .map((m) => {
-      const who = m.role === 'user' ? 'You' : 'Assistant';
-      const kind = m.kind && m.kind !== 'chat' ? ` (${m.kind})` : '';
-      return `**${who}${kind}:**\n${String(m.text || '').trim()}`;
-    })
-    .join('\n\n');
-
-  const understanding = String(parsed?.content || '').trim();
-  // Stable title from the conversation so re-running /note updates the SAME note
-  // (and overwrites the same file) instead of creating a duplicate.
-  const baseTitle = String(convo.title || parsed?.title || 'Conversation').trim().replace(/\s+/g, ' ').slice(0, 160);
-  const noteTitle = baseTitle.startsWith(NOTE_PREFIX) ? baseTitle : `${NOTE_PREFIX}${baseTitle}`;
-  const content = [
-    understanding ? `## What this conversation understood\n\n${understanding}` : '',
-    `## Full conversation\n\n${transcript}`,
-  ].filter(Boolean).join('\n\n');
-
-  const existing = db.prepare(`SELECT 1 FROM knowledge_docs WHERE title=?`).get(noteTitle);
-  const out = existing
-    ? updateKnowledgeNote(db, noteTitle, { description: parsed?.description || '', content })
-    : createKnowledgeNote(db, { title: baseTitle, description: parsed?.description, content });
-  if (out.error) {
-    return { text: out.message || 'I could not get a clean document out of that — say in one line what should be written down, then ask again.' };
+  // Every conversation is now written down by itself once it goes quiet
+  // (services/convoThinking.js); /note does the same thing now. The full
+  // conversation is saved even when the thinking cannot be written.
+  let out = await writeThinking(convoId, { force: true });
+  for (let pass = 0; pass < 3 && out.ok && out.more; pass++) out = await writeThinking(convoId);
+  const doc = out.note && !out.note.error ? out.note : null;
+  if (!doc) {
+    return { text: out.message || 'I could not write that down just now — try again in a moment.' };
   }
-
-  // No repo delivery from here. It used to call gitOps.deliverNoteToRepo(), which
-  // shells out to git — and this container has no git binary, so it failed silently
-  // every time while this message claimed the file had landed. The Mac runner does
-  // it now (scripts/queue-runner.js#mirrorToRepo), within a few minutes, so what the
-  // message promises is no longer promised by the thing that cannot keep it.
-  const text = `Written down as **${out.title}**. The whole conversation is saved in it, not just a summary.`;
-  saveAssistantTurn(convoId, text, { act: 'note', doc_title: out.title, chars: out.chars });
+  const text = out.error
+    ? `Saved as **${doc.title}** — the whole conversation. The thinking could not be written just now; it will be added on its own.`
+    : `Written down as **${doc.title}** — the thinking, and the whole conversation.`;
+  saveAssistantTurn(convoId, text, { act: 'note', doc_title: doc.title, chars: doc.chars });
   broadcastAll('convos:updated', { convoId });
-  return { text, via: result.via, act: 'note', doc: out };
+  return { text, via: out.via, act: 'note', doc };
 }
 
 // Everything a conversation has already rewritten on its subject, so the studio

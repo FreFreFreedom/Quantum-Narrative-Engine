@@ -28,6 +28,18 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-10-01 — Every Room conversation keeps its thinking, and the Room reads it when the
+subject comes back.** `services/convoThinking.js`: once a conversation or side talk has been
+quiet 15 minutes, a 5-minute sweep writes its thinking (the path it took, append-only, one
+slice and one model call per tick, the Room's own lane) into `convo_thinking`, and the full
+note (thinking + verbatim transcript) into the same `Note: ` row `/note` uses — so the notes
+mirror carries every conversation to `project-docs/notes/`. A full Room answer carries an
+earlier conversation's thinking **only** when his last messages share its rarer words
+(`recalledThinkingBlock`, kept per thread in `convos.recalled`, at most 2) — plain context, no
+instruction. Bring on a whole side talk carries its thinking. `/note` is now "write it now".
+`POST /api/convos/:id/thinking {text}` stores a record written in a terminal. Plan:
+`plans/conversation-thinking-recall.md`.
+
 **2026-09-30 — Two models can answer one question, side by side.** A second pick beside
 the composer's lane picker (`.se-lanebtn2`, the same popover in side `'b'` mode, stored on
 `convos.chat_override_b`) makes every send a pair: `runPairTurn` runs the ordinary turn twice
