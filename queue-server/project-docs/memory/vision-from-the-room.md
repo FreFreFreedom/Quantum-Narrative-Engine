@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Software code acts as an artificial grammar that determines what large operational groups can perceive and do.
+
+Antoine explored structural operations and essential functions, moving from terms like structural mechanics to the core action of an entity. This idea captures how translating operations into software sets hard limits on what an institution can notice, connect, check, and act upon.
+
 ## Human internal experience, interpersonal dynamics, and the external world often share the exact same structural pattern.
 
 This is demonstrated when Antoine and the conversation connect the flinch of a child, personal relationship dynamics, and macro-level institutional politics, showing that every wall functions as a fractal repeating across human, interpersonal, and systemic scales.
@@ -30,10 +34,6 @@ Global dominance is decided by whose foundational categories become the default 
 ## Complete structural mapping of a person's relational network allows an external system to anticipate their future actions before self-awareness occurs.
 
 Derived from the discussion on Person of Interest and Palantir, this idea highlights how a thorough relational network mapping allows an external system to anticipate human choices and model future trajectories before the individual attains self-awareness.
-
-## Software code acts as an artificial grammar that determines what large operational groups are capable of perceiving and doing.
-
-When an institution translates its operations into software, that software sets hard limits on what can be noticed, connected, checked, and acted upon.
 
 ## The fractal cross‑domain engine maps the direction and feedback loops of patterns across scales, turning institutional language barriers into anatomical signatures that reveal how archetypes travel from macro to micro.
 
