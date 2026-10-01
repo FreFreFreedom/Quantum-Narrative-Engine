@@ -11,6 +11,12 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Complete structural mapping of a person's relational network allows an external system to anticipate their future actions before self-awareness occurs.
+
+- Thorough mapping of personal connections
+- Anticipation of upcoming choices by an external system
+- Delay in self-awareness compared to external visibility
+
 ## Software code acts as an artificial grammar that determines what large operational groups are capable of perceiving and doing.
 
 When an institution translates its operations into software, that software sets hard limits on what can be noticed, connected, checked, and acted upon.
