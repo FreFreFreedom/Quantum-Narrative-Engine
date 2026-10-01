@@ -12,6 +12,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## About Antoine
 
+- He is drawn to a macro-level view and conceptual exploration focused on how invisible frameworks dictate perception and conflict.
 - He wants to build the mental capacity to recognize operational opportunities across any domain. — What is done
 What is being worked on
 What could be done
