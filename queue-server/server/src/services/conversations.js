@@ -1941,21 +1941,34 @@ export function roomWorldLook(convoId) {
 //
 // Deterministic on purpose — a regex over his own words, no model call, no cost.
 // Digits and the spelled-out forms he actually says out loud ("a thousand words").
+// One message can name several lengths — "about 600 words for the question, about
+// 1200 for the books, so a total of at least 1800 words" (2026-10-01). Reading only
+// the first number made the whole order 600, the answer stopped at 698 and the
+// continuation pass saw nothing missing. The biggest number in the message is the
+// one he means: the parts are the breakdown, the total is the order. Erring high is
+// the safe side — an answer is billed for the words it writes, and he has never
+// complained that one ran long.
 const WORD_NUMBERS = { a: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, eight: 8, ten: 10 };
+// "1,800 words" and "1 800 mots" are the same order as "1800 words".
+const DIGITS = String.raw`\d{1,2}[,   ]\d{3}|\d{3,5}`;
 const LENGTH_PATTERNS = [
-  /\b(\d{3,5})\s*(?:\+|or\s+more)?\s*(?:words|word|mots)\b/i,
-  /\b(a|one|two|three|four|five|six|eight|ten)\s+thousand\s+(?:words|mots)\b/i,
-  /\b(two|three|four|five|six|eight)\s+hundred\s+(?:words|mots)\b/i,
+  new RegExp(String.raw`\b(${DIGITS})\s*(?:\+|or\s+more)?\s*(?:words|word|mots)\b`, 'gi'),
+  /\b(a|one|two|three|four|five|six|eight|ten)\s+thousand\s+(?:words|mots)\b/gi,
+  /\b(two|three|four|five|six|eight)\s+hundred\s+(?:words|mots)\b/gi,
 ];
 export function lengthRequest(text) {
   const t = String(text || '');
+  let best = null;
   for (const [i, re] of LENGTH_PATTERNS.entries()) {
-    const m = re.exec(t);
-    if (!m) continue;
-    const n = i === 0 ? Number(m[1]) : (WORD_NUMBERS[m[1].toLowerCase()] || 0) * (i === 1 ? 1000 : 100);
-    if (Number.isFinite(n) && n >= 100 && n <= 20000) return n;
+    re.lastIndex = 0;
+    for (const m of t.matchAll(re)) {
+      const n = i === 0
+        ? Number(m[1].replace(/[,   ]/g, ''))
+        : (WORD_NUMBERS[m[1].toLowerCase()] || 0) * (i === 1 ? 1000 : 100);
+      if (Number.isFinite(n) && n >= 100 && n <= 20000 && (best === null || n > best)) best = n;
+    }
   }
-  return null;
+  return best;
 }
 
 // ~1.4 tokens per English word, doubled, plus a flat 2000.

@@ -28,6 +28,11 @@ const HITS = {
   'about five hundred words': 500,
   'GIVE ME 800 WORDS': 800,
   'donne-moi 1200 mots': 1200,
+  // Several lengths in one message: the parts are the breakdown, the biggest
+  // number is the order (2026-10-01 — reading the first one capped a 1800-word
+  // ask at 600 and the answer stopped at 698).
+  'about 600 words for this and about 1200 words for the books, a total of at least 1800 words': 1800,
+  'write 1,800 words': 1800,
 };
 // Vague asks stay vague on purpose: "make it long" has no number to obey, and a
 // count that is about the subject rather than the answer must not raise the roof.
