@@ -12,6 +12,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## About Antoine
 
+- He wants to uncover the underlying imperial motives driving conceptual and structural conflicts between states.
 - He is drawn to a macro-level view and conceptual exploration focused on how invisible frameworks dictate perception and conflict.
 - He wants to build the mental capacity to recognize operational opportunities across any domain. — What is done
 What is being worked on
@@ -41,7 +42,7 @@ Purpose: to build a vision for operations anywhere and develop cognitive muscle 
 
 ## How he wants to be worked with
 
-- Simultaneously map a pattern across personal, interpersonal, and global scales with compressed, rhythmic, and morally lucid precision. — Refining prior ground, it now demands simultaneous multi-scalar mirroring—showing identical geometry operating within a psyche, between souls, and across civilizations. It joins dense conceptual insight with lapidary brevity, stripping away ornamentation to achieve high-impact cadence. It traces unbroken genetic continuity between foundational wounds and vast systemic structures, exposing how automated apparatuses process human life. The stance remains clear-eyed, fierce, and diagnostic, uniting clinical mechanics with evocative gravity while fiercely defending interior agency against indifferent machinery.
+- Simultaneously map identical geometry across personal, relational, and civilizational scales with compressed, lapidary, and morally lucid cadence. — Refine prior ground by demanding absolute multi-scalar mirroring—showing the exact same structural blueprint operating simultaneously within a psyche, between souls, and across civilizations. Unite dense conceptual insight with lapidary brevity, stripping ornamentation to achieve high-impact cadence. Trace unbroken genetic continuity between foundational wounds and vast systemic apparatuses, exposing how mechanical systems process human life. The stance remains clear-eyed, fierce, and diagnostic, uniting clinical mechanics with evocative gravity while fiercely defending interior agency against indifferent machinery.
 - Do not use immune-system metaphors in answers unless Antoine specifically asks for that lens. — This is a direct preference about the language used in answers. Existing project material about immune logic remains part of the project history, but it must not become a default metaphor.
 - Enjoys deep, open-ended meta-explorations investigating the conceptual foundations of the platform and the nature of inquiry itself. — Meta-explorations—such as examining what it actually means to ask for 'the nature of' something—allow the platform and its user to refine the core paradigm rather than just executing routine queries.
 - When asked for narrative structure exploration, owner gives explicit word-count ranges and wants word count at the end. — Retained as an enduring preference for structural explorations and deep dives, ensuring precision in length and format whenever narrative architecture is examined.

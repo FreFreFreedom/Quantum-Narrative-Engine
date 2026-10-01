@@ -11,6 +11,12 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Control over definitions and reality functions as a continuation of territorial conquest.
+
+How shaping categories and foundational assumptions drives modern geopolitical dominance
+Tracing the historical continuity between physical empire and structural control over meaning
+The mechanisms through which establishing conceptual frameworks achieves the same ends as territorial expansion
+
 ## Global dominance is decided by whose foundational categories become the default grammar of human coordination.
 
 The struggle for power happens through infrastructure like smart cities, cables, and models.
