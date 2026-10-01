@@ -967,14 +967,14 @@ export function conversationsRoutes() {
 
   // GET/POST /api/convos/:id/thinking — the conversation's thinking record (plan
   // conversation-thinking-recall). POST { text } stores a record written elsewhere;
-  // POST with no text writes it now on the Room's lane.
+  // POST with no text writes it now with Gemini; { reset: true } starts it over.
   router.get('/:id/thinking', (req, res) => {
     res.json({ thinking: thinking.readThinking(req.params.id) });
   });
   router.post('/:id/thinking', asyncHandler(async (req, res) => {
     const out = req.body?.text
       ? thinking.setThinking(req.params.id, req.body.text)
-      : await thinking.writeThinking(req.params.id, { force: true });
+      : await thinking.writeThinking(req.params.id, { force: true, reset: !!req.body?.reset });
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json({ ok: true, doc_title: out.note?.title || null, more: !!out.more });
   }));

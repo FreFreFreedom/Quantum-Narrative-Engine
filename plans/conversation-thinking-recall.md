@@ -27,7 +27,7 @@ rule about answer shape (AGENTS.md "Where the rules kept hiding"; `ROOM_LINE`).
 
 1. **The thinking record** — `services/convoThinking.js`, table `convo_thinking`
    (one row per conversation: `doc_title`, `thinking`, `through_created_at`,
-   `written_by`). The thinking is written by the Room's own lane (`feature: 'studio'`)
+   `written_by`). The thinking is written by Gemini (Flash, then Flash-Lite; never another provider — his pick)
    from the conversation itself: the path the thinking took — what he opened and why,
    what each answer brought, where he pushed back or turned it, the distinctions and
    names earned, works and people and what each was for, what is still open. Never
@@ -61,7 +61,7 @@ rule about answer shape (AGENTS.md "Where the rules kept hiding"; `ROOM_LINE`).
    messages.
 6. **Hand-written records** — `POST /api/convos/:id/thinking` with `{ text }` stores a
    record written elsewhere (a terminal session) as the conversation's thinking and
-   rewrites its note; without `text` it writes it now on the Room's lane. Later
+   rewrites its note; without `text` it writes it now with Gemini (`reset: true` starts it over). Later
    messages are appended by the sweep as usual.
 
 ## Not done / open

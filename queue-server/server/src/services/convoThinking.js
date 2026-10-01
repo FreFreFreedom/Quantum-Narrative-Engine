@@ -9,6 +9,7 @@
 //      once it has gone quiet: the thinking (the path it took, not a fact list) plus
 //      the full transcript, in the same `Note: ` knowledge_docs row /note writes — so
 //      the Mac runner's existing mirror carries it to the repo with no new lane.
+//      The record is written by Gemini (geminiWrite), whatever lane the Room uses.
 //   2. Recall. A full Room answer carries an earlier conversation's thinking only
 //      when his message clearly shares its subject — a free word match, rarer words
 //      weighing more. Plain context under a bare heading; nothing tells the model
@@ -171,13 +172,30 @@ export function writeNote(convoId) {
 const _inFlight = new Set();
 const _failedAt = new Map();
 
-export async function writeThinking(convoId, { force = false } = {}) {
+// Written by Gemini, always — his pick (2026-10-01): the record is the system's
+// own reading, not the reading of whichever model a session runs on. Flash first,
+// Flash-Lite when Flash is out of its daily allowance; never another provider.
+const GEMINI_WRITERS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
+async function geminiWrite(prompt) {
+  let last = null;
+  for (const model of GEMINI_WRITERS) {
+    last = await generateText({
+      prompt, feature: 'studio', provider: 'google-ai-studio', model, strictModel: true,
+      label: 'conversations:thinking', maxTokens: 4000, allowLongOutput: true, timeoutMs: 300_000,
+    });
+    if (String(last?.text || '').trim()) return last;
+  }
+  return last;
+}
+
+export async function writeThinking(convoId, { force = false, reset = false } = {}) {
   if (!db) return { error: 'no_db' };
   if (_inFlight.has(convoId)) return { error: 'busy' };
   const convo = convoRow(convoId);
   if (!convo) return { error: 'not_found' };
   _inFlight.add(convoId);
   try {
+    if (reset) saveRow(convoId, { thinking: null, through_created_at: null, written_by: null });
     const row = thinkingRow(convoId);
     const since = row?.through_created_at || '';
     const fresh = chatMessages(convoId).filter((m) => m.created_at > since);
@@ -201,10 +219,7 @@ export async function writeThinking(convoId, { force = false } = {}) {
       prior ? `\n${CONTINUE_PROMPT}\n\n=== THE RECORD SO FAR ===\n${prior.length > CONTINUITY_CHARS ? '…' + prior.slice(-CONTINUITY_CHARS) : prior}` : '',
       `\n=== ${prior ? 'THE NEW MESSAGES' : 'THE CONVERSATION'} — "${convo.title || 'Conversation'}" ===\n${slice.map((s) => s.line).join('\n\n')}`,
     ].filter(Boolean).join('\n');
-    const out = await generateText({
-      prompt, feature: 'studio', label: 'conversations:thinking',
-      maxTokens: 4000, allowLongOutput: true, timeoutMs: 300_000,
-    });
+    const out = await geminiWrite(prompt);
     const part = String(out?.text || '').trim();
     if (!part) {
       _failedAt.set(convoId, Date.now());
