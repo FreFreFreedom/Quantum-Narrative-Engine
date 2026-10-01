@@ -976,7 +976,7 @@ export function conversationsRoutes() {
       ? thinking.setThinking(req.params.id, req.body.text)
       : await thinking.writeThinking(req.params.id, { force: true, reset: !!req.body?.reset });
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
-    res.json({ ok: true, doc_title: out.note?.title || null, more: !!out.more });
+    res.json({ ok: true, doc_title: out.note?.title || null, more: !!out.more, via: out.via || null });
   }));
 
   router.post('/:id/retitle', asyncHandler(async (req, res) => {

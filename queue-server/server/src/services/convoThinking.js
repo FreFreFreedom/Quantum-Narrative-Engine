@@ -60,20 +60,37 @@ const RETRY_AFTER_FAIL_MS = 30 * 60_000;
 // Small slices: given a whole long thread at once, Gemini wrote only its last
 // stretch, and ran out of room mid-list (2026-10-01). A few exchanges per part.
 const SLICE_CHARS = 18_000;
-const MSG_CHARS = 12_000;
+// A long answer is kept whole: cut at 12k, the record said the talk "cut off".
+const MSG_CHARS = 40_000;
 const CONTINUITY_CHARS = 8_000;
 const RECALL_DOC_CHARS = 14_000;
 const RECALL_MAX = 2;
 
-const WRITER_PROMPT = `You keep the record of a conversation between Antoine and an AI, so that when its subject comes back months from now the thinking can be picked up where it was left instead of being started again.
+// The conversation goes first and the task last: given the task first and a long
+// thread after it, Gemini skipped the opening exchanges and wrote a reading list
+// with two books nobody had named (2026-10-01).
+const WRITER_TASK = `Now write the record of the conversation above, so that when its subject comes back months from now the thinking can be picked up where it was left instead of being started again.
 
-Write the thinking itself, from the first message to the last, in the order it moved: what he opened and what he was reaching for, what each answer brought, where he pushed back, corrected or turned the line, the distinctions and names that were earned, the works and people that came in and what each was there for, and what was left open. Keep his own words and coined terms exact. Keep the answers' strongest images and formulations where the talk built on them. The path matters as much as where it arrived.
+Write the thinking itself, from the first message to the last, in the order it moved: what Antoine opened and what he was reaching for, what each answer brought, where he pushed back, corrected or turned the line, the distinctions and names that were earned, the works and people that were named and what each was there for, and what was left open. Keep his own words and coined terms exact. Keep the answers' strongest images and formulations where the talk built on them. The path matters as much as where it arrived.
+
+Write only what is in the messages above. Never add a work, a person, a fact or a claim they do not contain. If something stayed vague, keep it vague.
 
 Leave out anything about how answers should be shaped — length, tone, format, style. That is not what the conversation was about.
 
-Invent nothing. If something stayed vague, keep it vague. Plain words. Markdown headings are fine. No preamble, no closing line, and never write "the user" or "the assistant".`;
+Plain words. Markdown headings are fine. No preamble, no closing line, and never write "the user" or "the assistant".`;
 
-const CONTINUE_PROMPT = `The record so far is shown for continuity only. Write the next part of it, covering every one of the new messages in order — do not repeat, summarise or rewrite what the record already holds.`;
+const CONTINUE_TASK = `The record so far is shown above for continuity only. Write the next part of it, covering every one of the new messages in order — do not repeat, summarise or rewrite what the record already holds.`;
+
+export function thinkingPrompt({ title, parentTitle = null, prior = '', lines = [], continues = false }) {
+  return [
+    `This is a conversation between Antoine and an AI${parentTitle ? `, in a side talk he stepped into from the conversation "${parentTitle}"` : ''}.`,
+    prior ? `\n=== THE RECORD SO FAR ===\n${prior.length > CONTINUITY_CHARS ? '…' + prior.slice(-CONTINUITY_CHARS) : prior}\n=== END OF THE RECORD SO FAR ===` : '',
+    `\n=== ${prior ? 'THE NEW MESSAGES' : 'THE CONVERSATION'} — "${title || 'Conversation'}" ===\n${lines.join('\n\n')}\n=== END OF THE ${prior ? 'NEW MESSAGES' : 'CONVERSATION'} ===`,
+    `\n${WRITER_TASK}`,
+    prior ? `\n${CONTINUE_TASK}` : '',
+    continues ? `\nThe conversation goes on after these messages, so do not say yet what was left open.` : '',
+  ].filter(Boolean).join('\n');
+}
 
 function parseMeta(meta) {
   if (!meta) return {};
@@ -213,14 +230,12 @@ export async function writeThinking(convoId, { force = false, reset = false } = 
       slice.push({ m, line });
       used += line.length;
     }
+    // Never end a part on his question with its answer left for the next part.
+    if (slice.length > 1 && slice.length < fresh.length && slice.at(-1).m.role === 'user') slice.pop();
+    const continues = slice.length < fresh.length;
     const prior = String(row?.thinking || '').trim();
     const parent = convo.subject_type === 'side' && convo.parent_convo_id ? convoRow(convo.parent_convo_id) : null;
-    const prompt = [
-      WRITER_PROMPT,
-      parent ? `\nThis is a side talk he stepped into from the conversation "${parent.title}".` : '',
-      prior ? `\n${CONTINUE_PROMPT}\n\n=== THE RECORD SO FAR ===\n${prior.length > CONTINUITY_CHARS ? '…' + prior.slice(-CONTINUITY_CHARS) : prior}` : '',
-      `\n=== ${prior ? 'THE NEW MESSAGES' : 'THE CONVERSATION'} — "${convo.title || 'Conversation'}" ===\n${slice.map((s) => s.line).join('\n\n')}`,
-    ].filter(Boolean).join('\n');
+    const prompt = thinkingPrompt({ title: convo.title, parentTitle: parent?.title || null, prior, lines: slice.map((x) => x.line), continues });
     const out = await geminiWrite(prompt);
     const part = String(out?.text || '').trim();
     if (!part) {
@@ -234,7 +249,7 @@ export async function writeThinking(convoId, { force = false, reset = false } = 
     const thinking = !prior ? part : laterDay ? `${prior}\n\n### Later — ${day(through)}\n\n${part}` : `${prior}\n\n${part}`;
     saveRow(convoId, { thinking, through_created_at: through, written_by: 'auto' });
     const note = writeNote(convoId);
-    return { ok: true, thinking, more: fresh.length > slice.length, note, via: out?.via };
+    return { ok: true, thinking, more: continues, note, via: out?.via };
   } finally {
     _inFlight.delete(convoId);
   }
