@@ -32405,6 +32405,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       e.interestFetching = true;
       try {
         const out = await api('/api/convos/' + encodeURIComponent(e.convoId) + '/interest-imports');
+        // A poll that finds nothing new must change nothing on screen. This used
+        // to repaint the whole thread every six seconds, which tore down and
+        // rebuilt the chapter rail and the chapter rules in the transcript —
+        // the page twitched on its own while he was reading (his ask, 2026-10-01).
+        const sig = JSON.stringify((out.batches || []).map(b => [b.id, b.status, JSON.stringify(b.result || null), (b.entries || []).length]));
+        let changed = sig !== e.interestSig;
+        e.interestSig = sig;
         e.interestBatches = out.batches; e.interestChecked = Date.now();
         for(const batch of out.batches){
           const img = e.interestImages && e.interestImages[batch.id];
@@ -32413,10 +32420,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             if(e.pendingAttachments.filter(a => a.kind === 'image').length < 4 && e.pendingAttachments.reduce((n,a) => n + (a.dataUrl?.length || 0), 0) + img.dataUrl.length <= 18000000){
               e.pendingAttachments.push(img);
               if(!e.interestChatReady)e.interestChatReady={};e.interestChatReady[batch.id]=true;
-            } else { e.note = 'Some images are waiting. Send or remove existing attachments first.'; }
+              changed = true;
+            } else { e.note = 'Some images are waiting. Send or remove existing attachments first.'; changed = true; }
           }
         }
-        if(current()) fillEmbed(host, e, opts);
+        if(changed && current()) fillEmbed(host, e, opts);
       } catch(err){ if(current()) bar.textContent = err.message; }
       finally { e.interestFetching = false; }
     };
@@ -32443,7 +32451,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       try {
         await Promise.all(ids.map(id => apiWrite('/api/convos/interest-imports/' + id + '/' + action, 'POST', {})));
         if(action === 'undo' && e.interestImages) ids.forEach(id => { delete e.interestImages[id]; });
-        e.interestChecked = 0; await refresh();
+        e.interestChecked = 0; e.interestSig = null; await refresh();
         if(document.getElementById('roomInterests')?.classList.contains('is-active')) renderInterestLibrary();
       } catch(err){ /* the pill simply stays */ }
     };
