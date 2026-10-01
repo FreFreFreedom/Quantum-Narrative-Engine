@@ -31,7 +31,7 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 **2026-10-01 — Every Room conversation keeps its thinking, and the Room reads it when the
 subject comes back.** `services/convoThinking.js`: once a conversation or side talk has been
 quiet 15 minutes, a 5-minute sweep writes its thinking (the path it took, append-only, one
-slice and one model call per tick, the Room's own lane) into `convo_thinking`, and the full
+slice and one model call per tick, always Gemini — his pick) into `convo_thinking`, and the full
 note (thinking + verbatim transcript) into the same `Note: ` row `/note` uses — so the notes
 mirror carries every conversation to `project-docs/notes/`. A full Room answer carries an
 earlier conversation's thinking **only** when his last messages share its rarer words

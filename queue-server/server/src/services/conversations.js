@@ -3325,7 +3325,7 @@ async function runSaveNoteTurn(convoId) {
   // (services/convoThinking.js); /note does the same thing now. The full
   // conversation is saved even when the thinking cannot be written.
   let out = await writeThinking(convoId, { force: true });
-  for (let pass = 0; pass < 3 && out.ok && out.more; pass++) out = await writeThinking(convoId);
+  for (let pass = 0; pass < 8 && out.ok && out.more; pass++) out = await writeThinking(convoId);
   const doc = out.note && !out.note.error ? out.note : null;
   if (!doc) {
     return { text: out.message || 'I could not write that down just now — try again in a moment.' };

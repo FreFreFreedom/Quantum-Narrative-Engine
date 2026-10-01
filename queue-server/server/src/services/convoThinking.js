@@ -57,7 +57,9 @@ export function bindConvoThinkingDb(database) {
 const SWEEP_MS = 5 * 60_000;
 const QUIET_MS = 15 * 60_000;
 const RETRY_AFTER_FAIL_MS = 30 * 60_000;
-const SLICE_CHARS = 60_000;
+// Small slices: given a whole long thread at once, Gemini wrote only its last
+// stretch, and ran out of room mid-list (2026-10-01). A few exchanges per part.
+const SLICE_CHARS = 18_000;
 const MSG_CHARS = 12_000;
 const CONTINUITY_CHARS = 8_000;
 const RECALL_DOC_CHARS = 14_000;
@@ -65,13 +67,13 @@ const RECALL_MAX = 2;
 
 const WRITER_PROMPT = `You keep the record of a conversation between Antoine and an AI, so that when its subject comes back months from now the thinking can be picked up where it was left instead of being started again.
 
-Write the thinking itself, in the order it moved: what he opened and what he was reaching for, what each answer brought, where he pushed back, corrected or turned the line, the distinctions and names that were earned, the works and people that came in and what each was there for, and what was left open. Keep his own words and coined terms exact. Keep the answers' strongest images and formulations where the talk built on them. The path matters as much as where it arrived.
+Write the thinking itself, from the first message to the last, in the order it moved: what he opened and what he was reaching for, what each answer brought, where he pushed back, corrected or turned the line, the distinctions and names that were earned, the works and people that came in and what each was there for, and what was left open. Keep his own words and coined terms exact. Keep the answers' strongest images and formulations where the talk built on them. The path matters as much as where it arrived.
 
 Leave out anything about how answers should be shaped — length, tone, format, style. That is not what the conversation was about.
 
 Invent nothing. If something stayed vague, keep it vague. Plain words. Markdown headings are fine. No preamble, no closing line, and never write "the user" or "the assistant".`;
 
-const CONTINUE_PROMPT = `The record so far is shown for continuity only. Write the next part of it, covering only the new messages — do not repeat, summarise or rewrite what the record already holds.`;
+const CONTINUE_PROMPT = `The record so far is shown for continuity only. Write the next part of it, covering every one of the new messages in order — do not repeat, summarise or rewrite what the record already holds.`;
 
 function parseMeta(meta) {
   if (!meta) return {};
@@ -181,7 +183,7 @@ async function geminiWrite(prompt) {
   for (const model of GEMINI_WRITERS) {
     last = await generateText({
       prompt, feature: 'studio', provider: 'google-ai-studio', model, strictModel: true,
-      label: 'conversations:thinking', maxTokens: 4000, allowLongOutput: true, timeoutMs: 300_000,
+      label: 'conversations:thinking', maxTokens: 16000, allowLongOutput: true, timeoutMs: 300_000,
     });
     if (String(last?.text || '').trim()) return last;
   }
@@ -228,7 +230,8 @@ export async function writeThinking(convoId, { force = false, reset = false } = 
     }
     _failedAt.delete(convoId);
     const through = slice.at(-1).m.created_at;
-    const thinking = prior ? `${prior}\n\n### Later — ${day(through)}\n\n${part}` : part;
+    const laterDay = prior && day(through) !== day(row?.through_created_at);
+    const thinking = !prior ? part : laterDay ? `${prior}\n\n### Later — ${day(through)}\n\n${part}` : `${prior}\n\n${part}`;
     saveRow(convoId, { thinking, through_created_at: through, written_by: 'auto' });
     const note = writeNote(convoId);
     return { ok: true, thinking, more: fresh.length > slice.length, note, via: out?.via };
@@ -261,7 +264,7 @@ export async function thinkingForBring(convoId) {
     const last = chatMessages(convoId).at(-1);
     return !row?.thinking || (last && last.created_at > (row.through_created_at || ''));
   };
-  for (let pass = 0; pass < 4 && behind(); pass++) {
+  for (let pass = 0; pass < 8 && behind(); pass++) {
     const out = await writeThinking(convoId);
     if (out.error) break;
   }
