@@ -34009,14 +34009,27 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if (c) seLastChat = c.id;
     }, true);
   });
+  // ⌥↑ / ⌥↓: from answer to answer — the top of the one above, again for the one
+  // before it; down to the next, and past the last one to the end.
   document.addEventListener('keydown', function(ev){
-    if (ev.key !== 'ArrowDown' || !ev.shiftKey || ev.altKey || !(ev.metaKey || ev.ctrlKey)) return;
+    if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp') return;
+    var toEnd = ev.key === 'ArrowDown' && ev.shiftKey && !ev.altKey && (ev.metaKey || ev.ctrlKey);
+    var step = ev.altKey && !ev.shiftKey && !ev.metaKey && !ev.ctrlKey;
+    if (!toEnd && !step) return;
     var shown = function(id){ var h = document.getElementById(id), l = h && h.querySelector('.se-log'); return l && l.offsetParent ? l : null; };
     var log = (seLastChat && shown(seLastChat)) || shown('roomConvo') || shown('roomSideEmbed');
     if (!log) return;
     ev.preventDefault();
-    log._detached = 0;
-    log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' });
+    var end = function(){ log._detached = 0; log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' }); };
+    if (toEnd) return end();
+    var lt = log.getBoundingClientRect().top, base = log._stepTo != null && Date.now() - log._stepAt < 700 ? log._stepTo : log.scrollTop;
+    var answers = Array.prototype.filter.call(log.querySelectorAll('.se-turn'), function(t){ return !t.classList.contains('you') && !t.parentElement.closest('.se-turn'); });
+    var tops = answers.map(function(t){ return Math.round(log.scrollTop + t.getBoundingClientRect().top - lt - 8); });
+    var to = null;
+    if (ev.key === 'ArrowUp') { for (var i = tops.length - 1; i >= 0; i--) if (tops[i] < base - 4) { to = Math.max(0, tops[i]); break; } if (to == null) to = 0; }
+    else { for (var j = 0; j < tops.length; j++) if (tops[j] > base + 4) { to = tops[j]; break; } if (to == null || to >= log.scrollHeight - log.clientHeight) return end(); }
+    log._detached = 1; log._stepTo = to; log._stepAt = Date.now();
+    log.scrollTo({ top: to, behavior: 'smooth' });
   }, true);
   // Pinching the trackpad to read a card used to move it or shut it: a zoom fires
   // the same resize and scroll the window does, and the card was closing on both
