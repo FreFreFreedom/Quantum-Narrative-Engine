@@ -2,14 +2,42 @@
 
 Saved conversations, mirrored automatically for the coding agent.
 
+- Note: Anthony Bourdain: Kitchen Confidential's Toughest Lessons — notes/anthony-bourdain-kitchen-confidential-s-toughest-lessons.md
+- Note: Boy A: Redemption and Identity Reconstruction — notes/boy-a-redemption-and-identity-reconstruction.md
+- Note: Comparative politics across structural scales — notes/comparative-politics-across-structural-scales.md
+- Note: Comparative politics and its parallel disciplines — side talk of Comparative politics across structural scales — notes/comparative-politics-and-its-parallel-disciplines-side-talk-of-comparative-polit.md
+- Note: Comparing Depth of Snowfall vs Top Boy — side talk of State Experiments in Constitutional Decision‑Making — notes/comparing-depth-of-snowfall-vs-top-boy-side-talk-of-state-experiments-in-constit.md
+- Note: Cook County Court as Fractal Injustice Anatomy — notes/cook-county-court-as-fractal-injustice-anatomy.md
+- Note: Cross-Domain Analogical Reasoning — notes/cross-domain-analogical-reasoning.md
+- Note: Cross‑Domain Analogy Recommendation for Fractal Legal Engine — notes/cross-domain-analogy-recommendation-for-fractal-legal-engine.md
 - Note: Essential Functions and Ontological Mapping Terminology — side talk of Palantir's Role in Modern Societal Infrastructure — notes/essential-functions-and-ontological-mapping-terminology-side-talk-of-palantir-s-.md
+- Note: Films depicting the unhealed-wound violence cycle — side talk of Comparative politics across structural scales — notes/films-depicting-the-unhealed-wound-violence-cycle-side-talk-of-comparative-polit.md
+- Note: Fractal Civic Structures as a Cross‑Scale Analytical Engine — notes/fractal-civic-structures-as-a-cross-scale-analytical-engine.md
+- Note: Fractal Legal Reasoning as Recursive Analogy — notes/fractal-legal-reasoning-as-recursive-analogy.md
+- Note: Fractal Mapping of Political Power Dynamics — notes/fractal-mapping-of-political-power-dynamics.md
 - Note: Fractal Ontology: Core Mechanics and Commitments — notes/fractal-ontology-core-mechanics-and-commitments.md
 - Note: Fractal Ontology: Mechanics and Soul of the Platform — notes/fractal-ontology-mechanics-and-soul-of-the-platform.md
 - Note: Fractal Resonance as the Core Navigation Principle — notes/fractal-resonance-as-the-core-navigation-principle.md
 - Note: Fractal reasoning across civic and justice narratives — notes/fractal-reasoning-across-civic-and-justice-narratives.md
 - Note: Fractal reasoning across civic and justice narratives (fork) — notes/fractal-reasoning-across-civic-and-justice-narratives-fork.md
+- Note: Gilmore tracing economic crisis into prison — side talk of Comparative politics across structural scales — notes/gilmore-tracing-economic-crisis-into-prison-side-talk-of-comparative-politics-ac.md
+- Note: Kinetic workout media selection — notes/kinetic-workout-media-selection.md
+- Note: Legal Realism in Better Call Saul — side talk of State Experiments in Constitutional Decision‑Making — notes/legal-realism-in-better-call-saul-side-talk-of-state-experiments-in-constitution.md
+- Note: Lower East Side abandonment phenomenon — side talk of Comparative politics across structural scales — notes/lower-east-side-abandonment-phenomenon-side-talk-of-comparative-politics-across-.md
+- Note: Mapping Psychological Walls Across Cultures and Media — notes/mapping-psychological-walls-across-cultures-and-media.md
 - Note: Ontological Warfare and Geopolitical Power Struggles — side talk of Palantir's Role in Modern Societal Infrastructure — notes/ontological-warfare-and-geopolitical-power-struggles-side-talk-of-palantir-s-rol.md
 - Note: Palantir's Role in Modern Societal Infrastructure — notes/palantir-s-role-in-modern-societal-infrastructure.md
+- Note: Policy as frozen posture toward pain — side talk of Comparative politics across structural scales — notes/policy-as-frozen-posture-toward-pain-side-talk-of-comparative-politics-across-st.md
+- Note: Policy as response to institutional pain — side talk of Comparative politics across structural scales — notes/policy-as-response-to-institutional-pain-side-talk-of-comparative-politics-acros.md
+- Note: Postcode wars as immune defense — side talk of Comparative politics across structural scales — notes/postcode-wars-as-immune-defense-side-talk-of-comparative-politics-across-structu.md
 - Note: QNE — notes/qne.md
+- Note: Redlining as civic self-dissociation — side talk of Comparative politics across structural scales — notes/redlining-as-civic-self-dissociation-side-talk-of-comparative-politics-across-st.md
+- Note: Relational Dynamics Reduced to Fundamental Polarity — notes/relational-dynamics-reduced-to-fundamental-polarity.md
+- Note: Repeated Single-Word Requests Trigger Model Rate Limit Errors — notes/repeated-single-word-requests-trigger-model-rate-limit-errors.md
+- Note: State Experiments in Constitutional Decision‑Making — notes/state-experiments-in-constitutional-decision-making.md
+- Note: Suits law firm loyalty betrayals — side talk of Comparative politics across structural scales — notes/suits-law-firm-loyalty-betrayals-side-talk-of-comparative-politics-across-struct.md
+- Note: Suits: Law as Adversarial Sport — notes/suits-law-as-adversarial-sport.md
 - Note: The Core of Fractal Resonance Navigation — notes/the-core-of-fractal-resonance-navigation.md
 - Note: The Living Grammar of Fractal Resonance — notes/the-living-grammar-of-fractal-resonance.md
+- Note: The trap mistaken for home — side talk of Comparative politics across structural scales — notes/the-trap-mistaken-for-home-side-talk-of-comparative-politics-across-structural-s.md
+- Note: Trauma and the Conspiratorial Mindset — notes/trauma-and-the-conspiratorial-mindset.md
