@@ -34000,6 +34000,24 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
   });
   document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') seCardClose(); });
+  // ⌘⇧↓ (Ctrl+Shift+↓ off a Mac): to the end of the chat he was last in — the
+  // side talk or the main thread, whichever his hand touched last (2026-09-30).
+  var seLastChat = null;
+  ['pointerdown', 'focusin'].forEach(function(t){
+    document.addEventListener(t, function(ev){
+      var c = ev.target && ev.target.closest && ev.target.closest('#roomSideEmbed, #roomConvo');
+      if (c) seLastChat = c.id;
+    }, true);
+  });
+  document.addEventListener('keydown', function(ev){
+    if (ev.key !== 'ArrowDown' || !ev.shiftKey || ev.altKey || !(ev.metaKey || ev.ctrlKey)) return;
+    var shown = function(id){ var h = document.getElementById(id), l = h && h.querySelector('.se-log'); return l && l.offsetParent ? l : null; };
+    var log = (seLastChat && shown(seLastChat)) || shown('roomConvo') || shown('roomSideEmbed');
+    if (!log) return;
+    ev.preventDefault();
+    log._detached = 0;
+    log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' });
+  }, true);
   // Pinching the trackpad to read a card used to move it or shut it: a zoom fires
   // the same resize and scroll the window does, and the card was closing on both
   // (his complaint, 2026-09-28). While the page is zoomed the card is left exactly
