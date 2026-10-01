@@ -1035,10 +1035,11 @@ export const ORDER_WORDS = /\b(should|must|always|never|from now on|in (?:all )?
 //     named so its thinking can come too.
 const TAUGHT_HOW_MAX = 6;
 const TAUGHT_IDEAS_MAX = 4;
+const TAUGHT_SUBJECTS_MAX = 4;
 const TAUGHT_MIN_SHARED = 2;
 const TAUGHT_MIN_SCORE = 5.5;
 export function taughtForRoom(said = '') {
-  const none = { how: '', ideas: '', convoIds: [] };
+  const none = { how: '', ideas: '', subjects: '', convoIds: [] };
   if (!db) return none;
   try {
     const how = db.prepare(`SELECT text FROM mind_facts WHERE active=1 AND source_note='teach' AND kind='taste' ORDER BY created_at DESC`).all()
@@ -1058,12 +1059,25 @@ export function taughtForRoom(said = '') {
         return shared >= TAUGHT_MIN_SHARED && score >= TAUGHT_MIN_SCORE ? { f, score } : null;
       }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, TAUGHT_IDEAS_MAX).map((x) => x.f);
     }
+    // Subjects he marked with Teach: a name rides when his words name it (every word
+    // of a short name, two of a longer one), and brings the conversation it came from.
+    let subjects = [];
+    if (String(said).trim()) {
+      const q = terms(said);
+      subjects = db.prepare(`SELECT name, convo_id FROM interest_subjects WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 1000`).all()
+        .filter((x) => {
+          const words = [...terms(x.name).keys()];
+          const hit = words.filter((w) => q.has(w)).length;
+          return words.length && hit >= Math.min(words.length, 2);
+        }).slice(0, TAUGHT_SUBJECTS_MAX);
+    }
     return {
       how: how.length ? `\n=== WHAT HE HAS LOVED IN ANSWERS ===\n${how.map((t) => `- ${t}`).join('\n')}` : '',
+      subjects: subjects.length ? `\n=== SUBJECTS HE HAS MARKED ===\n${subjects.map((x) => `- ${x.name}`).join('\n')}` : '',
       ideas: ideas.length
         ? `\n=== WHAT HE HAS TAUGHT ON THIS ===\n${ideas.map((f) => `- ${String(f.text).trim()}${f.detail ? `\n  ${String(f.detail).trim().replace(/\s*\n\s*/g, ' · ').slice(0, 1200)}` : ''}`).join('\n')}`
         : '',
-      convoIds: [...new Set(ideas.map((f) => f.source_convo_id).filter(Boolean))],
+      convoIds: [...new Set([...ideas.map((f) => f.source_convo_id), ...subjects.map((x) => x.convo_id)].filter(Boolean))],
     };
   } catch (e) {
     console.error('[mind] taught recall failed:', e?.message || e);

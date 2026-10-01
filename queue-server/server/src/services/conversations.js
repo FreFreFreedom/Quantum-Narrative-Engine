@@ -2145,6 +2145,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // An earlier conversation's thinking, only when his message is on its subject
     // (plan conversation-thinking-recall). Context under a bare heading, no rule.
     taught?.ideas || '',
+    taught?.subjects || '',
     recalledThinkingBlock(convo.id, { also: taught?.convoIds || [] }),
     withMap && repoFacts ? liveListsBlock() : '',
     tools ? ROOM_TOOLS_LINE : '',

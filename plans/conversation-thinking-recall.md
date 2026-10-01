@@ -70,7 +70,8 @@ rule about answer shape (AGENTS.md "Where the rules kept hiding"; `ROOM_LINE`).
    every full answer as plain facts about him, beside WHO HE IS — headline only, and
    any line written as an order (`ORDER_WORDS`) is dropped, at save and at render.
    Taught ideas and facts about him ride only when his last two messages share their
-   rarer words (at least 2 shared, IDF over all facts); the conversation each came
+   rarer words (at least 2 shared, IDF over all facts), and so do subjects he marked
+   when his words name them; the conversation each came
    from is handed to `recalledThinkingBlock` as `also`, so its record comes too.
    Teach itself runs on Gemini (`convoThinking.js#geminiText`), every item but a
    subject now gets a detail, and subjects are short names. `POST /api/mind/teach/tidy`
