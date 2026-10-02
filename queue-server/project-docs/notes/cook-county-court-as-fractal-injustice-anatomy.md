@@ -1,6 +1,6 @@
 # Note: Cook County Court as Fractal Injustice Anatomy
 
-Saved: 2026-10-02T11:39:12.894Z
+Saved: 2026-10-02T11:48:50.470Z
 
 ## What this conversation understood
 
@@ -204,6 +204,46 @@ A central feature of this envisioned app is the ability to map the feedback loop
 To support this, the platform features a visual interface that saves what has already been mapped, creating a persistent, growing library. The system accepts any narrative as an input—whether fiction or nonfiction, in the form of a book or any other medium—and automatically extracts the underlying structural anatomy and maps the desired patterns. 
 
 Once mapped, the platform can automatically identify how a specific loop or fractal pattern appears in other narratives across different mediums, spanning both real historical events and fictional works. An intelligent AI runs on this saved library, generating intelligent insights on what has been mapped so far and pointing toward where the user could go next, allowing for continuous deepening and exploration of structural patterns that existing institutional vocabularities actively disguise.
+
+### The Civic Structure as Act and Hypothesis
+
+The work begins by establishing what a civic structure actually is: not a building like a courthouse, precinct, or prison, but an *act*—a repeated, collective decision about what counts as acceptable, transgression, and what happens to the body that crosses the line. Every civic structure is a hypothesis about human nature made concrete, carrying its own blind spot and generating a shadow through boundary-drawing. 
+
+This ground anchors the analysis of narratives as field notes:
+- *When They See Us* stages the civic structure's hypothesis that some bodies are pre-guilty and some childhoods are pre-crimes, where devouring the innocent is the machinery operating as designed.
+- *Fences* shows the civic structure as private architecture, where Troy Maxson builds fences the state builds borders—marking lines between the worthy and unworthy until fence, prison, and home collapse into one.
+- The family dinner table operates as a civic space with its own laws, exiles, and unspoken constitution.
+
+### The Fractal Policy Engine and Distribution Anatomy
+
+The discussion moves to tracing a policy—such as a change in sentencing guidelines—through a structural decomposition rather than a causal chain. A policy is a distribution system that sends bodies and absences (the father's chair, the child's understanding of justice, community trust) to various scales. 
+
+This operates via structural anatomy, matching patterns across domains without shared vocabulary:
+- A housing segregation policy and a school zoning rule share the same structural operation of exclusion, justification, and generational reproduction.
+- The scapegoat mechanism driving a wrongful conviction is structurally identical to a housing eviction, a school expulsion, or a corporate purge.
+
+### The Narrative Recommendation Engine and Bodies of Evidence
+
+The narrative engine treats books, films, series, and historical accounts not as consumption objects or keyword-matched genres, but as bodies of evidence whose internal anatomy matches the policy or civic structure under study. 
+- *Fences* matches the anatomical operation of the Central Park Five's exile.
+- *Say Nothing* matches the exile of IRA fighters after the Troubles.
+- *The Wire* matches the institutional abandonment of the corner, the dock, the classroom, and the newspaper.
+- *Beasts of No Nation* matches the child soldier to the exiled citizen.
+- A Japanese corporate ronin narrative shares the anatomy of an individual exiled by a collective that demands silence as the price of belonging.
+
+### The Input System, Loop-Closing, and Library Intelligence
+
+The platform accepts any narrative in any medium—books, films, series, podcasts, court transcripts, city council recordings, oral histories, letters, diaries, news articles, legal briefs—and reads them for structural form rather than summarized content. 
+
+The loop-closing engine traces the rhythm and period of feedback loops: whether a wound at the family level feeds institutional dysfunction or vice versa, and the time lag between law passage and individual disappearance. By mapping these dynamics, the diagnostic system identifies leverage points—typically one scale below the visible problem—where a small change can dissolve the structure holding the wound in place.
+
+The saved library accumulates institutional memory, recognizing when new patterns mirror past decompositions while noting structural gaps in the library (such as untracked corporate restructurings, Syrian family migrations, or religious community disownments) to push the inquiry further.
+
+### The Visual Interface and the New Organ of Perception
+
+The visual interface is a living, navigable cartography of civic structures as fractal, recursive loops across scales. It allows a user to enter a policy, trace its ascent to mythic legacy trauma and its descent into a specific family or neighborhood, and map structural matches across domains and continents. 
+
+Ultimately, this platform functions as a new organ of perception—a capacity for a civilization to read its own shadow at every scale simultaneously, turning the abstract question of policy impact into an answerable, structural inquiry.
 
 ## Full conversation
 
