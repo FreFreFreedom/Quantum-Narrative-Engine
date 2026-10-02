@@ -2,7 +2,8 @@
 // an answer gets, besides Wiktionary's plain entry, a reading of what it means IN THIS
 // SENTENCE and in this conversation, written for him — plain words, English his second
 // language. One cheap call on the free lane, cached per conversation and word.
-import { generateText } from './ai/text.js';
+import { generateText, generateTextDirect } from './ai/text.js';
+import * as router from './ai/router.js';
 import { getConvo, listMessages } from './conversations.js';
 import { STOPWORDS } from '../lib/stopwords.js';
 import { mindBlock } from './mind.js';
@@ -37,6 +38,33 @@ function messageText(convoId, messageId) {
   const m = listMessages(convoId).find((x) => x.id === messageId);
   return m ? String(m.text || '').slice(0, MAX_ANSWER) : '';
 }
+// A click wants its answer at once (his ask, 2026-10-02): only the part of the answer
+// around the sentence goes along — a smaller prompt is a faster one, and fits the
+// fast lanes' per-minute token ceiling.
+const AROUND = 2400;
+function answerAround(answer, sentence) {
+  if (answer.length <= AROUND) return answer;
+  const at = sentence ? answer.indexOf(sentence.slice(0, 60)) : -1;
+  const mid = at < 0 ? 0 : at;
+  const from = Math.max(0, Math.min(mid - AROUND / 2, answer.length - AROUND));
+  return answer.slice(from, from + AROUND);
+}
+// The fastest lanes first, each given a few seconds: a lane that is slow or spent today
+// is passed over at once instead of holding the popup for half a minute. The feature's
+// own chain is the last resort, so a lookup still answers when all three are out.
+const FAST_LANES = [
+  { provider: 'groq', model: 'openai/gpt-oss-120b', ms: 5000 },
+  { provider: 'cerebras', model: 'gpt-oss-120b', ms: 5000 },
+  { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', ms: 7000 },
+];
+async function quickText(prompt) {
+  for (const l of FAST_LANES) {
+    if (router.isExhausted(l.provider, l.model)) continue;
+    const out = await generateTextDirect({ prompt, provider: l.provider, model: l.model, maxTokens: 600, label: 'room:define', timeoutMs: l.ms }).catch(() => null);
+    if (out && out.text) return out;
+  }
+  return generateText({ prompt, feature: 'quick', label: 'room:define', maxTokens: 600, timeoutMs: 20_000 });
+}
 
 const PROMPT = `You are a dictionary that knows where the reader is. He is reading an answer in a
 long conversation and selected ONE word. Write, for him, what that word means as it is used
@@ -63,8 +91,9 @@ nothing after them. Do not begin by repeating the passage, and do not begin with
 // when a letter is itself an acronym, that one spelled out too; then the plain reading.
 const ACRONYM_PROMPT = `You are a dictionary that knows where the reader is. He is reading an answer in a
 long conversation and selected an ACRONYM. Give what its letters stand for, as it is used in
-THIS sentence (pick the one meaning that fits here). If one of its letters is itself an
-acronym, spell that one out too, in brackets right after it. Then write ONE sentence of plain
+THIS sentence (pick the one meaning that fits here). Only when a letter stands for ANOTHER
+acronym, spell that inner acronym out in brackets right after it — VHDL is "VHSIC [Very
+High Speed Integrated Circuit] Hardware Description Language". Never put brackets after an ordinary word. Then write ONE sentence of plain
 English, about 15 words — never more than 20 — saying what that thing is or does, as it matters
 here. English is his second language. Do not begin the sentence with the acronym.
 Answer with JSON only, no markdown fence: {"expansion":"…","text":"…"}`;
@@ -83,16 +112,12 @@ async function lookupAcronym(convoId, { raw, sentence, messageId }) {
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 600);
   const title = String(convo.title || '').slice(0, 200);
-  const answer = messageText(convoId, messageId);
-  const out = await generateText({
-    prompt: `${ACRONYM_PROMPT}\n\n=== THE ACRONYM ===\n${raw}\n\n=== THE SENTENCE ===\n${sent || '(not given)'}`
+  const answer = answerAround(messageText(convoId, messageId), sent);
+  const out = await quickText(
+    `${ACRONYM_PROMPT}\n\n=== THE ACRONYM ===\n${raw}\n\n=== THE SENTENCE ===\n${sent || '(not given)'}`
       + (answer ? `\n\n=== THE WHOLE ANSWER IT STANDS IN ===\n${answer}` : '')
       + (title ? `\n\n=== THE CONVERSATION ===\n"${title}"` : ''),
-    feature: 'quick',
-    label: 'room:define',
-    maxTokens: 600,
-    timeoutMs: 30_000,
-  });
+  );
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
   let parsed = null;
   try { parsed = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { return { error: 'unreadable' }; }
@@ -127,19 +152,15 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 600);
   const recap = String(convo.recap || '').slice(0, 1200);
   const title = String(convo.title || '').slice(0, 200);
-  const mind = mindBlock(sent + ' ' + title).slice(0, 1500);
-  const answer = messageText(convoId, messageId);
-  const out = await generateText({
-    prompt: `${PROMPT}\n\n=== THE WORD ===\n${w}\n\n=== THE SENTENCE ===\n${sent || '(not given)'}`
+  const mind = mindBlock(sent + " " + title).slice(0, 600);
+  const answer = answerAround(messageText(convoId, messageId), sent);
+  const out = await quickText(
+    `${PROMPT}\n\n=== THE WORD ===\n${w}\n\n=== THE SENTENCE ===\n${sent || '(not given)'}`
       + (answer ? `\n\n=== THE WHOLE ANSWER IT STANDS IN ===\n${answer}` : '')
       + (title ? `\n\n=== THE CONVERSATION ===\n"${title}"` : '')
       + (recap ? `\n${recap}` : '')
       + (mind ? `\n\n=== THE READER ===\n${mind}` : ''),
-    feature: 'quick',
-    label: 'room:define',
-    maxTokens: 600,
-    timeoutMs: 30_000,
-  });
+  );
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
   const text = firstSentence(out.text);
   if (text.split(/\s+/).length < 8) return { error: 'too_short' };
@@ -158,17 +179,13 @@ async function lookupPhrase(convoId, { key, shown, mode, sentence, messageId }) 
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 900);
   const title = String(convo.title || '').slice(0, 200);
-  const answer = messageText(convoId, messageId);
-  const out = await generateText({
-    prompt: `${mode === 'phrase' ? PHRASE_PROMPT : PASSAGE_PROMPT}\n\n=== WHAT HE SELECTED ===\n${shown}`
+  const answer = answerAround(messageText(convoId, messageId), sent);
+  const out = await quickText(
+    `${mode === 'phrase' ? PHRASE_PROMPT : PASSAGE_PROMPT}\n\n=== WHAT HE SELECTED ===\n${shown}`
       + (mode === 'phrase' && sent ? `\n\n=== THE SENTENCE ===\n${sent}` : '')
       + (answer ? `\n\n=== THE WHOLE ANSWER IT STANDS IN ===\n${answer}` : '')
       + (title ? `\n\n=== THE CONVERSATION ===\n"${title}"` : ''),
-    feature: 'quick',
-    label: 'room:define',
-    maxTokens: 600,
-    timeoutMs: 30_000,
-  });
+  );
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
   const text = firstSentences(out.text, mode === 'phrase' ? 1 : 2);
   if (text.split(/\s+/).length < 6) return { error: 'too_short' };
