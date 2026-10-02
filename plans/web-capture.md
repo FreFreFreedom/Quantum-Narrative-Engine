@@ -1,6 +1,6 @@
 # Web capture — keep a line or an image from any page
 
-**Status: IN PROGRESS** — 2026-10-02. Phase 1 (capture) only. Antoine's call: build the
+**Status: PHASE 1 SHIPPED** — 2026-10-02 (commit b3ad337). Phase 1 (capture) only. Antoine's call: build the
 capture alone, live with it a week, then grow the side panel around it.
 
 ## Why
