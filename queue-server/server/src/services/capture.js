@@ -11,6 +11,7 @@ import { generateText } from './ai/text.js';
 import { whoHeIsBlock } from './ai/voice.js';
 import { broadcastAll } from '../realtime.js';
 import { recallFacts, listFacts } from './mind.js';
+import { KEPT_SIDE_ONLY_SQL } from './pairSql.js';
 import { listIdeas, createIdea } from './workIdeas.js';
 import { createOpenConvo, attachFile, sendMessage, getConvo } from './conversations.js';
 
@@ -213,12 +214,31 @@ export function latestInstruments() {
   }
   return null;
 }
+// Side talks stay out of the Room's memory on purpose (a tangent is not a standing
+// fact), but a tangent is often exactly where a tool idea shows up. So the
+// recommender reads the latest ones directly — read for this, never filed.
+function recentSideTalks(n = 8) {
+  try {
+    const talks = db.prepare(`SELECT id, title FROM convos WHERE subject_type='side' AND deleted_at IS NULL
+                               ORDER BY updated_at DESC LIMIT ?`).all(n);
+    return talks.map((t) => {
+      const msgs = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat'
+                                 AND role IN ('user','assistant') AND ${KEPT_SIDE_ONLY_SQL} ORDER BY created_at`).all(t.id);
+      const his = msgs.filter((m) => m.role === 'user').map((m) => m.text).join(' / ');
+      const last = [...msgs].reverse().find((m) => m.role === 'assistant')?.text || '';
+      if (!his) return '';
+      return `- "${cut(t.title, 80)}": he said ${cut(his, 500)}${last ? ` — the answer: ${cut(last, 300)}` : ''}`;
+    }).filter(Boolean).join('\n');
+  } catch (err) { return ''; }
+}
+
 export async function suggestInstruments() {
   const vision = listFacts({ kind: 'vision' }).slice(0, 25).map((f) => `- ${f.text}${f.detail ? ' — ' + cut(f.detail, 300) : ''}`).join('\n');
   const projects = listFacts({ kind: 'project' }).slice(0, 15).map((f) => `- ${f.text}`).join('\n');
   const seeds = listIdeas().slice(0, 30).map((i) => `- ${i.title}${i.summary ? ' — ' + cut(i.summary, 200) : ''}`).join('\n');
   const kept = webPassages(25).map((p) => `- "${cut(p.text, 300)}" — ${p.source_title || siteOf(p.source_url)}`).join('\n');
   const pile = latestReading().reading?.text || '';
+  const sides = recentSideTalks();
 
   const material = [
     vision && `=== THE VISION, AS THE ROOM HAS UNDERSTOOD IT ===\n${vision}`,
@@ -226,6 +246,7 @@ export async function suggestInstruments() {
     seeds && `=== HIS SEEDS (ideas kept to build) ===\n${seeds}`,
     kept && `=== LINES HE KEPT FROM THE WEB LATELY ===\n${kept}`,
     pile && `=== WHAT THOSE LINES ADD UP TO ===\n${pile}`,
+    sides && `=== HIS LATEST SIDE TALKS (tangents, where tool ideas often start) ===\n${sides}`,
     `=== EXTENSIONS HE ALREADY HAS ===\n${HAS.map((h) => '- ' + h).join('\n')}`,
   ].filter(Boolean).join('\n\n');
 
