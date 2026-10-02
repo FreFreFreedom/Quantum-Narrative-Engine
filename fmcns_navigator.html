@@ -2575,6 +2575,8 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-cards--over { outline:2px dashed var(--c-ink); outline-offset:-2px; background:var(--c-bg-2); }
 /* A file dragged anywhere over the Room (his ask, 2026-09-24): one quiet veil over the
    whole window, a gold hairline frame and one word; dropped, it joins the message box. */
+#wsRoom.is-file-over.is-lib-over::after { display:none; }
+#wsRoom.is-lib-over [data-room-primary="library"] { color:var(--c-kept-echo, var(--c-accent)); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 70%, transparent); border-radius:8px; }
 #wsRoom.is-file-over::after { content:'Drop to attach'; position:absolute; inset:8px; z-index:60; pointer-events:none;
   display:flex; align-items:center; justify-content:center; border:1px dashed var(--c-kept-rule, var(--c-accent)); border-radius:18px;
   background:color-mix(in srgb, var(--c-bg) 72%, transparent); font:500 13px 'Cinzel', var(--font-read); letter-spacing:.3em; text-transform:uppercase;
@@ -19673,13 +19675,25 @@ if (roomDropZone && roomFileInput) {
   // it is read into the Library, never attached to the message box.
   const hasFiles = (ev) => !!(ev.dataTransfer && Array.from(ev.dataTransfer.types || []).includes('Files'))
     && !(ev.target && ev.target.closest && ev.target.closest('#roomInterests'));
-  const clear = () => { depth = 0; ws.classList.remove('is-file-over'); };
+  // The Library tab takes screenshots too: let go over it and they are read into the Library.
+  const libTab = (ev) => ev.target && ev.target.closest && ev.target.closest('[data-room-primary="library"]');
+  const clear = () => { depth = 0; ws.classList.remove('is-file-over', 'is-lib-over'); };
   ws.addEventListener('dragenter', (ev) => { if (!hasFiles(ev)) return; ev.preventDefault(); depth++; ws.classList.add('is-file-over'); }, true);
-  ws.addEventListener('dragover', (ev) => { if (!hasFiles(ev)) return; ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'copy'; }, true);
+  ws.addEventListener('dragover', (ev) => { if (!hasFiles(ev)) return; ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'copy'; ws.classList.toggle('is-lib-over', !!libTab(ev)); }, true);
   ws.addEventListener('dragleave', (ev) => { if (!hasFiles(ev)) return; depth = Math.max(0, depth - 1); if (!depth) ws.classList.remove('is-file-over'); }, true);
   ws.addEventListener('drop', (ev) => {
     if (!hasFiles(ev)) return;
-    ev.preventDefault(); ev.stopPropagation(); clear();
+    ev.preventDefault(); ev.stopPropagation();
+    const overLib = libTab(ev);
+    clear();
+    if (overLib) {
+      const shots = Array.from(ev.dataTransfer.files || []).filter((f) => roomFileKind(f) === 'image');
+      if (!shots.length) return;
+      if (!overLib.classList.contains('active')) overLib.click();
+      libSuggesting = false;
+      Promise.resolve(renderInterestLibrary()).then(() => libReadShots(shots, document.querySelector('#roomShelf .shelf-slot')));
+      return;
+    }
     // A drop over the side talk goes to the side talk, not the main chat.
     const side = ev.target && ev.target.closest && ev.target.closest('#roomSide') && document.getElementById('roomSideEmbed');
     const host = side || document.getElementById('roomConvo');
