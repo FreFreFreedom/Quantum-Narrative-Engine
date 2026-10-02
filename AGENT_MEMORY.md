@@ -28,6 +28,12 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-10-01 — A local server rewrites the checkout's notes folder.** Booting `queue-server`
+locally (any `DB_PATH`) runs `noteMirror.js`'s disk sync, which writes the local DB's notes
+into `queue-server/project-docs/notes/` and deletes every file the local DB lacks — the
+mass of `D` lines that keeps appearing in `git status`. Never commit them: restore with
+`git checkout -- queue-server/project-docs/notes/` after a local run.
+
 **2026-10-01 — Every Room conversation keeps its thinking, and the Room reads it when the
 subject comes back.** `services/convoThinking.js`: once a conversation or side talk has been
 quiet 15 minutes, a 5-minute sweep writes its thinking (the path it took, append-only, one
