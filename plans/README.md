@@ -1,5 +1,7 @@
 # Plan Backlog
 
+- [Web capture](web-capture.md) — **IN PROGRESS**, 2026-10-02. Select text or right-click an image on any page and it lands in QNE: text as a Passage (read automatically), images on the Library wall. Capture is dumb, reading is smart — no tags, no choices at capture time. Side panel, reading pass and recommender come later.
+
 - [Conversations keep their thinking](conversation-thinking-recall.md) — **DONE**, 2026-10-01. Every Room conversation and side talk is written down by itself when it goes quiet (its thinking, append-only, plus the full transcript); the Room reads an earlier conversation's thinking only when his message is clearly on the same subject; bring carries a side talk's thinking.
 
 - [Two models, side by side](two-models-side-by-side.md) — **IMPLEMENTED**, 2026-09-30. One question answered by two picked models at once, drawn as two independent-scrolling columns in the Room thread (layout H; no scroll lock, no added structure). One answer is kept and only the kept one carries into later context.

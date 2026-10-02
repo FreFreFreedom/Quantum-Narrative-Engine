@@ -3237,7 +3237,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   border-radius:0 8px 8px 0; padding:12px 15px 10px; }
 .pass-chip { width:26px; aspect-ratio:2/3; border-radius:3px; background:var(--c-surface-3,var(--c-surface-2)) center/cover no-repeat;
   border:1px solid var(--c-border-2); display:block; font-size:0; flex:none; }
-.pass-chip.is-convo, .pass-chip.is-loose, .pass-chip.is-blank { opacity:.55; }
+.pass-chip.is-convo, .pass-chip.is-loose, .pass-chip.is-blank, .pass-chip.is-web { opacity:.55; }
+.pass-weblink { color:inherit; text-decoration:none; }
+.pass-weblink:hover b { text-decoration:underline; text-underline-offset:2px; }
 .pass-main { min-width:0; }
 .pass-line { display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:0;
   font-family:var(--room-font); color:var(--c-ink-2); font-size:var(--room-size); line-height:1.6; }
@@ -15450,6 +15452,13 @@ async function loadRoomPassageWorld() {
 // notebook is: a jacket and a name, then the lines kept under it. A line taken
 // from a conversation files under that conversation's own title.
 function passSourceOf(p) {
+  // A line highlighted on a web page files under that page (plans/web-capture.md).
+  if (p.source_url) {
+    let site = '';
+    try { site = new URL(p.source_url).hostname.replace(/^www\./, ''); } catch (e) { /* keep it blank */ }
+    const title = String(p.source_title || '').trim() || site || 'A web page';
+    return { key: 'web:' + p.source_url, title, kind: 'web', url: p.source_url, site };
+  }
   const book = String(p.source_title || '').trim();
   if (book) return { key: 'book:' + book, title: book, kind: 'book' };
   const t = (roomThreads || []).find((x) => x.id === p.convo_id);
@@ -15510,9 +15519,12 @@ function renderRoomPassages() {
       ? roomMediaArtMarkup({ kind: 'book', title: g.title, artwork: shelfCoverFor(g.title) }, 'pass-chip')
       : '<span class="pass-chip is-' + g.kind + '" aria-hidden="true"></span>';
     const n = g.items.length;
+    const name = g.kind === 'web'
+      ? '<a class="pass-weblink" href="' + qEscAttr(g.url) + '" target="_blank" rel="noopener noreferrer"><b>' + qEsc(g.title) + '</b></a>'
+      : '<b>' + qEsc(g.title) + '</b>';
     return '<div class="pass-group">'
       + '<div class="pass-grouphead">' + art
-      +   '<div><b>' + qEsc(g.title) + '</b><small>' + n + (n === 1 ? ' line kept' : ' lines kept') + '</small></div>'
+      +   '<div>' + name + '<small>' + (g.site ? qEsc(g.site) + ' · ' : '') + n + (n === 1 ? ' line kept' : ' lines kept') + '</small></div>'
       + '</div>'
       + g.items.map(one).join('')
       + '</div>';

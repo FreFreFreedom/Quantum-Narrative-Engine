@@ -13,7 +13,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { openDb, DB_PATH } from './db/schema.js';
-import { requireAuth, issueToken } from './auth.js';
+import { requireAuth, issueToken, issueCaptureToken } from './auth.js';
 import { attachRealtime } from './realtime.js';
 import { queueRoutes } from './routes/queue.js';
 import { agentsRoutes } from './routes/agents.js';
@@ -314,6 +314,9 @@ const ALLOWED_ORIGINS = [
   'https://quantum-narrative-engine-production.up.railway.app',
   /^https?:\/\/localhost(:\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+  // The web-capture extension (plans/web-capture.md). CORS is not auth: its calls
+  // still need a token, and its token opens only the capture doors.
+  /^(chrome-)?extension:\/\/[a-z]+$/,
 ];
 app.use(cors({
   origin(origin, callback) {
@@ -358,6 +361,14 @@ app.post('/api/auth/login', loginLimiter, (req, res) => {
     return res.status(401).json({ error: 'invalid_password' });
   }
   res.json({ token: issueToken() });
+});
+
+// The capture extension trades a full session for its own narrow, long-lived key.
+app.post('/api/auth/capture-token', requireAuth, (req, res) => {
+  res.json({ token: issueCaptureToken() });
+});
+app.get('/api/auth/capture-check', requireAuth, (req, res) => {
+  res.json({ ok: true, scope: req.user?.scope || null });
 });
 
 // crypto.timingSafeEqual throws on unequal-length buffers, so compare a fixed-size

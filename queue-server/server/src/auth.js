@@ -14,6 +14,22 @@ export function issueToken() {
   return jwt.sign({ sub: 'antoine' }, JWT_SECRET, { expiresIn: '7d' });
 }
 
+// The web-capture extension's key (plans/web-capture.md). It lives in a browser for a
+// year, so it must not be a full session: it opens only the doors capture needs, and
+// every other route answers 403 to it. The WebSocket refuses it outright.
+export function issueCaptureToken() {
+  return jwt.sign({ sub: 'antoine', scope: 'capture' }, JWT_SECRET, { expiresIn: '365d' });
+}
+const CAPTURE_DOORS = [
+  ['POST', /^\/api\/passages\/?$/],
+  ['POST', /^\/api\/convos\/library\/interest-imports\/?$/],
+  ['GET', /^\/api\/auth\/capture-check\/?$/],
+];
+function captureMayPass(req) {
+  const path = String(req.originalUrl || '').split('?')[0];
+  return CAPTURE_DOORS.some(([method, re]) => req.method === method && re.test(path));
+}
+
 // Shared by requireAuth (HTTP) and realtime.js (WebSocket) so both auth paths
 // verify the same way — pinning algorithms is cheap defense-in-depth against a
 // signature-downgrade attack, even though only HS256 is ever used to sign.
@@ -25,10 +41,15 @@ export function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'missing_token' });
+  let user;
   try {
-    req.user = verifyToken(token);
-    next();
+    user = verifyToken(token);
   } catch {
-    res.status(401).json({ error: 'invalid_token' });
+    return res.status(401).json({ error: 'invalid_token' });
   }
+  if (user.scope && !(user.scope === 'capture' && captureMayPass(req))) {
+    return res.status(403).json({ error: 'token_scope' });
+  }
+  req.user = user;
+  next();
 }

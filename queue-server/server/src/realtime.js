@@ -18,7 +18,8 @@ export function attachRealtime(httpServer) {
       const url = new URL(req.url, 'http://internal');
       const token = url.searchParams.get('token');
       if (!token) return done(false, 401, 'missing_token');
-      verifyToken(token);
+      // A scoped token (the capture extension's) never reads the broadcast stream.
+      if (verifyToken(token).scope) return done(false, 403, 'token_scope');
       done(true);
     } catch {
       done(false, 401, 'invalid_token');

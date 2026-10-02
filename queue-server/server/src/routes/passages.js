@@ -18,6 +18,7 @@ export function passagesRoutes() {
       convoId: req.body?.convoId,
       messageId: req.body?.messageId,
       sourceTitle: req.body?.sourceTitle,
+      sourceUrl: req.body?.sourceUrl,
       createdBy: req.user?.id || 'antoine',
     });
     if (out.error) return res.status(out.error === 'empty' ? 400 : 500).json(out);
