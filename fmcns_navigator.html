@@ -19680,7 +19680,9 @@ if (roomDropZone && roomFileInput) {
   ws.addEventListener('drop', (ev) => {
     if (!hasFiles(ev)) return;
     ev.preventDefault(); ev.stopPropagation(); clear();
-    const host = document.getElementById('roomConvo');
+    // A drop over the side talk goes to the side talk, not the main chat.
+    const side = ev.target && ev.target.closest && ev.target.closest('#roomSide') && document.getElementById('roomSideEmbed');
+    const host = side || document.getElementById('roomConvo');
     const files = ev.dataTransfer.files;
     if (host && typeof host._addFiles === 'function' && files && files.length) host._addFiles(files);
   }, true);
