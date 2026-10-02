@@ -3802,6 +3802,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-define .head + .here { position:relative; padding-top:16px; }
 .se-define .head + .here::before { content:''; position:absolute; top:6px; left:0; width:26px; height:1px; background:var(--pop-gold); }
 .se-define .here p { margin:0; color:inherit; }
+.se-define .here p.full { margin-bottom:8px; font-style:italic; font-weight:500; }
 .se-define .plain { margin-top:10px; font-size:19px; font-style:italic; color:color-mix(in srgb, var(--c-on-solid) 78%, transparent); }
 .se-define .pos { font-family:'Cinzel', var(--font-read); font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:color-mix(in srgb, var(--c-on-solid) 65%, transparent); }
 :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .se-define .pos { color:#b8c1cf; }
@@ -31157,7 +31158,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }
     return box;
   }
+  // ICE, NGOs, AI: an acronym gets what its letters stand for, never Wiktionary's "ice".
+  function isAcronym(w){ return /^[A-Z][A-Z0-9&]{1,7}s?$/.test(w) && (w.match(/[A-Z]/g) || []).length >= 2; }
   function defineWord(word, pop){
+    if(isAcronym(word)){ var b = defineBox(pop); if(b) b.querySelector('.head .pos').textContent = 'acronym'; return; }
     var key = word.toLowerCase().replace(/[’']s$/, '');
     var paint = function(entry){
       if(!entry) return;
@@ -31229,9 +31233,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   function defineHere(e, word, sentence, pop, messageId){
     if(!e || !e.convoId) return;
-    var key = e.convoId + '|' + word.toLowerCase().replace(/[’']s$/, '').slice(0, 600);
+    var key = e.convoId + '|' + (isAcronym(word) ? 'acronym:' + word : word.toLowerCase().replace(/[’']s$/, '').slice(0, 600));
     var paint = function(text){
       if(!text) return;
+      var full = typeof text === 'object' ? text.expansion : '';
+      if(typeof text === 'object') text = text.text;
       var box = defineBox(pop); if(!box) return;
       var head = box.querySelector('.head');
       var ws = word.split(/\s+/);
@@ -31239,13 +31245,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       head.querySelector('.w').textContent = ws.length > 6 ? ws.slice(0, 6).join(' ') + '…' : word;
       head.hidden = ws.length > 8;
       var slot = box.querySelector('.here');
-      slot.innerHTML = '<p>' + qEsc(text) + '</p>';
+      slot.innerHTML = (full ? '<p class="full">' + qEsc(full) + '</p>' : '') + '<p>' + qEsc(text) + '</p>';
       slot.hidden = false;
       placeQuotePop();
     };
     if(key in defineHereCache){ paint(defineHereCache[key]); return; }
     apiWrite('/api/convos/' + e.convoId + '/define', 'POST', { word: word, sentence: sentence, messageId: messageId || null })
-      .then(function(d){ var t = d && d.text ? d.text : ''; defineHereCache[key] = t; paint(t); })
+      .then(function(d){ var t = d && d.text ? (d.expansion ? { text: d.text, expansion: d.expansion } : d.text) : ''; defineHereCache[key] = t; paint(t); })
       .catch(function(){});
   }
   function placeQuotePop(){
@@ -31374,7 +31380,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // word, a phrase, or a passage (then what it is really saying). The word
         // class from the dictionary only makes sense for a single word.
         var nWords = passage.split(' ').length;
-        if(/^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage)){
+        if(/^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage) || isAcronym(passage)){
           defineHere(e, passage, sentenceAround(range, passage), quotePop, msgId);
           defineWord(passage, quotePop);
         } else if(nWords >= 2 && nWords <= 150 && /[A-Za-z]/.test(passage)){

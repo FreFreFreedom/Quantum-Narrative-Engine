@@ -15,6 +15,8 @@ export function bindWordLookup(database) {
     text TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (convo_id, word)
   )`);
+  // An acronym keeps what its letters stand for beside the reading.
+  try { db.exec("ALTER TABLE word_lookups ADD COLUMN expansion TEXT NOT NULL DEFAULT ''"); } catch { /* already there */ }
   // One glossary per answer, made once, so a click on any of its words is instant.
   db.exec(`CREATE TABLE IF NOT EXISTS message_glossaries (
     message_id TEXT PRIMARY KEY, convo_id TEXT NOT NULL, json TEXT NOT NULL,
@@ -57,6 +59,50 @@ a long conversation and selected a PASSAGE. Say plainly what it is really saying
 under the words, unpacked, not repeated. Plain English — it is his second language. No list, no heading, no markdown. One or two short sentences, at most 45 words in all, and
 nothing after them. Do not begin by repeating the passage, and do not begin with "This passage".`;
 
+// An acronym (his ask, 2026-10-02): ICE, NGOs, AI — what the letters stand for, and
+// when a letter is itself an acronym, that one spelled out too; then the plain reading.
+const ACRONYM_PROMPT = `You are a dictionary that knows where the reader is. He is reading an answer in a
+long conversation and selected an ACRONYM. Give what its letters stand for, as it is used in
+THIS sentence (pick the one meaning that fits here). If one of its letters is itself an
+acronym, spell that one out too, in brackets right after it. Then write ONE sentence of plain
+English, about 15 words — never more than 20 — saying what that thing is or does, as it matters
+here. English is his second language. Do not begin the sentence with the acronym.
+Answer with JSON only, no markdown fence: {"expansion":"…","text":"…"}`;
+export function isAcronym(raw) {
+  const t = String(raw || '').trim();
+  return /^[A-Z][A-Z0-9&]{1,7}s?$/.test(t) && (t.match(/[A-Z]/g) || []).length >= 2;
+}
+
+async function lookupAcronym(convoId, { raw, sentence, messageId }) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const key = 'acronym:' + raw;
+  if (db) {
+    const hit = db.prepare('SELECT text, expansion FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, key);
+    if (hit && hit.expansion) return { ok: true, text: hit.text, expansion: hit.expansion, cached: true };
+  }
+  const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 600);
+  const title = String(convo.title || '').slice(0, 200);
+  const answer = messageText(convoId, messageId);
+  const out = await generateText({
+    prompt: `${ACRONYM_PROMPT}\n\n=== THE ACRONYM ===\n${raw}\n\n=== THE SENTENCE ===\n${sent || '(not given)'}`
+      + (answer ? `\n\n=== THE WHOLE ANSWER IT STANDS IN ===\n${answer}` : '')
+      + (title ? `\n\n=== THE CONVERSATION ===\n"${title}"` : ''),
+    feature: 'quick',
+    label: 'room:define',
+    maxTokens: 600,
+    timeoutMs: 30_000,
+  });
+  if (out.error || !out.text) return { error: out.error || 'generation_failed' };
+  let parsed = null;
+  try { parsed = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { return { error: 'unreadable' }; }
+  const expansion = String(parsed?.expansion || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  const text = firstSentence(parsed?.text);
+  if (!expansion || text.split(/\s+/).length < 6) return { error: 'too_short' };
+  if (db) db.prepare('INSERT OR REPLACE INTO word_lookups (convo_id, word, sentence, text, expansion) VALUES (?,?,?,?,?)').run(convoId, key, sent, text, expansion);
+  return { ok: true, text, expansion };
+}
+
 function firstSentences(raw, n) {
   const t = String(raw || '').replace(/\s+/g, ' ').trim();
   const parts = t.match(/[^.!?]+[.!?]+["”’)]*/g) || [t];
@@ -67,6 +113,7 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
   const raw = String(word || '').replace(/\s+/g, ' ').trim();
   const count = raw ? raw.split(' ').length : 0;
   const mode = count <= 1 ? 'word' : count <= 8 ? 'phrase' : 'passage';
+  if (mode === 'word' && isAcronym(raw)) return lookupAcronym(convoId, { raw, sentence, messageId });
   const w = mode === 'word' ? raw.toLowerCase().replace(/[’']s$/, '') : raw.slice(0, 600).toLowerCase();
   if (!w) return { error: 'not_a_word' };
   if (mode === 'word' && (w.length > 40 || !/^[a-z][a-z'’-]*$/i.test(w))) return { error: 'not_a_word' };
