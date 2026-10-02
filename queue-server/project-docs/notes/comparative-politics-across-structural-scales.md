@@ -1,6 +1,6 @@
 # Note: Comparative politics across structural scales
 
-Saved: 2026-10-02T09:11:54.401Z
+Saved: 2026-10-02T09:21:54.296Z
 
 ## What this conversation understood
 
@@ -752,6 +752,46 @@ Nicole Gonzalez Van Cleve’s work is engaged as a deep anatomical diagram of li
 The system's sustaining myth of neutrality and fairness depends on projecting its own violence onto an expendable other. The book exposes an internal anatomy where power reproduces itself by analogy: courtroom rituals (such as prosecutors mimicking defense jokes, judges coaching newcomers to stand farthest from the accused, clerks mocking families) are an immune response. The system cannot admit its created wound, so it produces a "comedy of cruelty" that makes pain seem natural, inevitable, and funny.
 
 For the platform, *Crook County* provides a template of a system keeping itself whole by exporting psychic and ethical contradictions. The loops appear at every scale—psyche, family, street, nation—where survival is won by exiling or laughing off the price of admission. The book's insider-observer ethnographic method acts as an anatomical cut, serving as a manual for finding structural fault lines where a system guards its wound and ensures it is never metabolized.
+
+### Comparative Politics Across Structural Scales (Continued) — New Entries
+
+Antoine opens by asking to explore the nature of civic ethnologies and requesting the best books for it, noting that while he loves *Crook County*, the entities do not have to be the same type as the Cook County Courthouse—any civic entities will do. 
+
+The response establishes civic ethnology as a rare lens that treats a civic structure not as an institutional design or machine, but as a living creature with interior rituals, shadow dynamics, sacrificial logic, and recursive ways of metabolizing risk, stigma, and power. *Crook County* is highlighted for reading the court as an organism that maintains coherence by banishing, laughing off, or rationalizing its inner violence. A canon is laid out across categories:
+- **Court as Organism:** *Random Family* by Adrian Nicole LeBlanc (lived ethnography of the Bronx as an entity seen from within its broken parts); *Punished: Policing the Lives of Black and Latino Boys* by Victor Rios (policing as a field teaching internal exile at the level of psyche and street).
+- **Policing, Welfare, and Street Institutions:** *On the Run: Fugitive Life in an American City* by Alice Goffman (interiority of surveillance and the wanted as fugitives); *Evicted: Poverty and Profit in the American City* by Matthew Desmond (the interior engine of American cities metabolizing instability and resilience through eviction).
+- **Welfare, Social Work, Care Systems:** *In the Shadow of the Poorhouse* by Michael B. Katz (genealogies of exclusion and civic care as an interface between belonging and banishment); *Pathologies of Power* by Paul Farmer (medicine as civic ethnology tracking who is healed or left to languish).
+- **State Violence and Control:** *Golden Gulag* by Ruth Wilson Gilmore (prisons as organs designed to metabolize surplus pain and risk); *Are Prisons Obsolete?* by Angela Y. Davis (carceral logics and ritual amnesia).
+- **Global and Ritual Perspectives:** *Death Without Weeping* by Nancy Scheper-Hughes (mothering and civic abandonment in Brazil as a system metabolizing the ungrievable); *Weapons of the Weak* by James C. Scott (how peasant life in Malaysia metabolizes domination through invisible tiny subversions, jokes, and silences).
+- **Historical and City-Level Structures:** *High-Rise Stories* ed. Audrey Petty; *There Are No Children Here* by Alex Kotlowitz; *Ghetto: The Invention of a Place, the History of an Idea* by Mitchell Duneier.
+
+Antoine pushes the line further, noting it could be interesting to explore structural analogies across civic entities, sensing why and asking to explore it together.
+
+The response seizes on this, identifying the unbuilt instrument: a discipline as exact as immunology or topology aimed at cities, courts, parishes, schools, and states. Every civic entity resolves instability through a ritual of exclusion, a routine of care, or a game of forgetting. The resonant pattern repeats up and down the rungs like a melody—the court’s jokes metabolize guilt, housing projects harden rituals of belonging and exile, the school carves up innocence and stigma, the city banishes peril, the nation reframes crisis as threat. The engine would ask: "Where is the skeleton the same? What is the signature move of this system’s immune response?" It would function as an analogical nervous system of every civic structure, lighting up the same fracture as it appears across psyche, street, shelter, and nation.
+
+Antoine asks for a short answer: what is the meaning of ethology, and what is civic ethnology?
+
+The response defines ethology as the study of how living beings behave—watching a creature from the inside out to see how it acts, adapts, forms habits, rituals, defenses, and social bonds as a real field. Civic ethnology is this method turned toward living civic structures (a city, court, welfare bureau, prison, neighborhood), seeing them as living beings with habits, defenses, wounds, sacred routines, immune responses, blind spots, and rituals of care and exclusion. It studies how a system feels from inside, maintaining its self, boundaries, and what can be grieved or ignored.
+
+Antoine asks for the difference with civic ethnography and whether one encompasses the other, requesting a 50 to 100-word answer.
+
+The response defines ethology as the study of an entity’s patterned behaviors and ethnography as the method of deep, immersive observation aiming to see from the inside. Civic ethnology is the larger structural science mapping how civic "creatures" metabolize difference, ritualize exclusion, and rehearse belonging as living anatomies, while civic ethnography is one branch—vivid, ground-level documentation of this lifeworld. Ethnology encompasses, compares, and theorizes these anatomies across contexts and scales; ethnography is the lived scene, and ethnology is the pattern behind it.
+
+Antoine asks for a couple more books about civic ethnologies, and whether there is sci-fi or cyberpunk about future or near-future civic ethnologies.
+
+The response returns to deep-diving nonfiction field manuals:
+- *Death Without Weeping* by Nancy Scheper-Hughes
+- *Evicted* by Matthew Desmond
+- *On the Run* by Alice Goffman
+- *Random Family* by Adrian Nicole LeBlanc
+- *Golden Gulag* by Ruth Wilson Gilmore
+- *Weapons of the Weak* by James C. Scott
+
+For future or near-future civic ethnologies in fiction and cyberpunk/post-cyberpunk:
+- *Diaspora* by Greg Egan (consciousness, polity, and law as living topology; civics as evolving fields of self-organizing sentience running on mathematical transformation).
+- *The City & The City* by China Miéville (two cities occupying the same space, ritually refusing to see each other; a field of enforced perception and boundary-drawing in collective forgetting).
+- *Dhalgren* by Samuel R. Delany (city as consciousness, boundaryless but full of ritual and shadow).
+- *New York 2140* by Kim Stanley Robinson (detailed civic ethnography of future NYC where climate change and finance are new organs inside the city's mutated body).
 
 ## Full conversation
 
