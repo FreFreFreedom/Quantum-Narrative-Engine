@@ -1,6 +1,6 @@
 # Note: State Experiments in Constitutional Decision‑Making
 
-Saved: 2026-10-02T01:40:26.942Z
+Saved: 2026-10-02T01:45:34.377Z
 
 ## What this conversation understood
 
@@ -382,6 +382,12 @@ Antoine then asked for nonfiction works operating with this exact mechanics.
   * **The Warmth of Other Suns by Isabel Wilkerson:** Follows three people fleeing the American South during the Great Migration, detailing how parents carried the terror of Jim Crow into Northern kitchens, turning defensive postures into permanent domestic walls.
   * **Tally’s Corner by Elliot Liebow:** Documents how economic exclusion shapes marital breakdown and fatherhood among Black men on a D.C. street corner, showing a father’s withdrawal as the agonizing realization that he cannot provide the basic shelter the market demands.
   * **Invisible Man, Got the Whole World Watching by Mychal Denzel Smith:** Examines growing into Black manhood under police violence and institutional neglect, exploring how fathers teach young men to suppress vulnerability as defensive armor against a hostile society.
+
+### Later — 2026-09-21
+
+### State Experiments in Constitutional Decision‑Making
+
+Antoine opened a new line of inquiry by wondering if justice systems around the world should, as time passes, become increasingly capable of handling higher levels of crime complexity. He noted that crime is never just local or an independent event, suggesting that crime is an emergent phenomenon. Using emergence theory and "our fractal paradigm," Antoine questioned whether justice systems are slowly implementing an understanding that this complexity makes crime emerge—specifically recognizing how the environment molds the person who commits the crime—and invited an exploration of these ideas.
 
 ## Full conversation
 
