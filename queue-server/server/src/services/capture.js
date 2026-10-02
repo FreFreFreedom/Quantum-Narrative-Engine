@@ -186,11 +186,37 @@ export async function readPile() {
 // Read from the vision and the memory, not from his clicks — the question is what
 // he is reaching for that nothing on his screen can do yet.
 const HAS = ['QNE capture — highlights and images from any page into the Room', 'Amazon book → YouTube — a YouTube search beside each Amazon book tab', 'Orisha session bridge — supplier portal sessions into his work ERP'];
-const INSTRUMENTS_PROMPT = `He builds his own browser extensions with Claude, in minutes, and loads them in Edge. Propose browser extensions that would serve what he is building: some that already exist and are worth installing, some that do not exist yet and that only he would build. Six to eight in all.
+// Rewritten 2026-10-02 after his verdict on round one ("insignificant"): an ad
+// blocker and five metaphors with "antigen" in them. The model had no idea what an
+// extension can actually do, what the app holds that no other tool has, or which
+// sites he lives on — so it wrote moods. This prompt gives it all three, and a bar.
+const INSTRUMENTS_PROMPT = `He builds his own browser extensions with Claude, in minutes, and loads them in Edge. Propose six browser extensions that would change how he works, week after week.
 
-For one that exists, give its real name, and only one you are certain exists. For one to build, give it a name of your own. For each, one text of 25 to 30 words — never more: what it does and why it matters for him.
+WHAT AN EXTENSION CAN REALLY DO — build from these, not from moods:
+- read every word, image and link of the page on screen, and rewrite or annotate it in place
+- read the subtitles of a film or video playing on YouTube, Netflix or any player, line by line with the time
+- see every open tab at once, and the order he moved through them
+- capture the visible frame of a video, or the whole page as an image
+- open a side panel that stays beside any page
+- call his own app, which holds what no other tool has:
+  - his corpus of about 200 films in 12 clusters, plus characters and countries, each placed on the same axes and linked by echoes across scales (cell, person, family, institution, nation, cosmos)
+  - the Room: his conversations with AI about all of it, and the facts it remembers about him and the vision
+  - his Library of books and films, his kept passages, his seeds, his dictionary of terms
+  - a lookup of what the app already holds about any page's subject
 
-Return ONLY JSON: {"items":[{"name":"","exists":true,"text":""}]}`;
+THE BAR — every one must pass all four:
+- it wakes on a page he really visits (the sites he keeps lines from are listed below) or in a moment he really has
+- it does something concrete there that he cannot do today: name what it reads, what it shows or writes, and where
+- the strongest ones use his app's own material, so only he could have this
+- after a month of use, his thinking or his corpus is richer in a way he can point to
+
+Never: ad blockers, focus timers, tab managers, dark modes, generic AI summarizers, "detectors" of manipulation or tone, or any name built from a metaphor (no "immune", "antigen", "lens", "guard", "protocol"). Say the mechanism plainly.
+
+At most one that already exists, and only if it touches films, subtitles, books or reading, and you are certain of its real name. The rest are his to build: give each a plain name that says what it does.
+
+For each, one text of 25 to 30 words — never more: where it wakes, what it does there, what he gains.
+
+Return ONLY JSON: {"items":[{"name":"","exists":false,"text":""}]}`;
 function jsonObject(text) {
   const s = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
   try { return JSON.parse(s); } catch {}
@@ -199,8 +225,8 @@ function jsonObject(text) {
   try { return JSON.parse(s.slice(a, b + 1)); } catch { return null; }
 }
 // Short on purpose — his ask, 2026-10-02: 25 to 30 words an instrument, no more.
-// Rounds written before that (what / why / scene, far longer) are not shown.
-const INSTRUMENTS_V = 2;
+// Rounds written before that, or before the 2026-10-02 rewrite, are not shown.
+const INSTRUMENTS_V = 3;
 const MAX_WORDS = 34;
 function words(text, n) {
   const w = String(text || '').trim().split(/\s+/).filter(Boolean);
@@ -239,6 +265,15 @@ export async function suggestInstruments() {
   const kept = webPassages(25).map((p) => `- "${cut(p.text, 300)}" — ${p.source_title || siteOf(p.source_url)}`).join('\n');
   const pile = latestReading().reading?.text || '';
   const sides = recentSideTalks();
+  const sites = (() => {
+    try {
+      const counts = {};
+      for (const r of db.prepare(`SELECT source_url FROM saved_passages WHERE deleted_at IS NULL AND source_url IS NOT NULL ORDER BY created_at DESC LIMIT 400`).all()) {
+        const h = siteOf(r.source_url); if (h) counts[h] = (counts[h] || 0) + 1;
+      }
+      return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([h, n]) => `- ${h} (${n})`).join('\n');
+    } catch { return ''; }
+  })();
 
   const material = [
     vision && `=== THE VISION, AS THE ROOM HAS UNDERSTOOD IT ===\n${vision}`,
@@ -247,6 +282,7 @@ export async function suggestInstruments() {
     kept && `=== LINES HE KEPT FROM THE WEB LATELY ===\n${kept}`,
     pile && `=== WHAT THOSE LINES ADD UP TO ===\n${pile}`,
     sides && `=== HIS LATEST SIDE TALKS (tangents, where tool ideas often start) ===\n${sides}`,
+    sites && `=== SITES HE KEEPS LINES FROM, MOST FIRST ===\n${sites}`,
     `=== EXTENSIONS HE ALREADY HAS ===\n${HAS.map((h) => '- ' + h).join('\n')}`,
   ].filter(Boolean).join('\n\n');
 
