@@ -1,7 +1,7 @@
 # Web capture — keep a line or an image from any page
 
-**Status: PHASE 1 SHIPPED** — 2026-10-02 (commit b3ad337). Phase 1 (capture) only. Antoine's call: build the
-capture alone, live with it a week, then grow the side panel around it.
+**Status: SHIPPED** — 2026-10-02. Phase 1 (capture, commit b3ad337), then phase 2 the same
+day at Antoine's request (side panel, stack, reading of the pile, instruments).
 
 ## Why
 
@@ -55,11 +55,38 @@ tag, no choice.** Meaning is made later, by the app, with the vision in hand.
    - Feedback is the toolbar badge only (✓ / ✕), no popup, no notification.
    - Options page: the password once → login → capture token → password discarded.
 
-## Not in this phase (deliberately)
+## Phase 2 — built 2026-10-02
 
-- Side panel and the running stack.
-- The reading pass over the whole pile, and the recommender that reads the vision,
-  memories and seeds to propose instruments that don't exist yet.
+1. **Side panel** (`qne-capture/sidepanel.*`; the toolbar button opens it). Two tabs,
+   Page | Stack, remembered.
+   - *Page*: what QNE already holds about the page on screen — Library works and corpus
+     entities named in its title or first heading, Mind facts about the strongest one,
+     lines kept from this page (or a count from the site), earlier panel talks about it.
+     `GET /api/capture/page`, rows only, never a model call. Nothing found is one grey line.
+   - *Ask*: a question about the page becomes a **real Room conversation**
+     (`createOpenConvo` + the page attached as a file + `sendMessage`), so it continues in
+     the app. `POST /api/capture/ask`; the capture key may only continue conversations
+     the panel began (`capture_threads`). "Open in the Room" uses the app's new
+     `#room=<id>` link, which pre-sets the mode, view and thread the app restores at boot.
+2. **Running stack**: right-click *Hold in the stack* (selection, image, link or page) or
+   *Hold this page* in the panel. Held in the browser, nothing decided. *Send as one seed*
+   → `POST /api/capture/stack` → one raw seed (`work_ideas`) listing everything and where
+   it came from.
+3. **Reading of the pile**: Library · Passages shows, above the shelf, the newest reading
+   of what was kept from the web — what keeps coming back, what it reaches for together.
+   Asked for, never automatic; cached in `capture_readings`. `POST /api/capture/reading`.
+4. **Instruments**: World look gets a switch, *This talk | Instruments*. Instruments are
+   browser extensions proposed from the Mind's vision and project facts, his seeds, the
+   lines kept from the web and the pile reading — some that exist (*Find it* opens an
+   Edge Add-ons search, never an invented link), some to build (*Keep as a seed*). Asked
+   for, cached in `capture_instruments`. `POST /api/capture/instruments`.
+
+Capture key doors now: `POST /api/passages`, `POST /api/convos/library/interest-imports`,
+`GET /api/auth/capture-check`, `GET /api/capture/page`, `POST /api/capture/ask`,
+`POST /api/capture/stack`. The readings and instruments are the app's only.
+
+## Not built (deliberately)
+
 - Video capture — Antoine dropped it (2026-10-02).
 - Recording navigation / dwell time / return visits.
 

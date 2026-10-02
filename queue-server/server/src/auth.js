@@ -15,8 +15,9 @@ export function issueToken() {
 }
 
 // The web-capture extension's key (plans/web-capture.md). It lives in a browser for a
-// year, so it must not be a full session: it opens only the doors capture needs, and
-// every other route answers 403 to it. The WebSocket refuses it outright.
+// year, so it must not be a full session: it opens only the doors capture and the
+// side panel need, and every other route answers 403 to it. The WebSocket refuses it
+// outright.
 export function issueCaptureToken() {
   return jwt.sign({ sub: 'antoine', scope: 'capture' }, JWT_SECRET, { expiresIn: '365d' });
 }
@@ -24,6 +25,10 @@ const CAPTURE_DOORS = [
   ['POST', /^\/api\/passages\/?$/],
   ['POST', /^\/api\/convos\/library\/interest-imports\/?$/],
   ['GET', /^\/api\/auth\/capture-check\/?$/],
+  // The side panel: what QNE holds about the page, a question about it, the stack.
+  ['GET', /^\/api\/capture\/page\/?$/],
+  ['POST', /^\/api\/capture\/ask\/?$/],
+  ['POST', /^\/api\/capture\/stack\/?$/],
 ];
 function captureMayPass(req) {
   const path = String(req.originalUrl || '').split('?')[0];

@@ -65,6 +65,8 @@ import { passagesRoutes } from './routes/passages.js';
 import { bindPassagesDb } from './services/passages.js';
 import { bindDocExtractionDb } from './services/docExtraction.js';
 import { mindRoutes } from './routes/mind.js';
+import { captureRoutes } from './routes/capture.js';
+import { bindCaptureDb } from './services/capture.js';
 import { bindChaptersDb } from './services/chapters.js';
 import { bindPromptHelperDb } from './services/promptHelper.js';
 import { bindConvoLogDb } from './services/convoLog.js';
@@ -142,6 +144,7 @@ bindBoardDb(db);
 bindImageSourcesDb(db);
 try { resumeAllStrayRequests(); } catch (e) { console.error('[room] analogy request resume failed:', e?.message || e); }
 bindPassagesDb(db);
+bindCaptureDb(db);
 bindDocExtractionDb(db);
 bindMindDb(db);
 bindConnections(db);
@@ -440,6 +443,7 @@ app.use('/api/convos', requireAuth, conversationsRoutes());
 app.use('/api/recommendations', requireAuth, recommendationRoutes());
 app.use('/api/passages', requireAuth, passagesRoutes());
 app.use('/api/mind', requireAuth, mindRoutes());
+app.use('/api/capture', requireAuth, captureRoutes());
 app.use('/api/connections', requireAuth, connectionsRoutes());
 app.use('/api/dashboard', requireAuth, dashboardRoutes());
 

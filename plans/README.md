@@ -1,6 +1,6 @@
 # Plan Backlog
 
-- [Web capture](web-capture.md) — **PHASE 1 SHIPPED**, 2026-10-02. Select text or right-click an image on any page and it lands in QNE: text as a Passage (read automatically), images on the Library wall. Capture is dumb, reading is smart — no tags, no choices at capture time. Side panel, reading pass and recommender come later.
+- [Web capture](web-capture.md) — **SHIPPED**, 2026-10-02. Select text or right-click an image on any page and it lands in QNE (Passages / Library wall). A side panel beside every page shows what QNE holds about it, takes questions as real Room conversations, and holds a running stack sent as one seed. Passages gets a reading of the pile; World look gets Instruments — extensions to install or build, read from the vision. Capture is dumb, reading is smart.
 
 - [Conversations keep their thinking](conversation-thinking-recall.md) — **DONE**, 2026-10-01. Every Room conversation and side talk is written down by itself when it goes quiet (its thinking, append-only, plus the full transcript); the Room reads an earlier conversation's thinking only when his message is clearly on the same subject; bring carries a side talk's thinking.
 

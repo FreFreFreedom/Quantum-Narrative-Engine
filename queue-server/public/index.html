@@ -3239,6 +3239,18 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   border:1px solid var(--c-border-2); display:block; font-size:0; flex:none; }
 .pass-chip.is-convo, .pass-chip.is-loose, .pass-chip.is-blank, .pass-chip.is-web { opacity:.55; }
 .pass-weblink { color:inherit; text-decoration:none; }
+.pass-pile { margin:0 0 16px; padding:0 0 12px; border-bottom:1px solid var(--c-border); }
+.instr-seg { margin:0 0 12px; align-self:flex-start; display:inline-flex; }
+.instr { padding:11px 0; border-bottom:1px solid var(--c-border); }
+.instr:last-of-type { border-bottom:0; }
+.instr-head { display:flex; align-items:baseline; gap:8px; }
+.instr-head b { font-size:var(--fs-base); font-weight:600; }
+.instr-head small { color:var(--c-ink-5); font-size:var(--fs-xs); }
+.instr-what { margin-top:3px; font-size:var(--fs-sm); line-height:1.5; color:var(--c-ink-2); }
+.instr-why, .instr-scene { margin-top:5px; font-size:var(--fs-sm); line-height:1.5; color:var(--c-ink-4); }
+.instr-scene { font-style:italic; }
+.instr .pass-acts { margin-top:7px; }
+.instr-again { margin-top:10px; }
 .pass-weblink:hover b { text-decoration:underline; text-underline-offset:2px; }
 .pass-main { min-width:0; }
 .pass-line { display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:0;
@@ -3253,9 +3265,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .pass-world-row { font-size:var(--fs-xs); line-height:1.45; color:var(--c-ink-4); margin-bottom:5px; }
 .pass-world-row b { display:block; color:var(--c-ink-3); font-weight:600; }
 .pass-acts { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-top:10px; }
-.pass-acts button { background:none; border:0; border-radius:0; padding:0; min-width:0;
-  font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5); }
-.pass-acts button:hover { color:var(--c-cast,var(--c-accent)); background:none; border:0; }
+.pass-acts button, .pass-acts a { background:none; border:0; border-radius:0; padding:0; min-width:0;
+  font-size:var(--fs-sm); letter-spacing:.02em; color:var(--c-ink-5); text-decoration:none; }
+.pass-acts button:hover, .pass-acts a:hover { color:var(--c-cast,var(--c-accent)); background:none; border:0; }
 /* Scoped to the Room only — .wl-title elsewhere (suggestion/seed cards) keeps its
    app-wide single-line ellipsis; this column is narrow enough that truncating a
    long idea title there cuts off nearly all of it. */
@@ -8654,6 +8666,20 @@ document.addEventListener('change', (ev) => {
   const val = sel.value;
   if (id && val) apiWrite(`/api/travaux/prompts/${id}`, 'PATCH', { account: val }).catch(() => {});
 });
+
+// A link from the capture side panel opens one Room conversation: #room=<id>
+// (plans/web-capture.md). It only pre-sets what the app already restores at boot —
+// the mode, the Room view and the selected thread — then drops the hash.
+(function () {
+  const m = /^#room=([0-9a-f-]{36})$/i.exec(location.hash || '');
+  if (!m) return;
+  try {
+    localStorage.setItem('fmcns_mode', 'core');
+    localStorage.setItem('fmcns_core_view', 'room');
+    localStorage.setItem('fmcns_room_thread', m[1]);
+  } catch (e) {}
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+})();
 
 // One queue, one database. This used to swing to http://localhost:3000 whenever
 // the file was opened from disk — which silently showed a DIFFERENT queue (the
@@ -15318,6 +15344,7 @@ function initRoom() {
     else if (act === 'attach') window.studioReferenceAttach({type:'passage',id}).then(out=>{btn.textContent='Attached to '+out.destination;}).catch(err=>{btn.title=err.message;btn.textContent=err.message;});
     else if (act === 'drop') roomDropPassage(id);
     else if (act === 'read') roomReadPassage(id);
+    else if (act === 'pile') roomReadPile();
     else if (act === 'world') roomPassageWorldLook(id);
   };
   // The Room's shared memory (plan "room-shared-memory").
@@ -15384,10 +15411,36 @@ async function loadRoom() {
   loadRoomPassages().then(loadRoomPassageWorld);
 }
 
+// The reading of everything kept from the web (plans/web-capture.md). Asked for,
+// never automatic; the newest one stays above the shelf until he asks again.
+let capPile = { reading: null, fresh: 0, busy: false, err: '' };
+async function loadCapPile() {
+  try { const out = await api('/api/capture/reading'); capPile.reading = out.reading || null; capPile.fresh = out.fresh || 0; }
+  catch (e) { /* the shelf draws without it */ }
+}
+async function roomReadPile() {
+  if (capPile.busy) return;
+  capPile.busy = true; capPile.err = ''; renderRoomPassages();
+  try { const out = await apiWrite('/api/capture/reading', 'POST', {}); capPile.reading = out.reading || capPile.reading; capPile.fresh = out.fresh || 0; }
+  catch (e) { capPile.err = e.message || 'That did not work. Try again.'; }
+  capPile.busy = false; renderRoomPassages();
+}
+function capPileHtml() {
+  if (!roomPassages.some((p) => p.source_url)) return '';
+  if (capPile.busy) return '<div class="pass-pile">' + waitHtml('working', 'Reading what you kept', 'div', 'pass-reading is-waiting') + '</div>';
+  const r = capPile.reading;
+  const label = r ? (capPile.fresh ? 'Read again · ' + capPile.fresh + ' new' : 'Read again') : 'Read what you kept from the web';
+  return '<div class="pass-pile">'
+    + (r ? '<div class="pass-reading">' + qEsc(r.text) + '</div>' : '')
+    + '<div class="pass-acts"><button type="button" class="se-cmd" data-pass-act="pile">' + label + '</button></div>'
+    + (capPile.err ? '<div class="pass-reading is-waiting">' + qEsc(capPile.err) + '</div>' : '')
+    + '</div>';
+}
+
 async function loadRoomPassages() {
   loadShelfCovers();
   try {
-    const out = await api('/api/passages');
+    const [out] = await Promise.all([api('/api/passages'), loadCapPile()]);
     roomPassages = out.passages || [];
   } catch (e) { roomPassages = []; }
   renderRoomPassages();
@@ -15514,7 +15567,7 @@ function renderRoomPassages() {
       + '</div></div>';
   };
 
-  host.innerHTML = groups.map((g) => {
+  host.innerHTML = capPileHtml() + groups.map((g) => {
     const art = g.kind === 'book'
       ? roomMediaArtMarkup({ kind: 'book', title: g.title, artwork: shelfCoverFor(g.title) }, 'pass-chip')
       : '<span class="pass-chip is-' + g.kind + '" aria-hidden="true"></span>';
@@ -17719,12 +17772,71 @@ async function roomIdeasStart() {
   loadRoomIdeas();
 }
 
+// ── Instruments (plans/web-capture.md, phase 2) ─────────────────────────────
+// Browser extensions proposed from the vision, the Mind, his seeds and what he
+// kept from the web — some to install, some only he would build. Global, not per
+// thread, so it sits beside this thread's world-look as its own side of one switch,
+// and the switch remembers which side he left it on.
+const INSTR_SIDE_KEY = 'qne-worldlook-side';
+let instrSide = 'talk';
+try { instrSide = localStorage.getItem(INSTR_SIDE_KEY) === 'instruments' ? 'instruments' : 'talk'; } catch (e) {}
+let instrRound = null, instrAsked = false, instrLoaded = false, instrBusy = false, instrErr = '';
+const instrKept = new Set();
+async function loadInstruments() {
+  try { instrRound = (await api('/api/capture/instruments')).round || null; } catch (e) { /* keep what we had */ }
+  instrLoaded = true;
+  renderRoomIdeas();
+}
+async function instrSuggest() {
+  if (instrBusy) return;
+  instrBusy = true; instrErr = ''; renderRoomIdeas();
+  try { const out = await apiWrite('/api/capture/instruments', 'POST', {}); instrRound = out.round || instrRound; instrKept.clear(); }
+  catch (e) { instrErr = e.message || 'That did not work. Try again.'; }
+  instrBusy = false; renderRoomIdeas();
+}
+async function instrSeed(index, btn) {
+  if (!instrRound) return;
+  btn.disabled = true;
+  try { await apiWrite('/api/capture/instruments/' + encodeURIComponent(instrRound.id) + '/' + index + '/seed', 'POST', {}); instrKept.add(instrRound.id + ':' + index); renderRoomIdeas(); }
+  catch (e) { btn.disabled = false; btn.title = e.message; }
+}
+function instrumentsHtml() {
+  if (instrBusy) return waitHtml('searching', 'Reading the vision for instruments — a minute or two', 'div', 'tv-empty');
+  const err = instrErr ? '<div class="room-note">' + qEsc(instrErr) + '</div>' : '';
+  if (!instrRound || !instrRound.items.length) {
+    if (!instrLoaded) return '';
+    return '<div class="tv-empty"><button type="button" class="ctrlbtn" data-instr="suggest"><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>Suggest instruments</button></div>' + err;
+  }
+  const cards = instrRound.items.map((x, i) => {
+    const kept = instrKept.has(instrRound.id + ':' + i);
+    const act = x.exists
+      ? '<a class="se-cmd" href="https://microsoftedge.microsoft.com/addons/search/' + encodeURIComponent(x.name) + '" target="_blank" rel="noopener noreferrer">Find it</a>'
+      : '<button type="button" class="se-cmd" data-instr="seed" data-instr-i="' + i + '"' + (kept ? ' disabled' : '') + '>' + (kept ? 'Kept as a seed' : 'Keep as a seed') + '</button>';
+    return '<div class="instr' + (x.exists ? ' is-exists' : '') + '">'
+      + '<div class="instr-head"><b>' + qEsc(x.name) + '</b><small>' + (x.exists ? 'exists' : 'to build') + '</small></div>'
+      + '<div class="instr-what">' + qEsc(x.what) + '</div>'
+      + (x.why ? '<div class="instr-why">' + qEsc(x.why) + '</div>' : '')
+      + (x.scene ? '<div class="instr-scene">' + qEsc(x.scene) + '</div>' : '')
+      + '<div class="pass-acts">' + act + '</div>'
+      + '</div>';
+  }).join('');
+  return cards + err + '<div class="instr-again"><button type="button" class="se-cmd" data-instr="suggest">Suggest again</button></div>';
+}
+function worldSideSwitch() {
+  return '<div class="q-place-seg instr-seg" role="tablist">'
+    + '<button type="button" data-instr-side="talk" class="' + (instrSide === 'talk' ? 'active' : '') + '">This talk</button>'
+    + '<button type="button" data-instr-side="instruments" class="' + (instrSide === 'instruments' ? 'active' : '') + '">Instruments' + (instrRound && instrRound.items.length ? ' <span class="room-tabcount">' + instrRound.items.length + '</span>' : '') + '</button>'
+    + '</div>';
+}
+
 function renderRoomIdeas() {
   const host = document.getElementById('roomIdeasHost');
   if (!host) return;
   setRoomTabCount('roomIdeaCount', roomIdeasReports.length);
-  if (!roomSel) { host.innerHTML = ''; return; }
-  const reach = connSuggestHtml();
+  if (!instrAsked) { instrAsked = true; loadInstruments(); }
+  if (instrSide === 'instruments') { host.innerHTML = worldSideSwitch() + instrumentsHtml(); return; }
+  if (!roomSel) { host.innerHTML = worldSideSwitch(); return; }
+  const reach = worldSideSwitch() + connSuggestHtml();
   if (roomIdeasRunning) {
     host.innerHTML = reach + `<div class="tv-empty">🔭 Looking at the world — real projects, hidden products, bold ideas. This takes a minute or two.</div>`;
     return;
@@ -17830,6 +17942,20 @@ function roomIdeaRoundHtml(report, idx) {
 // renderRoomIdeas() redraws the host from scratch on every state change, so a
 // per-row handler would only ever survive one render.
 function roomIdeasHostClick(ev) {
+  const side = ev.target.closest('[data-instr-side]');
+  if (side) {
+    instrSide = side.getAttribute('data-instr-side');
+    try { localStorage.setItem(INSTR_SIDE_KEY, instrSide); } catch (e) {}
+    renderRoomIdeas();
+    return;
+  }
+  const instr = ev.target.closest('[data-instr]');
+  if (instr) {
+    const what = instr.getAttribute('data-instr');
+    if (what === 'suggest') instrSuggest();
+    else if (what === 'seed') instrSeed(Number(instr.getAttribute('data-instr-i')), instr);
+    return;
+  }
   const connRow = ev.target.closest('.conn-suggest');
   if (connRow) {
     const source = connRow.getAttribute('data-conn');
@@ -20565,6 +20691,7 @@ const WS_ROUTES = {
   'recommendations:updated': () => refreshVisibleRecommendations(),
   'analogies:updated': () => { if (coreOpen() && coreView === 'room' && typeof loadRoomAnalogies === 'function') loadRoomAnalogies(); },
   'passages:updated': () => { if (coreOpen() && coreView === 'room' && typeof window.loadRoomPassages === 'function') window.loadRoomPassages(); },
+  'capture:updated': () => { if (coreOpen() && coreView === 'room') { if (typeof window.loadRoomPassages === 'function') window.loadRoomPassages(); if (typeof loadInstruments === 'function') loadInstruments(); } },
   'board:updated': (e) => { if (coreOpen() && coreView === 'room' && roomSel === e.convoId && typeof loadRoomBoard === 'function') loadRoomBoard(); },
   'mind:updated': () => { if (coreOpen() && coreView === 'arch' && typeof archTab !== 'undefined' && archTab === 'mind' && typeof loadMind === 'function') loadMind(true); },
   'worldlook:updated': () => { if (typeof window.refreshWorldPanels === 'function') window.refreshWorldPanels(); },
