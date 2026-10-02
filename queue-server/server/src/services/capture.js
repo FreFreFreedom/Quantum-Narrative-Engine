@@ -192,29 +192,29 @@ const HAS = ['QNE capture — highlights and images from any page into the Room'
 // sites he lives on — so it wrote moods. This prompt gives it all three, and a bar.
 const INSTRUMENTS_PROMPT = `He builds his own browser extensions with Claude, in minutes, and loads them in Edge. Propose six browser extensions that would change how he works, week after week.
 
-WHAT AN EXTENSION CAN REALLY DO — build from these, not from moods:
-- read every word, image and link of the page on screen, and rewrite or annotate it in place
-- read the subtitles of a film or video playing on YouTube, Netflix or any player, line by line with the time
-- see every open tab at once, and the order he moved through them
-- capture the visible frame of a video, or the whole page as an image
-- open a side panel that stays beside any page
-- call his own app, which holds what no other tool has:
-  - his corpus of about 200 films in 12 clusters, plus characters and countries, each placed on the same axes and linked by echoes across scales (cell, person, family, institution, nation, cosmos)
-  - the Room: his conversations with AI about all of it, and the facts it remembers about him and the vision
-  - his Library of books and films, his kept passages, his seeds, his dictionary of terms
+WHAT AN EXTENSION CAN REALLY DO — build from these, not from moods. It can act, not only show:
+- on the page: rewrite, reorder, hide or insert text and images; click buttons, fill forms, scroll, follow links on its own
+- on video: read the subtitles line by line with the time, pause, jump to a moment, slow down, loop a scene, grab the frame, record the sound
+- across tabs: see them all, open, close, group, reorder them, carry content from one tab into another
+- run on its own while he does something else: walk a list of pages, read each, and bring the result back
+- download, save, export
+- read AND WRITE his own app, which holds what no other tool has:
+  - his corpus of about 200 films in 12 clusters, plus characters and countries, each placed on the same axes and linked by echoes across scales (cell, person, family, institution, nation, cosmos) — an extension can add a film, a character, a scene, a placement on an axis, a new echo
+  - the Room: his conversations with AI, and the facts it remembers about him and the vision — an extension can open a conversation, add to one, ask a question with the page attached
+  - his Library of books and films, his kept passages, his seeds, his dictionary of terms — an extension can add to all of them
   - a lookup of what the app already holds about any page's subject
 
 THE BAR — every one must pass all four:
+- it does something, not only shows something: it changes the page, drives the video or the tabs, or writes into his app. An overlay that only displays is not enough
 - it wakes on a page he really visits (the sites he keeps lines from are listed below) or in a moment he really has
-- it does something concrete there that he cannot do today: name what it reads, what it shows or writes, and where
 - the strongest ones use his app's own material, so only he could have this
-- after a month of use, his thinking or his corpus is richer in a way he can point to
+- after a month of use, his corpus or his thinking holds something new he can point to — new entities, new echoes, new scenes, new questions
 
-Never: ad blockers, focus timers, tab managers, dark modes, generic AI summarizers, "detectors" of manipulation or tone, or any name built from a metaphor (no "immune", "antigen", "lens", "guard", "protocol"). Say the mechanism plainly.
+Never: ad blockers, focus timers, tab managers, dark modes, generic AI summarizers, "detectors" of manipulation or tone, or any name built from a metaphor (no "immune", "antigen", "lens", "guard", "protocol", "decoder"). Say the mechanism plainly.
 
-At most one that already exists, and only if it touches films, subtitles, books or reading, and you are certain of its real name. The rest are his to build: give each a plain name that says what it does.
+At most one that already exists, and only if it can act on films, subtitles, books or reading, and you are certain of its real name. The rest are his to build: give each a plain name that says what it does.
 
-For each, one text of 25 to 30 words — never more: where it wakes, what it does there, what he gains.
+For each, one text of 25 to 30 words — never more: where it wakes, what it does or changes there, what he gains.
 
 Return ONLY JSON: {"items":[{"name":"","exists":false,"text":""}]}`;
 function jsonObject(text) {
@@ -226,7 +226,7 @@ function jsonObject(text) {
 }
 // Short on purpose — his ask, 2026-10-02: 25 to 30 words an instrument, no more.
 // Rounds written before that, or before the 2026-10-02 rewrite, are not shown.
-const INSTRUMENTS_V = 3;
+const INSTRUMENTS_V = 4;
 const MAX_WORDS = 34;
 function words(text, n) {
   const w = String(text || '').trim().split(/\s+/).filter(Boolean);
