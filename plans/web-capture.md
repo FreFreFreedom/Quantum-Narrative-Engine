@@ -49,7 +49,7 @@ tag, no choice.** Meaning is made later, by the app, with the vision in hand.
 5. **Extension** `~/edge-extensions/qne-capture/` (outside the repo, loaded unpacked in
    Edge, like `amazon-author-youtube`):
    - Right-click a selection → *Keep in QNE*. Right-click an image → *Send to the
-     Library*. Shortcut for the selection: Alt+Shift+K.
+     Library*. Shortcut for the selection: Command+Shift+2.
    - Images are fetched by the extension and posted as a data URL; anything not PNG,
      JPEG, WebP or GIF is redrawn to PNG first.
    - Feedback is the toolbar badge only (✓ / ✕), no popup, no notification.
