@@ -19061,10 +19061,12 @@ function libCard(it) {
     + (facts && facts.rating ? '<span class="lib-badge">' + facts.rating.toFixed(1) + '</span>' : '')
     + (libIsScreen(it.raw) ? '<span class="lib-kind">' + (it.raw.kind === 'series' ? '◗' : '▶') + '</span>' : '')
     + '<span class="shelf-name">' + qEsc(libShortTitle(it.title)) + (it.raw && it.raw.episode ? ' · ' + qEsc(it.raw.episode) : '') + (it.creator ? ' · ' + qEsc(it.creator) : '') + '</span></button>'
+    // Every card on the wall can go with one click on its corner, without opening
+    // it first (his ask, 2026-10-02) — not only the whole books on the shelf.
     + (it.type === 'shelf'
       ? '<i class="shelf-dot" title="The whole book is here"></i>'
         + '<button type="button" data-drop title="Take it off the shelf" aria-label="Take it off the shelf">✕</button>'
-      : '')
+      : '<button type="button" data-drop title="Remove" aria-label="Remove">✕</button>')
     + '</div>';
 }
 
@@ -19383,11 +19385,18 @@ async function renderInterestLibrary(opts) {
       if (libOpen && libOpen.type === 'shelf' && !libMedia) { /* handled by the card's ✕ below */ }
     }
     host.querySelectorAll('.shelf-card [data-drop]').forEach((b) => {
-      const card = b.closest('[data-lib]'); const [, id] = card.dataset.lib.split(/:(.+)/);
+      const card = b.closest('[data-lib]'); const [type, id] = card.dataset.lib.split(/:(.+)/);
+      const it = wall.find((x) => x.type === type && x.id === id);
       b.onclick = async (ev) => {
         ev.stopPropagation();
-        try { await apiWrite('/api/convos/books/' + encodeURIComponent(id), 'DELETE', {}); libOpen = null; shelfOpen = ''; renderInterestLibrary(); }
-        catch (err) { slot.textContent = err.message; }
+        b.disabled = true;
+        try {
+          if (type === 'shelf') await apiWrite('/api/convos/books/' + encodeURIComponent(id), 'DELETE', {});
+          else await apiWrite('/api/recommendations/library/remove', 'POST', { type: it.raw.type, id: it.raw.id });
+          if (libOpen && libOpen.type === type && libOpen.id === id) { libOpen = null; shelfOpen = ''; }
+          renderInterestLibrary();
+        }
+        catch (err) { b.disabled = false; b.title = err.message; }
       };
     });
 
