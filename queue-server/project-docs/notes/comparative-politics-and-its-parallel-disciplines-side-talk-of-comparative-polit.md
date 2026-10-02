@@ -1,6 +1,33 @@
 # Note: Comparative politics and its parallel disciplines — side talk of Comparative politics across structural scales
 
-Saved: 2026-10-01T23:20:27.391Z
+Saved: 2026-10-02T10:37:53.496Z
+
+## What this conversation understood
+
+## Horizontal exploration and parallel disciplines
+
+Antoine opened by asking for a concise list of fields akin to comparative politics, noting it was of interest and relevant for his paradigm, specifically for the "horizontal exploration."
+
+The AI answered that comparative politics stays trapped inside the boundaries of nation-states, comparing parliaments and election laws as machines built by the same blueprints. For a paradigm requiring horizontal exploration across living systems, five fields were introduced:
+
+*   **Comparative historical sociology:** Refuses to treat a society as a static current event. It looks across centuries to ask how entities like peasant villages, colonial peripheries, and industrial empires forged social contracts out of crisis and labor pressure. It maps the divergence of paths—why one state builds a bureaucratic cage while another builds a patronage network—providing the method for seeing how a structural pattern migrates across time while changing its clothes.
+*   **Legal pluralism:** Steps outside the courtroom to look at what governs people when official law is absent or predatory. It studies how neighborhoods, gangs, immigrant enclaves, and merchant guilds generate binding rules, dispute rituals, and enforcement mechanisms underneath the state's nose. It shows that whenever an official legal system fails, another rises with its own codes of evidence, punishment, and amnesty.
+*   **Urban ethnology:** Treats the city as a living ecosystem where human groups form specialized organs. Rooted in deep field observation, it tracks adaptation to spatial containment, marked territories, and street economies functioning as circulatory systems when the official economy locks its doors. It shows how physical space and social trauma fold into each other to create living sub-cultures that behave like distinct species.
+*   **Historical institutionalism:** Asks how an organization or state becomes a prisoner of its past choices. It shows how emergency measures harden into permanent reflexes, surviving after the threat vanishes. An institution builds a routine to manage a vulnerability, which eventually blinds it to new dangers. It studies institutional memory and amnesia—how systems learn to forget founding wounds.
+*   **Structural anthropology:** Looks past surface differences to find deep generative rules governing human relation. It treats kinship, myth, and ritual as a rigid geometry of obligation, exchange, and taboo, mapping the grammar by which a group decides who belongs and who must be cast out as danger.
+
+The AI noted that none of these fields cross scales the way the engine demands, and none treat a narrative as an entity, but each provides a lens for horizontal exploration—a way to see that the court, the gang, the council estate, and the corporation play the same ancient game of boundary, wound, and defense.
+
+## Books of the fields
+
+Antoine asked for the best books of each field.
+
+The AI provided the texts and their functions:
+*   **Comparative historical sociology:** Barrington Moore’s *Social Origins of Dictatorship and Democracy*, tracing how labor shapes state power across centuries.
+*   **Legal pluralism:** Sally Falk Moore’s *Law as Process*, showing how unofficial rules govern where official states fail.
+*   **Urban ethnology:** Elijah Anderson’s *Code of the Street*, charting survival codes on neglected blocks.
+*   **Historical institutionalism:** Paul Pierson’s *Politics in Time*, mapping how past choices lock systems in place.
+*   **Structural anthropology:** Claude Lévi-Strauss’s *Structural Anthropology*, revealing the deep grammar beneath human myths.
 
 ## Full conversation
 
