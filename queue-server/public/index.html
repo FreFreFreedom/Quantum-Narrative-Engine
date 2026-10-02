@@ -31584,7 +31584,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       return { messageId: m.message_id, snippet: m.snippet, kind: 'saved', label: m.label || '', markId: m.id };
     }).sort(function(a, b){ return (order[a.messageId] || 0) - (order[b.messageId] || 0); });
     if(!chapters.length){
-      rail.hidden = true; rail.innerHTML = ''; log.onscroll = null;
+      rail.hidden = true; rail.innerHTML = ''; rail._html = ''; log.onscroll = null;
       var w0 = rail.closest('.se-wrap'); if(w0) w0.classList.remove('has-rail');
       return;
     }
@@ -31594,7 +31594,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var q = e.railQuery || '', typing = had && document.activeElement === had;
     var searching = !!(e.railSearch || q);
     rail.classList.toggle('is-searching', searching);
-    rail.innerHTML = '<div class="se-rail-head"><span>Kept \u00b7 ' + chapters.length + '</span>'
+    var railHtml = '<div class="se-rail-head"><span>Kept \u00b7 ' + chapters.length + '</span>'
       + '<button type="button" class="se-rail-findbtn" aria-label="Find in this conversation"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3.2 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>'
       + '<label class="se-rail-find"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5l3.2 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
       + '<input type="search" placeholder="Find in this conversation" aria-label="Find in this conversation" value="' + qEscAttr(q) + '"></label>'
@@ -31609,6 +31609,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         + '<b class="se-rail-drop" data-rail-drop="' + qEscAttr(c.markId) + '" aria-label="Forget this chapter">\u2715</b>'
         + '</button>';
     }).join('') + '</div>';
+    // Rebuilt only when it would read differently. While a passage is selected the
+    // thread repaints every 200ms, and rewriting the rail each time replayed the
+    // current chapter's grow-in — the last bar twitched while a definition was open
+    // (his ask, 2026-10-01). Same words: keep the nodes, their handlers, their state.
+    var railSame = rail._html === railHtml && rail._log === log;
+    if(!railSame){ rail.innerHTML = railHtml; rail._html = railHtml; rail._log = log; }
 
     // Sit beside the log, not beside the whole panel: the head and the composer are
     // not part of what the rail points into. The gutter class goes on the wrap so
@@ -31632,6 +31638,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }
     var wrap = rail.closest('.se-wrap');
     if(wrap) wrap.classList.add('has-rail');
+    if(railSame){
+      railHere(rail, log, chapters);
+      log.onscroll = function(){ railHere(rail, log, chapters); };
+      return;
+    }
 
     rail.querySelectorAll('[data-chapter]').forEach(function(b, i){
       b.onclick = function(ev){
