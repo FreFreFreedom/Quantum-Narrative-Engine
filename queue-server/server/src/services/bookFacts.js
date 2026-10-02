@@ -44,7 +44,7 @@ export function bindBookFacts(database) {
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
-const MATCHER = 8;
+const MATCHER = 9;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
@@ -123,6 +123,22 @@ function scoreCandidate(cand, fullTitle, who) {
 // the right size, so only their own URLs give them away.
 const DUD_COVER = /(no[-_]?cover|nocover|image[-_]?not[-_]?available|unjacketed)/i;
 
+// Google's "cover" for a book scanned out of a university library is the inside
+// title page: black type on white, no jacket. Snow Crash, Technics and Civilization
+// and Informing Statecraft all showed one (2026-10-02). Mostly-white pages compress
+// to almost nothing — under 3.5 KB at Google's thumbnail size, where a real jacket
+// is 8 to 12 — so the file's weight gives the page away without decoding it.
+async function googleCoverIsJacket(url) {
+  const base = String(url).replace(/&fife=[^&]*/, '');
+  return (await imageSize(base)) > 5000;
+}
+
+// The language a title is written in, as far as the title says: French when it
+// reads French, English otherwise. A Vietnamese "Atlas of AI" is the right book in
+// the wrong hands — its jacket is not the one he would recognise.
+const FRENCH = /\b(le|la|les|des|du|une|leurs|après|douce|chanson|enfants|et|pour|sur)\b|[éèêàùçœ]/i;
+const titleLang = (t) => (FRENCH.test(String(t || '')) ? 'fr' : 'en');
+
 async function getJson(url, ms = 8000) {
   try {
     const ctrl = new AbortController();
@@ -185,18 +201,22 @@ export async function lookupBook(title, creator) {
     for (const item of g?.items || []) {
       const v = item.volumeInfo || {};
       const full = [v.title, v.subtitle].filter(Boolean).join(': ');
+      if (v.language && v.language !== titleLang(title)) continue;
       const score = scoreCandidate({ title: full, authors: v.authors || [] }, title, who);
-      // Google's jacket art is the better one, so a tie goes to it.
       if (score > 0) cands.push({ score: score + 0.5, src: 'g', v, year: String(v.publishedDate || '').slice(0, 4) });
     }
     if (cands.some((c) => c.src === 'g')) break;
   }
 
-  // Apple Books: keyless, no daily quota, and sharp jacket art — the source that
-  // still answers when Google's anonymous quota is spent, which it often is.
-  if (!cands.some((c) => c.src === 'g' && c.v?.imageLinks)) {
+  // Apple Books: keyless, no daily quota, and the publisher's own jacket at 600
+  // pixels. Always asked, and its jacket is tried first for the cover: Google's
+  // image is often a scanned title page or a foreign edition (2026-10-02), while
+  // Google still gives the better blurb and the ISBN.
+  {
     for (const media of ['ebook', 'audiobook']) {
-      const a = await getJson('https://itunes.apple.com/search?limit=10&media=' + media + '&term=' + encodeURIComponent(main + (who ? ' ' + who : '')));
+      // A French title is looked for in the French store, where its own jacket is.
+      const store = titleLang(title) === 'fr' ? '&country=fr' : '';
+      const a = await getJson('https://itunes.apple.com/search?limit=10' + store + '&media=' + media + '&term=' + encodeURIComponent(main + (who ? ' ' + who : '')));
       for (const r of a?.results || []) {
         const name = r.trackName || r.collectionName || '';
         const score = scoreCandidate({ title: name, authors: [r.artistName || ''] }, title, who);
@@ -232,6 +252,10 @@ export async function lookupBook(title, creator) {
 
   cands.sort((a, b) => b.score - a.score);
   const out = { cover: '', blurb: '', year: '', isbn: '' };
+  // The best Apple match close to the top answers the cover before anything else.
+  const top = cands.length ? cands[0].score : 0;
+  const apple = cands.find((c) => c.src === 'apple' && c.score >= top - 3);
+  if (apple) out.cover = apple.art;
   for (const c of cands) {
     if (out.cover && out.blurb && out.isbn) break;
     if (!out.year && c.year) out.year = c.year;
@@ -250,7 +274,8 @@ export async function lookupBook(title, creator) {
       }
       const img = c.v.imageLinks?.thumbnail || c.v.imageLinks?.smallThumbnail || '';
       if (!out.cover && img && !DUD_COVER.test(img)) {
-        out.cover = img.replace(/^http:/, 'https:').replace(/&edge=curl/, '') + '&fife=w400';
+        const u = img.replace(/^http:/, 'https:').replace(/&edge=curl/, '');
+        if (await googleCoverIsJacket(u)) out.cover = u + '&fife=w400';
       }
       const d = String(c.v.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
       if (!out.blurb && d.length > 140) out.blurb = d.slice(0, 2000);
