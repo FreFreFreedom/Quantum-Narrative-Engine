@@ -3247,8 +3247,6 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .instr-head b { font-size:var(--fs-base); font-weight:600; }
 .instr-head small { color:var(--c-ink-5); font-size:var(--fs-xs); }
 .instr-what { margin-top:3px; font-size:var(--fs-sm); line-height:1.5; color:var(--c-ink-2); }
-.instr-why, .instr-scene { margin-top:5px; font-size:var(--fs-sm); line-height:1.5; color:var(--c-ink-4); }
-.instr-scene { font-style:italic; }
 .instr .pass-acts { margin-top:7px; }
 .instr-again { margin-top:10px; }
 .pass-weblink:hover b { text-decoration:underline; text-underline-offset:2px; }
@@ -17814,9 +17812,7 @@ function instrumentsHtml() {
       : '<button type="button" class="se-cmd" data-instr="seed" data-instr-i="' + i + '"' + (kept ? ' disabled' : '') + '>' + (kept ? 'Kept as a seed' : 'Keep as a seed') + '</button>';
     return '<div class="instr' + (x.exists ? ' is-exists' : '') + '">'
       + '<div class="instr-head"><b>' + qEsc(x.name) + '</b><small>' + (x.exists ? 'exists' : 'to build') + '</small></div>'
-      + '<div class="instr-what">' + qEsc(x.what) + '</div>'
-      + (x.why ? '<div class="instr-why">' + qEsc(x.why) + '</div>' : '')
-      + (x.scene ? '<div class="instr-scene">' + qEsc(x.scene) + '</div>' : '')
+      + '<div class="instr-what">' + qEsc(x.text || x.what) + '</div>'
       + '<div class="pass-acts">' + act + '</div>'
       + '</div>';
   }).join('');

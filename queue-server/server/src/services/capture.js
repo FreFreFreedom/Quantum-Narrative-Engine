@@ -187,9 +187,9 @@ export async function readPile() {
 const HAS = ['QNE capture — highlights and images from any page into the Room', 'Amazon book → YouTube — a YouTube search beside each Amazon book tab', 'Orisha session bridge — supplier portal sessions into his work ERP'];
 const INSTRUMENTS_PROMPT = `He builds his own browser extensions with Claude, in minutes, and loads them in Edge. Propose browser extensions that would serve what he is building: some that already exist and are worth installing, some that do not exist yet and that only he would build. Six to eight in all.
 
-For one that exists, give its real name, and only one you are certain exists. For one to build, give it a name of your own. For each: what it does, why it matters for him, and one short scene of it working in his day.
+For one that exists, give its real name, and only one you are certain exists. For one to build, give it a name of your own. For each, one text of 25 to 30 words — never more: what it does and why it matters for him.
 
-Return ONLY JSON: {"items":[{"name":"","exists":true,"what":"","why":"","scene":""}]}`;
+Return ONLY JSON: {"items":[{"name":"","exists":true,"text":""}]}`;
 function jsonObject(text) {
   const s = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
   try { return JSON.parse(s); } catch {}
@@ -197,9 +197,21 @@ function jsonObject(text) {
   if (a < 0 || b <= a) return null;
   try { return JSON.parse(s.slice(a, b + 1)); } catch { return null; }
 }
+// Short on purpose — his ask, 2026-10-02: 25 to 30 words an instrument, no more.
+// Rounds written before that (what / why / scene, far longer) are not shown.
+const INSTRUMENTS_V = 2;
+const MAX_WORDS = 34;
+function words(text, n) {
+  const w = String(text || '').trim().split(/\s+/).filter(Boolean);
+  return w.length <= n ? w.join(' ') : w.slice(0, n).join(' ').replace(/[,;:]$/, '') + '…';
+}
 export function latestInstruments() {
-  const row = db.prepare(`SELECT * FROM capture_instruments ORDER BY created_at DESC LIMIT 1`).get();
-  return row ? { id: row.id, items: JSON.parse(row.items_json || '[]'), created_at: row.created_at } : null;
+  const rows = db.prepare(`SELECT * FROM capture_instruments ORDER BY created_at DESC LIMIT 10`).all();
+  for (const row of rows) {
+    const items = JSON.parse(row.items_json || '[]');
+    if (items[0]?.v === INSTRUMENTS_V) return { id: row.id, items, created_at: row.created_at };
+  }
+  return null;
 }
 export async function suggestInstruments() {
   const vision = listFacts({ kind: 'vision' }).slice(0, 25).map((f) => `- ${f.text}${f.detail ? ' — ' + cut(f.detail, 300) : ''}`).join('\n');
@@ -229,12 +241,11 @@ export async function suggestInstruments() {
   if (out.error || !out.text) return { error: out.error || 'generation_failed', message: out.message };
   const parsed = jsonObject(out.text);
   const items = (parsed?.items || []).slice(0, 10).map((x) => ({
+    v: INSTRUMENTS_V,
     name: cut(x?.name, 120).trim(),
     exists: x?.exists === true,
-    what: cut(x?.what, 600).trim(),
-    why: cut(x?.why, 800).trim(),
-    scene: cut(x?.scene, 800).trim(),
-  })).filter((x) => x.name && x.what);
+    text: words(x?.text || x?.what, MAX_WORDS),
+  })).filter((x) => x.name && x.text);
   if (!items.length) return { error: 'unreadable', message: 'The answer could not be read. Try again.' };
   const id = randomUUID();
   db.prepare(`INSERT INTO capture_instruments (id, items_json) VALUES (?,?)`).run(id, JSON.stringify(items));
@@ -250,7 +261,7 @@ export function instrumentToSeed(roundId, index) {
   if (!item) return { error: 'not_found' };
   const idea = createIdea({
     title: `Extension: ${item.name}`,
-    notes: [item.what, item.why && `Why: ${item.why}`, item.scene && `In his day: ${item.scene}`].filter(Boolean).join('\n\n'),
+    notes: item.text || [item.what, item.why].filter(Boolean).join('\n\n'),
   });
   broadcastAll('ideas:updated', { ideaId: idea.id });
   return { ok: true, idea };

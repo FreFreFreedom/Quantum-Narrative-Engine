@@ -78,8 +78,9 @@ tag, no choice.** Meaning is made later, by the app, with the vision in hand.
 4. **Instruments**: World look gets a switch, *This talk | Instruments*. Instruments are
    browser extensions proposed from the Mind's vision and project facts, his seeds, the
    lines kept from the web and the pile reading — some that exist (*Find it* opens an
-   Edge Add-ons search, never an invented link), some to build (*Keep as a seed*). Asked
-   for, cached in `capture_instruments`. `POST /api/capture/instruments`.
+   Edge Add-ons search, never an invented link), some to build (*Keep as a seed*). Each is a
+   name and one text of 25–30 words, no more (his ask). Asked for, cached in
+   `capture_instruments`. `POST /api/capture/instruments`.
 
 Capture key doors now: `POST /api/passages`, `POST /api/convos/library/interest-imports`,
 `GET /api/auth/capture-check`, `GET /api/capture/page`, `POST /api/capture/ask`,
