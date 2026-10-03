@@ -13,7 +13,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { openDb, DB_PATH } from './db/schema.js';
-import { requireAuth, issueToken, issueCaptureToken } from './auth.js';
+import { requireAuth, issueToken } from './auth.js';
 import { attachRealtime } from './realtime.js';
 import { queueRoutes } from './routes/queue.js';
 import { agentsRoutes } from './routes/agents.js';
@@ -65,8 +65,6 @@ import { passagesRoutes } from './routes/passages.js';
 import { bindPassagesDb } from './services/passages.js';
 import { bindDocExtractionDb } from './services/docExtraction.js';
 import { mindRoutes } from './routes/mind.js';
-import { captureRoutes } from './routes/capture.js';
-import { bindCaptureDb } from './services/capture.js';
 import { bindChaptersDb } from './services/chapters.js';
 import { bindPromptHelperDb } from './services/promptHelper.js';
 import { bindConvoLogDb } from './services/convoLog.js';
@@ -144,7 +142,6 @@ bindBoardDb(db);
 bindImageSourcesDb(db);
 try { resumeAllStrayRequests(); } catch (e) { console.error('[room] analogy request resume failed:', e?.message || e); }
 bindPassagesDb(db);
-bindCaptureDb(db);
 bindDocExtractionDb(db);
 bindMindDb(db);
 bindConnections(db);
@@ -317,9 +314,6 @@ const ALLOWED_ORIGINS = [
   'https://quantum-narrative-engine-production.up.railway.app',
   /^https?:\/\/localhost(:\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
-  // The web-capture extension (plans/web-capture.md). CORS is not auth: its calls
-  // still need a token, and its token opens only the capture doors.
-  /^(chrome-)?extension:\/\/[a-z]+$/,
 ];
 app.use(cors({
   origin(origin, callback) {
@@ -364,14 +358,6 @@ app.post('/api/auth/login', loginLimiter, (req, res) => {
     return res.status(401).json({ error: 'invalid_password' });
   }
   res.json({ token: issueToken() });
-});
-
-// The capture extension trades a full session for its own narrow, long-lived key.
-app.post('/api/auth/capture-token', requireAuth, (req, res) => {
-  res.json({ token: issueCaptureToken() });
-});
-app.get('/api/auth/capture-check', requireAuth, (req, res) => {
-  res.json({ ok: true, scope: req.user?.scope || null });
 });
 
 // crypto.timingSafeEqual throws on unequal-length buffers, so compare a fixed-size
@@ -443,7 +429,6 @@ app.use('/api/convos', requireAuth, conversationsRoutes());
 app.use('/api/recommendations', requireAuth, recommendationRoutes());
 app.use('/api/passages', requireAuth, passagesRoutes());
 app.use('/api/mind', requireAuth, mindRoutes());
-app.use('/api/capture', requireAuth, captureRoutes());
 app.use('/api/connections', requireAuth, connectionsRoutes());
 app.use('/api/dashboard', requireAuth, dashboardRoutes());
 

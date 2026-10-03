@@ -1726,8 +1726,6 @@ export function initConversationsSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_saved_passages ON saved_passages(created_at DESC)`); } catch {}
-  // A line kept from a web page carries the page it came from (plans/web-capture.md).
-  try { db.exec(`ALTER TABLE saved_passages ADD COLUMN source_url TEXT`); } catch {}
   // Every rewrite a conversation made to the thing it was about — one row per
   // field, before and after. A single table rather than an "original" column on
   // each of the five subject tables: it keeps the whole history, needs no

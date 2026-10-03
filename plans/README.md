@@ -1,7 +1,5 @@
 # Plan Backlog
 
-- [Web capture](web-capture.md) — **SHIPPED**, 2026-10-02. Select text or right-click an image on any page and it lands in QNE (Passages / Library wall). A side panel beside every page shows what QNE holds about it, takes questions as real Room conversations, and holds a running stack sent as one seed. Passages gets a reading of the pile; World look gets Instruments — extensions to install or build, read from the vision. Capture is dumb, reading is smart.
-
 - [Conversations keep their thinking](conversation-thinking-recall.md) — **DONE**, 2026-10-01. Every Room conversation and side talk is written down by itself when it goes quiet (its thinking, append-only, plus the full transcript); the Room reads an earlier conversation's thinking only when his message is clearly on the same subject; bring carries a side talk's thinking.
 
 - [Two models, side by side](two-models-side-by-side.md) — **IMPLEMENTED**, 2026-09-30. One question answered by two picked models at once, drawn as two independent-scrolling columns in the Room thread (layout H; no scroll lock, no added structure). One answer is kept and only the kept one carries into later context.

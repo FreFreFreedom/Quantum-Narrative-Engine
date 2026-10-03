@@ -1229,6 +1229,3 @@ Messages that leave the Room's 16-message window are written down in plain lines
   hook and `~/.claude/CLAUDE.md`, harvested memory, random subjects, shelf/library dumps, tool
   descriptions) — see AGENTS.md "Where the rules kept hiding". New "Blank" group in the
   picker: Gemini / GPT-4.1 with only the conversation, as real turns.
-
-## Web capture (2026-10-02)
-Highlight text or right-click an image on any page → text becomes a Passage (`saved_passages.source_url`, filed under the page, read automatically), images go to the Library wall's reader (`convoId = 'library'`). The extension is **outside the repo**, at `~/edge-extensions/qne-capture/`, loaded unpacked in Edge. It holds a one-year JWT with `scope: 'capture'` that `auth.js#requireAuth` lets through only the doors in `CAPTURE_DOORS` (capture, plus the side panel's `/api/capture/page`, `/ask`, `/stack`); the WebSocket refuses any scoped token. Any new scoped key must go through the same door list. Capture is dumb, reading is smart: never add a tag, category or form at capture time. Phase 2 (same day): side panel, running stack → one seed, the pile reading on Passages, Instruments in World look (`services/capture.js`). The app opens a thread from `#room=<id>`. Plan: `plans/web-capture.md`.

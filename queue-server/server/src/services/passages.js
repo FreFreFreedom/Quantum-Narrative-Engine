@@ -40,7 +40,7 @@ export function getPassage(id) {
   return db.prepare(`SELECT * FROM saved_passages WHERE id=? AND deleted_at IS NULL`).get(id) || null;
 }
 
-export function savePassage({ text, convoId = null, messageId = null, sourceTitle = null, sourceUrl = null, createdBy = 'antoine' } = {}) {
+export function savePassage({ text, convoId = null, messageId = null, sourceTitle = null, createdBy = 'antoine' } = {}) {
   if (!db) return { error: 'no_db' };
   const body = String(text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT);
   if (!body) return { error: 'empty' };
@@ -61,12 +61,10 @@ export function savePassage({ text, convoId = null, messageId = null, sourceTitl
     }
   }
 
-  // Only a real web address is kept as a source — never a script or a local page.
-  const url = /^https?:\/\//i.test(String(sourceUrl || '')) ? String(sourceUrl).slice(0, 2000) : null;
   const id = randomUUID();
   db.prepare(
-    `INSERT INTO saved_passages (id, text, convo_id, message_id, source_title, source_url, created_by) VALUES (?,?,?,?,?,?,?)`,
-  ).run(id, body, convoId || null, messageId || null, sourceTitle ? String(sourceTitle).slice(0, 300) : null, url, createdBy);
+    `INSERT INTO saved_passages (id, text, convo_id, message_id, source_title, created_by) VALUES (?,?,?,?,?,?)`,
+  ).run(id, body, convoId || null, messageId || null, sourceTitle || null, createdBy);
   broadcastAll('passages:updated', { passageId: id });
   return { ok: true, passage: getPassage(id) };
 }
@@ -82,18 +80,14 @@ export function deletePassage(id) {
 // The reading. Short on purpose: this is a line on a shelf, not an essay — the
 // long version is what the Room is for, and the world-look is one click away.
 // Context, not rules (2026-09-26): the task and its size, then who he is.
-const READING_PROMPT = `He kept this line because it was worth keeping. Write a short reading of it, three or four sentences: what the line names underneath, and what it could become inside the platform he is building.`;
+const READING_PROMPT = `He kept this line out of one of his conversations because it was worth keeping. Write a short reading of it, three or four sentences: what the line names underneath, and what it could become inside the platform he is building.`;
 
 export async function readPassage(id, { force = false } = {}) {
   const row = getPassage(id);
   if (!row) return { error: 'not_found' };
   if (row.reading && !force) return { ok: true, passage: row, cached: true };
 
-  let site = '';
-  try { site = row.source_url ? new URL(row.source_url).hostname.replace(/^www\./, '') : ''; } catch {}
-  const context = row.source_url
-    ? `\n\nHe highlighted it on a page he was reading${row.source_title ? `, "${row.source_title}"` : ''}${site ? ` (${site})` : ''}.`
-    : row.source_title ? `\n\nIt came out of a conversation called "${row.source_title}".` : '';
+  const context = row.source_title ? `\n\nIt came out of a conversation called "${row.source_title}".` : '';
   const out = await generateText({
     prompt: `${READING_PROMPT}\n${whoHeIsBlock()}\n\n=== THE LINE ===\n"${row.text.slice(0, MAX_READING_INPUT)}"${context}`,
     feature: 'summary',
