@@ -153,30 +153,40 @@ export async function lookupOnScreen({ show = '', term = '', line = '' } = {}) {
 // that only the people on screen understand are already explained. One cheap call
 // over the last lines of dialogue, kept for those lines, and every term it finds is
 // written into the lookup cache too, so clicking it later costs nothing.
-const GLOSSARY_PROMPT = `Below are the last lines of dialogue from a series someone is watching. Find the words
-and phrases an ordinary viewer would NOT understand — the trade's own language: procedure
-names, drug names, equipment, abbreviations, numbers read as a code, slang used inside
-that profession. Ignore ordinary English, names of people, and anything a viewer plainly
-understands. Take at most 4, the ones that most block understanding, and skip the scene
-entirely if nothing in it is jargon.
-For each, write what it means HERE — what the people on screen are doing or referring to
-when they say it. Plain words, English is his second language, no jargon explained with
-more jargon. ONE sentence of about 14 words, never more than 18. Do not begin with the
-term itself.
-When the term is an acronym, also give what its letters stand for, as "expansion".
+const GLOSSARY_PROMPT = `Below are the last lines of dialogue from a series someone is watching. He understands
+the English; what stops him is the trade's own language — procedure names, drug names,
+equipment, abbreviations, codes, slang used inside that profession.
+
+Write ONE short reading of what is being said, as a friend leaning over would say it:
+two or three plain sentences, about 45 words in all, never more than 60. Say what is
+actually happening and what the jargon in it amounts to, together, in the flow of the
+sentence — not a list, not a definition after a dash, no headings, no markdown, no
+quotation marks. Plain words, English is his second language. If a term matters, put
+what it means where it falls, the way you would say it out loud. Never explain ordinary
+English. If nothing in the scene is jargon, say in one sentence what is happening.
+
+Then list the terms you folded in, so they can be underlined on screen: at most 4, each
+with a one-sentence plain meaning of about 14 words, and, for an acronym, what its
+letters stand for.
 Answer with JSON only, no markdown fence:
-{"terms":[{"term":"…","expansion":"…","text":"…"}]}
-An empty list is a fine answer.`;
+{"gist":"…","terms":[{"term":"…","expansion":"…","text":"…"}]}
+An empty term list is a fine answer.`;
 
 export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
   const text = String(lines || '').replace(/\s+/g, ' ').trim().slice(0, 1600);
-  if (text.split(/\s+/).length < 6) return { ok: true, terms: [] };
+  if (text.split(/\s+/).length < 6) return { ok: true, terms: [], gist: '' };
   const showKey = String(show || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 120);
   const hash = createHash('sha1').update(showKey + '|' + text.toLowerCase()).digest('hex').slice(0, 20);
 
   if (db) {
     const hit = db.prepare('SELECT json FROM show_glossaries WHERE show=? AND lines_hash=?').get(showKey, hash);
-    if (hit) { try { return { ok: true, terms: JSON.parse(hit.json), cached: true }; } catch { /* remake */ } }
+    if (hit) {
+      try {
+        const v = JSON.parse(hit.json);
+        if (Array.isArray(v)) return { ok: true, terms: v, gist: '', cached: true };
+        return { ok: true, terms: v.terms || [], gist: v.gist || '', cached: true };
+      } catch { /* remake */ }
+    }
   }
 
   const out = await quickTextLong(
@@ -187,6 +197,7 @@ export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
   let parsed = null;
   try { parsed = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { return { error: 'unreadable' }; }
 
+  const gist = String(parsed?.gist || '').replace(/\s+/g, ' ').trim().slice(0, 700);
   const terms = [];
   for (const it of (parsed && parsed.terms) || []) {
     const term = String(it?.term || '').replace(/\s+/g, ' ').trim().slice(0, 80);
@@ -200,8 +211,8 @@ export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
     }
     if (terms.length >= 4) break;
   }
-  if (db) db.prepare('INSERT OR REPLACE INTO show_glossaries (show, lines_hash, json) VALUES (?,?,?)').run(showKey, hash, JSON.stringify(terms));
-  return { ok: true, terms };
+  if (db) db.prepare('INSERT OR REPLACE INTO show_glossaries (show, lines_hash, json) VALUES (?,?,?)').run(showKey, hash, JSON.stringify({ gist, terms }));
+  return { ok: true, gist, terms };
 }
 
 // The glossary asks for several readings at once, so it needs more room than a single
@@ -241,7 +252,13 @@ export async function episodeGlossary({ key = '', show = '', transcript = '' } =
   if (!episodeKey) return { error: 'key_required' };
   if (db) {
     const hit = db.prepare('SELECT json FROM show_episodes WHERE episode_key=?').get(episodeKey);
-    if (hit) { try { return { ok: true, terms: JSON.parse(hit.json), cached: true }; } catch { /* remake */ } }
+    if (hit) {
+      try {
+        const v = JSON.parse(hit.json);
+        if (Array.isArray(v)) return { ok: true, terms: v, gist: '', cached: true };
+        return { ok: true, terms: v.terms || [], gist: v.gist || '', cached: true };
+      } catch { /* remake */ }
+    }
   }
   const text = String(transcript || '').replace(/\s+/g, ' ').trim();
   if (text.length < 400) return { error: 'transcript_too_short' };
