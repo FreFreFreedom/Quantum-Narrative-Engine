@@ -188,9 +188,10 @@ he heard means here. Do not narrate the action: he follows the story. No heading
 no quotation marks, no numbering. Plain words — English is his second language.
 If the lines hold no trade word at all, say in a few words what is happening.
 
-Then list the terms you folded in, so they can be underlined on screen: at most 4, each
-with a one-sentence plain meaning of about 14 words, and, for an acronym, what its
-letters stand for.
+Then list every hard term in the lines, at most 4, in the order they are spoken. For
+each, give what it means FOR THIS PATIENT, IN THIS SCENE, in 12 words or fewer — not a
+dictionary meaning. Do not begin with the term itself. For an acronym, also give what
+its letters stand for.
 Answer with JSON only, no markdown fence:
 {"gist":"…","terms":[{"term":"…","expansion":"…","text":"…"}]}
 An empty term list is a fine answer.`;
