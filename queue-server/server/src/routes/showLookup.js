@@ -1,7 +1,7 @@
 // Mounted at /api/screen — the dictionary for whatever he is watching, called by
 // the Edge extension over the same token login the QNE extension already uses.
 import { Router } from 'express';
-import { lookupOnScreen, glossaryOnScreen } from '../services/showLookup.js';
+import { lookupOnScreen, glossaryOnScreen, episodeGlossary } from '../services/showLookup.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function showLookupRoutes() {
@@ -22,6 +22,13 @@ export function showLookupRoutes() {
   router.post('/glossary', asyncHandler(async (req, res) => {
     const out = await glossaryOnScreen({ show: req.body?.show || '', lines: req.body?.lines || '' });
     if (out.error) return res.status(500).json(out);
+    res.json(out);
+  }));
+
+  // { key, show, transcript } — one pass over a whole episode's subtitles.
+  router.post('/episode', asyncHandler(async (req, res) => {
+    const out = await episodeGlossary({ key: req.body?.key || '', show: req.body?.show || '', transcript: req.body?.transcript || '' });
+    if (out.error) return res.status(out.error === 'key_required' || out.error === 'transcript_too_short' ? 400 : 500).json(out);
     res.json(out);
   }));
 

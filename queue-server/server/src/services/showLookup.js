@@ -22,6 +22,12 @@ export function bindShowLookup(database) {
   )`);
   // One glossary per stretch of dialogue, made once: the same lines looked at twice
   // (he opens the card, closes it, opens it again) must not cost a second call.
+  // A whole episode read once: its subtitle file turned into every term an ordinary
+  // viewer would not know, so afterwards nothing has to be asked at all.
+  db.exec(`CREATE TABLE IF NOT EXISTS show_episodes (
+    episode_key TEXT PRIMARY KEY, show TEXT NOT NULL DEFAULT '', json TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
   db.exec(`CREATE TABLE IF NOT EXISTS show_glossaries (
     show TEXT NOT NULL, lines_hash TEXT NOT NULL, json TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -202,4 +208,74 @@ export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
 // lookup — but the same lanes, raced the same way.
 async function quickTextLong(prompt) {
   return raceLanes(prompt, { maxTokens: 700, label: 'screen:glossary', fallbackMs: 25_000 });
+}
+
+// ---------------------------------------------------------------------------
+// The whole episode, read once (his ask, 2026-10-04). The player can hand over the
+// subtitle file of what he is watching; read in one pass it becomes a list of every
+// term in the episode, and from then on the card answers with no call at all. The
+// extension only ever shows a term once it has actually been said, so knowing the
+// whole episode never spoils any of it.
+const EPISODE_PROMPT = `Below is part of the subtitles of one episode. Find the words and phrases an ordinary
+viewer would NOT understand — the trade's own language: procedure names, drug names,
+equipment, abbreviations, codes, slang used inside that profession. Ignore ordinary
+English, names of people and places, and anything a viewer plainly understands.
+For each, write what it means here — what the people on screen are doing or referring to
+when they say it. Plain words, English is the reader's second language, no jargon
+explained with more jargon. ONE sentence of about 14 words, never more than 18. Do not
+begin with the term itself. When it is an acronym, also give what its letters stand for
+as "expansion".
+Answer with JSON only, no markdown fence: {"terms":[{"term":"…","expansion":"…","text":"…"}]}
+An empty list is a fine answer.`;
+
+const CHUNK = 5000;
+const MAX_CHUNKS = 10;
+function chunkTranscript(text) {
+  const out = [];
+  for (let i = 0; i < text.length && out.length < MAX_CHUNKS; i += CHUNK) out.push(text.slice(i, i + CHUNK));
+  return out;
+}
+
+export async function episodeGlossary({ key = '', show = '', transcript = '' } = {}) {
+  const episodeKey = String(key || '').trim().slice(0, 200);
+  if (!episodeKey) return { error: 'key_required' };
+  if (db) {
+    const hit = db.prepare('SELECT json FROM show_episodes WHERE episode_key=?').get(episodeKey);
+    if (hit) { try { return { ok: true, terms: JSON.parse(hit.json), cached: true }; } catch { /* remake */ } }
+  }
+  const text = String(transcript || '').replace(/\s+/g, ' ').trim();
+  if (text.length < 400) return { error: 'transcript_too_short' };
+
+  const showLine = String(show || '').slice(0, 200) || '(unknown)';
+  const chunks = chunkTranscript(text);
+  const results = await Promise.all(chunks.map((c) => quickTextLong(
+    `${EPISODE_PROMPT}\n\n=== WHAT HE IS WATCHING ===\n${showLine}\n\n=== THE SUBTITLES ===\n${c}`,
+  ).catch(() => null)));
+
+  const byTerm = new Map();
+  for (const out of results) {
+    if (!out || out.error || !out.text) continue;
+    let parsed = null;
+    try { parsed = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { continue; }
+    for (const it of (parsed && parsed.terms) || []) {
+      const term = String(it?.term || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+      const t = firstSentence(it?.text);
+      if (!term || t.split(/\s+/).length < 5) continue;
+      const k = term.toLowerCase();
+      if (byTerm.has(k)) continue;
+      const expansion = String(it?.expansion || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+      byTerm.set(k, expansion ? { term, expansion, text: t } : { term, text: t });
+    }
+  }
+  const terms = [...byTerm.values()];
+  if (!terms.length) return { error: 'nothing_read' };
+
+  if (db) {
+    const showKey = String(show || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 120);
+    db.prepare('INSERT OR REPLACE INTO show_episodes (episode_key, show, json) VALUES (?,?,?)').run(episodeKey, showKey, JSON.stringify(terms));
+    // Each one also goes in the ordinary cache, so clicking it later costs nothing.
+    const ins = db.prepare('INSERT OR REPLACE INTO show_lookups (show, term, line, text, expansion) VALUES (?,?,?,?,?)');
+    for (const t of terms) ins.run(showKey, t.term.toLowerCase(), '', t.text, t.expansion || '');
+  }
+  return { ok: true, terms };
 }
