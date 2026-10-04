@@ -171,17 +171,18 @@ export async function lookupOnScreen({ show = '', term = '', line = '' } = {}) {
 // that only the people on screen understand are already explained. One cheap call
 // over the last lines of dialogue, kept for those lines, and every term it finds is
 // written into the lookup cache too, so clicking it later costs nothing.
-const GLOSSARY_PROMPT = `Below are the last lines of dialogue from a series someone is watching. He understands
-the English; what stops him is the trade's own language — procedure names, drug names,
-equipment, abbreviations, codes, slang used inside that profession.
+const GLOSSARY_PROMPT = `Below are the last lines of dialogue from a series someone is watching. He follows the
+story perfectly well. What he does not know is the vocabulary — the trade's own language:
+procedure names, drug names, equipment, abbreviations, codes, slang used inside that
+profession. Assume he knows none of it.
 
-Write ONE short reading of what is being said, as a friend leaning over would say it:
-25 words or fewer — one sentence, never two. Count them. Say what is
-actually happening and what the jargon in it amounts to, together, in the flow of the
-sentence — not a list, not a definition after a dash, no headings, no markdown, no
-quotation marks. Plain words, English is his second language. If a term matters, put
-what it means where it falls, the way you would say it out loud. Never explain ordinary
-English. If nothing in the scene is jargon, say in one sentence what is happening.
+Write ONE reading of 25 words or fewer — one sentence, never two. Count them. Spend
+every word on the terms, not on the action: take the two or three hardest words in the
+lines and say what they are, in the flow of a sentence, the way a friend leaning over
+would. Do not narrate what the characters are doing in plain words they already
+understand; that is not what he is missing. No list, no definition after a dash, no
+headings, no markdown, no quotation marks. Plain words — English is his second language.
+If the lines hold no trade word at all, say in a few words what is happening.
 
 Then list the terms you folded in, so they can be underlined on screen: at most 4, each
 with a one-sentence plain meaning of about 14 words, and, for an acronym, what its
