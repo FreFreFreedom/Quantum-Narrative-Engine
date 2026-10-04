@@ -3696,6 +3696,11 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    is removed the moment the selection is dropped. */
 /* A kept line: underlined in the look's own colour, and echoed in the margin beside
    it when there is room (Antoine's pick "G1", 2026-09-23). */
+/* Selecting inside a thread wears the look's own accent rather than the browser's
+   blue slab, and the drag snaps to whole words (below) so the wash never cuts a
+   word in half. */
+.se-log ::selection, .se-log::selection { background:color-mix(in srgb, var(--c-accent, #c8472e) 24%, transparent); color:inherit; text-shadow:none; }
+.se-log ::-moz-selection, .se-log::-moz-selection { background:color-mix(in srgb, var(--c-accent, #c8472e) 24%, transparent); color:inherit; text-shadow:none; }
 /* A kept line is washed in parchment (his pick D3, 2026-09-24): no underline, no echo in
    the margin, nothing that moves the text. Darker looks get the same wash in their own gold. */
 .se-kept { background:rgba(214,190,140,.45); color:inherit; border-bottom:0; border-radius:2px; cursor:pointer;
@@ -31119,6 +31124,30 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .then(function(d){ var t = d && d.text ? (d.expansion ? { text: d.text, expansion: d.expansion } : d.text) : ''; defineHereCache[key] = t; paint(t); })
       .catch(function(){});
   }
+  // A drag by hand lands mid-word at both ends, so the wash cut words in half and
+  // the passage carried half a word with it. Grow the ends out to the word edges —
+  // only for a mouse or finger gesture: shift+arrow is meant to be letter by letter.
+  var WORD_CH = /[A-Za-z0-9\u00C0-\u024F'\u2019-]/;
+  function snapSelectionToWords(sel){
+    if(!sel || !sel.rangeCount) return;
+    var r = sel.getRangeAt(0);
+    if(r.collapsed) return;
+    var s = r.startContainer, so = r.startOffset, e = r.endContainer, eo = r.endOffset, moved = false;
+    if(s.nodeType === 3){
+      var a = s.data;
+      while(so > 0 && WORD_CH.test(a.charAt(so)) && WORD_CH.test(a.charAt(so - 1))){ so--; moved = true; }
+    }
+    if(e.nodeType === 3){
+      var b = e.data;
+      while(eo < b.length && WORD_CH.test(b.charAt(eo)) && WORD_CH.test(b.charAt(eo - 1))){ eo++; moved = true; }
+    }
+    if(!moved) return;
+    try{
+      var nr = document.createRange();
+      nr.setStart(s, so); nr.setEnd(e, eo);
+      sel.removeAllRanges(); sel.addRange(nr);
+    }catch(_){}
+  }
   function placeQuotePop(){
     if(!quotePop) return;
     if(quotePop.classList.contains('se-kept-pop')) return killQuotePop();
@@ -31146,6 +31175,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       quoteOfferTimer=setTimeout(function(){
         if(!log.isConnected)return;
         var sel = window.getSelection && window.getSelection();
+        if(gesture) snapSelectionToWords(sel);
         var text = sel ? String(sel).trim() : '';
         killQuotePop();
         // Only a real passage of an answer: a stray click, or a word grabbed from
@@ -31174,6 +31204,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var passage = text.replace(/\s+/g, ' ').slice(0, 100000);
         quotePop = document.createElement('div');
         quotePop.className = 'se-quote-pop';
+        // What this bar was built for. The snap above moves the selection, which
+        // fires selectionchange again — without this the bar would be torn down and
+        // rebuilt for the very same passage, and blink each time you let go.
+        quotePop.dataset.passage = passage;
         // The bar keeps the answer's selection alive by swallowing mouse-down — except
         // on the meaning of the word, which he selects to copy (his ask, 2026-10-01).
         var popGrab = function(ev){ ev.stopPropagation(); if(!(ev.target.closest && ev.target.closest('.se-define'))) ev.preventDefault(); };
@@ -31304,6 +31338,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(inPop)return;
     if(!sel || !String(sel).trim()){clearTimeout(quoteOfferTimer);if(!(quotePop && (quotePop.classList.contains('se-kept-pop') || quotePop.classList.contains('se-like-pop'))))killQuotePop();return;}
     if(mouseDragging)return;
+    if(quotePop && quotePop.dataset && quotePop.dataset.passage === String(sel).trim().replace(/\s+/g,' ').slice(0,100000))return;
     var node=sel.anchorNode, el=node && (node.nodeType===1?node:node.parentElement);
     var log=el && el.closest && el.closest('.se-log');
     if(log && log.quoteOffer)log.quoteOffer(80);
