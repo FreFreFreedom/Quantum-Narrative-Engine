@@ -31148,6 +31148,64 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       sel.removeAllRanges(); sel.addRange(nr);
     }catch(_){}
   }
+  // Live word selection: while the drag is still happening, both ends sit on word
+  // edges, so the wash never shows half a word even mid-gesture. Snapping only at
+  // mouseup was still letter-by-letter under the hand, which is what he saw.
+  function wordAt(node, off){
+    if(!node || node.nodeType !== 3) return null;
+    var t = node.data, a = off, b = off;
+    while(a > 0 && WORD_CH.test(t.charAt(a - 1))) a--;
+    while(b < t.length && WORD_CH.test(t.charAt(b))) b++;
+    return { node: node, start: a, end: b };
+  }
+  function caretWordFrom(x, y){
+    var r = null;
+    if(document.caretRangeFromPoint) r = document.caretRangeFromPoint(x, y);
+    else if(document.caretPositionFromPoint){
+      var cp = document.caretPositionFromPoint(x, y);
+      if(cp){ r = document.createRange(); r.setStart(cp.offsetNode, cp.offset); }
+    }
+    if(!r) return null;
+    return wordAt(r.startContainer, r.startOffset);
+  }
+  var wordDrag = null;
+  function wordDragMove(ev){
+    if(!wordDrag) return;
+    // A click is not a drag: until the hand has really moved, leave the selection
+    // alone, or clicking into an answer would grab the word under the cursor.
+    if(Math.abs(ev.clientX - wordDrag.x) + Math.abs(ev.clientY - wordDrag.y) < 5) return;
+    var focus = caretWordFrom(ev.clientX, ev.clientY);
+    if(!focus || !wordDrag.log.contains(focus.node)) return;
+    var sel = window.getSelection && window.getSelection();
+    if(!sel || !sel.setBaseAndExtent) return;
+    // Which way the drag is going, in document order — not by coordinates, which
+    // lie the moment the text wraps onto another line.
+    var probe = document.createRange();
+    probe.setStart(wordDrag.anchor.node, wordDrag.anchor.start);
+    probe.setEnd(wordDrag.anchor.node, wordDrag.anchor.start);
+    var other = document.createRange();
+    other.setStart(focus.node, focus.start);
+    var back = probe.compareBoundaryPoints(Range.START_TO_START, other) > 0;
+    try{
+      if(back) sel.setBaseAndExtent(wordDrag.anchor.node, wordDrag.anchor.end, focus.node, focus.start);
+      else sel.setBaseAndExtent(wordDrag.anchor.node, wordDrag.anchor.start, focus.node, focus.end);
+    }catch(_){}
+  }
+  function wordDragEnd(){
+    if(!wordDrag) return;
+    wordDrag = null;
+    document.removeEventListener('mousemove', wordDragMove, true);
+    document.removeEventListener('mouseup', wordDragEnd, true);
+  }
+  function wordDragStart(log, ev){
+    if(ev.button !== 0 || ev.detail > 1) return;      // double-click is already a word
+    if(ev.target.closest && ev.target.closest('a,button,input,textarea,.se-quote-pop')) return;
+    var w = caretWordFrom(ev.clientX, ev.clientY);
+    if(!w || !log.contains(w.node)) return;
+    wordDrag = { log: log, anchor: w, x: ev.clientX, y: ev.clientY };
+    document.addEventListener('mousemove', wordDragMove, true);
+    document.addEventListener('mouseup', wordDragEnd, true);
+  }
   function placeQuotePop(){
     if(!quotePop) return;
     if(quotePop.classList.contains('se-kept-pop')) return killQuotePop();
@@ -31288,6 +31346,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       }, settleMs);
     };
     log.quoteOffer=offer;
+    log.addEventListener('mousedown', function(ev){ wordDragStart(log, ev); });
     log.addEventListener('mouseup', function(){ offer(0, true); });
     log.addEventListener('keyup', function(){ offer(0); });
     // Passive: the gesture is the browser's own text selection and must not be
