@@ -61,8 +61,31 @@ assert.equal(answerWordCount('One **clear** [linked phrase](https://example.com/
   assert.equal(repaired.passes, 2);
   assert.equal(calls.length, 2);
   assert.ok(calls.every((c) => c.provider === 'google-ai-studio' && c.model === 'gemini-flash-latest'));
-  assert.ok(calls[0].prompt.includes('only 600 words'));
-  assert.ok(calls[1].prompt.includes('only 1050 words'));
+  assert.ok(calls[0].prompt.includes('stopped at 600'));
+  assert.ok(calls[1].prompt.includes('stopped at 1050'));
+}
+
+// A near-miss must still ask for a real passage. Asking Gemini for "at least 27
+// additional words" came back empty with finish_reason "stop" — the model agrees
+// a finished piece is finished — so the shortfall is floored, and one empty reply
+// is asked again rather than ending the repair in silence (2026-10-04).
+{
+  const wordBlock = (n, name) => Array.from({ length: n }, () => name).join(' ');
+  const asked = [];
+  const repaired = await completeRequestedLength({
+    text: wordBlock(1973, 'opening'), target: 2000,
+    provider: 'google-ai-studio', model: 'gemini-flash-lite-latest',
+    generate: async (opts) => {
+      asked.push(opts);
+      return asked.length === 1 ? { text: '' } : { text: wordBlock(200, 'further') };
+    },
+  });
+  assert.ok(asked[0].prompt.includes(`at least ${convos.CONTINUATION_FLOOR_WORDS} words`));
+  assert.ok(!asked[0].prompt.includes('at least 27 words'));
+  assert.ok(asked[0].maxTokens >= 2400);
+  assert.equal(asked.length, 2);
+  assert.equal(repaired.wordCount, 2173);
+  assert.ok(repaired.completed);
 }
 console.log('requested length OK — short answers continue on the exact model until the requested count is reached');
 

@@ -2038,11 +2038,20 @@ export function answerWordCount(text) {
   return visible.match(/[\p{L}\p{N}]+(?:['\u2019][\p{L}\p{N}]+)*/gu)?.length || 0;
 }
 
+// Never ask for the exact shortfall. A 2000-word order answered in 1973 words
+// asked Gemini for "at least 27 additional words" and got back finish_reason
+// "stop" with ZERO tokens, every time (measured 2026-10-04): the model reads a
+// finished piece, agrees it is finished, and writes nothing — so the repair pass
+// silently did nothing and the answer stayed 27 words short. The floor makes the
+// continuation a real passage worth writing, and the wording forbids the "it is
+// already complete" verdict outright. Overshooting the target is free: he has
+// never complained that an answer ran long, and a short one is the actual bug.
+export const CONTINUATION_FLOOR_WORDS = 150;
 export function lengthContinuationPrompt({ answer, target, current }) {
-  const missing = Math.max(1, target - current);
-  return `Continue the answer below using the SAME voice, argument and level of detail. The owner asked for ${target} words, but the answer currently contains only ${current} words.
+  const more = Math.max(CONTINUATION_FLOOR_WORDS, target - current);
+  return `Continue the answer below in the SAME voice, argument and level of detail. He asked for ${target} words and it stopped at ${current}, so it is not finished.
 
-Write the missing part now: at least ${missing} additional words. Continue directly from the existing ending. Do not restart, repeat, summarise, apologise, mention word counts, or offer to continue later. Develop the substance until the complete answer reaches at least ${target} words, then end naturally. Return ONLY the continuation.
+Write one more passage now: at least ${more} words that carry the thinking further — a facet of the same subject the answer has not opened yet. Continue straight on from the existing ending. Do not restart, repeat, summarise, apologise, mention word counts, or offer to continue later. Do not say the answer is already complete: whatever you judge, more is wanted. Return ONLY the new passage.
 
 === EXISTING ANSWER ===
 ${answer}`;
@@ -2058,19 +2067,24 @@ export async function completeRequestedLength({ text, target, provider, model, a
   if (!target || count >= target || !provider || !model) return { text: whole, wordCount: count, completed: count >= (target || 0), passes: 0 };
 
   let passes = 0;
+  let blanks = 0;
   while (count < target && passes < maxPasses) {
     passes += 1;
     if (onStatus) { try { onStatus(`Extending this answer to the ${target} words you asked for…`); } catch {} }
-    const missing = target - count;
+    const missing = Math.max(CONTINUATION_FLOOR_WORDS, target - count);
     const result = await generate({
       prompt: lengthContinuationPrompt({ answer: whole, target, current: count }),
       provider, model, account, effort,
-      maxTokens: Math.min(32000, Math.max(1200, Math.round(missing * 2.8) + 1000)),
+      maxTokens: Math.min(32000, Math.max(2400, Math.round(missing * 2.8) + 2000)),
       label: 'conversations:length-continuation',
       timeoutMs: 150_000, allowLongOutput: true, tailReminder: voiceTailReminder(), onUsage,
     });
     const addition = String(result?.text || '').trim();
-    if (!addition) break;
+    // An empty reply costs nothing and is usually the model declining once, so
+    // it is worth one more ask — but never a third, or a dead lane would be
+    // asked until maxPasses runs out.
+    if (!addition) { blanks += 1; if (blanks >= 2) break; continue; }
+    blanks = 0;
     whole = `${whole}\n\n${addition}`;
     if (onToken) { try { onToken(`\n\n${addition}`); } catch {} }
     const next = answerWordCount(whole);
@@ -2167,7 +2181,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     directInstructionsBlock(),
     `\n=== WHAT TO DO NOW ===\n${instruction || `Reply to Antoine's last message.${convo.reach ? ` ${REACH_TAIL}` : ''}`}`,
     askedWords
-      ? `\n=== LENGTH: HE ASKED FOR ${askedWords} WORDS ===\nWrite at least ${askedWords} words, the whole thing now — never stop early or offer to continue instead. Reach the length by going further into the material, never by padding or saying the same thing again in new words.`
+      ? `\n=== LENGTH: HE ASKED FOR ${askedWords} WORDS ===\nWrite at least ${askedWords} words, the whole thing now — never stop early or offer to continue instead. ${askedWords} is a floor, not a target: land comfortably past it, because an answer that stops just under the number is a failed answer. Reach the length by going further into the material, never by padding or saying the same thing again in new words.`
       : '',
   ];
   // A card turn (brevity): the structured, system-triggered answers that land in a
