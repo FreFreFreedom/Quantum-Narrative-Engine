@@ -162,7 +162,7 @@ the English; what stops him is the trade's own language — procedure names, dru
 equipment, abbreviations, codes, slang used inside that profession.
 
 Write ONE short reading of what is being said, as a friend leaning over would say it:
-two or three plain sentences, about 45 words in all, never more than 60. Say what is
+25 words or fewer — one sentence, never two. Count them. Say what is
 actually happening and what the jargon in it amounts to, together, in the flow of the
 sentence — not a list, not a definition after a dash, no headings, no markdown, no
 quotation marks. Plain words, English is his second language. If a term matters, put
@@ -201,7 +201,7 @@ export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
   let parsed = null;
   try { parsed = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { return { error: 'unreadable' }; }
 
-  const gist = String(parsed?.gist || '').replace(/\s+/g, ' ').trim().slice(0, 700);
+  const gist = String(parsed?.gist || '').replace(/\s+/g, ' ').trim().slice(0, 400);
   const terms = [];
   for (const it of (parsed && parsed.terms) || []) {
     const term = String(it?.term || '').replace(/\s+/g, ' ').trim().slice(0, 80);
