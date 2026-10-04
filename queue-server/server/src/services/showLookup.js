@@ -47,16 +47,15 @@ const FAST_LANES = [
 // episode waiting. Asked all at once, the answer arrives as fast as the quickest of
 // them — three free calls instead of one, which costs nothing but a little quota.
 async function raceLanes(prompt, { maxTokens, label, claudeLastResort = false, fallbackMs = 20_000 }) {
-  const live = FAST_LANES.filter((l) => !router.isExhausted(l.provider, l.model)).slice(0, 2);
-  if (live.length) {
-    const tries = live.map((l) => generateTextDirect({
-      prompt, provider: l.provider, model: l.model, maxTokens, label, timeoutMs: l.ms,
-    }).then((out) => {
-      if (!out || !out.text) throw new Error('empty');
-      return out;
-    }));
-    const won = await Promise.any(tries).catch(() => null);
-    if (won) return won;
+  // One lane at a time, each given a few seconds. Racing two answered no faster in
+  // practice — the first lane almost always wins — and spent twice the free quota,
+  // which is the thing that runs out and makes everything slow later.
+  const live = FAST_LANES.filter((l) => !router.isExhausted(l.provider, l.model));
+  for (const l of live) {
+    const out = await generateTextDirect({
+      prompt, provider: l.provider, model: l.model, maxTokens, label, timeoutMs: Math.min(l.ms, 6000),
+    }).catch(() => null);
+    if (out && out.text) return out;
   }
   // This runs beside an episode he is watching. When the free lanes are spent, the
   // honest answer is none: the queue's own lane would take half a minute and spend
