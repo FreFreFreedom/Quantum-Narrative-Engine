@@ -46,8 +46,8 @@ const FAST_LANES = [
 // its whole timeout before the second is even tried, and he sits in front of a paused
 // episode waiting. Asked all at once, the answer arrives as fast as the quickest of
 // them — three free calls instead of one, which costs nothing but a little quota.
-async function raceLanes(prompt, { maxTokens, label, fallbackMs }) {
-  const live = FAST_LANES.filter((l) => !router.isExhausted(l.provider, l.model));
+async function raceLanes(prompt, { maxTokens, label, claudeLastResort = false, fallbackMs = 20_000 }) {
+  const live = FAST_LANES.filter((l) => !router.isExhausted(l.provider, l.model)).slice(0, 2);
   if (live.length) {
     const tries = live.map((l) => generateTextDirect({
       prompt, provider: l.provider, model: l.model, maxTokens, label, timeoutMs: l.ms,
@@ -58,11 +58,16 @@ async function raceLanes(prompt, { maxTokens, label, fallbackMs }) {
     const won = await Promise.any(tries).catch(() => null);
     if (won) return won;
   }
+  // This runs beside an episode he is watching. When the free lanes are spent, the
+  // honest answer is none: the queue's own lane would take half a minute and spend
+  // the subscription on a subtitle. Only a word he asked for by hand is worth that.
+  if (!claudeLastResort) return { error: 'no_free_lane' };
   return generateText({ prompt, feature: 'quick', label, maxTokens, timeoutMs: fallbackMs });
 }
 
+// A word he clicked or typed: worth the slow lane if the fast ones are spent.
 async function quickText(prompt) {
-  return raceLanes(prompt, { maxTokens: 400, label: 'screen:define', fallbackMs: 20_000 });
+  return raceLanes(prompt, { maxTokens: 400, label: 'screen:define', claudeLastResort: true, fallbackMs: 20_000 });
 }
 
 const COMMON = `English is his second language — plain words, no jargon explained with more jargon.
@@ -183,8 +188,8 @@ export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
     if (hit) {
       try {
         const v = JSON.parse(hit.json);
-        if (Array.isArray(v)) return { ok: true, terms: v, gist: '', cached: true };
-        return { ok: true, terms: v.terms || [], gist: v.gist || '', cached: true };
+        // An entry from before the reading existed is no answer at all — make it again.
+        if (!Array.isArray(v) && v.gist) return { ok: true, terms: v.terms || [], gist: v.gist, cached: true };
       } catch { /* remake */ }
     }
   }
@@ -218,7 +223,7 @@ export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
 // The glossary asks for several readings at once, so it needs more room than a single
 // lookup — but the same lanes, raced the same way.
 async function quickTextLong(prompt) {
-  return raceLanes(prompt, { maxTokens: 700, label: 'screen:glossary', fallbackMs: 25_000 });
+  return raceLanes(prompt, { maxTokens: 700, label: 'screen:glossary' });
 }
 
 // ---------------------------------------------------------------------------
