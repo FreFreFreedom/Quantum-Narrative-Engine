@@ -80,12 +80,12 @@ const PHRASE_PROMPT = `You are a dictionary that knows where the reader is. He i
 long conversation and selected a PHRASE. Write, for him, what this phrase means as it is used
 here — the idea it carries, including any shade or image a plain reading would miss. Plain
 English — it is his second language. No list, no heading, no markdown, no quotation
-marks around the phrase. ONE sentence of prose, about 20 words — never more than 26 — and
-nothing after it. Do not begin by repeating the phrase, and do not begin with "In this context".`;
+marks around the phrase. ONE sentence of prose, about 24 words — never more than 34 — and
+nothing after it. Finish the sentence; never stop halfway. Do not begin by repeating the phrase, and do not begin with "In this context".`;
 const PASSAGE_PROMPT = `You are a reading companion who knows where the reader is. He is reading an answer in
 a long conversation and selected a PASSAGE. Say plainly what it is really saying here — the idea
-under the words, unpacked, not repeated. Plain English — it is his second language. No list, no heading, no markdown. One or two short sentences, at most 45 words in all, and
-nothing after them. Do not begin by repeating the passage, and do not begin with "This passage".`;
+under the words, unpacked, not repeated. Plain English — it is his second language. No list, no heading, no markdown. One or two short sentences, at most 60 words in all, and
+nothing after them. Finish every sentence you begin. Do not begin by repeating the passage, and do not begin with "This passage".`;
 
 // An acronym (his ask, 2026-10-02): ICE, NGOs, AI — what the letters stand for, and
 // when a letter is itself an acronym, that one spelled out too; then the plain reading.
@@ -128,12 +128,22 @@ async function lookupAcronym(convoId, { raw, sentence, messageId }) {
   return { ok: true, text, expansion };
 }
 
+// A full stop only ends a sentence when a new one starts after it. Splitting on every
+// period cut "legislation for the U.S. military" down to "legislation for the U." and
+// the reading arrived half-written — which is what Antoine saw, 2026-10-04.
 function firstSentences(raw, n) {
   const t = String(raw || '').replace(/\s+/g, ' ').trim();
-  const parts = t.match(/[^.!?]+[.!?]+["”’)]*/g) || [t];
-  return parts.slice(0, n).join(' ').trim();
+  const re = /.*?[.!?]["”’)]*(?=\s+["“(]?[A-Z]|$)/g;
+  const parts = [];
+  let m;
+  while (parts.length < n && (m = re.exec(t))) parts.push(m[0].trim());
+  return (parts.length ? parts.join(' ') : t).trim();
 }
 
+// A reading already kept can itself be one of the half-written ones from before the
+// splitter was fixed: it ends on an initial, like "for the U." — read it again rather
+// than hand back the same cut sentence for good.
+function cutShort(text) { return /\b[A-Z]\.$/.test(String(text || '').trim()); }
 export async function lookupWord(convoId, { word, sentence = '', messageId = null } = {}) {
   const raw = String(word || '').replace(/\s+/g, ' ').trim();
   const count = raw ? raw.split(' ').length : 0;
@@ -147,7 +157,7 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
   if (!convo) return { error: 'not_found' };
   if (db) {
     const hit = db.prepare('SELECT text FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, w);
-    if (hit && hit.text.split(/\s+/).length >= 8 && hit.text.split(/\s+/).length <= 20 && !/[.!?]\s+[A-Z]/.test(hit.text)) return { ok: true, text: hit.text, cached: true };
+    if (hit && !cutShort(hit.text) && hit.text.split(/\s+/).length >= 8 && hit.text.split(/\s+/).length <= 20 && !/[.!?]\s+[A-Z]/.test(hit.text)) return { ok: true, text: hit.text, cached: true };
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 600);
   const recap = String(convo.recap || '').slice(0, 1200);
@@ -171,11 +181,11 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
 async function lookupPhrase(convoId, { key, shown, mode, sentence, messageId }) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const max = mode === 'phrase' ? 30 : 50;
+  const max = mode === 'phrase' ? 38 : 64;
   if (db) {
     const hit = db.prepare('SELECT text FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, key);
     const n = hit ? hit.text.split(/\s+/).length : 0;
-    if (hit && n >= 6 && n <= max) return { ok: true, text: hit.text, cached: true };
+    if (hit && !cutShort(hit.text) && n >= 6 && n <= max) return { ok: true, text: hit.text, cached: true };
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 900);
   const title = String(convo.title || '').slice(0, 200);
