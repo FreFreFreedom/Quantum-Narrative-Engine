@@ -28,6 +28,19 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-10-03 — The browser extension is "QNE" and sends to the Library.**
+`~/edge-extensions/amazon-author-youtube/` (folder name kept so Edge keeps the same id;
+the manifest name is now QNE) does three things: the old YouTube pairing, **Amazon tabs
+to the Library** (every Amazon product tab in every window, read as title/author/year in
+the page itself — no model, posted twelve at a time to `POST /api/convos/interests` →
+`saveSuggestedWorks`), and a right-click on any image, **Read this into the QNE Library**
+(fetched inside that tab under `activeTab`, redrawn to PNG when needed, posted to the
+existing `POST /api/convos/library/interest-imports`, which reads it with the BROAD
+prompt). It signs in with the admin password kept in extension storage and holds an
+ordinary 7-day token, renewed once on any 401 — **not** the scoped capture key, which was
+deleted 2026-10-02 (`ed03e37`) for being refused everywhere. CORS allows
+`chrome-extension://<32 a-p>` again; CORS is not auth.
+
 **2026-10-01 — A local server rewrites the checkout's notes folder.** Booting `queue-server`
 locally (any `DB_PATH`) runs `noteMirror.js`'s disk sync, which writes the local DB's notes
 into `queue-server/project-docs/notes/` and deletes every file the local DB lacks — the

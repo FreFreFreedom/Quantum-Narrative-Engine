@@ -65,6 +65,9 @@ export function conversationsRoutes() {
       res.json(fn(req, owner));
     } catch (err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not update the interest library.' }); }
   };
+  // The browser extension sends the books open on Amazon as plain rows — title,
+  // author, year — so nothing is read by a model. Doubles fold in saveSuggestedWorks.
+  router.post('/interests', interestRoute((req, owner) => ({ saved: interests.saveSuggestedWorks(owner, (req.body || {}).works || []) })));
   router.get('/interests', interestRoute((req, owner) => ({ items: interests.listInterests(owner, req.query) })));
   router.get('/interest-review', interestRoute((req, owner) => ({ entries: interests.pendingInterestReview(owner) })));
   router.get('/interest-imports/:batchId/image', interestRoute((req, owner) => interests.importImage(owner,req.params.batchId)));

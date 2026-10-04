@@ -314,6 +314,10 @@ const ALLOWED_ORIGINS = [
   'https://quantum-narrative-engine-production.up.railway.app',
   /^https?:\/\/localhost(:\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+  // The QNE browser extension (~/edge-extensions/amazon-author-youtube): Amazon tabs
+  // and right-clicked images into the Library. CORS is not auth — it signs in with the
+  // password like the app does and carries an ordinary session token.
+  /^chrome-extension:\/\/[a-p]{32}$/,
 ];
 app.use(cors({
   origin(origin, callback) {
