@@ -36,13 +36,27 @@ const FAST_LANES = [
   { provider: 'cerebras', model: 'gpt-oss-120b', ms: 5000 },
   { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', ms: 7000 },
 ];
-async function quickText(prompt) {
-  for (const l of FAST_LANES) {
-    if (router.isExhausted(l.provider, l.model)) continue;
-    const out = await generateTextDirect({ prompt, provider: l.provider, model: l.model, maxTokens: 400, label: 'screen:define', timeoutMs: l.ms }).catch(() => null);
-    if (out && out.text) return out;
+// The lanes are raced, not queued. Asked one after another, a slow first lane spends
+// its whole timeout before the second is even tried, and he sits in front of a paused
+// episode waiting. Asked all at once, the answer arrives as fast as the quickest of
+// them — three free calls instead of one, which costs nothing but a little quota.
+async function raceLanes(prompt, { maxTokens, label, fallbackMs }) {
+  const live = FAST_LANES.filter((l) => !router.isExhausted(l.provider, l.model));
+  if (live.length) {
+    const tries = live.map((l) => generateTextDirect({
+      prompt, provider: l.provider, model: l.model, maxTokens, label, timeoutMs: l.ms,
+    }).then((out) => {
+      if (!out || !out.text) throw new Error('empty');
+      return out;
+    }));
+    const won = await Promise.any(tries).catch(() => null);
+    if (won) return won;
   }
-  return generateText({ prompt, feature: 'quick', label: 'screen:define', maxTokens: 400, timeoutMs: 20_000 });
+  return generateText({ prompt, feature: 'quick', label, maxTokens, timeoutMs: fallbackMs });
+}
+
+async function quickText(prompt) {
+  return raceLanes(prompt, { maxTokens: 400, label: 'screen:define', fallbackMs: 20_000 });
 }
 
 const COMMON = `English is his second language — plain words, no jargon explained with more jargon.
@@ -137,11 +151,11 @@ const GLOSSARY_PROMPT = `Below are the last lines of dialogue from a series some
 and phrases an ordinary viewer would NOT understand — the trade's own language: procedure
 names, drug names, equipment, abbreviations, numbers read as a code, slang used inside
 that profession. Ignore ordinary English, names of people, and anything a viewer plainly
-understands. Take at most 6, the ones that most block understanding, and skip the scene
+understands. Take at most 4, the ones that most block understanding, and skip the scene
 entirely if nothing in it is jargon.
 For each, write what it means HERE — what the people on screen are doing or referring to
 when they say it. Plain words, English is his second language, no jargon explained with
-more jargon. ONE sentence of about 16 words, never more than 22. Do not begin with the
+more jargon. ONE sentence of about 14 words, never more than 18. Do not begin with the
 term itself.
 When the term is an acronym, also give what its letters stand for, as "expansion".
 Answer with JSON only, no markdown fence:
@@ -178,19 +192,14 @@ export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
       db.prepare('INSERT OR REPLACE INTO show_lookups (show, term, line, text, expansion) VALUES (?,?,?,?,?)')
         .run(showKey, term.toLowerCase(), text.slice(0, 1200), t, expansion);
     }
-    if (terms.length >= 6) break;
+    if (terms.length >= 4) break;
   }
   if (db) db.prepare('INSERT OR REPLACE INTO show_glossaries (show, lines_hash, json) VALUES (?,?,?)').run(showKey, hash, JSON.stringify(terms));
   return { ok: true, terms };
 }
 
-// The glossary asks for six readings at once, so it needs more room than a single
-// lookup and a little more patience — but the same free lanes, in the same order.
+// The glossary asks for several readings at once, so it needs more room than a single
+// lookup — but the same lanes, raced the same way.
 async function quickTextLong(prompt) {
-  for (const l of FAST_LANES) {
-    if (router.isExhausted(l.provider, l.model)) continue;
-    const out = await generateTextDirect({ prompt, provider: l.provider, model: l.model, maxTokens: 900, label: 'screen:glossary', timeoutMs: l.ms + 4000 }).catch(() => null);
-    if (out && out.text) return out;
-  }
-  return generateText({ prompt, feature: 'quick', label: 'screen:glossary', maxTokens: 900, timeoutMs: 30_000 });
+  return raceLanes(prompt, { maxTokens: 700, label: 'screen:glossary', fallbackMs: 25_000 });
 }
