@@ -1,7 +1,7 @@
 // Mounted at /api/screen — the dictionary for whatever he is watching, called by
 // the Edge extension over the same token login the QNE extension already uses.
 import { Router } from 'express';
-import { lookupOnScreen } from '../services/showLookup.js';
+import { lookupOnScreen, glossaryOnScreen } from '../services/showLookup.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function showLookupRoutes() {
@@ -15,6 +15,13 @@ export function showLookupRoutes() {
       line: req.body?.line || '',
     });
     if (out.error) return res.status(out.error === 'not_a_word' ? 400 : 500).json(out);
+    res.json(out);
+  }));
+
+  // { show, lines } — the jargon in what was just said, found and read without being asked.
+  router.post('/glossary', asyncHandler(async (req, res) => {
+    const out = await glossaryOnScreen({ show: req.body?.show || '', lines: req.body?.lines || '' });
+    if (out.error) return res.status(500).json(out);
     res.json(out);
   }));
 
