@@ -176,12 +176,13 @@ story perfectly well. What he does not know is the vocabulary — the trade's ow
 procedure names, drug names, equipment, abbreviations, codes, slang used inside that
 profession. Assume he knows none of it.
 
-Write ONE reading of 25 words or fewer — one sentence, never two. Count them. Spend
-every word on the terms, not on the action: take the two or three hardest words in the
-lines and say what they are, in the flow of a sentence, the way a friend leaning over
-would. Do not narrate what the characters are doing in plain words they already
-understand; that is not what he is missing. No list, no definition after a dash, no
-headings, no markdown, no quotation marks. Plain words — English is his second language.
+Take the two or three hardest terms in the lines. Keep each one in the words it was
+actually said in, and say straight after it what it is — "rhonchi is a coarse rattling
+in the lungs". Join them with semicolons into ONE line of 25 words or fewer. Count them;
+if three will not fit, take two. Never replace a term with a plain phrase and leave it
+at that — he needs to know what the word he heard means, not a version of the sentence
+without it. Do not narrate the action: he follows the story. No headings, no markdown,
+no quotation marks, no numbering. Plain words — English is his second language.
 If the lines hold no trade word at all, say in a few words what is happening.
 
 Then list the terms you folded in, so they can be underlined on screen: at most 4, each
