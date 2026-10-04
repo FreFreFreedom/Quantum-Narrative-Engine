@@ -102,18 +102,20 @@ function context({ show, line }) {
     + (l ? `\n\n=== THE DIALOGUE JUST NOW ===\n${l}` : '');
 }
 
-// Twenty-five words means twenty-five. Asked for it, the models answer with thirty-odd
+const GIST_WORDS = 15;
+// Fifteen words means fifteen. Asked for it, the models answer with thirty-odd
 // and a trailing clause explaining the explanation, so the limit is kept here: the
 // first sentence, and if that still runs long, cut at the last comma that fits.
-function twentyFive(raw) {
+function shortLine(raw) {
   const t = String(raw || '').replace(/\s+/g, ' ').trim();
-  const one = (t.match(/^.*?[.!?](?=\s|$)/) || [t])[0].trim();
-  const w = one.split(' ');
-  if (w.length <= 25) return one;
-  const head = w.slice(0, 25).join(' ');
-  const cut = Math.max(head.lastIndexOf(','), head.lastIndexOf(';'), head.lastIndexOf(' — '));
+  const w = t.split(' ');
+  if (w.length <= GIST_WORDS) return t;
+  // Not the first sentence — that threw away the meanings and left a bare list of
+  // terms. The first words up to the limit, cut back to the last clean break.
+  const head = w.slice(0, GIST_WORDS).join(' ');
+  const cut = Math.max(head.lastIndexOf(';'), head.lastIndexOf(','), head.lastIndexOf('.'));
   const kept = cut > 40 ? head.slice(0, cut) : head;
-  return kept.replace(/[,;:\s]+$/, '') + '.';
+  return kept.replace(/[,;:.\s]+$/, '') + '.';
 }
 
 function firstSentences(raw, n) {
@@ -176,12 +178,13 @@ story perfectly well. What he does not know is the vocabulary — the trade's ow
 procedure names, drug names, equipment, abbreviations, codes, slang used inside that
 profession. Assume he knows none of it.
 
-Take the two or three hardest terms in the lines. Keep each one in the words it was
-actually said in, and say straight after it what it is — "rhonchi is a coarse rattling
-in the lungs". Join them with semicolons into ONE line of 25 words or fewer. Count them;
-if three will not fit, take two. Never replace a term with a plain phrase and leave it
-at that — he needs to know what the word he heard means, not a version of the sentence
-without it. Do not narrate the action: he follows the story. No headings, no markdown,
+Take the ONE or TWO hardest terms in the lines. Keep each one in the words it was
+actually said in, and say straight after it what it means FOR THIS PATIENT, IN THIS
+SCENE — not a dictionary meaning. "rhonchi means his lungs are rattling, so they are
+full of something" is right; "rhonchi are coarse breath sounds" is not. Join them with a semicolon into ONE line of 15 words or fewer. Count them; if
+two will not fit, take one. A bare list of the terms with no meaning is useless — never do that. Never replace
+a term with a plain phrase and leave it at that either: he needs to know what the word
+he heard means here. Do not narrate the action: he follows the story. No headings, no markdown,
 no quotation marks, no numbering. Plain words — English is his second language.
 If the lines hold no trade word at all, say in a few words what is happening.
 
@@ -217,7 +220,7 @@ export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
   let parsed = null;
   try { parsed = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { return { error: 'unreadable' }; }
 
-  const gist = twentyFive(parsed?.gist);
+  const gist = shortLine(parsed?.gist);
   const terms = [];
   for (const it of (parsed && parsed.terms) || []) {
     const term = String(it?.term || '').replace(/\s+/g, ' ').trim().slice(0, 80);
