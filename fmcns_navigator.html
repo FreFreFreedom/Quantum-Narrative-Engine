@@ -3711,9 +3711,8 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-ink i { position:absolute; display:block; border-radius:3px; transform-origin:left center;
   background:color-mix(in srgb, var(--c-accent, #c8472e) 22%, transparent);
   transition:background var(--t-fast, .14s) var(--ease, ease); }
-/* The stroke only animates on release; under the hand the ink simply follows. */
-.se-ink.laid i { animation:seInk .3s cubic-bezier(.33,0,.2,1) backwards;
-  background:color-mix(in srgb, var(--c-accent, #c8472e) 30%, transparent); }
+/* The stroke plays as the first words are taken; after that the ink follows the hand. */
+.se-ink.laid i { animation:seInk .18s cubic-bezier(.33,0,.2,1) backwards; }
 @keyframes seInk { from { transform:scaleX(0); } to { transform:scaleX(1); } }
 @media (prefers-reduced-motion: reduce){ .se-ink.laid i { animation:none; } }
 /* A kept line is washed in parchment (his pick D3, 2026-09-24): no underline, no echo in
@@ -31026,7 +31025,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!rects.length) return killInk();
     if(inkLayer && inkLayer.parentNode) inkLayer.parentNode.removeChild(inkLayer);
     var total = rects.reduce(function(n, r){ return n + r.width; }, 0);
-    var SPAN = 300, run = 0;
+    var SPAN = 180, run = 0;
     inkLayer = document.createElement('div');
     inkLayer.className = 'se-ink' + (laid ? ' laid' : '');
     rects.forEach(function(r){
@@ -31048,13 +31047,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Called from everything that can move the selection. Straight through rather than
   // on a frame: a tab that is not the one in front never runs its frames, and the ink
   // is the only highlight there is now — it cannot afford to wait for one.
-  function inkFollow(laid){
+  function inkFollow(){
     var sel = window.getSelection && window.getSelection();
     if(!sel || !sel.rangeCount || !String(sel).trim()) return killInk();
     var r = sel.getRangeAt(0);
     var node = r.startContainer, el = node && (node.nodeType === 1 ? node : node.parentElement);
     if(!el || !el.closest || !el.closest('.se-log')) return killInk();
-    paintInk(r, laid);
+    // The stroke only plays where there was no ink a moment ago — the first words you
+    // take. After that the ink simply follows the hand, with nothing to wait for.
+    paintInk(r, !inkLayer);
   }
   function killQuotePop(){
     if(quotePop && quotePop.parentNode) quotePop.parentNode.removeChild(quotePop);
@@ -31406,8 +31407,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     };
     log.quoteOffer=offer;
     log.addEventListener('mousedown', function(ev){ wordDragStart(log, ev); });
-    log.addEventListener('mouseup', function(){ inkFollow(true); offer(0, true); });
-    log.addEventListener('touchend', function(){ inkFollow(true); }, { passive: true });
+    log.addEventListener('mouseup', function(){ offer(0, true); });
     log.addEventListener('keyup', function(){ offer(0); });
     // Passive: the gesture is the browser's own text selection and must not be
     // interfered with — this only reads what it produced.
@@ -31447,10 +31447,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   document.addEventListener('mousedown', function(ev){
     if(!quotePop || !quotePop.contains(ev.target)){clearTimeout(quoteOfferTimer);killQuotePop();}
   }, true);
-  window.addEventListener('scroll', function(){ placeQuotePop(); if(inkRange) inkFollow(false); }, true);
+  window.addEventListener('scroll', function(){ placeQuotePop(); if(inkRange) inkFollow(); }, true);
   // Clicking away clears the selection; the offer goes with it.
   document.addEventListener('selectionchange', function(){
-    inkFollow(false);
+    inkFollow();
     if(quotePop && quotePop.contains(document.activeElement))return;
     var sel=window.getSelection();
     // Selecting inside the bar itself (the meaning, to copy it) keeps the bar.
