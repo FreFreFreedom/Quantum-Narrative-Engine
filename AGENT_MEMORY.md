@@ -40,6 +40,10 @@ prompt). It signs in with the admin password kept in extension storage and holds
 ordinary 7-day token, renewed once on any 401 — **not** the scoped capture key, which was
 deleted 2026-10-02 (`ed03e37`) for being refused everywhere. CORS allows
 `chrome-extension://<32 a-p>` again; CORS is not auth.
+**It reloads itself**: a half-minute alarm compares the manifest version on disk with the
+one running and calls `chrome.runtime.reload()` when they differ — so **every edit to that
+folder must end with `./bump.sh`**, or nothing notices and he is pressing reload in
+`edge://extensions` again.
 
 **2026-10-01 — A local server rewrites the checkout's notes folder.** Booting `queue-server`
 locally (any `DB_PATH`) runs `noteMirror.js`'s disk sync, which writes the local DB's notes
