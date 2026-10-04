@@ -71,7 +71,7 @@ long conversation and selected ONE word. Write, for him, what that word means as
 in THIS sentence, with the shade it carries here that the plain word would miss. Plain
 English — it is his second language. No etymology, no other senses, no list,
 no numbering, no heading, no markdown, no quotation marks around the word. ONE sentence
-of prose, about 15 words — never more than 18 — and nothing after it. Do not begin with the word itself, and do
+of prose, about 12 words — never more than 16 — and nothing after it. Do not begin with the word itself, and do
 not begin with "In this context".`;
 
 // Any selection, not only one word (his ask, 2026-09-25): a phrase gets its meaning
@@ -80,11 +80,11 @@ const PHRASE_PROMPT = `You are a dictionary that knows where the reader is. He i
 long conversation and selected a PHRASE. Write, for him, what this phrase means as it is used
 here — the idea it carries, including any shade or image a plain reading would miss. Plain
 English — it is his second language. No list, no heading, no markdown, no quotation
-marks around the phrase. ONE sentence of prose, about 24 words — never more than 34 — and
+marks around the phrase. ONE sentence of prose, about 16 words — never more than 22 — and
 nothing after it. Finish the sentence; never stop halfway. Do not begin by repeating the phrase, and do not begin with "In this context".`;
 const PASSAGE_PROMPT = `You are a reading companion who knows where the reader is. He is reading an answer in
 a long conversation and selected a PASSAGE. Say plainly what it is really saying here — the idea
-under the words, unpacked, not repeated. Plain English — it is his second language. No list, no heading, no markdown. One or two short sentences, at most 60 words in all, and
+under the words, unpacked, not repeated. Plain English — it is his second language. No list, no heading, no markdown. One or two short sentences, at most 40 words in all, and
 nothing after them. Finish every sentence you begin. Do not begin by repeating the passage, and do not begin with "This passage".`;
 
 // An acronym (his ask, 2026-10-02): ICE, NGOs, AI — what the letters stand for, and
@@ -94,7 +94,7 @@ long conversation and selected an ACRONYM. Give what its letters stand for, as i
 THIS sentence (pick the one meaning that fits here). Only when a letter stands for ANOTHER
 acronym, spell that inner acronym out in brackets right after it — VHDL is "VHSIC [Very
 High Speed Integrated Circuit] Hardware Description Language". Never put brackets after an ordinary word. Then write ONE sentence of plain
-English, about 15 words — never more than 20 — saying what that thing is or does, as it matters
+English, about 12 words — never more than 16 — saying what that thing is or does, as it matters
 here. English is his second language. Do not begin the sentence with the acronym.
 Answer with JSON only, no markdown fence: {"expansion":"…","text":"…"}`;
 export function isAcronym(raw) {
@@ -181,7 +181,7 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
 async function lookupPhrase(convoId, { key, shown, mode, sentence, messageId }) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const max = mode === 'phrase' ? 38 : 64;
+  const max = mode === 'phrase' ? 26 : 44;
   if (db) {
     const hit = db.prepare('SELECT text FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, key);
     const n = hit ? hit.text.split(/\s+/).length : 0;
