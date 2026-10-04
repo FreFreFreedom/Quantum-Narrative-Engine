@@ -3701,6 +3701,19 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    word in half. */
 .se-log ::selection, .se-log::selection { background:color-mix(in srgb, var(--c-accent, #c8472e) 24%, transparent); color:inherit; text-shadow:none; }
 .se-log ::-moz-selection, .se-log::-moz-selection { background:color-mix(in srgb, var(--c-accent, #c8472e) 24%, transparent); color:inherit; text-shadow:none; }
+/* While the ink is being laid down the browser's own wash steps aside, so the stroke
+   is the only thing you see arriving. It comes back the moment the stroke lands. */
+.se-log.se-inking ::selection, .se-log.se-inking::selection { background:color-mix(in srgb, var(--c-accent, #c8472e) 7%, transparent); }
+.se-log.se-inking ::-moz-selection { background:color-mix(in srgb, var(--c-accent, #c8472e) 7%, transparent); }
+/* The ink: under the hand the wash stays faint, and when you let go the real colour
+   sweeps across the passage line by line, the way a marker lays it down. Painted as
+   its own layer behind the text, so nothing in the answer moves. */
+.se-ink { position:fixed; inset:0; pointer-events:none; z-index:calc(var(--z-popover) - 1); }
+.se-ink i { position:absolute; display:block; border-radius:3px; transform-origin:left center;
+  background:color-mix(in srgb, var(--c-accent, #c8472e) 26%, transparent);
+  animation:seInk .34s cubic-bezier(.33,0,.2,1) backwards; }
+@keyframes seInk { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+@media (prefers-reduced-motion: reduce){ .se-ink i { animation:none; } }
 /* A kept line is washed in parchment (his pick D3, 2026-09-24): no underline, no echo in
    the margin, nothing that moves the text. Darker looks get the same wash in their own gold. */
 .se-kept { background:rgba(214,190,140,.45); color:inherit; border-bottom:0; border-radius:2px; cursor:pointer;
@@ -30997,9 +31010,44 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // dropped, so it can never outlive the thing it points at.
   var quotePop = null;
   var quoteOfferTimer = null;
+  var inkLayer = null, inkTimer = null, inkLog = null;
+  function killInk(){
+    clearTimeout(inkTimer);
+    if(inkLayer && inkLayer.parentNode) inkLayer.parentNode.removeChild(inkLayer);
+    if(inkLog) inkLog.classList.remove('se-inking');
+    inkLayer = null; inkLog = null;
+  }
+  // One strip per line of the passage, each starting where the one before finished,
+  // so a passage running over four lines reads as a single stroke rather than four.
+  function paintInk(log, range){
+    killInk();
+    var rects = Array.prototype.slice.call(range.getClientRects()).filter(function(r){ return r.width > 0.5 && r.height > 0.5; });
+    if(!rects.length) return;
+    var total = rects.reduce(function(n, r){ return n + r.width; }, 0);
+    var SPAN = 340, run = 0;
+    inkLayer = document.createElement('div');
+    inkLayer.className = 'se-ink';
+    rects.forEach(function(r){
+      var i = document.createElement('i');
+      i.style.left = r.left + 'px';
+      i.style.top = (r.top - 1) + 'px';
+      i.style.width = r.width + 'px';
+      i.style.height = (r.height + 2) + 'px';
+      i.style.animationDuration = Math.max(90, SPAN * (r.width / total)) + 'ms';
+      i.style.animationDelay = (SPAN * (run / total)) + 'ms';
+      run += r.width;
+      inkLayer.appendChild(i);
+    });
+    document.body.appendChild(inkLayer);
+    inkLog = log; log.classList.add('se-inking');
+    // Once the stroke has landed, hand the passage back to the browser's own wash —
+    // which paints behind the letters, where a highlight belongs.
+    inkTimer = setTimeout(killInk, SPAN + 160);
+  }
   function killQuotePop(){
     if(quotePop && quotePop.parentNode) quotePop.parentNode.removeChild(quotePop);
     quotePop = null;
+    killInk();
   }
   // The answer a node sits in, or nothing if it is in your own message or outside
   // the transcript altogether.
@@ -31333,6 +31381,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         });
         document.body.appendChild(quotePop);
         placeQuotePop();
+        if(gesture) paintInk(log, range);
         // Whatever is selected, its meaning here opens under the bar by itself: one
         // word, a phrase, or a passage (then what it is really saying). The word
         // class from the dictionary only makes sense for a single word.
