@@ -102,6 +102,20 @@ function context({ show, line }) {
     + (l ? `\n\n=== THE DIALOGUE JUST NOW ===\n${l}` : '');
 }
 
+// Twenty-five words means twenty-five. Asked for it, the models answer with thirty-odd
+// and a trailing clause explaining the explanation, so the limit is kept here: the
+// first sentence, and if that still runs long, cut at the last comma that fits.
+function twentyFive(raw) {
+  const t = String(raw || '').replace(/\s+/g, ' ').trim();
+  const one = (t.match(/^.*?[.!?](?=\s|$)/) || [t])[0].trim();
+  const w = one.split(' ');
+  if (w.length <= 25) return one;
+  const head = w.slice(0, 25).join(' ');
+  const cut = Math.max(head.lastIndexOf(','), head.lastIndexOf(';'), head.lastIndexOf(' — '));
+  const kept = cut > 40 ? head.slice(0, cut) : head;
+  return kept.replace(/[,;:\s]+$/, '') + '.';
+}
+
 function firstSentences(raw, n) {
   const t = String(raw || '').replace(/\s+/g, ' ').trim();
   const parts = t.match(/[^.!?]+[.!?]+["”’)]*/g) || [t];
@@ -201,7 +215,7 @@ export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
   let parsed = null;
   try { parsed = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { return { error: 'unreadable' }; }
 
-  const gist = String(parsed?.gist || '').replace(/\s+/g, ' ').trim().slice(0, 400);
+  const gist = twentyFive(parsed?.gist);
   const terms = [];
   for (const it of (parsed && parsed.terms) || []) {
     const term = String(it?.term || '').replace(/\s+/g, ' ').trim().slice(0, 80);
