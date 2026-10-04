@@ -46,6 +46,7 @@ import { analogyLook } from './roomAnalogies.js';
 import { bindInterestLibrary, interestContext, INTEREST_POINTED, INTEREST_TOOLS, interestTool, saveSuggestedWorks } from './interestLibrary.js';
 import { referenceQuote, REFERENCE_TOOLS, referenceTool } from './referenceLibrary.js';
 import { bindBookShelf, shelfContext, namesShelfBook, BOOK_TOOLS, bookTool } from './bookShelf.js';
+import { WATCHING_TOOLS, watchingTool, watchingContext } from './watching.js';
 import { bindScreenFacts } from './screenFacts.js';
 import { bindBookFacts } from './bookFacts.js';
 import { bindBookContents } from './bookContents.js';
@@ -2159,6 +2160,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // answer and were rules in all but name (2026-09-30).
     interestContext(convo.created_by, lastUserText(convo.id), { onlyExplicit: true }),
     shelfContext(convo.created_by, lastUserText(convo.id), { onlyNamed: true }),
+    watchingContext(lastUserText(convo.id)),
     repoBlock,
     // What he told it to remember, after what it merely knows, so his own standing
     // words outrank it — but before the task, so what he says now still wins.
@@ -2182,6 +2184,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     mindBlock(lastUserText(convo.id)),
     interestContext(convo.created_by, lastUserText(convo.id)),
     shelfContext(convo.created_by, lastUserText(convo.id)),
+    watchingContext(lastUserText(convo.id)),
     repoBlock,
     parentTranscriptFor(convo),
     linkedConversationsBlock(convo.id),
@@ -2253,7 +2256,7 @@ async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens,
 // the structured turns (/plan, /fold, /reframe, /more) ask for one JSON object
 // back, and a tool round mid-way through that is a round that returns prose
 // instead of the object the caller then has to parse.
-const studioTools = (convoId) => [...STUDIO_TOOLS, ...INTEREST_TOOLS, ...REFERENCE_TOOLS, ...BOOK_TOOLS,
+const studioTools = (convoId) => [...STUDIO_TOOLS, ...INTEREST_TOOLS, ...REFERENCE_TOOLS, ...BOOK_TOOLS, ...WATCHING_TOOLS,
   ...(listConvoLinks(convoId).length ? [LINKED_CONVERSATION_TOOL] : [])];
 const studioDispatch = (convoId) => (name, input) => name === LINKED_CONVERSATION_TOOL.name
   ? readLinkedConversation(convoId, input)
@@ -2263,6 +2266,8 @@ const studioDispatch = (convoId) => (name, input) => name === LINKED_CONVERSATIO
   ? referenceTool(db.prepare('SELECT created_by FROM convos WHERE id=?').get(convoId)?.created_by,name,input)
   : BOOK_TOOLS.some(t => t.name === name)
   ? bookTool(db.prepare('SELECT created_by FROM convos WHERE id=?').get(convoId)?.created_by,name,input)
+  : WATCHING_TOOLS.some(t => t.name === name)
+  ? watchingTool(name, input)
   : dispatchStudioTool(db, name, input);
 
 // When he asks for books, films or series, the works the answer suggests are
