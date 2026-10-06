@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## External systems and technologies do not originate malice but operationalize human will, serving as mirrors for unvoiced aggression.
+
+Tools and institutions are frequently treated as autonomous monsters rather than mirrors of human agency, exposing the urge to blame the weapon for the cruelty of the hand that wields it. Kept line: 'the tool does not originate the will; it operationalizes it.'
+
 ## The psychological architecture of a traumatized person's isolation mirrors the physical design of a total institution.
 
 When an individual suffers profound betrayal or injury, the psyche constructs an internal penitentiary—locking doors, enforcing solitary confinement, and policing its own thoughts and boundaries—to prevent external contact from reaching past fragile defenses.
