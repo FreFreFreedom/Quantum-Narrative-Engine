@@ -11,6 +11,14 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The psychological architecture of a traumatized person's isolation mirrors the physical design of a total institution.
+
+When an individual suffers profound betrayal or injury, the psyche constructs an internal penitentiary—locking doors, enforcing solitary confinement, and policing its own thoughts and boundaries—to prevent external contact from reaching past fragile defenses.
+
+## Extreme environments like prisons and cell blocks act as compression chambers that strip human social dynamics down to their raw structural skeleton.
+
+In ordinary civil society, systemic friction and power dynamics are cushioned by space, time, and social fiction. Closed institutions weld shut these safety valves—such as upward mobility, spatial escape, and casual separation—collapsing the latency between cause and effect to zero and revealing the naked architecture of human association.
+
 ## Software code acts as an artificial grammar that determines what large operational groups can perceive and do.
 
 Antoine explored structural operations and essential functions, moving from terms like structural mechanics to the core action of an entity. This idea captures how translating operations into software sets hard limits on what an institution can notice, connect, check, and act upon.
