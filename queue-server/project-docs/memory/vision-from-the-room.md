@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Total institutions and prisons serve as raw crucibles that strip away social masks and force the interior transformation of the self.
+
+When an individual is thrust into the absolute compression of a cage, the polite social machinery falls away. This isolation can either crush a person or serve as an austere workshop where reactive rage is transmuted into a hardened, sovereign internal architecture.
+
 ## The polite social world is a total institution operating at low tide, sharing the exact geometry of a cell block.
 
 Environments like high schools, suburban family dinners, and respectable corporate institutions demand compliance through the threat of isolation and social excommunication, operating on the same hidden baseline of power dynamics as a total institution.
