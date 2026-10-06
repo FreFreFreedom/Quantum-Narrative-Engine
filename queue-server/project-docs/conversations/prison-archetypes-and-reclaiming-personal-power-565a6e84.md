@@ -1,4 +1,4 @@
-# Prison Archetypes and Trauma Recovery Isolation
+# Prison Archetypes and Reclaiming Personal Power
 
 Thread 565a6e84-f3d7-4ada-8d3f-591d47413bb0 · 5 turns · last said 2026-10-06T05:45:10.789Z
 
