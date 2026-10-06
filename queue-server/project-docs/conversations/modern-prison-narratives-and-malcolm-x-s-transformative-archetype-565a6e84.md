@@ -1,4 +1,4 @@
-# Prison Archetypes and Trauma Processing Literature
+# Modern Prison Narratives and Malcolm X’s Transformative Archetype
 
 Thread 565a6e84-f3d7-4ada-8d3f-591d47413bb0 · 17 turns · last said 2026-10-06T08:49:19.989Z
 
