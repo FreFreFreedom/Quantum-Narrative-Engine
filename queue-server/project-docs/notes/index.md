@@ -30,6 +30,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Policy as frozen posture toward pain — side talk of Comparative politics across structural scales — notes/policy-as-frozen-posture-toward-pain-side-talk-of-comparative-politics-across-st.md
 - Note: Policy as response to institutional pain — side talk of Comparative politics across structural scales — notes/policy-as-response-to-institutional-pain-side-talk-of-comparative-politics-acros.md
 - Note: Postcode wars as immune defense — side talk of Comparative politics across structural scales — notes/postcode-wars-as-immune-defense-side-talk-of-comparative-politics-across-structu.md
+- Note: Prisons as Laboratories of Human Dynamics — notes/prisons-as-laboratories-of-human-dynamics.md
 - Note: QNE — notes/qne.md
 - Note: Redlining as civic self-dissociation — side talk of Comparative politics across structural scales — notes/redlining-as-civic-self-dissociation-side-talk-of-comparative-politics-across-st.md
 - Note: Relational Dynamics Reduced to Fundamental Polarity — notes/relational-dynamics-reduced-to-fundamental-polarity.md
