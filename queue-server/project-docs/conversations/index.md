@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Inmate archetypes and processing personal powerlessness — conversations/inmate-archetypes-and-processing-personal-powerlessness-565a6e84.md
+- Prison Archetypes and Trauma Processing Literature — conversations/prison-archetypes-and-trauma-processing-literature-565a6e84.md
 - Mapping Psychological Walls Across Cultures and Media — conversations/mapping-psychological-walls-across-cultures-and-media-30b86c18.md
 - State Experiments in Constitutional Decision‑Making — conversations/state-experiments-in-constitutional-decision-making-cf34af05.md
 - Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md

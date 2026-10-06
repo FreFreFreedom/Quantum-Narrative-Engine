@@ -11,13 +11,17 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The polite social world is a total institution operating at low tide, sharing the exact geometry of a cell block.
+
+Environments like high schools, suburban family dinners, and respectable corporate institutions demand compliance through the threat of isolation and social excommunication, operating on the same hidden baseline of power dynamics as a total institution.
+
+## Rock bottom is an austere masterpiece of architecture that halts the bleeding of vitality into porous social compliance.
+
+By stripping away social safety nets, unearned approvals, and the exhausting luxury of weak hope, rock bottom forces scattered energy down against unyielding stone, providing the cold, unshakeable clarity of a man who has faced the worst.
+
 ## External systems and technologies do not originate malice but operationalize human will, serving as mirrors for unvoiced aggression.
 
 Tools and institutions are frequently treated as autonomous monsters rather than mirrors of human agency, exposing the urge to blame the weapon for the cruelty of the hand that wields it. Kept line: 'the tool does not originate the will; it operationalizes it.'
-
-## The psychological architecture of a traumatized person's isolation mirrors the physical design of a total institution.
-
-When an individual suffers profound betrayal or injury, the psyche constructs an internal penitentiary—locking doors, enforcing solitary confinement, and policing its own thoughts and boundaries—to prevent external contact from reaching past fragile defenses.
 
 ## Extreme environments like prisons and cell blocks act as compression chambers that strip human social dynamics down to their raw structural skeleton.
 
