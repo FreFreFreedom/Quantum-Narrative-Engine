@@ -41,6 +41,9 @@ export function bindBookFacts(database) {
   try { db.exec('ALTER TABLE book_facts ADD COLUMN about TEXT'); } catch (err) { /* already there */ }
   // The book's own Goodreads page, checked; '-' once it was looked for and not found.
   try { db.exec("ALTER TABLE book_facts ADD COLUMN goodreads TEXT NOT NULL DEFAULT ''"); } catch (err) { /* already there */ }
+  // How long the book is. '' means never looked for, '-' means looked for and no
+  // catalogue said — so a book nobody counted is not re-asked on every repaint.
+  try { db.exec("ALTER TABLE book_facts ADD COLUMN pages TEXT NOT NULL DEFAULT ''"); } catch (err) { /* already there */ }
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
@@ -186,7 +189,7 @@ export async function lookupBook(title, creator) {
   for (const q of queries) {
     if (!q || seen.has(q)) continue;
     seen.add(q);
-    const j = await getJson('https://openlibrary.org/search.json?limit=8&fields=cover_i,key,title,subtitle,author_name,first_publish_year,isbn&q=' + encodeURIComponent(q));
+    const j = await getJson('https://openlibrary.org/search.json?limit=8&fields=cover_i,key,title,subtitle,author_name,first_publish_year,isbn,number_of_pages_median&q=' + encodeURIComponent(q));
     for (const doc of j?.docs || []) {
       const full = [doc.title, doc.subtitle].filter(Boolean).join(': ');
       const score = scoreCandidate({ title: full, authors: doc.author_name || [] }, title, who);
@@ -234,7 +237,7 @@ export async function lookupBook(title, creator) {
   if (!cands.length && surname(who)) {
     const want = new Set(words(title).filter((w) => w.length >= 5));
     const sn = surname(who), mine = [];
-    const ol = await getJson('https://openlibrary.org/search.json?limit=30&fields=cover_i,key,title,subtitle,author_name,first_publish_year,isbn&author=' + encodeURIComponent(who));
+    const ol = await getJson('https://openlibrary.org/search.json?limit=30&fields=cover_i,key,title,subtitle,author_name,first_publish_year,isbn,number_of_pages_median&author=' + encodeURIComponent(who));
     for (const doc of ol?.docs || []) {
       if (!norm((doc.author_name || []).join(' ')).split(' ').includes(sn)) continue;
       const hit = words([doc.title, doc.subtitle].filter(Boolean).join(' ')).filter((w) => want.has(w)).length;
@@ -251,13 +254,13 @@ export async function lookupBook(title, creator) {
   }
 
   cands.sort((a, b) => b.score - a.score);
-  const out = { cover: '', blurb: '', year: '', isbn: '' };
+  const out = { cover: '', blurb: '', year: '', isbn: '', pages: '' };
   // The best Apple match close to the top answers the cover before anything else.
   const top = cands.length ? cands[0].score : 0;
   const apple = cands.find((c) => c.src === 'apple' && c.score >= top - 3);
   if (apple) out.cover = apple.art;
   for (const c of cands) {
-    if (out.cover && out.blurb && out.isbn) break;
+    if (out.cover && out.blurb && out.isbn && out.pages) break;
     if (!out.year && c.year) out.year = c.year;
     if (c.src === 'apple') {
       if (!out.cover) out.cover = c.art;
@@ -267,6 +270,7 @@ export async function lookupBook(title, creator) {
       continue;
     }
     if (c.src === 'g') {
+      if (!out.pages && Number(c.v.pageCount) > 0) out.pages = String(Math.round(Number(c.v.pageCount)));
       if (!out.isbn) {
         const ids = c.v.industryIdentifiers || [];
         const pick = ids.find((x) => x.type === 'ISBN_10') || ids.find((x) => x.type === 'ISBN_13');
@@ -280,6 +284,7 @@ export async function lookupBook(title, creator) {
       const d = String(c.v.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
       if (!out.blurb && d.length > 140) out.blurb = d.slice(0, 2000);
     } else {
+      if (!out.pages && Number(c.doc.number_of_pages_median) > 0) out.pages = String(Math.round(Number(c.doc.number_of_pages_median)));
       if (!out.isbn && Array.isArray(c.doc.isbn) && c.doc.isbn.length) {
         const ten = c.doc.isbn.find((x) => String(x).length === 10);
         out.isbn = String(ten || c.doc.isbn[0]).replace(/[^0-9Xx]/g, '');
@@ -455,14 +460,15 @@ function rowOf(title, creator) {
   catch (err) { return null; }
 }
 function save(title, creator, facts) {
-  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by, isbn)
-              VALUES (?,?,?,?,?,?,?,?)
+  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by, isbn, pages)
+              VALUES (?,?,?,?,?,?,?,?,?)
               ON CONFLICT(key) DO UPDATE SET cover=COALESCE(NULLIF(excluded.cover,''), book_facts.cover),
                 blurb=COALESCE(NULLIF(excluded.blurb,''), book_facts.blurb),
                 year=COALESCE(NULLIF(excluded.year,''), book_facts.year),
                 isbn=COALESCE(NULLIF(excluded.isbn,''), book_facts.isbn),
+                pages=COALESCE(NULLIF(excluded.pages,''), book_facts.pages),
                 found_by=excluded.found_by, fetched_at=CURRENT_TIMESTAMP`)
-    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '', MATCHER, facts.isbn || '');
+    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '', MATCHER, facts.isbn || '', facts.pages || '-');
 }
 
 // The same shape a film's facts come back in, so the wall draws both the same way.
@@ -494,6 +500,7 @@ function shape(row, item) {
     poster: row?.cover || '', rating: 0, votes: 0,
     overview: row?.about || row?.blurb || '', fromBook: false, book: null,
     isbn: row?.isbn || '',
+    pages: Number(row?.pages) > 0 ? Number(row.pages) : 0,
     goodreads: /^https:\/\//.test(row?.goodreads || '') ? row.goodreads : '',
     relevance: row?.relevance || '',
   };
@@ -519,6 +526,7 @@ export async function bookFactsFor(owner, items = []) {
     // what shows, and a catalogue that timed out once (Open Library slow, Google's
     // anonymous quota spent) left "Shattered Bonds" blank for good (2026-09-25).
     const stale = !row || (!row.cover && !row.blurb) || Number(row.found_by || 0) < MATCHER
+      || String(row.pages || '') === ''
       || (!row.cover && ageHours(row.fetched_at) >= COVER_RETRY_HOURS);
     if (stale && fetched < FETCH_CAP) {
       fetched += 1;

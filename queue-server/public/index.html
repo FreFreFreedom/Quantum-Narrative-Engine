@@ -33985,12 +33985,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var top = Math.max(8, Math.min(r.top, vh - h - 8));
     seCard.style.left = left + 'px'; seCard.style.top = top + 'px';
   }
+  // 300 words a page, shown to two telling figures: 86,000 rather than 86,400.
+  function bkWords(pages){
+    var n = Math.round(pages * 300);
+    var step = n >= 20000 ? 1000 : n >= 2000 ? 500 : 100;
+    n = Math.round(n / step) * step;
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
   function seCardHtml(d, card){
     var kind = d.coverKind, book = kind === 'book';
     var f = card || {};
     var out = libOutLink({ kind: kind, title: d.coverTitle, creator: d.coverCreator }, f.isbn || f.imdbId ? f : (seOutFacts[d.coverArt] || null));
     var meta = [];
-    if (book) { if (d.coverCreator) meta.push(d.coverCreator); if (f.year || d.coverYear) meta.push(f.year || d.coverYear); }
+    if (book) { if (d.coverCreator) meta.push(d.coverCreator); if (f.year || d.coverYear) meta.push(f.year || d.coverYear);
+      // How long it is, before he opens it: the catalogue's page count, and the
+      // words it comes to at the usual 300 a page, rounded so it reads as the
+      // estimate it is.
+      if (f.pages > 0) { meta.push(f.pages + ' pages'); meta.push('~' + bkWords(f.pages) + ' words'); } }
     else {
       if (f.year || d.coverYear) meta.push(f.year || d.coverYear);
       if (f.runtime) meta.push(kind === 'series' ? f.runtime + ' min/ep' : Math.floor(f.runtime / 60) + 'h ' + String(f.runtime % 60).padStart(2, '0'));
