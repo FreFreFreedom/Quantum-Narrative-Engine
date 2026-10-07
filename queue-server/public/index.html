@@ -29827,6 +29827,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var msg = e.msgs[at];
     var text = msg.body || msg.text || '';
     if(msg.quotes && msg.quotes.length) e.quotes = msg.quotes.slice();
+    // A screenshot he sent with the question comes back to the box with it. The
+    // bytes are already held on the message for the small "answer again" button;
+    // rewinding dropped them, so the picture vanished from a question he was only
+    // editing, and he had to find and paste it again (his ask, 2026-10-07).
+    if(msg.retryAttachments && msg.retryAttachments.length){
+      e.pendingAttachments = msg.retryAttachments.slice();
+      persistAttachments(e);
+    }
     e.msgs = e.msgs.slice(0, at);
     e.marks = (e.marks || []).filter(function(mk){ return e.msgs.some(function(m){ return m.id === mk.message_id; }); });
     e.draft = text; e.draftForce = true; saveDraft(e);
