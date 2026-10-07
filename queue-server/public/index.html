@@ -1602,6 +1602,12 @@ body::after {
   align-items:center; justify-content:center; padding:12px 0; margin:0; border:0; border-right:1px solid var(--c-border);
   background:color-mix(in srgb, var(--c-ink) 4%, transparent); cursor:pointer; transition:background var(--t-fast) var(--ease); }
 .ws-room.room-folded .room-fold-rib:hover { background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 12%, transparent); }
+/* Hold me: a gold line runs down the rib for as long as the wait lasts. */
+.room-side-rib, .room-fold-rib { position:relative; overflow:hidden; }
+.room-side-rib::after, .room-fold-rib::after { content:''; position:absolute; left:0; width:2px; top:0; height:0;
+  background:var(--c-kept-echo, var(--c-accent)); opacity:.7; transition:height 1.4s linear; }
+.room-side-rib.is-waiting::after, .ws-room.room-folded .room-fold-rib:hover::after { height:100%; }
+.room-side-rib:not(.is-waiting)::after, .ws-room.room-folded .room-fold-rib:not(:hover)::after { transition:height .12s linear; }
 .ws-room.room-folded .room-fold-rib span { writing-mode:vertical-rl; transform:rotate(180deg); max-height:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
   font:500 10.5px/1 'Cinzel', var(--font-read); letter-spacing:.2em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
 /* Folded, the conversation itself is a panel hanging off the rib — out of the way
@@ -1609,11 +1615,14 @@ body::after {
 .ws-room.room-folded > .room-main > .room-toolbar,
 .ws-room.room-folded > .room-main > .room-convo {
   left:34px; right:auto; width:var(--room-peek-w, min(460px, 44cqw));
-  opacity:0; pointer-events:none; transition:opacity var(--t-med) var(--ease); transition-delay:.4s; }
+  opacity:0; pointer-events:none; transition:opacity var(--t-med) var(--ease); transition-delay:1.4s; }
 .ws-room.room-folded > .room-main > .room-convo { position:absolute; top:0; bottom:0; z-index:var(--z-panel);
   background:var(--c-bg); box-shadow:var(--sh-md); border-right:1px solid var(--c-border); border-radius:0 14px 14px 0; }
 .ws-room.room-folded > .room-main:hover > .room-toolbar,
-.ws-room.room-folded > .room-main:hover > .room-convo { opacity:1; pointer-events:auto; transition-delay:.1s; }
+.ws-room.room-folded > .room-main:hover > .room-convo { opacity:1; pointer-events:auto; transition-delay:1.4s; }
+/* Once it is over, leaving puts it away at once rather than after the same wait. */
+.ws-room.room-folded > .room-main > .room-toolbar:hover,
+.ws-room.room-folded > .room-main > .room-convo:hover { transition-delay:0s; }
 /* The width the Room gives up goes to the asides — otherwise folding buys nothing
    and only leaves a gap. */
 .ws-room.room-folded .room-cards.side-layout:not(.collapsed) { width:auto; flex:1; max-width:none; }
@@ -17100,6 +17109,25 @@ let roomSideOpenId = null;
 let roomSideTrail = [];
 const roomSidePositions = new Map();
 let roomSideMenuOpen = false;
+// Resting on a rib opens it, no click needed — but not at a brush of the pointer.
+// The ribs line the left edge, which is exactly where the pointer crosses on its
+// way somewhere else, so a rib asks to be held for a moment first (his ask,
+// 2026-10-07). A gold line fills down the rib while he holds, so the wait is
+// visible rather than a thing that eventually happens.
+const ROOM_RIB_DWELL = 1400;
+function roomRibDwell(el, open) {
+  if (!el || el.dataset.dwell) return;
+  el.dataset.dwell = '1';
+  let timer = null;
+  const stop = () => { clearTimeout(timer); timer = null; el.classList.remove('is-waiting'); };
+  el.addEventListener('mouseenter', () => {
+    stop();
+    el.classList.add('is-waiting');
+    timer = setTimeout(() => { stop(); open(); }, ROOM_RIB_DWELL);
+  });
+  el.addEventListener('mouseleave', stop);
+  el.addEventListener('click', stop);
+}
 // He unfolded the Room by hand: leave it open until he steps into another aside.
 let roomFoldSuppressed = false;
 // Folded whenever an aside is open in the pane and he has not asked for the Room
@@ -17435,6 +17463,7 @@ function renderRoomSide() {
   }
   host.querySelectorAll('[data-side-rib]').forEach(b => {
     b.onclick = () => roomSideOpen(b.getAttribute('data-side-rib'));
+    roomRibDwell(b, () => roomSideOpen(b.getAttribute('data-side-rib')));
   });
   host.querySelectorAll('[data-side-pick]').forEach(b => {
     b.onclick = () => { roomSideMenuOpen = false; roomSideOpen(b.getAttribute('data-side-pick')); };
