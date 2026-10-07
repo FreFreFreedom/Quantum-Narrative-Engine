@@ -466,7 +466,9 @@ export function conversationsRoutes() {
 
   router.get('/:id/sides', (req, res) => {
     if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
-    res.json({ sides: convos.listSideTalks(req.params.id) });
+    // ?deep=1 — the whole tree of asides under this thread, not only the first
+    // level, because asides nest and the pane draws the open chain in one go.
+    res.json({ sides: convos.listSideTalks(req.params.id, { deep: req.query.deep === '1' }) });
   });
 
   // POST /api/convos/:id/sides — body: { mode: 'empty'|'fork', throughMessageId?,

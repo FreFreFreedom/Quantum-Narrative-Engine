@@ -1030,10 +1030,26 @@ export function listOpenConvos(limit = 50) {
 // whole parent conversation via the block conversations.js's own prompt assembly
 // adds below (see buildTurnPrompt).
 
-export function listSideTalks(parentConvoId) {
+// An aside can itself have asides, as deep as the thinking goes (his pick A,
+// 2026-10-07) — parent_convo_id was already generic, so nesting needs no new
+// column. `deep` returns the whole descendant tree in one call, which is what the
+// Room's pane wants: it draws the open chain as ribs and must know the branches
+// hanging off every one of them without a request per level.
+export function listSideTalks(parentConvoId, { deep = false } = {}) {
   if (!db) return [];
+  if (!deep) {
+    return db.prepare(
+      `SELECT * FROM convos WHERE subject_type='side' AND parent_convo_id=? AND deleted_at IS NULL ORDER BY updated_at DESC`,
+    ).all(parentConvoId);
+  }
   return db.prepare(
-    `SELECT * FROM convos WHERE subject_type='side' AND parent_convo_id=? AND deleted_at IS NULL ORDER BY updated_at DESC`,
+    `WITH RECURSIVE tree(id) AS (
+       SELECT id FROM convos WHERE subject_type='side' AND parent_convo_id=?1 AND deleted_at IS NULL
+       UNION
+       SELECT c.id FROM convos c JOIN tree ON c.parent_convo_id=tree.id
+         WHERE c.subject_type='side' AND c.deleted_at IS NULL
+     )
+     SELECT * FROM convos WHERE id IN (SELECT id FROM tree) ORDER BY updated_at DESC`,
   ).all(parentConvoId);
 }
 
@@ -1193,8 +1209,13 @@ export function deleteConvo(id) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(id);
   if (!convo) return { error: 'not_found' };
-  db.prepare(`UPDATE convos SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
-  broadcastAll('convos:updated', { convoId: id });
+  // Asides nest, so throwing one away throws away what branched off it — otherwise
+  // the children survive with a deleted parent and nothing can ever reach them.
+  const doomed = [id, ...listSideTalks(id, { deep: true }).map((row) => row.id)];
+  for (const victim of doomed) {
+    db.prepare(`UPDATE convos SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(victim);
+    broadcastAll('convos:updated', { convoId: victim });
+  }
   return { ok: true };
 }
 
@@ -2111,18 +2132,33 @@ export async function completeRequestedLength({ text, target, provider, model, a
 // Pure given its arguments — no db reads of its own — so scripts/side-selftest.js
 // can exercise it directly. The db lookups (parent convo + its messages) live at
 // the call site below.
-export function parentTranscriptBlock(convo, parent, parentMsgs) {
+export function parentTranscriptBlock(convo, parent, parentMsgs, { heading = null } = {}) {
   if (!convo || convo.subject_type !== 'side' || !convo.parent_convo_id || !parent) return '';
   const transcript = transcriptOf(parent, parentMsgs || [], CONVO_HISTORY_WINDOW, { full: true });
   if (!transcript) return '';
-  return `\n=== THE CONVERSATION THIS ONE STEPPED OUT OF — background, not the subject ===\n${transcript}`;
+  const title = heading || 'THE CONVERSATION THIS ONE STEPPED OUT OF';
+  return `\n=== ${title} — background, not the subject ===\n${transcript}`;
 }
 
+// An aside of an aside sees the whole line it came down, not only the step above
+// it (nesting, 2026-10-07): the immediate parent word for word, and each older
+// one in turn, so the main thread is still there at the top of a deep branch.
+// Three levels up at most — past that the prompt costs more than the context is
+// worth, and the thinking has long since moved.
+const SIDE_ANCESTOR_LIMIT = 3;
 function parentTranscriptFor(convo) {
   if (convo.subject_type !== 'side' || !convo.parent_convo_id) return '';
-  const parent = getConvo(convo.parent_convo_id);
-  if (!parent) return '';
-  return parentTranscriptBlock(convo, parent, threadMessages(parent.id));
+  let child = convo;
+  let out = '';
+  for (let step = 0; step < SIDE_ANCESTOR_LIMIT; step += 1) {
+    const parent = getConvo(child.parent_convo_id);
+    if (!parent) break;
+    out += parentTranscriptBlock(child, parent, threadMessages(parent.id),
+      { heading: step === 0 ? null : 'AND THE CONVERSATION THAT ONE STEPPED OUT OF, FURTHER BACK' });
+    if (parent.subject_type !== 'side' || !parent.parent_convo_id) break;
+    child = parent;
+  }
+  return out;
 }
 
 function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null, maxChars = null }) {

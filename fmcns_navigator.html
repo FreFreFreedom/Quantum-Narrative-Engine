@@ -3153,6 +3153,22 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   font-family:var(--font-read); font-size:15px; letter-spacing:0; text-transform:none; color:var(--c-ink-3); }
 .room-side-pop .room-side-row.on { color:var(--c-kept-echo, var(--c-accent)); }
 .room-side-open { border-top:none; padding-top:0; }
+/* Asides nest, as deep as the thinking goes (his pick A, 2026-10-07), and depth
+   costs no room: every talk in the open chain except the one he is writing in
+   folds to a rib — its name stood on end, wide enough to land on — so the third
+   aside reads exactly as wide as the first. Ribs on the left are the way back up;
+   ribs on the right are the branch he stepped out of, kept so stepping back up
+   never throws the deeper talk away. */
+.room-side-stack { flex:1; display:flex; min-height:0; min-width:0; }
+.room-side-live { flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
+.room-side-rib { flex:0 0 28px; display:flex; align-items:center; justify-content:center; padding:10px 0;
+  border:0; border-right:1px solid var(--c-border); background:color-mix(in srgb, var(--c-ink) 3%, transparent);
+  cursor:pointer; transition:background var(--t-fast) var(--ease); }
+.room-side-rib.deeper { border-right:0; border-left:1px solid var(--c-border); }
+.room-side-rib:hover { background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 10%, transparent); }
+.room-side-rib span { writing-mode:vertical-rl; transform:rotate(180deg); max-height:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  font:500 10.5px/1 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-4); }
+.room-side-rib:hover span { color:var(--c-kept-echo, var(--c-accent)); }
 #roomSideEmbed .se-head, #roomSideEmbed .se-spend { display:none !important; }
 #roomSideEmbed .se-turn { border-top:none; padding:12px 4px; }
 #roomSideEmbed .se-turn.you { display:flex; flex-direction:column; align-items:flex-end; }
@@ -17043,9 +17059,44 @@ function renderRoomAnalogies() {
    the main thread; nothing here ever sends in his name. */
 let roomSides = [];
 let roomSideOpenId = null;
+// The chain he came down, top-level first — not only where he is. Stepping back up
+// a rib leaves the deeper asides standing on the right instead of forgetting them.
+let roomSideTrail = [];
 const roomSidePositions = new Map();
 let roomSideMenuOpen = false;
-function roomSideName(s, i) { return s.title && s.title !== 'Side talk' ? s.title : 'Aside ' + (i + 1); }
+function roomSideOf(id) { return roomSides.find(s => s.id === id) || null; }
+function roomSideKids(parentId) { return roomSides.filter(s => s.parent_convo_id === parentId); }
+// Numbered among the asides hanging off the SAME talk: once asides nest, a position
+// in the flat list says nothing.
+function roomSideName(s) {
+  if (!s) return '';
+  if (s.title && s.title !== 'Side talk') return s.title;
+  return 'Aside ' + (roomSideKids(s.parent_convo_id).indexOf(s) + 1);
+}
+function roomSidePathOf(id) {
+  const path = [];
+  let cur = roomSideOf(id);
+  while (cur) { path.unshift(cur); cur = cur.parent_convo_id === roomSel ? null : roomSideOf(cur.parent_convo_id); }
+  return path;
+}
+// Every aside under this thread, parents before their children — the order both the
+// menu and the static list read, with a depth to indent by.
+function roomSideTree() {
+  const out = [];
+  (function walk(parentId, depth) {
+    roomSideKids(parentId).forEach((s) => { out.push({ side: s, depth }); walk(s.id, depth + 1); });
+  })(roomSel, 0);
+  return out;
+}
+// Which conversation a new aside hangs off, for a given embed: the Room's own main
+// thread, or the aside open in the pane. A task card or a seed has nothing to step
+// out of, so neither gesture is offered there.
+window.roomAsideHome = function (e) {
+  if (!e || typeof roomSel === 'undefined') return null;
+  if (e.type === 'open' && e.convoId && e.convoId === roomSel) return roomSel;
+  if (e.type === 'side' && e.convoId && e.convoId === roomSideOpenId) return e.convoId;
+  return null;
+};
 function roomSideSyncTab(open) {
   const tab = document.querySelector('#roomTabs [data-room-primary="side"]');
   if (!tab) return;
@@ -17068,9 +17119,12 @@ function openRoomSideMenu(anchor) {
   // click must not open it again.
   if (Date.now() - roomSideMenuShutAt < 300) return;
   const open = roomSides.find(s => s.id === roomSideOpenId) || null;
-  const items = roomSides.map((s, i) => ({ label: roomSideName(s, i), checked: s.id === roomSideOpenId,
-    on: () => roomSideOpen(s.id) }));
+  const items = roomSideTree().map(({ side: s, depth }) => ({
+    label: (depth ? '\u2007\u2007'.repeat(depth) + '\u21b3 ' : '') + roomSideName(s),
+    checked: s.id === roomSideOpenId, on: () => roomSideOpen(s.id) }));
   items.push({ label: 'New aside', icon: 'plus', on: () => roomSideCreate({ mode: 'empty' }) });
+  if (open) items.push({ label: 'An aside of this one', icon: 'plus',
+    on: () => roomSideCreate({ mode: 'empty', parentId: open.id }) });
   if (open) {
     items.push({ sep: true },
       { label: 'Rename', icon: 'pencil', on: () => { roomSideRenaming = true; renderRoomSide(); } },
@@ -17102,13 +17156,17 @@ async function loadRoomSides() {
   const want = roomSel;
   if (!want) { roomSides = []; roomSideOpenId = null; renderRoomSide(); return; }
   try {
-    const out = await api('/api/convos/' + encodeURIComponent(want) + '/sides');
+    // deep=1: the whole tree under this thread in one call, so the pane can draw the
+    // open chain and its branches without a request per level.
+    const out = await api('/api/convos/' + encodeURIComponent(want) + '/sides?deep=1');
     if (roomSel !== want) return;   // a different thread was picked mid-flight
     roomSides = out.sides || [];
     if (!roomSideOpenId) {
       try { roomSideOpenId = localStorage.getItem('fmcns.roomSideOpen.' + want); } catch (e) {}
     }
     if (roomSideOpenId && !roomSides.some(s => s.id === roomSideOpenId)) roomSideOpenId = null;
+    roomSideTrail = roomSideTrail.filter(id => roomSides.some(s => s.id === id));
+    if (roomSideOpenId && roomSideTrail.indexOf(roomSideOpenId) < 0) roomSideTrail = roomSidePathOf(roomSideOpenId).map(s => s.id);
   } catch (e) { if (roomSel === want) roomSides = []; }
   renderRoomSide();
 }
@@ -17124,6 +17182,8 @@ function roomShowPane(id) {
 
 function roomSideOpen(id) {
   roomSideOpenId = id;
+  // Already on the chain (he clicked a rib): keep it whole, deeper ones and all.
+  if (roomSideTrail.indexOf(id) < 0) roomSideTrail = roomSidePathOf(id).map(s => s.id);
   try { localStorage.setItem('fmcns.roomSideOpen.' + roomSel, id); } catch (e) {}
   roomShowPane('side');
   renderRoomSide();
@@ -17133,12 +17193,14 @@ function roomSideOpen(id) {
 // the pane). `prefill`, when given, is put straight into the new aside's own
 // message box and focused — never sent on his behalf; he writes the first
 // line and sends it himself, when he's ready.
-async function roomSideCreate({ mode = 'empty', throughMessageId = null, prefill = null } = {}) {
-  if (!roomSel) return null;
+async function roomSideCreate({ mode = 'empty', throughMessageId = null, prefill = null, parentId = null } = {}) {
+  // No parent named: off the main thread. Named: an aside of that aside.
+  const home = parentId || roomSel;
+  if (!home) return null;
   const body = { mode };
   if (throughMessageId) body.throughMessageId = throughMessageId;
   try {
-    const out = await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/sides', 'POST', body);
+    const out = await apiWrite('/api/convos/' + encodeURIComponent(home) + '/sides', 'POST', body);
     if (!out || !out.convo) return null;
     await loadRoomSides();
     roomSideOpen(out.convo.id);
@@ -17159,9 +17221,12 @@ async function roomSideCreate({ mode = 'empty', throughMessageId = null, prefill
 // the answer itself as the editable draft. Never sent on his behalf.
 window.roomSideBring = roomSideBring;
 function roomSideBring(text, how) {
-  const side = roomSides.find(s => s.id === roomSideOpenId);
-  const main = roomThreads.find(t => t.id === roomSel);
-  if (!side || !main || !window.studioLend || !window.studioLend.carry) return false;
+  const side = roomSideOf(roomSideOpenId);
+  // One level up, not all the way home: an aside of an aside brings its find back to
+  // the talk it stepped out of, which is where the thought it answers is waiting.
+  const upId = side ? side.parent_convo_id : null;
+  const up = upId === roomSel ? roomThreads.find(t => t.id === roomSel) : roomSideOf(upId);
+  if (!side || !up || !window.studioLend || !window.studioLend.carry) return false;
   if (typeof text !== 'string') {
     const e = window.studioLend.entry('side', side.subject_id);
     const last = (e.msgs || []).slice().reverse().find(m => m.role === 'assistant');
@@ -17170,10 +17235,11 @@ function roomSideBring(text, how) {
   if (!text) return false;
   // An "aside" card on the main box: sent with his next message as a labelled passage.
   const kind = { answer: 'An answer', question: 'A question', essence: 'Essence', whole: 'What it found' }[how] || 'From the aside';
-  window.studioLend.carry('open', main.subject_id,
-    { text: text, msgId: null, aside: roomSideName(side, roomSides.indexOf(side)), asideKind: kind }, '');
-  renderRoomConvo();
-  const box = document.querySelector('#roomConvo .se-input');
+  window.studioLend.carry(upId === roomSel ? 'open' : 'side', up.subject_id,
+    { text: text, msgId: null, aside: roomSideName(side), asideKind: kind }, '');
+  if (upId === roomSel) { renderRoomConvo(); }
+  else { roomSideOpen(upId); }
+  const box = document.querySelector((upId === roomSel ? '#roomConvo' : '#roomSideEmbed') + ' .se-input');
   if (box) box.focus();
   return true;
 }
@@ -17181,13 +17247,17 @@ function roomSideBring(text, how) {
 // The other way round: open a new aside carrying cards from the main thread —
 // never loose text in its box. Each card names the main thread and what it is.
 window.roomSideTake = roomSideTake;
-async function roomSideTake(quotes) {
-  const main = roomThreads.find(t => t.id === roomSel);
-  if (!main || !window.studioLend || !window.studioLend.carry) return false;
-  const convo = await roomSideCreate({ mode: 'empty' });
+async function roomSideTake(quotes, parentId) {
+  // From the main thread, or from an open aside — the new talk hangs off whichever
+  // one the gesture came out of.
+  const home = parentId || roomSel;
+  const from = home === roomSel ? roomThreads.find(t => t.id === roomSel) : roomSideOf(home);
+  if (!from || !window.studioLend || !window.studioLend.carry) return false;
+  const convo = await roomSideCreate({ mode: 'empty', parentId: home });
   if (!convo) return false;
+  const label = home === roomSel ? (from.title || 'The main thread') : roomSideName(from);
   quotes.forEach(q => window.studioLend.carry('side', convo.subject_id,
-    { text: q.text, msgId: null, aside: main.title || 'The main thread', asideKind: q.asideKind || 'A passage', fromMain: true }, ''));
+    { text: q.text, msgId: null, aside: label, asideKind: q.asideKind || 'A passage', fromMain: true }, ''));
   renderRoomSide();
   const box = document.querySelector('#roomSideEmbed .se-input');
   if (box) box.focus();
@@ -17212,21 +17282,24 @@ function renderRoomSide() {
   // aside and opens the list; "bring" sits at the end of the tab row.
   roomSideSyncTab(open);
   let html = '';
+  let head = '';
   if (roomSideRenaming && open) {
-    html += '<input class="room-side-rename searchbox" maxlength="120" aria-label="Name this aside">';
+    head = '<input class="room-side-rename searchbox" maxlength="120" aria-label="Name this aside">';
   } else if (open) {
-    const name = roomSideName(open, roomSides.indexOf(open));
-    html += '<button type="button" class="room-side-title" aria-haspopup="menu" title="' + qEscAttr(name) + '">'
+    const name = roomSideName(open);
+    head = '<button type="button" class="room-side-title" aria-haspopup="menu" title="' + qEscAttr(name) + '">'
       + '<span class="room-side-titletext">' + qEsc(name) + '</span>'
       + '<span class="room-titlecopy" role="button" title="Copy the title" aria-label="Copy the title">⧉</span>'
       + '</button>';
   }
   if (!open) {
+    // Indented by depth, so an aside of an aside sits under the one it came out of.
     html += '<div class="lib-kindpop room-side-pop is-static" role="menu">'
-      + roomSides.map((s, i) => (
+      + roomSideTree().map(({ side: s, depth }) => (
         '<div class="room-side-item">'
-        + '<button type="button" role="menuitem" class="room-side-row' + (s.id === roomSideOpenId ? ' on' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
-        + qEsc(roomSideName(s, i))
+        + '<button type="button" role="menuitem" class="room-side-row' + (s.id === roomSideOpenId ? ' on' : '') + '" data-side-pick="' + qEscAttr(s.id) + '"'
+        + (depth ? ' style="padding-left:' + (10 + depth * 15) + 'px"' : '') + '>'
+        + (depth ? '↳ ' : '') + qEsc(roomSideName(s))
         + '</button>'
         + '<button type="button" class="room-side-drop" data-side-drop="' + qEscAttr(s.id) + '" title="Throw this aside away" aria-label="Throw this aside away">✕</button>'
         + '</div>'
@@ -17234,8 +17307,24 @@ function renderRoomSide() {
       + '<div class="lib-kindpop-foot"><button type="button" role="menuitem" data-side-new="1">＋ New aside</button>'
       + '</div>'
       + '</div>';
+  } else {
+    // The spine: everything on the open chain but the open talk itself becomes a rib,
+    // so the fourth aside has the same reading width as the first.
+    const trail = roomSideTrail.indexOf(open.id) >= 0 ? roomSideTrail : [open.id];
+    const at = trail.indexOf(open.id);
+    const rib = (id, deeper) => {
+      const s = roomSideOf(id);
+      if (!s) return '';
+      const name = roomSideName(s);
+      return '<button type="button" class="room-side-rib' + (deeper ? ' deeper' : '') + '" data-side-rib="' + qEscAttr(id) + '"'
+        + ' title="' + qEscAttr(name) + '"><span>' + qEsc(name) + '</span></button>';
+    };
+    html += '<div class="room-side-stack">'
+      + trail.slice(0, at).map(id => rib(id, false)).join('')
+      + '<div class="room-side-live">' + head + '<div class="room-side-open room-convo" id="roomSideEmbed"></div></div>'
+      + trail.slice(at + 1).map(id => rib(id, true)).join('')
+      + '</div>';
   }
-  if (open) html += '<div class="room-side-open room-convo" id="roomSideEmbed"></div>';
   host.innerHTML = html;
   if (reuse) host.querySelector('#roomSideEmbed').replaceWith(previous);
 
@@ -17274,6 +17363,9 @@ function renderRoomSide() {
     renameBox.onblur = () => finish(true);
     setTimeout(() => { renameBox.focus(); renameBox.select(); }, 0);
   }
+  host.querySelectorAll('[data-side-rib]').forEach(b => {
+    b.onclick = () => roomSideOpen(b.getAttribute('data-side-rib'));
+  });
   host.querySelectorAll('[data-side-pick]').forEach(b => {
     b.onclick = () => { roomSideMenuOpen = false; roomSideOpen(b.getAttribute('data-side-pick')); };
   });
@@ -29804,7 +29896,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     apiWrite('/api/convos/' + e.convoId + '/sides', 'POST', { mode: 'fork', throughMessageId: messageId })
       .then(function(out){
         var id = out && out.convo ? out.convo.id : null;
-        var inRoom = typeof roomSel !== 'undefined' && roomSel === e.convoId && typeof roomSideOpen === 'function' && typeof loadRoomSides === 'function';
+        var inRoom = typeof roomSideOpen === 'function' && typeof loadRoomSides === 'function'
+          && typeof window.roomAsideHome === 'function' && !!window.roomAsideHome(e);
         if(id && inRoom){
           e.note = '';
           return loadRoomSides().then(function(){ roomSideOpen(id); });
@@ -31375,10 +31468,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
           keepPassage(e, msgId, passage, repaint, r);
         });
-        // Aside and Remember only make sense against the Room's own main thread
+        // Aside and Remember only make sense against the Room's own threads
         // (plan "side talks in the Room, and remember this") — a side talk of a
-        // task card or a seed has nothing to step out of.
-        if(e.type === 'open' && typeof roomSel !== 'undefined' && e.convoId === roomSel && typeof roomSideCreate === 'function'){
+        // task card or a seed has nothing to step out of. Since asides nest, the
+        // open aside counts as one of those threads too.
+        if(typeof window.roomAsideHome === 'function' && window.roomAsideHome(e) && typeof roomSideCreate === 'function'){
           // Selecting several passages before clicking Aside carries them all —
           // the same e.quotes accumulation Quote already does. Aside takes
           // whatever is already queued for the main composer and redirects it
@@ -32314,8 +32408,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       anchor.style.cssText = 'position:fixed;width:1px;height:1px;left:' + from.left + 'px;top:' + (from.bottom - 1) + 'px;pointer-events:none';
       document.body.appendChild(anchor);
     }
+    var home = typeof window.roomAsideHome === 'function' ? window.roomAsideHome(e) : null;
     var land = function(qs){
-      take(qs).then(function(ok){
+      take(qs, home).then(function(ok){
         if(!ok){ seMindToast(from, 'Could not open an aside', 'miss'); return; }
         seMindToast(from, 'In a new aside', 'ok');
         seFlyToMind(from, '#roomSideEmbed .se-compose');
@@ -32345,7 +32440,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     } });
     if(full) rows.push({ label: isAnswer ? 'This answer, whole' : 'This question', icon: 'quote', title: 'Carried as it is', on: function(){ land([{ text: full, asideKind: isAnswer ? 'An answer' : 'A question' }]); } });
     if(m && m.id && isAnswer) rows.push({ label: 'Its essence', icon: 'spark', title: 'The ideas in it, one per line', on: function(){ gist(m.id, 'Essence'); } });
-    if(e.convoId) rows.push({ label: 'Where this thread stands', icon: 'layers', title: 'What the whole main thread has reached, one idea per line', on: function(){ gist(null, 'Where it stands'); } });
+    if(e.convoId) rows.push({ label: 'Where this thread stands', icon: 'layers', title: 'What this whole talk has reached, one idea per line', on: function(){ gist(null, 'Where it stands'); } });
     var shut = openMenu(anchor, rows, { align: 'left', onClose: function(){ if(anchor !== at) setTimeout(function(){ anchor.remove(); }, 0); } });
     if(!shut && anchor !== at) anchor.remove();
   }
@@ -33136,7 +33231,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // The second choice (plan "side talks in the Room, and remember this")
         // only makes sense on the Room's own main thread — a side talk of a task
         // card's own conversation has no Room pane to open into.
-        if(e.type === 'open' && typeof roomSel !== 'undefined' && e.convoId === roomSel
+        if(typeof window.roomAsideHome === 'function' && window.roomAsideHome(e)
            && typeof window.openMenu === 'function' && typeof forkFromMessageToSide === 'function'){
           window.openMenu(b, [
             { label: 'Branch into a new thread', on: function(){ forkFromMessage(e, messageId, repaintFork); } },
@@ -34391,9 +34486,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
                  + ((m.text || m.body) ? '<button type="button" class="se-turncopy" data-se-copy="' + qEsc(String(idx)) + '" title="Copy the text">\u29c9</button>' : '')
                  // In a side talk: carry this very message into the main thread's box
                  // (his ask, 2026-09-30 — "bring" belongs on what it brings).
-                 + (e.type === 'side' && (m.text || m.body) ? '<button type="button" class="se-turnbring" data-se-bring="' + qEsc(String(idx)) + '" title="Bring this into the main thread">\u2191</button>' : '')
+                 + (e.type === 'side' && (m.text || m.body) ? '<button type="button" class="se-turnbring" data-se-bring="' + qEsc(String(idx)) + '" title="Bring this into the talk this one stepped out of">\u2191</button>' : '')
                  // And on the Room's main thread, the way out: take this into a new aside.
-                 + (e.type === 'open' && typeof roomSel !== 'undefined' && e.convoId === roomSel && (m.text || m.body) ? '<button type="button" class="se-turnbring" data-se-aside="' + qEsc(String(idx)) + '" title="Take this into a new aside">\u2197</button>' : '')
+                 + (typeof window.roomAsideHome === 'function' && window.roomAsideHome(e) && (m.text || m.body) ? '<button type="button" class="se-turnbring" data-se-aside="' + qEsc(String(idx)) + '" title="Take this into a new aside">\u2197</button>' : '')
                  + (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
                  + (you && m.id ? '<button type="button" class="se-turnrewind" data-se-rewind="' + qEsc(m.id) + '" title="Rewind to here — this and everything after is removed, and the words come back to the box to change and ask again">↶</button>' : '')
                  + (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
