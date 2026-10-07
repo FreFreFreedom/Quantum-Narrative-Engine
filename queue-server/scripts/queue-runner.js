@@ -2137,7 +2137,13 @@ const GIT_SHIP_DRY_RUN = process.env.GIT_SHIP_DRY_RUN === '1';
 // Reads the whole set and rewrites the whole mirror every time rather than tracking
 // what is new: it costs three requests, and it means anything saved while this
 // runner was off is picked up by simply starting it.
-const NOTE_MIRROR_MS = 5 * 60_000;
+// Once an hour, not every five minutes. Each mirror commit is a push to the trunk,
+// and every push to the trunk redeploys the app — which means the Room answers HTTP
+// 502 for the half-minute the container takes to come back. On a long night of
+// talking that was twenty-one restarts under him (2026-10-07). Nothing here is
+// urgent: the notes and the memory are already safe in the database, and the repo
+// copy only has to be there for the next coding session.
+const NOTE_MIRROR_MS = 60 * 60_000;
 let lastNoteMirrorAt = 0;
 async function mirrorToRepo() {
   if (Date.now() - lastNoteMirrorAt < NOTE_MIRROR_MS) return;
