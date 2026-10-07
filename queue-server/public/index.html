@@ -3670,6 +3670,9 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   display:flex; align-items:center; justify-content:center; font-size:var(--fs-xs); line-height:1; white-space:nowrap; overflow:hidden;
   opacity:0; transition:opacity .12s; background:rgba(var(--c-surface-rgb),.85); }
 .shelf-card:hover [data-drop], .shelf-card [data-drop]:focus-visible { opacity:1; }
+/* On its way out — it leaves on the click, not on the server's answer. */
+.shelf-card.is-going, .interest-item.is-going { opacity:0; transform:scale(.94); pointer-events:none;
+  transition:opacity .16s var(--ease), transform .16s var(--ease); }
 .shelf-working { display:flex; align-items:center; gap:7px; padding:5px 0; font-size:var(--fs-sm); overflow-wrap:anywhere; }
 .shelf-working span:nth-of-type(2) { flex:1; min-width:0; }
 .shelf-working small { color:var(--c-ink-4); white-space:nowrap; }
@@ -18820,6 +18823,15 @@ let libScreen = {};          // what the catalogues know about each saved work, 
 // repaints the wall — that must not mean asking the server again and flashing
 // "Loading…" over a pane he is reading.
 let libData = null;
+// Take it out of what the wall last fetched. Without this, removing something and
+// repainting quietly would bring it straight back — and repainting loudly means
+// three round trips before the card goes, which is why the ✕ felt broken (his
+// ask, 2026-10-07).
+function libForget(id) {
+  if (!libData) return;
+  if (libData.out && Array.isArray(libData.out.items)) libData.out.items = libData.out.items.filter((w) => w.id !== id);
+  if (libData.shelf && Array.isArray(libData.shelf.books)) libData.shelf.books = libData.shelf.books.filter((b) => b.id !== id);
+}
 function libKey() { return interestLibraryQuery + '|' + interestLibraryKind + '|' + interestLibraryOffset; }
 // The pane scrolls, not the window: hold its position across a repaint.
 function libScroller(el) {
@@ -19036,7 +19048,7 @@ function libCard(it) {
   const art = it.type === 'media' && !cover
     ? roomMediaArtMarkup(it.raw, 'shelf-cover')       // filled in by the catalogue once it answers
     : '<span class="shelf-cover"' + cover + '></span>';
-  return '<div class="shelf-card' + (open ? ' is-open' : '') + (fresh ? ' is-new' : '') + '" data-lib=""' + qEscAttr(it.type + ':' + it.id) + '">'
+  return '<div class="shelf-card' + (open ? ' is-open' : '') + (fresh ? ' is-new' : '') + '" data-lib="' + qEscAttr(it.type + ':' + it.id) + '">'
     + '<button type="button" class="shelf-open" data-open aria-label="' + qEscAttr(it.title) + '">' + art
     + (facts && facts.rating ? '<span class="lib-badge">' + facts.rating.toFixed(1) + '</span>' : '')
     + (libIsScreen(it.raw) ? '<span class="lib-kind">' + (it.raw.kind === 'series' ? '◗' : '▶') + '</span>' : '')
@@ -19348,11 +19360,18 @@ async function renderInterestLibrary(opts) {
       if (renote) renote.onclick = () => { if (shelfOpen && !shelfNotesBusy) { shelfNotes = null; shelfLoadNotes(shelfOpen, host, true); } };
       const drop = panel.querySelector('[data-remove]');
       if (drop && libMedia) drop.onclick = async () => {
+        if (drop.disabled) return;
+        drop.disabled = true;
+        const gone = libMedia;
+        const cardEl = host.querySelector('[data-lib][data-lib$="' + CSS.escape(gone.id) + '"]');
+        if (cardEl) cardEl.classList.add('is-going');
+        libOpen = null;
         try {
-          await apiWrite('/api/recommendations/library/remove', 'POST', { type: libMedia.type, id: libMedia.id });
-          libOpen = null; renderInterestLibrary();
-          if (libMedia.type === 'passage' && window.loadRoomPassages) window.loadRoomPassages();
-        } catch (err) { libSay(drop, err.message); }
+          await apiWrite('/api/recommendations/library/remove', 'POST', { type: gone.type, id: gone.id });
+          libForget(gone.id);
+          renderInterestLibrary({ quiet: true });
+          if (gone.type === 'passage' && window.loadRoomPassages) window.loadRoomPassages();
+        } catch (err) { drop.disabled = false; if (cardEl) cardEl.classList.remove('is-going'); libSay(drop, err.message); }
       };
       const attach = panel.querySelector('[data-attach]');
       if (attach && libMedia) attach.onclick = async () => {
@@ -19369,14 +19388,20 @@ async function renderInterestLibrary(opts) {
       const it = wall.find((x) => x.type === type && x.id === id);
       b.onclick = async (ev) => {
         ev.stopPropagation();
+        if (b.disabled) return;
         b.disabled = true;
+        // Gone the moment he clicks. It used to wait on the delete and then on a full
+        // refetch of the wall before the card moved, which read as a ✕ that does
+        // nothing (his ask, 2026-10-07). Only a real failure puts it back.
+        card.classList.add('is-going');
+        if (libOpen && libOpen.type === type && libOpen.id === id) { libOpen = null; shelfOpen = ''; }
         try {
           if (type === 'shelf') await apiWrite('/api/convos/books/' + encodeURIComponent(id), 'DELETE', {});
           else await apiWrite('/api/recommendations/library/remove', 'POST', { type: it.raw.type, id: it.raw.id });
-          if (libOpen && libOpen.type === type && libOpen.id === id) { libOpen = null; shelfOpen = ''; }
-          renderInterestLibrary();
+          libForget(id);
+          renderInterestLibrary({ quiet: true });
         }
-        catch (err) { b.disabled = false; b.title = err.message; }
+        catch (err) { card.classList.remove('is-going'); b.disabled = false; b.title = err.message; }
       };
     });
 
@@ -19406,7 +19431,18 @@ async function renderInterestLibrary(opts) {
         try { const r = await window.studioReferenceAttach({ type: w.type, id: w.id }); libSay(btn, 'Attached to ' + r.destination, true); }
         catch (err) { libSay(btn, err.message); }
       };
-      el.querySelector('[data-remove]').onclick = async () => { try { await apiWrite('/api/recommendations/library/remove', 'POST', { type: w.type, id: w.id }); renderInterestLibrary(); if (w.type === 'passage' && window.loadRoomPassages) window.loadRoomPassages(); } catch (err) { el.textContent = err.message; } };
+      el.querySelector('[data-remove]').onclick = async (ev) => {
+        const btn = ev.currentTarget;
+        if (btn.disabled) return;
+        btn.disabled = true;
+        el.classList.add('is-going');
+        try {
+          await apiWrite('/api/recommendations/library/remove', 'POST', { type: w.type, id: w.id });
+          libForget(w.id);
+          renderInterestLibrary({ quiet: true });
+          if (w.type === 'passage' && window.loadRoomPassages) window.loadRoomPassages();
+        } catch (err) { el.classList.remove('is-going'); btn.disabled = false; libSay(btn, err.message); }
+      };
     });
     const more = results.querySelector('[data-lib-more]');
     if (libMoreObs) { libMoreObs.disconnect(); libMoreObs = null; }
