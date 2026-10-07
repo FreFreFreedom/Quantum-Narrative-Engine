@@ -24956,8 +24956,6 @@ async function loadUsage() {
   // token — and is simply absent when Anthropic is rate-limiting it, which it does
   // hard. An absent account draws a dash, never a zero: a zero would read as "spent".
   const pa = u.claudeMax || null;
-  const ant = u.claudePro || null;
-  const codex = currentCodexQuota(u);
 
   const cap = u.openai;
   const money = cap && typeof cap.spentUsd === 'number'
@@ -24968,12 +24966,10 @@ async function loadUsage() {
     <div class="uq-grid">
       <div class="uq-head"><span></span><span>5 h</span><span>Week</span></div>
       ${uqRow('Claude Max', pa)}
-      ${uqRow('Codex Pro', currentCodexQuota(u, 'codexSecond'))}
       ${money}
     </div>
     <div class="uq-shut">
       ${uqShutBar('Max', pa)}
-      ${uqShutBar('Cx Pro', currentCodexQuota(u, 'codexSecond'))}
       ${cap && typeof cap.spentUsd === 'number' ? `<span class="uq-spend" title="Spent this month">$${cap.spentUsd.toFixed(2)}</span>` : ''}
     </div>`;
 }
