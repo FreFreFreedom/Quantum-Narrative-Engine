@@ -2965,6 +2965,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .umenu-item.has-icon .umenu-ic { flex:none; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 .umenu-item.has-icon .umenu-label { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .umenu-sep { height:1px; margin:4px 6px; background:var(--c-border); }
+.umenu-head { padding:7px 10px 3px 22px; font:500 10.5px/1 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); }
 
 /* The look picker: fixed dark glass whatever the look, so every preview reads true. */
 .umenu.look-picker { max-width:none; width:max-content; transform-origin:bottom left; padding:12px 12px 4px; background:#1c1f24; border-color:#3a3d44; color:#d9ceb2; }
@@ -17177,11 +17178,20 @@ function openRoomSideMenu(anchor) {
   // click must not open it again.
   if (Date.now() - roomSideMenuShutAt < 300) return;
   const open = roomSides.find(s => s.id === roomSideOpenId) || null;
-  const items = roomSideTree().map(({ side: s, depth }) => ({
-    label: (depth ? '\u2007\u2007'.repeat(depth) + '\u21b3 ' : '') + roomSideName(s),
-    checked: s.id === roomSideOpenId, on: () => roomSideOpen(s.id) }));
-  items.push({ label: 'New aside', icon: 'plus', on: () => roomSideCreate({ mode: 'empty' }) });
-  if (open) items.push({ label: 'An aside of this one', icon: 'plus',
+  // Four groups, in the order he reads them (his ask, 2026-10-07): which aside to
+  // be in, how to start another, what to do to the one he is in, and the one way
+  // to lose it. Before, the list and the actions were one undivided column and the
+  // two ways to start an aside sat side by side saying nearly the same thing.
+  const tree = roomSideTree();
+  const items = [];
+  if (tree.length) {
+    items.push({ head: 'Asides' });
+    tree.forEach(({ side: s, depth }) => items.push({ label: roomSideName(s), indent: depth,
+      checked: s.id === roomSideOpenId, on: () => roomSideOpen(s.id) }));
+    items.push({ sep: true });
+  }
+  items.push({ label: 'New aside', icon: 'plus', title: 'Beside the main thread', on: () => roomSideCreate({ mode: 'empty' }) });
+  if (open) items.push({ label: 'Aside inside this one', icon: 'plus', title: 'A tangent off ' + roomSideName(open),
     on: () => roomSideCreate({ mode: 'empty', parentId: open.id }) });
   if (open) {
     items.push({ sep: true },
@@ -17194,7 +17204,6 @@ function openRoomSideMenu(anchor) {
         const reset = document.querySelector('#roomSideEmbed [data-se-act="reset"]');
         if (reset) reset.click();
       } },
-      { sep: true },
       { label: 'Reading', icon: 'layers', title: 'Font, text size and reading width', hover: (menuItem) => openRoomTypeMenu(menuItem, true, 'right'), on: () => openRoomTypeMenu(anchor) },
       { sep: true },
       { label: 'Delete', icon: 'trash', danger: true, on: async () => {
@@ -17360,7 +17369,7 @@ function renderRoomSide() {
         '<div class="room-side-item">'
         + '<button type="button" role="menuitem" class="room-side-row' + (s.id === roomSideOpenId ? ' on' : '') + '" data-side-pick="' + qEscAttr(s.id) + '"'
         + (depth ? ' style="padding-left:' + (10 + depth * 15) + 'px"' : '') + '>'
-        + (depth ? '↳ ' : '') + qEsc(roomSideName(s))
+        + qEsc(roomSideName(s))
         + '</button>'
         + '<button type="button" class="room-side-drop" data-side-drop="' + qEscAttr(s.id) + '" title="Throw this aside away" aria-label="Throw this aside away">✕</button>'
         + '</div>'
@@ -21614,6 +21623,9 @@ function openMenu(anchor, items, opts) {
   for (const it of items) {
     if (!it) continue;
     if (it.sep) { const hr = document.createElement('div'); hr.className = 'umenu-sep'; el.appendChild(hr); continue; }
+    // A group label: what the rows under it are, in two words. Not a row — nothing
+    // to click, nothing to miss.
+    if (it.head) { const hd = document.createElement('div'); hd.className = 'umenu-head'; hd.textContent = it.head; el.appendChild(hd); continue; }
     const b = document.createElement('button');
     b.type = 'button';
     b.setAttribute('role', 'menuitem');
@@ -21623,6 +21635,9 @@ function openMenu(anchor, items, opts) {
       const label = document.createElement('span'); label.className = 'umenu-label'; label.textContent = it.label; b.appendChild(label);
     } else b.textContent = it.label;
     if (it.title) b.title = it.title;
+    // A nested row is said by where it starts, not by an arrow glued to its name —
+    // an arrow collided with the ✓ column and made a tree read as noise.
+    if (it.indent) b.style.paddingLeft = (22 + it.indent * 14) + 'px';
     if (it.hover) {
       b.addEventListener('mouseenter', () => it.hover(b));
       b.addEventListener('mouseleave', () => { if (roomTypeMenu) scheduleRoomTypePeekClose(); });
