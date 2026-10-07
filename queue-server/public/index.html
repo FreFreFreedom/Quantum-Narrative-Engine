@@ -1590,6 +1590,33 @@ body::after {
    2026-09-24), so a line is never sliced by a hard edge. */
 #wsRoom .room-main { position:relative; }
 #wsRoom .room-main > .room-toolbar { position:absolute; top:0; left:0; right:0; z-index:8; }
+/* The Room folds to a rib of its own, the same width and the same gesture as the
+   asides beside it (his pick A, 2026-10-07) — gold, because it is the one he came
+   from. It does not disappear: hovering the rib slides the whole conversation back
+   over the pane to read (B's peek), and it slides away again when he leaves.
+   Clicking the rib opens it for good, and it stays open until he steps into
+   another aside. */
+.room-fold-rib { display:none; }
+.ws-room.room-folded > .room-main { flex:0 0 34px; min-width:34px; width:34px; overflow:visible; z-index:var(--z-floating); }
+.ws-room.room-folded .room-fold-rib { display:flex; position:absolute; left:0; top:0; bottom:0; width:34px; z-index:2;
+  align-items:center; justify-content:center; padding:12px 0; margin:0; border:0; border-right:1px solid var(--c-border);
+  background:color-mix(in srgb, var(--c-ink) 4%, transparent); cursor:pointer; transition:background var(--t-fast) var(--ease); }
+.ws-room.room-folded .room-fold-rib:hover { background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 12%, transparent); }
+.ws-room.room-folded .room-fold-rib span { writing-mode:vertical-rl; transform:rotate(180deg); max-height:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  font:500 10.5px/1 'Cinzel', var(--font-read); letter-spacing:.2em; text-transform:uppercase; color:var(--c-kept-echo, var(--c-accent)); }
+/* Folded, the conversation itself is a panel hanging off the rib — out of the way
+   until the pointer asks for it, and never taking the column's width back. */
+.ws-room.room-folded > .room-main > .room-toolbar,
+.ws-room.room-folded > .room-main > .room-convo {
+  left:34px; right:auto; width:var(--room-peek-w, min(460px, 44cqw));
+  opacity:0; pointer-events:none; transition:opacity var(--t-med) var(--ease); transition-delay:.4s; }
+.ws-room.room-folded > .room-main > .room-convo { position:absolute; top:0; bottom:0; z-index:var(--z-panel);
+  background:var(--c-bg); box-shadow:var(--sh-md); border-right:1px solid var(--c-border); border-radius:0 14px 14px 0; }
+.ws-room.room-folded > .room-main:hover > .room-toolbar,
+.ws-room.room-folded > .room-main:hover > .room-convo { opacity:1; pointer-events:auto; transition-delay:.1s; }
+/* The width the Room gives up goes to the asides — otherwise folding buys nothing
+   and only leaves a gap. */
+.ws-room.room-folded .room-cards.side-layout:not(.collapsed) { width:auto; flex:1; max-width:none; }
 /* The title in gold Cinzel capitals, centred, a short gold line under it (his pick 2,
    2026-09-24). Still the same button: a click opens everything about the thread. */
 #wsRoom .room-toolbar .room-titlebtn { position:relative; margin:0 auto; padding:6px 14px 11px; background:none; border-color:transparent; }
@@ -6012,6 +6039,10 @@ button:active { transform: translateY(1px) scale(.99); }
         <div id="roomThreadsNote" class="room-note"></div>
       </div>
       <div class="room-main">
+        <!-- The Room folded to a rib, exactly as an aside folds (his pick A + B's
+             peek, 2026-10-07). Hovering it slides the whole conversation back over
+             the pane to read; clicking it opens the Room for good. -->
+        <button type="button" class="room-fold-rib" id="roomFoldRib" aria-label="Open the Room again"><span id="roomFoldName"></span></button>
         <div class="tv-toolbar room-toolbar">
           <button type="button" class="uicon" id="roomThreadsBtn" title="Threads" aria-label="Show or hide the thread list" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
           <button type="button" class="room-titlebtn" id="roomTitleBtn" aria-haspopup="menu" title="Everything about this conversation">
@@ -15302,6 +15333,7 @@ function initRoom() {
       }
       if (pane === 'interests') renderInterestLibrary();
       if (pane === 'papers' || pane === 'apps') openRoomRecommendations(pane);
+      if (typeof applyRoomFold === 'function') applyRoomFold();
     };
     strip.onclick = (ev) => {
       const primary = ev.target.closest('[data-room-primary]');
@@ -17067,6 +17099,29 @@ let roomSideOpenId = null;
 let roomSideTrail = [];
 const roomSidePositions = new Map();
 let roomSideMenuOpen = false;
+// He unfolded the Room by hand: leave it open until he steps into another aside.
+let roomFoldSuppressed = false;
+// Folded whenever an aside is open in the pane and he has not asked for the Room
+// back. Nothing to press to fold it — stepping into an aside is the asking.
+function applyRoomFold() {
+  const ws = document.getElementById('wsRoom');
+  if (!ws) return;
+  const side = document.getElementById('roomSide');
+  const want = !roomFoldSuppressed && !!roomSideOpenId && !!(side && side.classList.contains('is-active'));
+  ws.classList.toggle('room-folded', want);
+  const rib = document.getElementById('roomFoldRib');
+  if (rib) {
+    const name = (document.getElementById('roomTitle') || {}).textContent || 'The Room';
+    const label = document.getElementById('roomFoldName');
+    if (label) label.textContent = name;
+    rib.title = name;
+    if (!rib.dataset.wired) {
+      rib.dataset.wired = '1';
+      rib.onclick = () => { roomFoldSuppressed = true; applyRoomFold(); };
+    }
+  }
+}
+window.applyRoomFold = applyRoomFold;
 function roomSideOf(id) { return roomSides.find(s => s.id === id) || null; }
 function roomSideKids(parentId) { return roomSides.filter(s => s.parent_convo_id === parentId); }
 // Numbered among the asides hanging off the SAME talk: once asides nest, a position
@@ -17184,6 +17239,9 @@ function roomShowPane(id) {
 }
 
 function roomSideOpen(id) {
+  // Stepping into an aside is the ask: the Room folds again even if he had opened
+  // it by hand a moment ago.
+  if (id !== roomSideOpenId) roomFoldSuppressed = false;
   roomSideOpenId = id;
   // Already on the chain (he clicked a rib): keep it whole, deeper ones and all.
   if (roomSideTrail.indexOf(id) < 0) roomSideTrail = roomSidePathOf(id).map(s => s.id);
@@ -17240,7 +17298,7 @@ function roomSideBring(text, how) {
   const kind = { answer: 'An answer', question: 'A question', essence: 'Essence', whole: 'What it found' }[how] || 'From the aside';
   window.studioLend.carry(upId === roomSel ? 'open' : 'side', up.subject_id,
     { text: text, msgId: null, aside: roomSideName(side), asideKind: kind }, '');
-  if (upId === roomSel) { renderRoomConvo(); }
+  if (upId === roomSel) { roomFoldSuppressed = true; applyRoomFold(); renderRoomConvo(); }
   else { roomSideOpen(upId); }
   const box = document.querySelector((upId === roomSel ? '#roomConvo' : '#roomSideEmbed') + ' .se-input');
   if (box) box.focus();
@@ -17383,6 +17441,7 @@ function renderRoomSide() {
     };
   });
 
+  applyRoomFold();
   if (open) {
     const embedHost = document.getElementById('roomSideEmbed');
     if (embedHost) {
