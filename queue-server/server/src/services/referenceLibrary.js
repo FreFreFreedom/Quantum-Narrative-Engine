@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { workFingerprint, sameEntry } from './sameWork.js';
+import { cachedBookFacts } from './bookFacts.js';
+import { cachedScreenFacts } from './screenFacts.js';
 let db;
 const parse = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
 const fail = (s, status = 400) => { throw Object.assign(new Error(s), { status }); };
@@ -70,7 +72,9 @@ export function saveReference(owner, ref) {
   return {...item,type:'saved',id:row.id};
 }
 export function referenceSaved(owner, identity) {return !!db.prepare('SELECT 1 FROM reference_saves WHERE owner=? AND identity=?').get(owner,identity);}
-export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
+// A work's year as a number, from its own row or from what the catalogues said.
+const yearOf=(v)=>{const m=String(v||'').match(/\b(1[0-9]{3}|20[0-9]{2})\b/);return m?Number(m[1]):0;};
+export function listReferences(owner,{kind='',query='',offset=0,limit=40,from='',to=''}={}) {
   ownerCheck(owner);
   // Newest first (his ask, 2026-09-27): what he just added shows at the top. Two
   // timestamp formats live in these tables ('YYYY-MM-DD HH:MM:SS' and ISO), so each
@@ -83,11 +87,24 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
     .map(r=>({type:'passage',id:r.id,kind:'passage',title:r.text.slice(0,100),text:r.text,sourceTitle:(r.convo_id||r.message_id)?'':(r.source_title||''),added:addedMs(r.created_at)}));
   const saved=db.prepare('SELECT id,snapshot,created_at FROM reference_saves WHERE owner=? ORDER BY created_at DESC').all(owner).map(r=>({...parse(r.snapshot),type:'saved',id:r.id,added:addedMs(r.created_at)}));
   const words=String(query).toLowerCase().slice(0,250).split(/\s+/).filter(Boolean);
+  // Filtering by year or by words reaches what the catalogues know too: the year a
+  // book or film came out, and what it is about, so a word like "prison" finds the
+  // works about prisons and not only the ones with it in the title (his ask, 2026-10-08).
+  const yFrom=yearOf(from), yTo=yearOf(to);
+  if(words.length||yFrom||yTo) for(const r of media){
+    let f=null;
+    try{f=r.kind==='book'?cachedBookFacts(r.title,r.creator):cachedScreenFacts(owner,r.kind,r.title,r.year);}catch(e){f=null;}
+    r.text=f?.overview||'';
+    r.yearN=yearOf(r.year)||yearOf(f?.year);
+  }
+  const inYears=(r)=>{if(!yFrom&&!yTo)return true;if(r.type!=='media'&&!['book','film','series'].includes(r.kind))return false;
+    const y=r.yearN||yearOf(r.year);return !!y&&(!yFrom||y>=yFrom)&&(!yTo||y<=yTo);};
+  const hit=(r)=>inYears(r)&&words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w));
   // A saved suggestion that is the same work as a Library entry is shown once, as
   // the entry — matched with or without subtitle, author or year (2026-09-28).
   const twinOf=(r)=>{const fp=workFingerprint(r);return !!fp&&media.some(m=>workFingerprint(m)===fp&&sameEntry(m,r));};
   const savedShown=saved.filter(r=>!twinOf(r));
-  const items=[...savedShown,...media,...passages].filter(r=>(!kind||r.kind===kind)&&words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w)))
+  const items=[...savedShown,...media,...passages].filter(r=>(!kind||r.kind===kind)&&hit(r))
     .sort((a,b)=>(b.added||0)-(a.added||0));
   const start=Math.max(0,Number(offset)||0), cap=Math.max(1,Math.min(2000,Number(limit)||40));
   // How many of each kind the library holds (the search still applies, the kind
@@ -95,11 +112,11 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40}={}) {
   // leave out the ones its own shelf already counts.
   const counts={}, bookTitles=[];
   for(const r of [...savedShown,...media,...passages]) {
-    if(!words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w))) continue;
+    if(!hit(r)) continue;
     counts[r.kind]=(counts[r.kind]||0)+1;
     if(r.kind==='book') bookTitles.push(r.title);
   }
-  return {items:items.slice(start,start+cap).map(({text,...r})=>({...r,excerpt:text?.slice(0,r.kind==='passage'?2000:300)})),total:items.length,counts,bookTitles};
+  return {items:items.slice(start,start+cap).map(({text,yearN,...r})=>({...r,...(yearN&&!yearOf(r.year)?{year:String(yearN)}:{}),excerpt:r.type==='media'?undefined:text?.slice(0,r.kind==='passage'?2000:300)})),total:items.length,counts,bookTitles};
 }
 // ─── Analogies found in conversation ────────────────────────────────────────
 // The mind harvest reads each Room conversation every few messages; when it meets a
