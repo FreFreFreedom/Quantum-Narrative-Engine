@@ -14825,6 +14825,8 @@ function openInsideRoom(kind, payload) {
     if (++tries > 60) return;
     if (kind === 'side') {
       if (!roomSides.some(s => s.id === payload)) return setTimeout(step, 250);
+      const panel = document.getElementById('roomCards'), button = document.getElementById('roomCardsBtn');
+      if (panel && button && (window.matchMedia('(max-width: 819px)').matches ? !panel.classList.contains('open') : panel.classList.contains('collapsed'))) button.click();
       return roomSideOpen(payload);
     }
     const open = kind === 'person' ? window.qneOpenPersonCard : window.qneOpenWorkCard;
@@ -15253,7 +15255,7 @@ function initRoom() {
     z.btn.setAttribute('aria-expanded', String(on));
     z.btn.title = on ? z.keptTitle : z.shutTitle;
     if (z.panel === cards) applyRoomCardsWidth();
-  }); };
+  }); applyRoomFold(); };
   roomZonesSync = syncZoneBtns;
   // Saved on the wide layout only. Narrow, a side zone is an overlay that slides
   // over the conversation, and one left standing open from last time would be in
@@ -17307,7 +17309,11 @@ function applyRoomFold() {
   const ws = document.getElementById('wsRoom');
   if (!ws) return;
   const side = document.getElementById('roomSide');
-  const want = !roomFoldSuppressed && !!roomSideOpenId && !!(side && side.classList.contains('is-active'));
+  // Only while the column holding the aside is actually on screen: folded beside a
+  // shut column, a refresh landed on a blank page (2026-10-08).
+  const cards = document.getElementById('roomCards');
+  const cardsShown = !!cards && (window.matchMedia('(max-width: 819px)').matches ? cards.classList.contains('open') : !cards.classList.contains('collapsed'));
+  const want = !roomFoldSuppressed && !!roomSideOpenId && !!(side && side.classList.contains('is-active')) && cardsShown;
   ws.classList.toggle('room-folded', want);
   const rib = document.getElementById('roomFoldRib');
   if (rib) {
