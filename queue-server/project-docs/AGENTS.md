@@ -338,7 +338,17 @@ goes as a system message (the context above) followed by the conversation as rea
 user/assistant turns — what a fresh chat on the model's own site sends — not one document
 with an "OWNER:/YOU:" transcript under headings. `buildTurnPrompt({ asTurns: true })` +
 `generateTextStream({ turns })`; the Claude and Codex lanes, images, and a turn too big
-to fit still get the flat prompt. See `plans/conversation-thinking-recall.md`. Harvested
+to fit still get the flat prompt.
+
+**Two more back doors, closed 2026-10-08.** (1) The turn router counted "where", "how does
+… work", "what does … do" and any slash as a question about the app — 80 of his 275
+messages, each then carrying the ~40k-character project map, repo facts and tools, and,
+with no model picked, the cheap lane. Now only words naming the app or the code, a real
+repo path, or a code-shaped name, read in his own words with quoted passages and links
+left out (`turnRouter.js` `ABOUT_APP_PHRASE`, `REPO_PATH`). (2) Selecting a passage folded
+~150 words of reading rules into his message, saved with it and resent every turn. The
+message now carries only the passages and his words; older messages are cleaned on the
+way to the model (`conversations.js#withoutPassageRules`). See `plans/conversation-thinking-recall.md`. Harvested
 memory stays out.
 
 **Blank models (his ask, 2026-09-30).** The picker's "Blank" group — Gemini and GPT-4.1 —

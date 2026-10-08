@@ -54,7 +54,12 @@ const BRAINSTORM_LANE = { feature: 'studio', model: null, tag: 'gpt-4.1' };
 
 // about_app signal: a path- or camelCase-shaped token (extractCandidates does the
 // real work) OR one of these phrasings.
-const ABOUT_APP_PHRASE = /\b(where|does the app|is there already|what handles|how does .* work|what does .* do|what file|which file|how is .* wired)\b/i;
+// Only words that name the app itself. "where", "how does … work" and "what does … do"
+// used to count too and sent almost a third of his thinking questions down the
+// code path, with the whole project map attached (audit 2026-10-08).
+const ABOUT_APP_PHRASE = /\b(the app|this app|my app|in the app|does the app|the code|the codebase|is there already|what handles|what file|which file|how is .* wired)\b/i;
+// A slash in prose ("and/or", "quebec/canada") is not a path; a file is.
+const REPO_PATH = /\.[a-z]{1,5}$|^(?:\.?\/)?(?:queue-server|server|src|scripts|plans|public|data-seed|project-docs|\.claude)\//i;
 // The judgement words that turn an about_app question into a code-reading job
 // (run the helper with Read/Grep/Glob, not just answer from facts).
 const JUDGEMENT_WORD = /\b(should we|why\b|is it safe|what would break|what breaks|is this safe|is that safe)\b/i;
@@ -153,10 +158,14 @@ export async function resolveTurn({ convoId, text, lastAssistantText, override =
   // Is this a question about the app itself? Worked out BEFORE the two forced
   // paths below, because a forced lane still deserves the free repo grounding —
   // see readRepoFacts.
-  let candidates = extractCandidates(trimmed);
-  const aboutPhrase = ABOUT_APP_PHRASE.test(trimmed);
+  // Read only his own words: a quoted passage or a link naming "the app" or a
+  // file is not him asking about the code.
+  const own = trimmed.replace(/“[^”]*”/g, ' ').replace(/https?:\/\/\S+/g, ' ');
+  let candidates = extractCandidates(own);
+  candidates = { ...candidates, paths: candidates.paths.filter((x) => REPO_PATH.test(x)) };
+  const aboutPhrase = ABOUT_APP_PHRASE.test(own);
   if (aboutPhrase && !candidates.paths.length && !candidates.identifiers.length) {
-    candidates = { paths: [], identifiers: phraseKeywords(trimmed) };
+    candidates = { paths: [], identifiers: phraseKeywords(own) };
   }
   const hasAppSignal = candidates.paths.length || candidates.identifiers.length || aboutPhrase;
 
