@@ -4146,7 +4146,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-chap::before, .se-chap .se-chap-rib { min-width:18px; }
 ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
 .se-chap::before { content:''; order:0; flex:1; height:1px; background:var(--c-kept-rule, var(--c-brand)); opacity:.45; }
-.se-chap::after { content:attr(data-name); order:1; flex:0 1 auto; min-width:0; max-width:none; font:500 clamp(11.5px, 1.1em, 14px)/1.45 'Cinzel', var(--font-read); letter-spacing:clamp(.08em, 1.2vw, .2em); text-transform:uppercase; color:var(--c-read, var(--c-ink-2)); white-space:normal; text-align:center; overflow-wrap:break-word; text-wrap:balance; }
+.se-chap-name { order:1; cursor:text; user-select:text; -webkit-user-select:text; flex:0 1 auto; min-width:0; max-width:none; font:500 clamp(11.5px, 1.1em, 14px)/1.45 'Cinzel', var(--font-read); letter-spacing:clamp(.08em, 1.2vw, .2em); text-transform:uppercase; color:var(--c-read, var(--c-ink-2)); white-space:normal; text-align:center; overflow-wrap:break-word; text-wrap:balance; }
 .se-chap .se-chap-rib { order:3; flex:1; width:auto; height:1px; clip-path:none; opacity:.45; }
 /* Remove sits right beside the name, a real button, shown when the line is hovered. */
 .se-chap-drop { order:2; flex:none; width:22px; height:22px; margin-left:-6px; border-radius:50%; display:flex; align-items:center; justify-content:center;
@@ -31758,6 +31758,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var el = node && (node.nodeType === 1 ? node : node.parentNode);
     if(!el || !el.closest) return null;
     var turn = el.closest('.se-turn');
+    // A chapter on an answer's first line sits just before that answer.
+    if(!turn){ var ch = el.closest('.se-chap'), nx = ch && ch.nextElementSibling; if(nx && nx.classList.contains('se-turn')) turn = nx; }
     if(!turn || turn.classList.contains('you')) return null;
     return turn;
   }
@@ -32645,7 +32647,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       d.setAttribute('data-name', gapName({ label: nm }));
       if(at === 0) d.style.fontSize = getComputedStyle(body).fontSize;
       d.setAttribute('data-mark-id', m.id);
-      d.innerHTML = '<i class="se-chap-rib"></i><b class="se-chap-drop" role="button" tabindex="0" title="Remove this chapter" aria-label="Remove this chapter">✕</b>';
+      // The name is real text, not drawn, so it can be selected and looked up.
+      d.innerHTML = '<span class="se-chap-name"></span><i class="se-chap-rib"></i><b class="se-chap-drop" role="button" tabindex="0" title="Remove this chapter" aria-label="Remove this chapter">✕</b>';
+      d.querySelector('.se-chap-name').textContent = d.getAttribute('data-name');
       if(at === 0) turn.parentNode.insertBefore(d, turn); else blocks[at].parentNode.insertBefore(d, blocks[at]);
     });
   }
