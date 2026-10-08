@@ -348,7 +348,10 @@ repo path, or a code-shaped name, read in his own words with quoted passages and
 left out (`turnRouter.js` `ABOUT_APP_PHRASE`, `REPO_PATH`). (2) Selecting a passage folded
 ~150 words of reading rules into his message, saved with it and resent every turn. The
 message now carries only the passages and his words; older messages are cleaned on the
-way to the model (`conversations.js#withoutPassageRules`). See `plans/conversation-thinking-recall.md`. Harvested
+way to the model (`conversations.js#withoutPassageRules`). (3) An earlier conversation's thinking no
+longer rides on a subject match (`recalledThinkingBlock` is unused by the Room): it fed the
+model its own old answers and he kept having to ask "without repeating yourself". Linking a
+conversation by hand, and bringing a side talk on, still carry it. See `plans/conversation-thinking-recall.md`. Harvested
 memory stays out.
 
 **Blank models (his ask, 2026-09-30).** The picker's "Blank" group — Gemini and GPT-4.1 —

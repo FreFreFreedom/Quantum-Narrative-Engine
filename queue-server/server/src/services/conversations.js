@@ -38,7 +38,7 @@ import { uniqueTitle } from './knowledgeDocs.js';
 import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory, subjectsBlock, taughtForRoom } from './mind.js';
 import { chapterize } from './chapters.js';
 import { logConversation, logText } from './convoLog.js';
-import { recalledThinkingBlock, thinkingForBring, writeThinking, hisRecentWords } from './convoThinking.js';
+import { thinkingForBring, writeThinking, hisRecentWords } from './convoThinking.js';
 import { splitByLabels, splitByMarks, parseMarks, MARKS_PROMPT } from './convoImport.js';
 import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
@@ -2217,11 +2217,12 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     ctx.mode === 'open' ? '' : `\n=== WHAT THIS CONVERSATION IS ABOUT ===\n${ctx.contextText}`,
     parentTranscriptFor(convo),
     linkedConversationsBlock(convo.id),
-    // An earlier conversation's thinking, only when his message is on its subject
-    // (plan conversation-thinking-recall). Context under a bare heading, no rule.
+    // His taught ideas and subjects, only when his message is on their subject.
+    // An earlier conversation's thinking no longer rides on its own (2026-10-08):
+    // it handed the model its old answers, and new ones drifted back to them. A
+    // conversation he links by hand still comes (linkedConversationsBlock).
     taught?.ideas || '',
     taught?.subjects || '',
-    recalledThinkingBlock(convo.id, { also: taught?.convoIds || [] }),
     withMap && repoFacts ? liveListsBlock() : '',
     tools ? ROOM_TOOLS_LINE : '',
     ROOM_PASSAGES_LINE,
