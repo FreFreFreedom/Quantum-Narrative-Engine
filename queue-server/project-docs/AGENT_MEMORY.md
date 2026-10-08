@@ -28,6 +28,61 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-10-03 — The browser extension is "QNE" and sends to the Library.**
+`~/edge-extensions/amazon-author-youtube/` (folder name kept so Edge keeps the same id;
+the manifest name is now QNE) does three things: the old YouTube pairing, **Amazon tabs
+to the Library** (every Amazon product tab in every window, read as title/author/year in
+the page itself — no model, posted twelve at a time to `POST /api/convos/interests` →
+`saveSuggestedWorks`), and a right-click on any image, **Read this into the QNE Library**
+(fetched inside that tab under `activeTab`, redrawn to PNG when needed, posted to the
+existing `POST /api/convos/library/interest-imports`, which reads it with the BROAD
+prompt). It signs in with the admin password kept in extension storage and holds an
+ordinary 7-day token, renewed once on any 401 — **not** the scoped capture key, which was
+deleted 2026-10-02 (`ed03e37`) for being refused everywhere. CORS allows
+`chrome-extension://<32 a-p>` again; CORS is not auth.
+**It reloads itself**: a half-minute alarm compares the manifest version on disk with the
+one running and calls `chrome.runtime.reload()` when they differ — so **every edit to that
+folder must end with `./bump.sh`**, or nothing notices and he is pressing reload in
+`edge://extensions` again.
+
+**2026-10-01 — A local server rewrites the checkout's notes folder.** Booting `queue-server`
+locally (any `DB_PATH`) runs `noteMirror.js`'s disk sync, which writes the local DB's notes
+into `queue-server/project-docs/notes/` and deletes every file the local DB lacks — the
+mass of `D` lines that keeps appearing in `git status`. Never commit them: restore with
+`git checkout -- queue-server/project-docs/notes/` after a local run.
+
+**2026-10-01 — Every Room conversation keeps its thinking, and the Room reads it when the
+subject comes back.** `services/convoThinking.js`: once a conversation or side talk has been
+quiet 15 minutes, a 5-minute sweep writes its thinking (the path it took, append-only, one
+slice and one model call per tick, always Gemini — his pick) into `convo_thinking`, and the full
+note (thinking + verbatim transcript) into the same `Note: ` row `/note` uses — so the notes
+mirror carries every conversation to `project-docs/notes/`. A full Room answer carries an
+earlier conversation's thinking **only** when his last messages share its rarer words
+(`recalledThinkingBlock`, kept per thread in `convos.recalled`, at most 2) — plain context, no
+instruction. Bring on a whole side talk carries its thinking. `/note` is now "write it now".
+`POST /api/convos/:id/thinking {text}` stores a record written in a terminal. Teach now reaches
+the Room too (`mind.js#taughtForRoom`: taught "how" items always, as facts, never orders;
+taught ideas by subject) and runs on Gemini. Plan:
+`plans/conversation-thinking-recall.md`.
+
+**2026-09-30 — Two models can answer one question, side by side.** A second pick beside
+the composer's lane picker (`.se-lanebtn2`, the same popover in side `'b'` mode, stored on
+`convos.chat_override_b`) makes every send a pair: `runPairTurn` runs the ordinary turn twice
+on two lanes at once, ties both answers with one `meta.pair` and a `side`, and the Room draws
+them as two columns in one turn slot — each its own scroller, **never scroll-locked** (his
+explicit no), stacking under 620px of thread width via a container query. Side `a` is kept to
+begin with; **Keep** moves it (`POST /messages/:id/keep`). The ↻ menu's "Beside the answer it
+got…" pairs an answer already in the thread (`POST /messages/:id/beside`). **The rule that
+matters: only the kept side may be read as the thread's answer** — every prompt, note, running
+log, chapter and mind harvest goes through `threadMessages()` (or `KEPT_SIDE_ONLY_SQL` from
+`services/pairSql.js` for raw reads), or the model gets two contradictory answers to the same
+question. Nothing pairs by itself: two answers cost two generations. Plan:
+`plans/two-models-side-by-side.md`.
+
+**2026-09-28 — The Library keeps no doubles.** One rule, `services/sameWork.js` (title without subtitle or article; film and series one family; author or year must not disagree), is used by every save path, the Discover-save listing, the shelf and the wall. Boot and every tidy fold existing doubles into the older row. Same-author books sharing a subject word are checked against Open Library / Google Books (`bookFacts.js#bookKnown`): one in no catalogue folds into the real one (a model had invented "Bob's Boys" beside Meier's "Morgenthau"); both real stay two. A book and its film/series stay two works but share one place on the wall, the poster sliding out on hover (his pick B5). Passages: a line inside a kept one is that one.
+
+**2026-09-28 — People in Room answers are clickable.** Each answer's real people and fictional characters are found in the same cheap pass as its works (`services/personNotes.js#namedPeople`, stored as `meta.people`) and the first mention of each gets a dotted underline (`seMarkPeople`). A click opens a card like a book's: portrait from Wikipedia when the page matches the kind, years, the main pattern, why they matter here through the paradigm (cached per conversation in `person_notes`), and Amazon / YouTube / Wikipedia searches. Kinds: real, fictional, myth, place, institution, archetype (lower-case names allowed; its card adds three Echoes who live it). `PEOPLE_V` in `personNotes.js` is bumped when a kind is added, so old answers are read once more. Older answers are read once when their conversation opens (`POST /:id/people-scan`, the whole conversation, 12 answers per call while `more`); every answer stores `meta.people`, an empty list too, so none is read twice.
+
 **2026-09-24 — The Room is the dusk-glow design, in every look.** Floating rounded panels on a darker frame, a warm radial glow over the conversation, glass cards for messages and the composer, a small Q beside each answer, paper grain over the whole app. A new look must give `--glow-1`/`--glow-2` (and `--glass`/`--q-av` if it is a day look), or its Room falls back to a flat page. Looks now: atlas, darkroom, bean, navy, plum, ember. The 59 palette mockups behind it were a local throwaway page.
 
 **2026-09-24 — Waiting is drawn with orbs; never add dots or a spinner.** Every place the app works on something uses `orbHtml(state, size)` (Thinking Orbs, nine named motions) or `waitHtml(state, text)` for an orb plus a shimmering line; the Queue's moving stage uses `matrixHtml()`. One rAF loop draws them all in the look's accent, so plain markup is enough. The Room composer has Dictate (browser speech, free) and a Talk overlay (ElevenLabs orb + `speechSynthesis`, free). See `plans/living-orbs-dictate-talk.md`.
@@ -1182,3 +1237,12 @@ language to what it is and does — understanding, never the surface of his essa
 "if i point at the moon, dont look at my finger". Never copy the essay's examples, words or
 order into a prompt or answer. Prompt: `queue-server/data-seed/voices/the-lens.md` (not a
 setting). Authority: AGENTS.md "The lens". His essay, verbatim: `fractal_operational_core.md` §22.
+
+## Room running log (2026-09-28)
+Messages that leave the Room's 16-message window are written down in plain lines by `services/convoLog.js` (append-only batches in `convos.log`, one free `summary` call per 4 leaving messages), and `transcriptOf` puts them back as "(earlier in this conversation)". Context only: no instruction rides with it, and the writer leaves out anything about answer shape. Skipped after "Start fresh", which sends everything since the fold anyway. Plan: `plans/room-running-log.md`.
+
+- **2026-09-30 — the Room's hidden rules, audited and closed; Blank models added.** He still
+  preferred a fresh model with no rules. Five back doors found (Mac CLI setup incl. a user
+  hook and `~/.claude/CLAUDE.md`, harvested memory, random subjects, shelf/library dumps, tool
+  descriptions) — see AGENTS.md "Where the rules kept hiding". New "Blank" group in the
+  picker: Gemini / GPT-4.1 with only the conversation, as real turns.

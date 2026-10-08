@@ -305,6 +305,47 @@ and must not be written back into the Room's prompt. Code: `ROOM_LINE` and `room
 `services/conversations.js`. The two memory blocks that ride along say what he asked and what
 he is drawn to, never "follow", "outrank" or "never force" (2026-09-26).
 
+**Where the rules kept hiding (audit 2026-09-30 — he still preferred a fresh model).** Five
+back doors, all closed; do not reopen any of them:
+- **The Mac's own Claude setup.** Room answers on either Claude account run through the
+  runner, which spawned the CLI from the repo with no system prompt of its own — so every
+  answer read Claude Code's coding-agent prompt, `~/.claude/CLAUDE.md` ("short, bullets,
+  fragments, no headings"), a user hook stamping "ANSWER STYLE (Antoine, always)", the repo
+  CLAUDE.md and auto-memory. Toolless helper jobs now run `clean` (`claudeCode.js`
+  `runToolless`: `--setting-sources project,local` + a one-line `--system-prompt`) from an
+  empty folder (`queue-runner.js#cleanRoomDir`). Codex text jobs run from that folder too —
+  from the repo it read AGENTS.md.
+- **The harvested memory.** `mindBlock` sent "taste" and "vision" facts on every answer, and
+  the harvest writes them as rules ("the desired move is to adopt a poetic tone in all future
+  responses"). Full Room answers no longer carry `mindBlock` at all; what he explicitly told
+  it to remember (`directInstructionsBlock`) still rides.
+- **Three random "subjects he is drawn to"** on every turn — gone from full answers.
+- **The shelf and the library.** The whole book list plus a how-to-quote paragraph rode on
+  every answer, and every long word matched against his saved interests; now only a book he
+  names, or his saved things when he points at them.
+- **The tool list.** Tool descriptions are pages of the paradigm's vocabulary; they now ride
+  only on a question about his app or his things (`roomWantsLookups`).
+
+**Teach: ideas ride, taste does not (2026-10-01, narrowed 2026-10-08).** Taught ideas
+and subjects ride only when his message shares their subject. The "what he loves in an
+answer" items **no longer ride at all** — audit 2026-10-08: five of them ("poetic, lyrical",
+"extreme brevity", "the same pattern across scales", "a line from private life to society")
+pushed every answer into one shape and contradicted each other; phrased as facts, they
+were still rules. The bold-words line (2026-10-07) went the same day, for the same reason.
+
+**The Room sends real turns (2026-10-08).** On Gemini and OpenAI lanes a full Room answer
+goes as a system message (the context above) followed by the conversation as real
+user/assistant turns — what a fresh chat on the model's own site sends — not one document
+with an "OWNER:/YOU:" transcript under headings. `buildTurnPrompt({ asTurns: true })` +
+`generateTextStream({ turns })`; the Claude and Codex lanes, images, and a turn too big
+to fit still get the flat prompt. See `plans/conversation-thinking-recall.md`. Harvested
+memory stays out.
+
+**Blank models (his ask, 2026-09-30).** The picker's "Blank" group — Gemini and GPT-4.1 —
+sends the conversation as real turns and nothing else: no portrait, no memory, no tools, no
+headings, no instruction, no fallback lane (`runBlankTurn`, lane flag `blank`). It is the
+fresh-model baseline he compares the Room against; never attach anything to it.
+
 **Depth: meaning, not a recital (hard, his call 2026-09-25).** He sent one question to GPT-4.1
 on miniapps.ai and to the Room, and preferred the miniapps answer by far — and said what he
 valued most was not its layout but "the metaphors and how it talks about things, because in
@@ -468,6 +509,11 @@ headings before any content. One tab row with counts says the same and shows one
 pane at a time. Put the count on the tab so a shut pane still says it holds
 something.
 
+**A panel shown on hover is still that panel — its edge drags too.** The thread list's
+resize edge only existed when the list was kept open; the hover version he actually
+uses had none, and "I can't resize it" came back three times while each fix tested
+the kept-open state. Test a panel in every state it can be on screen.
+
 **Rare actions go behind one `⋯`; dangerous ones never sit beside common ones.**
 Delete was a pixel from Fork in a row of five icons.
 
@@ -544,6 +590,14 @@ thing you are looking at is the thing you would hit.
 **No explaining inside the app.** Ship the control, not the paragraph. Helper text
 belongs in a `title` tooltip or nowhere.
 
+**A mark in an answer is for the thing, never for where it came from (hard, Antoine
+2026-09-29).** An answer listing SWAT series underlined CBS, Cinemax and FX — inside the
+very headings that named the works — and left *S.W.A.T.*, *The Shield* and *Sicario*
+dead on the page. Exactly backwards. A film, a series, a book, a person, a place is an
+entity and earns its card; the network, streamer, studio, publisher or label that
+carried it is a shelf, not a thing on it. Whenever a new kind of mark is added, ask
+which of the two it is before writing the prompt that finds it.
+
 **Every sidebar is draggable, and comes back exactly as it was left (hard, Antoine
 2026-09-11).** His words: *"whenever we have a sidebar, I want it to be adjustable and
 this setting saved — so if we adjust it and come back later, that's the same adjustment
@@ -592,6 +646,13 @@ Look sat stacked in the shut rail and side by side in the open one, so hovering 
 rail slid the button away from the pointer reaching for it. Every button in a
 collapsible bar keeps the same spot in both states; if the open state has more room,
 it spends it on labels beside the icons, never on rearranging them.
+
+**The Room's main chat and its side chat are one feature set** (2026-09-30).
+Anything added to one — a button, a menu, a display like the word count, a
+behaviour — goes to the other in the same change, unless it truly makes no sense
+there (say so when skipping). Both run the same embed; divergence comes from CSS
+scoped to `#roomConvo` or `#roomSideEmbed` alone, and from `document.querySelector('#roomConvo …')`
+in JS. Scope new rules as `:is(#roomConvo, #roomSideEmbed)`.
 
 ### Don't leave published pages behind (added 2026-09-09)
 
