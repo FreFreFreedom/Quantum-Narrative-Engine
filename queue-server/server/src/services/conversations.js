@@ -297,6 +297,9 @@ function smartTitleSoon(convoId) {
 // The gist of a side talk, or of one message in it, to carry into the main thread
 // (the Room's "bring" menu, 2026-09-30). The free summary lane; a click, so it waits.
 const GIST_PROMPT = `Carry what follows into a larger conversation that will build on it. Write the ideas themselves, not a report about an exchange: each distinction, name, mechanism, example and open question worth keeping, in the text's own strongest words and images where they are good. Six to twelve short lines, one idea per line, plain words, no heading, no preamble, no closing line. Never write "the conversation", "the user", "the assistant", "he asked" or "the answer".`;
+// A whole aside: fuller than one answer's essence (his call, 2026-10-08 — Gemini can
+// hold it), still far short of the thinking record that once ran to 74,000 characters.
+const WHOLE_PROMPT = `Carry what follows into a larger conversation that will build on it. Write what it found, a page or two (about 800 to 1,500 words): the ideas themselves with the reasoning that holds them up, each distinction, name, mechanism, example and open question worth keeping, in the text's own strongest words and images where they are good. Plain words, short paragraphs, no heading, no preamble, no closing line. Never write "the conversation", "the user", "the assistant", "he asked" or "the answer".`;
 export async function gistConvo(convoId, messageId) {
   if (!db) return { error: 'no_db' };
   if (!getConvo(convoId)) return { error: 'not_found' };
@@ -305,14 +308,15 @@ export async function gistConvo(convoId, messageId) {
   let msgs = threadMessages(convoId).filter((m) => m.kind === 'chat');
   if (messageId) msgs = msgs.filter((m) => m.id === messageId);
   if (!msgs.length) return { error: 'empty' };
-  const line = (m) => (messageId ? '' : `${m.role === 'user' ? 'He asked' : 'The answer'}: `) + String(m.text).slice(0, messageId ? 12000 : 3000);
+  const line = (m) => (messageId ? '' : `${m.role === 'user' ? 'He asked' : 'The answer'}: `) + String(m.text).slice(0, messageId ? 12000 : 6000);
   const out = await generateText({
-    prompt: `${GIST_PROMPT}\n\n=== TEXT ===\n${msgs.slice(-24).map(line).join('\n\n')}`,
+    prompt: `${messageId ? GIST_PROMPT : WHOLE_PROMPT}\n\n=== TEXT ===\n${msgs.slice(-40).map(line).join('\n\n')}`,
     // The Room's own lane: this text is read by him and carried into his thread, so
     // the cheap summary lane (which came back with a few words) is not good enough.
     feature: 'studio',
     label: 'conversations:bring-gist',
-    maxTokens: 1500,
+    maxTokens: messageId ? 1500 : 6000,
+    allowLongOutput: true, // without it every text call is cut at 800 tokens
     timeoutMs: 120_000,
   });
   const text = String(out?.text || '').trim();
@@ -2146,7 +2150,7 @@ const OLD_PASSAGE_RULES = /^These selections are the default subject of my messa
 // A passage carried into a message is read by the model in its first stretch only;
 // his own words after it always go whole. One brought side talk was 74,000
 // characters and rode on every answer after it (2026-10-08).
-const PASSAGE_MODEL_CAP = 8000;
+const PASSAGE_MODEL_CAP = 12000;
 function withoutPassageRules(text) {
   const t = String(text || '').replace(OLD_PASSAGE_RULES, (m, refs) => (refs ? `${refs}:` : ''));
   const at = t.lastIndexOf('\n\nMY MESSAGE:\n');
