@@ -2890,6 +2890,10 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .bk-out-menu { position:absolute; right:0; top:calc(100% + 6px); z-index:5; display:flex; flex-direction:column; gap:2px; min-width:150px; padding:6px;
   background:var(--c-surface-2, var(--c-surface)); border:1px solid var(--c-border); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,.3); }
 .bk-out-menu[hidden] { display:none; }
+/* Opens on hover too (his ask, 2026-10-08); the bridge keeps it open across the gap. */
+.bk-out:hover .bk-out-menu[hidden], .bk-out:focus-within .bk-out-menu[hidden] { display:flex; }
+.bk-out:hover .bk-out-btn { background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 12%, transparent); }
+.bk-out-menu::before { content:''; position:absolute; left:0; right:0; top:-8px; height:8px; }
 .bk-out-menu a { padding:6px 10px; border-radius:6px; font-size:var(--fs-sm); color:var(--c-ink-2); text-decoration:none; white-space:nowrap; }
 .bk-out-menu a:first-child { color:var(--c-kept-echo, var(--c-accent)); }
 .bk-out-menu a:hover { background:var(--c-hover-wash); color:var(--c-ink); }
