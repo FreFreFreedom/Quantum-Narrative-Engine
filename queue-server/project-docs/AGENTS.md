@@ -276,8 +276,8 @@ rule written the same day, which fought the conversational warmth in his profile
 tell a coding session "remember this" / "take my story from that message" than to rely on the
 mind harvest. When he does: distil the understanding (never his wording, never a rule about how
 to answer) into `queue-server/data-seed/voices/the-room.md`, run
-`node queue-server/scripts/push-room-portrait.js` (puts it live in the Room's voice box), and
-mirror the same lines into his Gemini Gem file `~/Downloads/Antoine-pour-Gemini.md`.
+`node queue-server/scripts/push-room-portrait.js` (puts it live in the Room's voice box).
+(The Gemini Gem file is no longer kept up to date, his call 2026-10-08.)
 
 **New ideas reach the Room the same way (his call, 2026-09-26).** When a concept should shape
 the Room's thinking, for example the Spinoza reading of "the holistic nature of X", it goes in
