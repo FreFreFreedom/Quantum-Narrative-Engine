@@ -15484,8 +15484,8 @@ function initRoom() {
     // The Library as a shelf of covers along the bottom of the Room, under the chat
     // and the side talks alike, so any cover can be dragged into either (his pick B,
     // 2026-10-08). The Library tab is unchanged.
+    // Shut each time the app opens (his ask, 2026-10-08): opened only when wanted.
     let split = false;
-    try { split = localStorage.getItem('fmcns_room_shelf') === '1'; } catch (e) {}
     const together = () => false;
     const apply = () => {
       const both = false;
@@ -15527,7 +15527,6 @@ function initRoom() {
     strip.onclick = (ev) => {
       if (ev.target.closest('[data-room-split]')) {
         split = !split;
-        try { localStorage.setItem('fmcns_room_shelf', split ? '1' : '0'); } catch (e) {}
         apply();
         return;
       }
