@@ -3202,6 +3202,16 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   border:0; border-right:1px solid var(--c-border); background:color-mix(in srgb, var(--c-ink) 3%, transparent);
   cursor:pointer; transition:background var(--t-fast) var(--ease); }
 .room-side-rib.deeper { border-right:0; border-left:1px solid var(--c-border); }
+.room-side-stack { position:relative; }
+.room-side-peek { position:absolute; top:0; bottom:0; z-index:var(--z-panel); display:flex; flex-direction:column;
+  width:min(420px, 62%); background:var(--c-bg); border:1px solid var(--c-border); border-radius:0 10px 10px 0;
+  box-shadow:0 10px 30px rgba(0,0,0,.28); overflow:hidden; cursor:pointer; }
+.room-side-peek.from-right { border-radius:10px 0 0 10px; }
+.room-side-peek-head { flex:0 0 auto; padding:8px 12px; font-family:'Cinzel',serif; font-size:12px; letter-spacing:.06em;
+  border-bottom:1px solid var(--c-border); color:var(--c-kept-echo, var(--c-accent)); }
+.room-side-peek-body { flex:1; min-height:0; overflow:auto; padding:10px 12px 16px; }
+.room-side-peek-body p { margin:0 0 10px; font-size:13px; line-height:1.5; }
+.room-side-peek-body p.me { color:var(--c-ink); opacity:.75; }
 .room-side-rib:hover { background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 10%, transparent); }
 .room-side-rib span { writing-mode:vertical-rl; transform:rotate(180deg); max-height:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
   font:500 10.5px/1 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-4); }
@@ -17128,6 +17138,43 @@ function roomRibDwell(el, open) {
   el.addEventListener('mouseleave', stop);
   el.addEventListener('click', stop);
 }
+
+// Resting on a rib shows the talk beside the one he is reading — a panel the
+// width of a side pane, not the whole column (his correction, 2026-10-07).
+// Clicking it, or clicking the rib, steps in for real.
+const roomPeekCache = new Map();
+let roomPeekFor = null;
+function roomPeekClose(id) {
+  if (id && roomPeekFor !== id) return;
+  roomPeekFor = null;
+  document.querySelectorAll('.room-side-peek').forEach(el => el.remove());
+}
+async function roomRibPeek(ribEl, id) {
+  const stack = ribEl && ribEl.closest('.room-side-stack');
+  const side = roomSideOf(id);
+  if (!stack || !side || roomPeekFor === id) return;
+  roomPeekClose();
+  roomPeekFor = id;
+  const deeper = ribEl.classList.contains('deeper');
+  const panel = document.createElement('div');
+  panel.className = 'room-side-peek' + (deeper ? ' from-right' : '');
+  panel.style[deeper ? 'right' : 'left'] = (deeper ? (stack.offsetWidth - ribEl.offsetLeft) : (ribEl.offsetLeft + ribEl.offsetWidth)) + 'px';
+  panel.innerHTML = '<div class="room-side-peek-head">' + qEsc(roomSideName(side)) + '</div>'
+    + '<div class="room-side-peek-body"></div>';
+  panel.onclick = () => { roomPeekClose(); roomSideOpen(id); };
+  panel.addEventListener('mouseleave', () => roomPeekClose(id));
+  stack.appendChild(panel);
+  let msgs = roomPeekCache.get(id);
+  if (!msgs) {
+    try { msgs = ((await api('/api/convos/' + encodeURIComponent(id))).messages) || []; } catch (e) { msgs = []; }
+    roomPeekCache.set(id, msgs);
+  }
+  if (roomPeekFor !== id || !panel.isConnected) return;
+  const body = panel.querySelector('.room-side-peek-body');
+  body.innerHTML = msgs.slice(-12).map(m =>
+    '<p' + (m.role === 'user' ? ' class="me"' : '') + '>' + qEsc(String(m.content || '').slice(0, 600)) + '</p>').join('');
+  body.scrollTop = body.scrollHeight;
+}
 // He unfolded the Room by hand: leave it open until he steps into another aside.
 let roomFoldSuppressed = false;
 // Folded whenever an aside is open in the pane and he has not asked for the Room
@@ -17462,8 +17509,12 @@ function renderRoomSide() {
     setTimeout(() => { renameBox.focus(); renameBox.select(); }, 0);
   }
   host.querySelectorAll('[data-side-rib]').forEach(b => {
-    b.onclick = () => roomSideOpen(b.getAttribute('data-side-rib'));
-    roomRibDwell(b, () => roomSideOpen(b.getAttribute('data-side-rib')));
+    b.onclick = () => { roomPeekClose(); roomSideOpen(b.getAttribute('data-side-rib')); };
+    roomRibDwell(b, () => roomRibPeek(b, b.getAttribute('data-side-rib')));
+    b.addEventListener('mouseleave', (ev) => {
+      const to = ev.relatedTarget;
+      if (!to || !to.closest || !to.closest('.room-side-peek')) roomPeekClose(b.getAttribute('data-side-rib'));
+    });
   });
   host.querySelectorAll('[data-side-pick]').forEach(b => {
     b.onclick = () => { roomSideMenuOpen = false; roomSideOpen(b.getAttribute('data-side-pick')); };
