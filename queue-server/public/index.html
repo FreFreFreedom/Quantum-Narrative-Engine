@@ -5,6 +5,12 @@
 <title>Quantum Narrative Engine</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
+/* The place this tab was opened on (#room/<id>, #flow, …), read before anything can
+   rewrite the address. Every place in the app has one, so a right-click on the rail or
+   on a conversation can open it in a new tab (his ask, 2026-10-08). */
+window.QNE_BOOT_PLACE = (location.hash || '').slice(1);
+</script>
+<script>
 /* A look is one complete set of colour tokens, chosen by hand from the rail. This runs
    before first paint so the page never flashes the other look, and it sets BOTH the
    data-look attribute (which the CSS reads) and the .dark class (which the three canvas
@@ -2062,6 +2068,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rail-item:hover, .rail-brand:hover { background:var(--c-surface-2); color:var(--c-ink); }
 /* the active mode has to read at 52px, where the label is invisible: a filled
    pill plus an accent bar hard against the left edge */
+a.rail-item, a.room-row { text-decoration:none; box-sizing:border-box; }
 .rail-item.active { background:var(--c-surface-2); color:var(--c-ink); font-weight:var(--fw-medium); }
 .rail-item.active::before { content:''; position:absolute; left:-6px; top:7px; bottom:7px; width:2px; border-radius:0 2px 2px 0; background:var(--c-accent); }
 /* Something is waiting on you: the Queue item warms up so it reads at 52px. */
@@ -5677,33 +5684,33 @@ button:active { transform: translateY(1px) scale(.99); }
            door opens on the child it last showed; its children unfold under it, in
            smaller letters, only while that door is the one you are in. The ids and
            data-rail-sub attributes are the old ones, so every handler still binds. -->
-      <button class="rail-item" data-rail-sub="room" role="tab" aria-selected="false" title="Room — a place to think, with cards pulled in when they matter">
+      <a href="#room" data-nav class="rail-item" data-rail-sub="room" role="tab" aria-selected="false" title="Room — a place to think, with cards pulled in when they matter">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chat"/></svg>
         <span class="rail-label">Room</span>
-      </button>
-      <button class="rail-item rail-door" data-door="world" title="World — the content and the map">
+      </a>
+      <a href="#content" data-nav class="rail-item rail-door" data-door="world" title="World — the content and the map">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"/></svg>
         <span class="rail-label">World</span>
-      </button>
+      </a>
       <div class="rail-kids" data-kids="world">
-        <button id="modeContentBtn" class="rail-item rail-kid active" data-kid="content" role="tab" aria-selected="true" title="Content navigator"><span class="rail-label">Content</span></button>
-        <button id="modeMapBtn" class="rail-item rail-kid" data-kid="map" role="tab" aria-selected="false" title="Map"><span class="rail-label">Map</span></button>
+        <a href="#content" data-nav id="modeContentBtn" class="rail-item rail-kid active" data-kid="content" role="tab" aria-selected="true" title="Content navigator"><span class="rail-label">Content</span></a>
+        <a href="#map" data-nav id="modeMapBtn" class="rail-item rail-kid" data-kid="map" role="tab" aria-selected="false" title="Map"><span class="rail-label">Map</span></a>
       </div>
-      <button class="rail-item rail-door" data-door="build" title="Build — the architecture and its building blocks">
+      <a href="#architecture" data-nav class="rail-item rail-door" data-door="build" title="Build — the architecture and its building blocks">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg>
         <span class="rail-label">Build</span>
-      </button>
+      </a>
       <div class="rail-kids" data-kids="build">
-        <button class="rail-item rail-kid" data-rail-sub="graph" data-kid="graph" role="tab" aria-selected="false" title="The architecture graph"><span class="rail-label">Architecture</span></button>
-        <button class="rail-item rail-kid" data-rail-sub="blocks" data-kid="blocks" role="tab" aria-selected="false" title="Building blocks — Discover and the Library"><span class="rail-label">Blocks</span></button>
+        <a href="#architecture" data-nav class="rail-item rail-kid" data-rail-sub="graph" data-kid="graph" role="tab" aria-selected="false" title="The architecture graph"><span class="rail-label">Architecture</span></a>
+        <a href="#blocks" data-nav class="rail-item rail-kid" data-rail-sub="blocks" data-kid="blocks" role="tab" aria-selected="false" title="Building blocks — Discover and the Library"><span class="rail-label">Blocks</span></a>
       </div>
-      <button class="rail-item rail-door" data-door="work" title="Work — signals and the flow of tasks">
+      <a href="#signals" data-nav class="rail-item rail-door" data-door="work" title="Work — signals and the flow of tasks">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-bolt"/></svg>
         <span class="rail-label">Work</span>
-      </button>
+      </a>
       <div class="rail-kids" data-kids="work">
-        <button class="rail-item rail-kid" data-rail-sub="mind" data-kid="mind" role="tab" aria-selected="false" title="Signals — the intel feed"><span class="rail-label">Signals</span></button>
-        <button class="rail-item rail-kid" data-rail-sub="flow" data-kid="flow" role="tab" aria-selected="false" title="Flow — tasks, suggestions and ideas"><span class="rail-label">Flow</span></button>
+        <a href="#signals" data-nav class="rail-item rail-kid" data-rail-sub="mind" data-kid="mind" role="tab" aria-selected="false" title="Signals — the intel feed"><span class="rail-label">Signals</span></a>
+        <a href="#flow" data-nav class="rail-item rail-kid" data-rail-sub="flow" data-kid="flow" role="tab" aria-selected="false" title="Flow — tasks, suggestions and ideas"><span class="rail-label">Flow</span></a>
       </div>
     </div>
     <!-- The foot carries one read-out and two buttons, and nothing else. Pause and the
@@ -8980,6 +8987,7 @@ async function boot() {
       const lastMode = localStorage.getItem(MODE_KEY);
       if (lastMode === 'core' || lastMode === 'map') setMode(lastMode);
     } catch (e) { /* a blocked store just means the default mode */ }
+    goBootPlace();
   } catch (e) {
     // This used to report EVERY startup failure as "Session expired, log in again."
     // A plain JS bug in any init step therefore looked exactly like being locked out
@@ -14725,8 +14733,59 @@ function syncRailDoors() {
     const on = kids ? kids.querySelector('.rail-kid.active') : null;
     d.classList.toggle('is-open', !!on);
     if (on) { try { localStorage.setItem('fmcns_door_' + door, on.getAttribute('data-kid')); } catch (e) {} }
+    let kid = null;
+    try { kid = localStorage.getItem('fmcns_door_' + door); } catch (e) {}
+    if (!(RAIL_DOORS[door] || []).includes(kid)) kid = (RAIL_DOORS[door] || [])[0];
+    if (kid) d.setAttribute('href', '#' + (PLACE_BY_KID[kid] || kid));
   });
+  syncAddress();
 }
+
+// ── Addresses (his ask, 2026-10-08): every place is a link, so the browser's own
+// right-click "Open Link in New Tab" works on the rail and on a conversation. The
+// address bar follows where you are; a tab opened on an address goes there.
+var PLACE_BY_KID = { graph: 'architecture', mind: 'signals' };
+var KID_BY_PLACE = { architecture: 'graph', signals: 'mind' };
+function currentPlace() {
+  try {
+    if (!document.getElementById('coreApp').classList.contains('open')) {
+      return document.getElementById('mapApp').classList.contains('open') ? 'map' : 'content';
+    }
+    if (coreView === 'room') return roomSel ? 'room/' + encodeURIComponent(roomSel) : 'room';
+    if (coreView === 'flow') return 'flow';
+    return PLACE_BY_KID[archTab] || archTab;
+  } catch (e) { return null; }
+}
+function syncAddress() {
+  if (window.QNE_BOOT_PLACE) return; // not before the tab has gone where it was opened on
+  const place = currentPlace();
+  if (!place || location.hash === '#' + place) return;
+  try { history.replaceState(null, '', '#' + place); } catch (e) {}
+}
+function goBootPlace() {
+  const raw = window.QNE_BOOT_PLACE || '';
+  window.QNE_BOOT_PLACE = '';
+  if (!raw) { syncAddress(); return; }
+  const parts = raw.split('/');
+  const kid = KID_BY_PLACE[parts[0]] || parts[0];
+  if (kid === 'room' && parts[1]) {
+    let id = parts[1];
+    try { id = decodeURIComponent(id); } catch (e) {}
+    try { localStorage.setItem(ROOM_SEL_KEY, id); } catch (e) {}
+    if (roomThreads.some(t => t.id === id)) roomSelect(id); else roomSel = null;
+  }
+  if (kid === 'content' || kid === 'map') setMode(kid);
+  else if (['room', 'graph', 'blocks', 'mind', 'flow'].includes(kid)) goCoreDest(kid);
+  syncAddress();
+}
+// A plain click stays in this tab and the app's own handler runs; a click with
+// ⌘/Ctrl/Shift or the middle button is left to the browser, which opens the tab.
+document.addEventListener('click', (ev) => {
+  const a = ev.target.closest && ev.target.closest('a[data-nav]');
+  if (!a) return;
+  if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) { ev.stopPropagation(); return; }
+  ev.preventDefault();
+}, true);
 function syncRailSub() {
   // Only one of the rail's destinations is lit at a time, and none of the five
   // Core ones is lit while you are in Content or Map.
@@ -15463,6 +15522,7 @@ async function loadRoom() {
     roomSel = (saved && roomThreads.some(t => t.id === saved)) ? saved
             : (roomThreads.length ? roomThreads[0].id : null);
   }
+  syncAddress();
   renderRoom();
   if (roomSel) loadRoomSubjects();
   loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
@@ -15754,12 +15814,12 @@ function renderRoomThreads() {
 
   // One row: the name, a star when it carries one, and the ⋯. No lane and no turn
   // count — see the note on .room-row in the stylesheet.
-  const rowHtml = (t) => `<div class="room-row${t.id === roomSel ? ' is-sel' : ''}" data-room-thread="${qEscAttr(t.id)}" data-room-subject="${qEscAttr(t.subject_id || '')}" role="button" tabindex="0" draggable="${t.id === roomSel ? 'false' : 'true'}" title="${qEscAttr(t.title || 'Open conversation')}">`
+  const rowHtml = (t) => `<a href="#room/${encodeURIComponent(t.id)}" data-nav class="room-row${t.id === roomSel ? ' is-sel' : ''}" data-room-thread="${qEscAttr(t.id)}" data-room-subject="${qEscAttr(t.subject_id || '')}" draggable="${t.id === roomSel ? 'false' : 'true'}" title="${qEscAttr(t.title || 'Open conversation')}">`
     + `<span class="rt">${qEsc(t.title || 'Open conversation')}</span>`
     + (window.qneBusySubjects && window.qneBusySubjects.has(String(t.subject_id)) ? orbHtml('composing', 20, 'room-row-orb') : '')
     + (Number(t.starred) ? '<span class="rstar" aria-label="Starred">★</span>' : '')
     + `<button type="button" class="room-rowmore" data-room-more="${qEscAttr(t.id)}" aria-label="More for this thread" aria-haspopup="menu" title="Rename, star or delete"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-more"/></svg></button>`
-    + `</div>`;
+    + `</a>`;
 
   // While searching, the date headings are noise — the list is already short and the
   // question is "which one", not "when". One flat run of matches instead.
@@ -18343,6 +18403,7 @@ function roomSelect(id) {
   if (!id || id === roomSel) return;
   roomSel = id;
   try { localStorage.setItem(ROOM_SEL_KEY, id); } catch (e) {}
+  syncAddress();
   roomSubjects = []; roomLinks = []; roomMergeBridgeReady = true;
   roomPickOpen = false; roomPickQ = '';
   roomCardQ = ''; roomCardTypes = new Set();

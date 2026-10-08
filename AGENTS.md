@@ -499,6 +499,14 @@ Written after a UI pass Antoine asked for in his own words: "intelligent, elegan
 not taking too much space for nothing". These are the rules that pass produced, and
 they hold for every view, not only the ones it touched.
 
+**A place you can go is a link (2026-10-08).** He right-clicks to open things in a new
+tab, which the browser only offers on a real `<a href>`. Every rail destination and every
+Room conversation is `<a href="#place" data-nav>` (`#room/<id>`, `#content`, `#map`,
+`#architecture`, `#blocks`, `#signals`, `#flow`); a plain click is caught and handled in
+the tab, a ⌘/middle click is left to the browser, the address bar follows where you are
+(`syncAddress`), and a tab opened on an address goes there (`goBootPlace`). A new thing
+that takes you somewhere gets an address and a link, not a `<button>`.
+
 **Nothing is drawn twice.** The single most expensive mistake in this app's chrome
 has been the same navigation existing in two or three places at once — a rail
 sub-list, a header row and an inner tab row all naming the same five destinations,
