@@ -28,7 +28,20 @@ export function resolveReference(owner, ref) {
   let r;
   if (ref.type === 'media') {
     r = db.prepare('SELECT * FROM interest_works WHERE id=? AND owner=?').get(ref.id,owner);
-    if(r) return {type:'media',id:r.id,kind:r.kind,title:r.title,creator:r.creator,year:r.year,state:r.state,origin:'Saved interest',identity:'media:'+r.identity};
+    if(r) {
+      let f=null;try{f=r.kind==='book'?cachedBookFacts(r.title,r.creator):cachedScreenFacts(owner,r.kind,r.title,r.year);}catch(e){f=null;}
+      return {type:'media',id:r.id,kind:r.kind,title:r.title,creator:r.creator,year:r.year,episode:r.episode||undefined,state:r.state,origin:'Saved interest',
+        about:String(f?.overview||'').slice(0,900)||undefined,topics:topicsFor(r.kind,r.title,r.creator)||undefined,identity:'media:'+r.identity};
+    }
+  } else if (ref.type === 'shelf') {
+    // A whole book on the shelf, dragged in from the Library (2026-10-08): the model
+    // can quote it with its shelf tools, so the reference names it, it does not paste it.
+    r = listBooks(owner).find(b=>b.id===ref.id);
+    if(r) {
+      let f=null;try{f=cachedBookFacts(r.title,r.author);}catch(e){f=null;}
+      return {type:'shelf',id:r.id,kind:'book',title:r.title,creator:r.author||'',year:r.year||'',origin:'Whole book on the shelf — quote it with the shelf tools',
+        about:String(f?.overview||'').slice(0,900)||undefined,topics:topicsFor('book',r.title,r.author)||undefined,identity:'shelf:'+r.id};
+    }
   } else if (ref.type === 'passage') {
     r = db.prepare('SELECT * FROM saved_passages WHERE id=? AND created_by=? AND deleted_at IS NULL').get(ref.id,owner);
     if(r) {

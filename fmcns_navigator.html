@@ -3570,7 +3570,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-size input::-moz-range-thumb { width:6px; height:6px; border:0; border-radius:50%; background:var(--c-ink-5); }
 .shelf-card { position:relative; min-width:0; }
 .shelf-card[draggable="true"] { cursor:grab; }
-.se-compose.is-work-over { outline:2px dashed var(--c-accent, #b38b45); outline-offset:3px; border-radius:10px; }
+.is-work-over { outline:2px dashed var(--c-accent, #b38b45); outline-offset:-4px; border-radius:12px; }
+:is(#roomConvo, #roomSideEmbed) .se-quoted:has(.se-quoted-cover) { flex-direction:row; align-items:center; gap:9px; max-width:320px; }
+.se-quoted .se-quoted-cover { flex:none; width:26px; height:38px; border-radius:3px; background:var(--c-surface-2, #2f3847) center/cover no-repeat; box-shadow:0 1px 3px rgba(0,0,0,.35); }
 /* A book and its film in one place (pick B5): the poster tucked behind the book,
    sliding out into the next place on hover — to the left from the last column. */
 .lib-pair { position:relative; min-width:0; }
@@ -19438,20 +19440,43 @@ function libDragText(it) {
 document.addEventListener('dragstart', (ev) => {
   const card = ev.target && ev.target.closest && ev.target.closest('.shelf-card[data-drag]');
   if (!card || !ev.dataTransfer) return;
-  ev.dataTransfer.setData('application/x-qne-work', card.dataset.drag);
+  const [type, id] = String(card.dataset.lib || '').split(/:(.+)/);
+  const el = card.querySelector('.shelf-cover');
+  const cover = card.dataset.dragCover || ((el && el.style.backgroundImage.match(/url\("?(https:[^")]+)/)) || [])[1] || '';
+  ev.dataTransfer.setData('application/x-qne-work', JSON.stringify({ type, id, cover, label: card.dataset.drag }));
   ev.dataTransfer.setData('text/plain', card.dataset.drag);
   ev.dataTransfer.effectAllowed = 'copy';
 });
-// Put the dragged name where the caret is, with a space on either side as needed.
-function roomInsertWork(input, text) {
-  const v = input.value, a = input.selectionStart ?? v.length, b = input.selectionEnd ?? v.length;
-  const before = v.slice(0, a), after = v.slice(b);
-  const piece = (before && !/\s$/.test(before) ? ' ' : '') + text + (after && !/^\s/.test(after) ? ' ' : '');
-  input.value = before + piece + after;
-  const at = (before + piece).length;
-  input.focus(); input.setSelectionRange(at, at);
-  input.dispatchEvent(new Event('input', { bubbles: true }));
+// Let go anywhere over the main conversation or a side talk, a card lands as an
+// attachment of that box, like a screenshot does — never as typed words.
+const libIsWorkDrag = (ev) => Array.from((ev.dataTransfer && ev.dataTransfer.types) || []).includes('application/x-qne-work');
+function libDropHost(ev) {
+  const t = ev.target && ev.target.closest ? ev.target : null;
+  if (!t || t.closest('#roomInterests')) return null;
+  if (t.closest('#roomSide')) return document.getElementById('roomSideEmbed');
+  if (t.closest('#roomConvo')) return document.getElementById('roomConvo');
+  return null;
 }
+(function wireWorkDrops() {
+  let lit = null;
+  const light = (h) => { if (lit === h) return; if (lit) lit.classList.remove('is-work-over'); lit = h; if (h) h.classList.add('is-work-over'); };
+  document.addEventListener('dragover', (ev) => {
+    if (!libIsWorkDrag(ev)) return;
+    const h = libDropHost(ev);
+    light(h && typeof h._attachRef === 'function' ? h : null);
+    if (lit) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'copy'; }
+  }, true);
+  document.addEventListener('drop', (ev) => {
+    if (!libIsWorkDrag(ev)) return;
+    const h = libDropHost(ev); light(null);
+    if (!h || typeof h._attachRef !== 'function') return;
+    ev.preventDefault(); ev.stopPropagation();
+    let ref = null;
+    try { ref = JSON.parse(ev.dataTransfer.getData('application/x-qne-work')); } catch (_) {}
+    if (ref && ref.id) h._attachRef(ref);
+  }, true);
+  document.addEventListener('dragend', () => light(null), true);
+})();
 function libCard(it) {
   const open = libOpen && libOpen.type === it.type && libOpen.id === it.id;
   // Something that just came in from a drop arrives with a glow, once.
@@ -19464,7 +19489,7 @@ function libCard(it) {
   const art = it.type === 'media' && !cover
     ? roomMediaArtMarkup(it.raw, 'shelf-cover')       // filled in by the catalogue once it answers
     : '<span class="shelf-cover"' + cover + '></span>';
-  return '<div class="shelf-card' + (open ? ' is-open' : '') + (fresh ? ' is-new' : '') + '" data-lib="' + qEscAttr(it.type + ':' + it.id) + '" draggable="true" data-drag="' + qEscAttr(libDragText(it)) + '">'
+  return '<div class="shelf-card' + (open ? ' is-open' : '') + (fresh ? ' is-new' : '') + '" data-lib="' + qEscAttr(it.type + ':' + it.id) + '" draggable="true" data-drag="' + qEscAttr(libDragText(it)) + '" data-drag-cover="' + qEscAttr(/^https:\/\//.test(src) ? src : '') + '">'
     + '<button type="button" class="shelf-open" data-open aria-label="' + qEscAttr(it.title) + '">' + art
     + (facts && facts.rating ? '<span class="lib-badge">' + facts.rating.toFixed(1) + '</span>' : '')
     + (libIsScreen(it.raw) ? '<span class="lib-kind">' + (it.raw.kind === 'series' ? '◗' : '▶') + '</span>' : '')
@@ -31166,6 +31191,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       };
     }
     input.addEventListener('focus',()=>{if(opts.captureInterests)referenceTarget={e,host,root:roomSel,repaint};});
+    // A Library card dropped on this conversation (main or side talk) joins its box.
+    host._attachRef = async function(ref){
+      try {
+        var quote = await apiWrite('/api/recommendations/library/attach', 'POST', { type: ref.type, id: ref.id });
+        if(!e.quotes) e.quotes = [];
+        if(e.quotes.length >= 20){ e.note = 'Attach up to twenty at once.'; repaint(); return; }
+        if(ref.cover) quote.cover = ref.cover;
+        if(!e.quotes.some(function(q){ return (quote.identity && q.identity === quote.identity) || (q.reference && q.reference.type === quote.reference.type && q.reference.id === quote.reference.id); })) e.quotes.push(quote);
+        saveDraft(e); repaint();
+        try { input.focus(); } catch(err) {}
+      } catch(err){ e.note = (err && err.message) || 'Could not attach that.'; repaint(); }
+    };
     var say = function(text){
       var pending = (e.pendingAttachments || []).slice();
       if(e.busy || (!String(text || '').trim() && !pending.length && !e.quotes?.length)) return;
@@ -31336,14 +31373,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       attachBtn.onclick = function(ev){ ev.stopPropagation(); if(e.convoId && !e.busy) fileInput.click(); };
       fileInput.onchange = function(){ var files = fileInput.files; fileInput.value = ''; addFiles(files); };
       var compose = host.querySelector('.se-compose');
-      var isWork = function(ev){ return Array.from((ev.dataTransfer && ev.dataTransfer.types) || []).includes('application/x-qne-work'); };
-      compose.ondragover = function(ev){ ev.preventDefault(); if(isWork(ev)){ ev.dataTransfer.dropEffect = 'copy'; compose.classList.add('is-work-over'); } };
-      compose.ondragleave = function(ev){ if(!compose.contains(ev.relatedTarget)) compose.classList.remove('is-work-over'); };
-      compose.ondrop = function(ev){
-        ev.preventDefault(); compose.classList.remove('is-work-over');
-        if(isWork(ev)){ roomInsertWork(input, ev.dataTransfer.getData('application/x-qne-work')); return; }
-        addFiles(ev.dataTransfer && ev.dataTransfer.files);
-      };
+      compose.ondragover = function(ev){ ev.preventDefault(); };
+      compose.ondrop = function(ev){ ev.preventDefault(); addFiles(ev.dataTransfer && ev.dataTransfer.files); };
       // The Room lets a file land anywhere in its window; this is where it goes.
       host._addFiles = addFiles;
       input.addEventListener('paste', function(ev){
@@ -33796,7 +33827,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var jumpable = !!quoteMsg(q);
           return '<div class="se-quoted' + (jumpable ? ' can-jump' : '') + (q.aside ? ' is-aside' : '') + (e.quoteOpen[i] ? ' is-open' : '') + '"'
             + (q.aside ? ' data-aside="' + qEscAttr((q.fromMain ? 'Main thread' : 'Aside') + ' \u00b7 ' + (q.asideKind || '')) + '"' : '') + '>'
-            + '<span class="se-quoted-n"' + (jumpable ? ' data-jump="' + i + '" role="button" tabindex="0" aria-label="Go and read this where it was said"' : '') + '>' + (i + 1) + '</span>'
+            + (q.reference && /^https:\/\//.test(q.cover || '') ? '<span class="se-quoted-cover" style="background-image:url(&quot;' + qEscAttr(q.cover) + '&quot;)"></span>' : '<span class="se-quoted-n"' + (jumpable ? ' data-jump="' + i + '" role="button" tabindex="0" aria-label="Go and read this where it was said"' : '') + '>' + (i + 1) + '</span>')
             + (q.aside ? '<span class="se-quoted-from">' + qEsc(q.aside) + '</span>' : '')
             + '<span class="se-quoted-text" data-open="' + i + '" aria-label="' + qEscAttr(text) + '">' + (q.reference?qEsc(q.title||text):q.aside?qEsc(text):'“'+qEsc(text)+'”') + '</span>'
             + '<button type="button" data-drop="' + i + '" title="Take this passage off — it will not be sent with your question" aria-label="Remove this passage">✕</button></div>';
