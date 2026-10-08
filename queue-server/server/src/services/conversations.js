@@ -308,9 +308,11 @@ export async function gistConvo(convoId, messageId) {
   let msgs = threadMessages(convoId).filter((m) => m.kind === 'chat');
   if (messageId) msgs = msgs.filter((m) => m.id === messageId);
   if (!msgs.length) return { error: 'empty' };
-  const line = (m) => (messageId ? '' : `${m.role === 'user' ? 'He asked' : 'The answer'}: `) + String(m.text).slice(0, messageId ? 12000 : 6000);
+  const line = (m) => (messageId ? '' : `${m.role === 'user' ? 'He asked' : 'The answer'}: `) + (String(m.text).length > (messageId ? 12000 : 6000) ? `${String(m.text).slice(0, messageId ? 12000 : 6000)} …` : String(m.text));
   const out = await generateText({
-    prompt: `${messageId ? GIST_PROMPT : WHOLE_PROMPT}\n\n=== TEXT ===\n${msgs.slice(-40).map(line).join('\n\n')}`,
+    // The ask is repeated after the text: with it only on top, a model read a long
+    // text as something to continue and picked up mid-word (2026-10-08).
+    prompt: `${messageId ? GIST_PROMPT : WHOLE_PROMPT}\n\n=== TEXT ===\n${msgs.slice(-40).map(line).join('\n\n')}\n=== END OF TEXT ===\n\nNow write it, as asked above. Begin with the first idea itself.`,
     // The Room's own lane: this text is read by him and carried into his thread, so
     // the cheap summary lane (which came back with a few words) is not good enough.
     feature: 'studio',
