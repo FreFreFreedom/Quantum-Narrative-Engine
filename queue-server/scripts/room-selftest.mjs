@@ -331,11 +331,6 @@ console.log(`cut answers OK — continued and joined; a 4000-word ask now gets $
   // Narrow natural-language detection: the fixed phrases hit (with a little slack
   // for "please"/"can you"/trailing punctuation), but a sentence that merely
   // discusses the feature — or buries the phrase in more words — must not.
-  const startHits = ['ask me questions', 'Interview me about this.', 'help me clarify what I mean', 'question me before answering', 'Can you ask me questions about it?'];
-  const startMisses = ['does the room ever ask me questions', 'I want you to ask me questions about something and then explain it', 'what happens if I interview me'];
-  for (const s of startHits) assert.ok(convos.INTERVIEW_START_RE.test(s), `should start: ${s}`);
-  for (const s of startMisses) assert.ok(!convos.INTERVIEW_START_RE.test(s), `should NOT start: ${s}`);
-
   const endHits = ['answer now', 'You can answer now.', 'ok answer now', 'Okay, answer now!'];
   const endMisses = ['can you answer now eventually', 'answer now please give me the detail', 'I will answer now'];
   for (const s of endHits) assert.ok(convos.ANSWER_NOW_RE.test(s), `should answer now: ${s}`);

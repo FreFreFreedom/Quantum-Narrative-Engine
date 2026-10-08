@@ -1747,11 +1747,6 @@ function keepAwake(onStatus, lane) {
   return () => clearInterval(timer);
 }
 
-// Only the switch he turns on himself travels here now: Reach. The voice and lens
-// reminders went with the rules, and the timeline with them (2026-09-26).
-function voiceTailReminder(convo = null) {
-  return convo?.reach ? REACH_TAIL : null;
-}
 
 // A timeline drawn inside the answer (his ask, 2026-09-25, all seven kinds of the
 // timelines mockup, the model choosing). The Room draws the fenced block; see
@@ -1775,14 +1770,6 @@ The prose must stand on its own without it: the timeline shows what the words al
 // The end of the prompt is weighted most; Gemini ignored the block above until
 // this line sat here too (2026-09-25).
 const TIMELINE_TAIL = `If this answer traces something through time — a history, an evolution, how something came to be — include one timeline block as described under A TIMELINE.`;
-
-// Reach names the stance, never a list of places to go: a list would become the
-// place every answer goes (see "Moon, not finger" at the top of the-lens.md).
-const REACH_BLOCK = `
-=== REACH — HE TURNED IT ON FOR THIS CONVERSATION ===
-He finds careful answers too grounded. Here, go further than feels safe. Take the leap a cautious answer would hold back — across fields, across scales, across orders of reality, the metaphysical included, as a real lens and not an ornament — wherever the same need truly echoes, however far away. Say what you see, not only what is established: a bold reading that might be wrong is worth more to him than a safe one that is surely right. Let the leap stand without apologising for it or hedging it into nothing. Reach is distance, never decoration: every leap must still be true to this subject, in your own words.`;
-
-const REACH_TAIL = `Reach is on: take the farther leap and do not soften it.`;
 
 function studioPersona() {
   // An empty AI Settings box now means NO persona — a plain, neutral assistant.
@@ -1846,9 +1833,8 @@ Write for the coding agent, not for a human reader. Be concise.`;
 // every lane (Auto or manually pinned), because they are just words in the
 // prompt, not a second model call or a side thread.
 // (The always-on "ask one question when it matters" rule was dropped with the
-// other answer rules on 2026-09-26; interview mode is his explicit switch.)
-
-const INTERVIEW_INSTRUCTION = `INTERVIEW MODE. The owner asked to be questioned before you answer. Treat the conversation so far — including what he just said — as material to explore, and ask the SINGLE most important next question: whichever of the goal, the desired outcome, the meaning of a key word, a real tension, a boundary, the audience, or what would count as a good result actually matters most right now, not a checklist that mechanically works through all of them. Ask ONE question only, folded into the conversation naturally — no numbered form, no explanation of why you're asking. Do not offer a solution, plan, recommendation or reading yet — that only happens once he says the interview has enough material.`;
+// other answer rules on 2026-09-26; interview mode went too on 2026-10-08 — what
+// is left only finishes a conversation still marked as an interview.)
 
 const ANSWER_NOW_INSTRUCTION = `The owner has decided the interview above has enough material — answer or synthesize now, using the whole interview as your source. Give the real thing the conversation was working toward: a recommendation, a reading, a plan, an answer. No more questions.`;
 
@@ -1859,7 +1845,6 @@ const ANSWER_NOW_INSTRUCTION = `The owner has decided the interview above has en
 // match, so it never flips the mode by accident.
 // Exported (pure regexes) so scripts/room-selftest.mjs can check the narrow
 // matching directly, with no model call.
-export const INTERVIEW_START_RE = /^(?:please\s+|can you\s+|could you\s+|will you\s+)?(?:ask me questions(?: about (?:this|it))?|interview me(?: about (?:this|it))?|help me clarify what i mean|question me before answering)[.!?]?$/i;
 export const ANSWER_NOW_RE = /^(?:ok,?\s*|okay,?\s*)?(?:you can\s+)?answer now[.!?]?$/i;
 
 function buildMessages(convo, msgs, windowSize) {
@@ -2098,7 +2083,7 @@ export async function completeRequestedLength({ text, target, provider, model, a
       provider, model, account, effort,
       maxTokens: Math.min(32000, Math.max(2400, Math.round(missing * 2.8) + 2000)),
       label: 'conversations:length-continuation',
-      timeoutMs: 150_000, allowLongOutput: true, tailReminder: voiceTailReminder(), onUsage,
+      timeoutMs: 150_000, allowLongOutput: true, onUsage,
     });
     const addition = String(result?.text || '').trim();
     // An empty reply costs nothing and is usually the model declining once, so
@@ -2181,12 +2166,13 @@ function earlierOf(convo) {
 
 // asTurns: returns { system, turns } for a lane that takes real turns, or null
 // when the conversation cannot go that way (the caller then sends the flat prompt).
-function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null, maxChars = null, asTurns = false }) {
-  const msgs = threadMessages(convo.id);
+function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null, maxChars = null, asTurns = false, uptoId = null }) {
+  // uptoId: an answer written beside an existing one sees the conversation only up
+  // to the question — never the answer already given, nor anything said after it.
+  const allMsgs = threadMessages(convo.id);
+  const upto = uptoId ? allMsgs.findIndex((m) => m.id === uptoId) : -1;
+  const msgs = upto >= 0 ? allMsgs.slice(0, upto + 1) : allMsgs;
   const depth = !brevity;
-  // Only on a depth turn: the brief turn lands in a small card, where a
-  // 1000-word answer would be a bug rather than obedience.
-  const askedWords = depth ? lengthRequest(lastUserText(convo.id)) : null;
   const talk = (historyWindow) => `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, historyWindow) || '(nothing yet)'}`;
   const repoBlock = repoFacts
     ? `\n=== REPO FACTS (read from the checkout just now — trust these over your own recollection) ===\n${repoFacts}\nTreat any file not listed as EXIST above as non-existent. Do not name a file you have not been told exists.`
@@ -2226,7 +2212,6 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     withMap && repoFacts ? liveListsBlock() : '',
     tools ? ROOM_TOOLS_LINE : '',
     ROOM_PASSAGES_LINE,
-    convo.reach ? REACH_BLOCK : '',
     turns ? earlierOf(convo) : talk(historyWindow),
     // What rides after the conversation is only what HE brought to it: a book he
     // named, his saved things when he points at them. The harvested memory (its
@@ -2241,11 +2226,8 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // words outrank it — but before the task, so what he says now still wins.
     directInstructionsBlock(),
     turns
-      ? (instruction ? `\n=== WHAT TO DO NOW ===\n${instruction}` : (convo.reach ? REACH_TAIL : ''))
-      : `\n=== WHAT TO DO NOW ===\n${instruction || `Reply to Antoine's last message.${convo.reach ? ` ${REACH_TAIL}` : ''}`}`,
-    askedWords
-      ? `\n=== LENGTH: HE ASKED FOR ${askedWords} WORDS ===\nWrite at least ${askedWords} words, the whole thing now — never stop early or offer to continue instead. ${askedWords} is a floor, not a target: land comfortably past it, because an answer that stops just under the number is a failed answer. Reach the length by going further into the material, never by padding or saying the same thing again in new words.`
-      : '',
+      ? (instruction ? `\n=== WHAT TO DO NOW ===\n${instruction}` : '')
+      : `\n=== WHAT TO DO NOW ===\n${instruction || `Reply to Antoine's last message.`}`,
   ];
   // A card turn (brevity): the structured, system-triggered answers that land in a
   // small box. Unchanged by the 2026-09-26 simplification.
@@ -2690,18 +2672,13 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // a lane that counts both against one ceiling — so the budget is worked out
   // BEFORE the prompt is built, and the prompt is built to fit it.
   const maxTokens = turnMaxTokens(convoId);
-  // Interview mode overrides the ordinary answer with its own instruction (ask
-  // one question, don't answer yet); any other mode is the normal turn.
-  const clarifyMode = convo.clarification_mode === 'interview' ? 'interview' : 'normal';
   const prompt = buildTurnPrompt({
-    convo, ctx, brevity: false, tools: lookups, repoFacts: turn?.repoFacts || null,
-    instruction: clarifyMode === 'interview' ? INTERVIEW_INSTRUCTION : null,
+    convo, ctx, brevity: false, tools: lookups, repoFacts: turn?.repoFacts || null, uptoId: opts.uptoId || null,
     maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
   });
   // The same turn as real turns, for a lane that takes them (see roomTurnsOf).
   const asTurns = buildTurnPrompt({
-    convo, ctx, brevity: false, tools: lookups, repoFacts: turn?.repoFacts || null, asTurns: true,
-    instruction: clarifyMode === 'interview' ? INTERVIEW_INSTRUCTION : null,
+    convo, ctx, brevity: false, tools: lookups, repoFacts: turn?.repoFacts || null, asTurns: true, uptoId: opts.uptoId || null,
     maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
   });
   const turns = asTurns ? [{ role: 'system', content: asTurns.system }, ...asTurns.turns] : null;
@@ -2736,7 +2713,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
     effort: turn?.lane?.effort || null,
-    label: 'conversations:chat', tailReminder: voiceTailReminder(convo), turns,
+    label: 'conversations:chat', turns,
     // The lookup tools (plan "roaming-conversations-backend" §2), only when the
     // question is about his app or his things — see roomWantsLookups.
     tools: lookups ? studioTools(convoId) : null, dispatchTool: lookups ? studioDispatch(convoId) : null,
@@ -2767,16 +2744,9 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // provider fetches if a cancelled paid-lane answer ever costs enough to matter.
   if (signal?.aborted) return { error: 'cancelled' };
   if (result.error) return saveFailedTurn(convoId, result, turn, pairMeta(opts));
-  const askedWords = clarifyMode === 'normal' ? lengthRequest(lastUserText(convoId)) : null;
-  const completed = await completeRequestedLength({
-    text: result.text, target: askedWords,
-    provider: result.provider || turn?.lane?.provider,
-    model: result.model || turn?.lane?.model,
-    account: turn?.lane?.account || null,
-    effort: turn?.lane?.effort || null,
-    onStatus, onToken, onUsage: trackUsage,
-  });
-  result.text = trueWordCountClaims(completed.text);
+  // A length he names is his own words in his message; nothing is added to it,
+  // and the answer is not stretched afterwards (2026-10-08).
+  result.text = trueWordCountClaims(result.text);
   if (signal?.aborted) return { error: 'cancelled' };
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
@@ -2852,7 +2822,7 @@ export async function pairAnswerBeside(convoId, { messageId, lane = null, onToke
     convoId, convo.created_by || 'antoine',
     onToken ? (t) => onToken(t, 'b') : null, turn,
     onStatus ? (m) => onStatus(m, 'b') : null, signal, null,
-    { pair: { id: pairId, side: 'b', ofId: ask.id, kept: false }, followUps: false },
+    { pair: { id: pairId, side: 'b', ofId: ask.id, kept: false }, followUps: false, uptoId: ask.id },
   );
   // Nothing came back: the answer that was already there is left exactly as it
   // was, rather than sitting in a pair with one empty column.
@@ -2905,16 +2875,13 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   const lookups = roomWantsLookups(convo, turn);
 
   const maxTokens = turnMaxTokens(convoId);
-  const clarifyMode = convo.clarification_mode === 'interview' ? 'interview' : 'normal';
   const prompt = buildTurnPrompt({
     convo, ctx, brevity: false, tools: lookups, repoFacts: turn?.repoFacts || null,
-    instruction: clarifyMode === 'interview' ? INTERVIEW_INSTRUCTION : null,
     maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
   });
   // The same turn as real turns, for a lane that takes them (see roomTurnsOf).
   const asTurns = buildTurnPrompt({
     convo, ctx, brevity: false, tools: lookups, repoFacts: turn?.repoFacts || null, asTurns: true,
-    instruction: clarifyMode === 'interview' ? INTERVIEW_INSTRUCTION : null,
     maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
   });
   const turns = asTurns ? [{ role: 'system', content: asTurns.system }, ...asTurns.turns] : null;
@@ -2927,7 +2894,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     effort: turn?.lane?.effort || null,
     tools: lookups ? studioTools(convoId) : null, dispatchTool: lookups ? studioDispatch(convoId) : null,
     maxTokens,
-    label: 'conversations:chat', tailReminder: voiceTailReminder(convo), turns,
+    label: 'conversations:chat', turns,
     allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId,
     claudeLastResort: !(turn?.lane?.provider && turn?.lane?.model), helperWaitMs: helperWaitFor(turn?.lane, 120_000, lengthRequest(lastUserText(convoId)) || 0),
@@ -2935,15 +2902,9 @@ async function runChatTurn(convoId, userId, turn, images = null) {
     images, requireVision: !!images?.length,
   });
   if (result.error) return saveFailedTurn(convoId, result, turn);
-  const askedWords = clarifyMode === 'normal' ? lengthRequest(lastUserText(convoId)) : null;
-  const completed = await completeRequestedLength({
-    text: result.text, target: askedWords,
-    provider: result.provider || turn?.lane?.provider,
-    model: result.model || turn?.lane?.model,
-    account: turn?.lane?.account || null,
-    effort: turn?.lane?.effort || null,
-  });
-  result.text = trueWordCountClaims(completed.text);
+  // A length he names is his own words in his message; nothing is added to it,
+  // and the answer is not stretched afterwards (2026-10-08).
+  result.text = trueWordCountClaims(result.text);
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
   // The id travels back with the answer. Without it the just-arrived turn has no
@@ -2961,26 +2922,6 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
   return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, works, people };
-}
-
-// Start (or re-enter) Interview mode and ask the first question right away,
-// from whatever is already in the conversation — same as the old one-off
-// /grill-me, except the mode now persists. Reuses the ordinary chat-turn
-// machinery: once clarification_mode is 'interview', runChatTurn/
-// runChatTurnStreaming pick up INTERVIEW_INSTRUCTION on their own (see above),
-// so there is exactly one place that assembles an interview prompt. No new
-// user message is saved — starting the mode is not itself a thing said.
-async function startInterview(convoId, { onToken = null, onStatus = null, signal = null } = {}) {
-  const set = setClarificationMode(convoId, 'interview');
-  if (set.error) return set;
-  const turn = { intent: 'interview', lane: null };
-  const out = onToken
-    ? await runChatTurnStreaming(convoId, 'antoine', onToken, turn, onStatus, signal)
-    : await runChatTurn(convoId, 'antoine', turn);
-  if (out.error) return out;
-  out.intent = 'interview';
-  out.mode = 'interview';
-  return out;
 }
 
 // Answer now — Antoine's explicit decision that Interview mode has enough
@@ -3009,7 +2950,7 @@ async function runAnswerNowTurn(convoId, { onToken = null, onStatus = null, sign
     model: lane?.model || null, provider: lane?.provider || null, account: lane?.account || null,
     effort: lane?.effort || null,
     tools: studioTools(convoId), dispatchTool: studioDispatch(convoId),
-    maxTokens, label: 'conversations:answer-now', tailReminder: voiceTailReminder(),
+    maxTokens, label: 'conversations:answer-now',
     allowLongOutput: true, timeoutMs: 150_000, onToken, onStatus,
     cacheKey: convoId, claudeLastResort: true, helperWaitMs: helperWaitFor(lane, 120_000, lengthRequest(lastUserText(convoId)) || 0),
   });
@@ -3044,7 +2985,7 @@ async function runCodeReadTurn(convoId, turn) {
   const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: false, repoFacts: turn?.repoFacts || null });
   const result = await generateText({
     prompt, feature: turn?.lane?.feature || 'studio', model: turn?.lane?.model || null,
-    maxTokens: turnMaxTokens(convoId), label: 'conversations:chat-coderead', tailReminder: voiceTailReminder(),
+    maxTokens: turnMaxTokens(convoId), label: 'conversations:chat-coderead',
     allowLongOutput: true, timeoutMs: 180_000,
     // Read-only: it may check the code, never touch it. The runner answers on the
     // second account and falls back to main on its own (see ai/text.js#runAttempt).
@@ -3128,7 +3069,7 @@ async function runCheckTurn(convoId) {
   });
   const result = await generateTextStream({
     prompt, feature: lane.feature, model: null, maxTokens: checkTokens,
-    label: 'conversations:check', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000, cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
+    label: 'conversations:check', allowLongOutput: true, timeoutMs: 150_000, cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
   });
   if (result.error) return result;
   const laneTag = tagFromVia(result.via, lane.tag);
@@ -3162,7 +3103,7 @@ async function runSecondTurn(convoId) {
   });
   const result = await generateTextStream({
     prompt, feature: lane.feature, model: null, maxTokens: secondTokens,
-    label: 'conversations:second', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000,
+    label: 'conversations:second', allowLongOutput: true, timeoutMs: 150_000,
     tools: studioTools(convoId), dispatchTool: studioDispatch(convoId), cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
   });
   if (result.error) return result;
@@ -3643,7 +3584,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     }
     if (slash === 'help') {
       return {
-        text: 'Available commands:\n  /interview (alias /grill-me) — switch to Interview mode: I ask you one question at a time, no answer yet, until you say "answer now".\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff claude|opencode — queue the plan as a paused task in the Dispatch Queue (idempotent); name an engine to pick it, or leave it off for the default.\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /ask gpt|claude|second|opencode <question> — force this one turn onto that lane (gpt = Google Gemini, second = your second Claude account).\n  /check — re-examine the last answer on a different lane, with fresh code facts.\n  /second — answer your last question again on a second lane, side by side.\n  /help — this list.\n\nOtherwise just type — I\'ll pick the right lane myself: a free code lookup when you name a file or function, a brainstorm when you\'re thinking out loud, and a build proposal when you ask me to make something.',
+        text: 'Available commands:\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff claude|opencode — queue the plan as a paused task in the Dispatch Queue (idempotent); name an engine to pick it, or leave it off for the default.\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /ask gpt|claude|second|opencode <question> — force this one turn onto that lane (gpt = Google Gemini, second = your second Claude account).\n  /check — re-examine the last answer on a different lane, with fresh code facts.\n  /second — answer your last question again on a second lane, side by side.\n  /help — this list.\n\nOtherwise just type — I\'ll pick the right lane myself: a free code lookup when you name a file or function, a brainstorm when you\'re thinking out loud, and a build proposal when you ask me to make something.',
       };
     }
     if (slash === 'seed') return runSaveSeedTurn(convoId);
@@ -3654,7 +3595,6 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     if (slash === 'reframe') return runReframeTurn(convoId);
     if (slash === 'check') return runCheckTurn(convoId);
     if (slash === 'second') return runSecondTurn(convoId);
-    if (slash === 'grill-me' || slash === 'interview') return startInterview(convoId, { onToken, onStatus, signal });
     // /ask (and any other text) falls through to the ordinary path, where the
     // turn router recognises it as a forced lane and routes accordingly.
   }
@@ -3663,7 +3603,6 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   // sentence merely discussing whether this feature exists ("does the Room ever
   // ask me questions?") does not accidentally flip the mode — these only match
   // when the WHOLE message is (close to) one of the fixed phrases.
-  if (INTERVIEW_START_RE.test(trimmed)) return startInterview(convoId, { onToken, onStatus, signal });
   if (ANSWER_NOW_RE.test(trimmed)) return answerNow(convoId, { onToken, onStatus, signal });
 
   // "Remember this" is a synchronous write, not a hope that the background

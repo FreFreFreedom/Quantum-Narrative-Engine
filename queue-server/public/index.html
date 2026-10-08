@@ -29645,7 +29645,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         e.laneB = data.chat_override_b || null;
         // Interview mode lives on the row, so it survives a refresh and a change of
         // answering model — read straight off the conversation, never guessed.
-        e.clarify = (data.convo && data.convo.clarification_mode) || 'normal';
+        e.clarify = 'normal'; // interview mode removed 2026-10-08, his call
         e.reach = !!(data.convo && data.convo.reach);
         e.loaded = true;
         e.note = '';
@@ -30617,8 +30617,6 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +       '<button type="button" class="se-lanebtn2" aria-haspopup="listbox" aria-expanded="false"></button>'
         +       '<div class="se-lanepop" hidden role="listbox"></div>'
         +     '</span>'
-        +     '<button type="button" class="se-interview" title="Ask me questions before you answer">Interview</button>'
-        +     '<button type="button" class="se-answer-now" style="display:none">Answer now</button>'
         +     ((opts.type === 'open' || opts.type === 'side')
               ? '<button type="button" class="se-attach" title="Add an image, PDF or text file" aria-label="Add an image, PDF or text file"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-upload"/></svg></button><input type="file" class="se-file-input" hidden multiple accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.md,.txt,.csv,.json,.js,.mjs,.cjs,.ts,.tsx,.jsx,.html,.css,.xml,.yaml,.yml,.log,.srt">'
               : '')
@@ -33789,24 +33787,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       };
       cmds.appendChild(b);
     });
-    // Reach (the answer takes the farther leap) lives here, out of sight until asked
-    // for — his call, 2026-09-25. On the conversation row, so it survives a refresh.
-    if(cmds.children.length) cmds.appendChild(dot());
-    var reach = document.createElement('button');
-    reach.type = 'button'; reach.className = 'se-cmd se-reach' + (e.reach ? ' is-set' : '');
-    reach.textContent = 'Reach'; reach.setAttribute('aria-pressed', e.reach ? 'true' : 'false');
-    reach.onclick = function(ev){
-      ev.stopPropagation();
-      var was = !!e.reach;
-      var rp = function(){ if(host.isConnected) fillEmbed(host, e, opts); };
-      e.reach = !was; rp();
-      apiWrite('/api/convos/' + e.convoId + '/reach', 'POST', { on: e.reach })
-        .then(function(d){ e.reach = !!(d && d.reach); rp(); })
-        .catch(function(){ e.reach = was; rp(); });
-    };
-    cmds.appendChild(reach);
     if(e.promptId){
-      cmds.appendChild(dot());
+      if(cmds.children.length) cmds.appendChild(dot());
       var v = document.createElement('button');
       v.type = 'button'; v.className = 'se-cmd'; v.textContent = 'Open the task it became';
       v.onclick = function(ev){ ev.stopPropagation(); jumpToQueueItem(e.promptId); };

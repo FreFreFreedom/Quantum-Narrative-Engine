@@ -351,7 +351,14 @@ message now carries only the passages and his words; older messages are cleaned 
 way to the model (`conversations.js#withoutPassageRules`). (3) An earlier conversation's thinking no
 longer rides on a subject match (`recalledThinkingBlock` is unused by the Room): it fed the
 model its own old answers and he kept having to ask "without repeating yourself". Linking a
-conversation by hand, and bringing a side talk on, still carry it. See `plans/conversation-thinking-recall.md`. Harvested
+conversation by hand, and bringing a side talk on, still carry it.
+
+**No switches either (his call, 2026-10-08).** Reach (button, prompt block and tail),
+the "he asked for N words" block with its after-the-fact stretching, and Interview mode
+(its button, `/interview`, `/grill-me` and the "ask me questions" phrase) are gone. A
+length he names is just his words in his message. An answer written **beside** another
+(`pairAnswerBeside`) now sees the conversation only up to the question
+(`buildTurnPrompt({ uptoId })`) — it used to read the first answer and copy it. See `plans/conversation-thinking-recall.md`. Harvested
 memory stays out.
 
 **Blank models (his ask, 2026-09-30).** The picker's "Blank" group — Gemini and GPT-4.1 —
