@@ -1314,6 +1314,9 @@ export function laneLabelUsage(day = allowanceDay()) {
 }
 
 const ANSWER_RESERVE = 0.3;
+
+// Lanes that take a conversation as real turns on the streaming path.
+const TURN_PROVIDERS = new Set(['google-ai-studio', 'openai']);
 // Only lanes with a known daily allowance, and only Google's, whose day and
 // counting the ledger above matches. Other free lanes refuse per minute, which a
 // daily reserve cannot help.
@@ -1488,6 +1491,10 @@ export async function generateTextStream({
   // Real turns instead of one prompt (the Room's blank lane, 2026-09-30): sent as
   // they are, on the streaming path, whether the lane is paid or free.
   messages: presetMessages = null,
+  // The Room's ordinary answer as real turns (2026-10-08): context as a system
+  // message, then the conversation as it was said. Used only on a lane that takes
+  // real turns; everywhere else the flat prompt goes, unchanged.
+  turns = null,
 }) {
   // A hand-picked paid OpenAI model can see the image too. This has to happen
   // before the general vision fork below: that fork deliberately defaults every
@@ -1542,9 +1549,11 @@ export async function generateTextStream({
     ? (explicitModel || null)
     : ((explicitModel && explicitModelUsableBy(providerId, explicitModel)) ? explicitModel : (featureDefaults.model || null));
 
+  const realTurns = turns?.length && TURN_PROVIDERS.has(providerId) ? turns : null;
+
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
-  if (!isMeteredProvider(providerId) && !presetMessages) {
+  if (!isMeteredProvider(providerId) && !presetMessages && !realTurns) {
     const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs, strictModel, effort });
     if (r?.text && onToken) onToken(r.text);
     return r;
@@ -1588,7 +1597,7 @@ export async function generateTextStream({
   // no Anthropic round trip to translate. The array GROWS across tool rounds:
   // assistant(tool_calls) then one role:'tool' message per call, which is what
   // lets round N+1 see what round N looked up.
-  const messages = presetMessages ? presetMessages.map((m) => ({ ...m })) : [{ role: 'user', content: prompt }];
+  const messages = (presetMessages || realTurns) ? (presetMessages || realTurns).map((m) => ({ ...m })) : [{ role: 'user', content: prompt }];
 
   let text = '';
   let toolCallsMade = 0;

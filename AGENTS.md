@@ -326,10 +326,19 @@ back doors, all closed; do not reopen any of them:
 - **The tool list.** Tool descriptions are pages of the paradigm's vocabulary; they now ride
   only on a question about his app or his things (`roomWantsLookups`).
 
-**Teach is the exception, by his choice (2026-10-01).** What he taught with Teach rides:
-the "what he loves in an answer" items on every full answer as facts about him, never
-as orders (`mind.js#ORDER_WORDS` drops any that read as one); taught ideas only when his
-message shares their subject. See `plans/conversation-thinking-recall.md`. Harvested
+**Teach: ideas ride, taste does not (2026-10-01, narrowed 2026-10-08).** Taught ideas
+and subjects ride only when his message shares their subject. The "what he loves in an
+answer" items **no longer ride at all** — audit 2026-10-08: five of them ("poetic, lyrical",
+"extreme brevity", "the same pattern across scales", "a line from private life to society")
+pushed every answer into one shape and contradicted each other; phrased as facts, they
+were still rules. The bold-words line (2026-10-07) went the same day, for the same reason.
+
+**The Room sends real turns (2026-10-08).** On Gemini and OpenAI lanes a full Room answer
+goes as a system message (the context above) followed by the conversation as real
+user/assistant turns — what a fresh chat on the model's own site sends — not one document
+with an "OWNER:/YOU:" transcript under headings. `buildTurnPrompt({ asTurns: true })` +
+`generateTextStream({ turns })`; the Claude and Codex lanes, images, and a turn too big
+to fit still get the flat prompt. See `plans/conversation-thinking-recall.md`. Harvested
 memory stays out.
 
 **Blank models (his ask, 2026-09-30).** The picker's "Blank" group — Gemini and GPT-4.1 —

@@ -1028,8 +1028,8 @@ export const ORDER_WORDS = /\b(should|must|always|never|from now on|in (?:all )?
 
 // What he taught, as it reaches a full Room answer (2026-10-01). Before this, Teach
 // wrote into the Mind and no Room answer read the Mind at all.
-//   - what he loves in an answer: always, as facts about him, beside who he is;
-//     never a line written as an order, never its detail (details drift into how-to);
+//   - what he loves in an answer: built here but no longer sent (2026-10-08 — taste
+//     lines shaped every answer alike; see AGENTS.md "Teach: ideas ride");
 //   - ideas and facts about him: only when his words share their subject, the same
 //     free match the conversation records use; the conversation each came from is
 //     named so its thinking can come too.
