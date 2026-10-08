@@ -108,13 +108,13 @@ async function lookupAcronym(convoId, { raw, sentence, messageId }) {
   const key = 'acronym:' + raw;
   if (db) {
     const hit = db.prepare('SELECT text, expansion FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, key);
-    if (hit && hit.expansion) return { ok: true, text: hit.text, expansion: hit.expansion, cached: true };
+    if (hit && hit.expansion && !wrongLang(hit.text, messageText(convoId, messageId))) return { ok: true, text: hit.text, expansion: hit.expansion, cached: true };
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 600);
   const title = String(convo.title || '').slice(0, 200);
   const answer = answerAround(messageText(convoId, messageId), sent);
   const out = await quickText(
-    `${ACRONYM_PROMPT}\n\n=== THE ACRONYM ===\n${raw}\n\n=== THE SENTENCE ===\n${sent || '(not given)'}`
+    `${ACRONYM_PROMPT}\n${LANG}\n\n=== THE ACRONYM ===\n${raw}\n\n=== THE SENTENCE ===\n${sent || '(not given)'}`
       + (answer ? `\n\n=== THE WHOLE ANSWER IT STANDS IN ===\n${answer}` : '')
       + (title ? `\n\n=== THE CONVERSATION ===\n"${title}"` : ''),
   );
@@ -144,6 +144,15 @@ function firstSentences(raw, n) {
 // splitter was fixed: it ends on an initial, like "for the U." — read it again rather
 // than hand back the same cut sentence for good.
 function cutShort(text) { return /\b[A-Z]\.$/.test(String(text || '').trim()); }
+
+// A reading in French for an answer in English is wrong (his ask, 2026-10-08: "warden"
+// came back in French in an English conversation). French only when the answer is.
+const LANG = 'Write in the language of the answer itself: English for an English answer, which is almost always; French only when the answer is in French.';
+export function frenchish(t) {
+  const s = String(t || '');
+  return /[éèêàçù]/.test(s) || (s.match(/\b(le|la|les|des|une|est|qui|du|dans|pour|aux|et|ce|cette|sein)\b/gi) || []).length >= 3;
+}
+const wrongLang = (text, answer) => frenchish(text) && !frenchish(answer);
 export async function lookupWord(convoId, { word, sentence = '', messageId = null } = {}) {
   const raw = String(word || '').replace(/\s+/g, ' ').trim();
   const count = raw ? raw.split(' ').length : 0;
@@ -157,7 +166,7 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
   if (!convo) return { error: 'not_found' };
   if (db) {
     const hit = db.prepare('SELECT text FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, w);
-    if (hit && !cutShort(hit.text) && hit.text.split(/\s+/).length >= 8 && hit.text.split(/\s+/).length <= 20 && !/[.!?]\s+[A-Z]/.test(hit.text)) return { ok: true, text: hit.text, cached: true };
+    if (hit && !cutShort(hit.text) && !wrongLang(hit.text, messageText(convoId, messageId)) && hit.text.split(/\s+/).length >= 8 && hit.text.split(/\s+/).length <= 20 && !/[.!?]\s+[A-Z]/.test(hit.text)) return { ok: true, text: hit.text, cached: true };
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 600);
   const recap = String(convo.recap || '').slice(0, 1200);
@@ -165,7 +174,7 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
   const mind = mindBlock(sent + " " + title).slice(0, 600);
   const answer = answerAround(messageText(convoId, messageId), sent);
   const out = await quickText(
-    `${PROMPT}\n\n=== THE WORD ===\n${w}\n\n=== THE SENTENCE ===\n${sent || '(not given)'}`
+    `${PROMPT}\n${LANG}\n\n=== THE WORD ===\n${w}\n\n=== THE SENTENCE ===\n${sent || '(not given)'}`
       + (answer ? `\n\n=== THE WHOLE ANSWER IT STANDS IN ===\n${answer}` : '')
       + (title ? `\n\n=== THE CONVERSATION ===\n"${title}"` : '')
       + (recap ? `\n${recap}` : '')
@@ -185,13 +194,13 @@ async function lookupPhrase(convoId, { key, shown, mode, sentence, messageId }) 
   if (db) {
     const hit = db.prepare('SELECT text FROM word_lookups WHERE convo_id=? AND word=?').get(convoId, key);
     const n = hit ? hit.text.split(/\s+/).length : 0;
-    if (hit && !cutShort(hit.text) && n >= 6 && n <= max) return { ok: true, text: hit.text, cached: true };
+    if (hit && !cutShort(hit.text) && !wrongLang(hit.text, messageText(convoId, messageId)) && n >= 6 && n <= max) return { ok: true, text: hit.text, cached: true };
   }
   const sent = String(sentence || '').replace(/\s+/g, ' ').trim().slice(0, 900);
   const title = String(convo.title || '').slice(0, 200);
   const answer = answerAround(messageText(convoId, messageId), sent);
   const out = await quickText(
-    `${mode === 'phrase' ? PHRASE_PROMPT : PASSAGE_PROMPT}\n\n=== WHAT HE SELECTED ===\n${shown}`
+    `${mode === 'phrase' ? PHRASE_PROMPT : PASSAGE_PROMPT}\n${LANG}\n\n=== WHAT HE SELECTED ===\n${shown}`
       + (mode === 'phrase' && sent ? `\n\n=== THE SENTENCE ===\n${sent}` : '')
       + (answer ? `\n\n=== THE WHOLE ANSWER IT STANDS IN ===\n${answer}` : '')
       + (title ? `\n\n=== THE CONVERSATION ===\n"${title}"` : ''),
@@ -207,7 +216,7 @@ async function lookupPhrase(convoId, { key, shown, mode, sentence, messageId }) 
 // is French may not know, or that carry a special shade here, and reads each one the
 // same way lookupWord does — one call per answer, on the free lane, kept for good.
 const GLOSSARY_PROMPT = `You are a dictionary that knows where the reader is. Below is one answer from a long
-conversation. The reader's first language is French; he reads English well but not every
+conversation. The reader reads English well, as a second language, but not every
 word. From the CANDIDATE WORDS, choose up to 14 that he may not know, or that carry a
 special shade in this answer. For each, write what it means as used here, with the shade
 the plain word would miss: ONE sentence of plain prose, about 15 words — never more than
@@ -232,7 +241,8 @@ export async function glossaryFor(convoId, messageId) {
   if (hit) {
     try {
       const words = JSON.parse(hit.json);
-      const tooLong = Object.values(words).some((t) => /[.!?]\s+[A-Z]/.test(String(t)) || String(t).split(/\s+/).length > 20);
+      const ans = messageText(convoId, messageId);
+      const tooLong = Object.values(words).some((t) => wrongLang(t, ans) || /[.!?]\s+[A-Z]/.test(String(t)) || String(t).split(/\s+/).length > 20);
       if (!tooLong) return { ok: true, words, cached: true };
     } catch { /* rebuild */ }
   }
@@ -242,7 +252,7 @@ export async function glossaryFor(convoId, messageId) {
   if (!cands.length) return { ok: true, words: {} };
   const title = String(convo.title || '').slice(0, 200);
   const out = await generateText({
-    prompt: `${GLOSSARY_PROMPT}\n\n=== THE CONVERSATION ===\n"${title}"\n\n=== THE ANSWER ===\n${answer}\n\n=== CANDIDATE WORDS ===\n${cands.join(', ')}`,
+    prompt: `${GLOSSARY_PROMPT}\n${LANG}\n\n=== THE CONVERSATION ===\n"${title}"\n\n=== THE ANSWER ===\n${answer}\n\n=== CANDIDATE WORDS ===\n${cands.join(', ')}`,
     feature: 'quick', label: 'room:glossary', maxTokens: 800, timeoutMs: 60_000,
   });
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
