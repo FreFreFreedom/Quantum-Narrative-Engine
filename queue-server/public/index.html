@@ -34673,7 +34673,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var f = card || {};
     var out = libOutLink({ kind: kind, title: d.coverTitle, creator: d.coverCreator }, f.isbn || f.imdbId ? f : (seOutFacts[d.coverArt] || null));
     var meta = [];
-    if (book) { if (d.coverCreator) meta.push(d.coverCreator); if (f.year || d.coverYear) meta.push(f.year || d.coverYear);
+    // "not specified in text" is a model with no name, not an author; the server
+    // sends the catalogue's when it has one.
+    var who = f.author || (/^\s*\(?\s*(not\s+(specified|given|stated|known|mentioned|named|provided)|unknown|unspecified|n\/?a|none)\b/i.test(d.coverCreator || '') ? '' : d.coverCreator || '');
+    if (book) { if (who) meta.push(who); if (f.year || d.coverYear) meta.push(f.year || d.coverYear);
       // How long it is, before he opens it: the catalogue's page count, and the
       // words it comes to at the usual 300 a page, rounded so it reads as the
       // estimate it is.
@@ -34687,7 +34690,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (book) {
       // His pick C (2026-09-27): small cover, title, ↗ for every link; About and
       // Contents as tabs. A click outside or Escape closes it, so no ✕ here.
-      var bw = { kind: kind, title: d.coverTitle, creator: d.coverCreator };
+      var bw = { kind: kind, title: d.coverTitle, creator: who };
       var ff = (f.goodreads || f.isbn) ? f : (seOutFacts[d.coverArt] || null);
       var cov = (seOutFacts[d.coverArt] || {}).cover || roomMediaArtCache.get(d.coverArt) || '';
       var about = f.note ? '<p class="se-card-note">' + qEsc(f.note) + '</p>'

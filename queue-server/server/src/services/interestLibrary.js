@@ -86,6 +86,15 @@ export function bindInterestLibrary(database) {
   purge();
   setTimeout(() => void drain(), 1000).unref();
   setTimeout(() => void tidyBooks(), 20000).unref();
+  // Works saved with a model's "not specified" for a name: blanked, and a book is
+  // sent back to the catalogue to be given its real author.
+  try {
+    for (const w of db.prepare("SELECT id,kind,title,creator FROM interest_works WHERE creator<>''").all()) {
+      if (!NO_NAME.test(w.creator)) continue;
+      db.prepare("UPDATE interest_works SET creator='', identity=?" + (w.kind === 'book' ? ', checked=0' : '') + ' WHERE id=?')
+        .run([w.kind, norm(w.title), ''].join('|'), w.id);
+    }
+  } catch (_) {}
 }
 
 // A book read off a screenshot is checked once against the catalogue, one at a
@@ -287,9 +296,13 @@ export function createInterestImport(owner, convoId, input) {
   return publicBatch(batchFor(owner, id));
 }
 
+// "not specified in text", "unknown": a model's way of saying it has no name. Kept,
+// it reads as the author on the card and sends every lookup after the wrong book.
+export const NO_NAME = /^\s*(?:\(?\s*)?(?:not\s+(?:specified|given|stated|known|mentioned|named|provided)|unknown|unspecified|n\/?a|none|tbd|\?+)\b/i;
+export const realName = (s) => (NO_NAME.test(String(s || '')) ? '' : String(s || ''));
 function candidate(raw) {
   const kind = raw?.kind === 'episode' ? 'series' : kinds.has(raw?.kind) ? raw.kind : '';
-  return { kind, title: clean(raw?.title), creator: clean(raw?.creator), year: clean(raw?.year, 20), episode: kind === 'series' ? clean(raw?.episode, 160) : '' };
+  return { kind, title: clean(raw?.title), creator: clean(realName(raw?.creator)), year: clean(raw?.year, 20), episode: kind === 'series' ? clean(raw?.episode, 160) : '' };
 }
 function saveWork(owner, c, explicit = false) {
   const titleKey = norm(c.title);

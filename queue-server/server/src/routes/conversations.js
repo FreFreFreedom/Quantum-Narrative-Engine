@@ -163,14 +163,18 @@ export function conversationsRoutes() {
   router.get('/:id/work-card', asyncHandler(async (req, res) => {
     const owner = req.user?.id || 'antoine';
     const it = { id: 'x', kind: String(req.query.kind || 'film'), title: String(req.query.title || '').slice(0, 300),
-      creator: String(req.query.creator || '').slice(0, 200), year: String(req.query.year || '').slice(0, 8),
+      creator: interests.realName(String(req.query.creator || '')).slice(0, 200), year: String(req.query.year || '').slice(0, 8),
       episode: String(req.query.kind || '') === 'series' ? String(req.query.episode || '').slice(0, 160) : '' };
     if (!it.title.trim()) return res.status(400).json({ error: 'title required' });
+    // A book with no author is given the catalogue's, for the exact title only —
+    // else the line under it guesses one from the conversation (The Hot House was
+    // written up as a memoir by someone the talk had named, 2026-10-08).
+    if (it.kind === 'book' && !it.creator) { try { it.creator = (await bookFacts.canonicalBook(it.title, ''))?.creator || ''; } catch {} }
     const facts = it.kind === 'book'
       ? (await bookFacts.bookFactsFor(owner, [it])).x || {}
       : (await screen.screenFactsFor(owner, [it])).x || {};
     const note = await workNote(req.params.id, { ...it, year: facts.year || it.year, overview: facts.overview || '' }, { refresh: req.query.refresh === '1' });
-    res.json({ ...facts, note: note.text });
+    res.json({ ...facts, note: note.text, author: it.kind === 'book' ? it.creator : '' });
   }));
 
   // The card a person's name opens in a Room answer: their years, the main pattern

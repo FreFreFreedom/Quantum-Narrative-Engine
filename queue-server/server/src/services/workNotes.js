@@ -20,6 +20,8 @@ export function bindWorkNotes(database) {
   // v3 (2026-09-23): he found v1 lines read like a catalogue blurb; lines are now
   // about 75 words and tied to the conversation. Older lines are written again.
   try { db.exec(`ALTER TABLE work_notes ADD COLUMN v INTEGER NOT NULL DEFAULT 1`); } catch {}
+  // Written while the book had no author, and given one from the conversation.
+  db.exec(`DELETE FROM work_notes WHERE key='book|the hot house'`);
   db.exec(`DELETE FROM work_notes WHERE trim(text) NOT GLOB '*[.!?…]' AND trim(text) NOT GLOB '*[.!?…]["'')”]'`);
 }
 
@@ -58,6 +60,7 @@ export async function workNote(convoId, { kind = 'film', title = '', creator = '
     prompt: [
       `Write ${MAX_WORDS - 10} to ${MAX_WORDS + 5} words about the ${what} "${title}"${creator ? ` (${creator}${year ? ', ' + year : ''})` : year ? ` (${year})` : ''} for the conversation below.`,
       'Not a catalogue synopsis. Say, in one short clause, what happens in it — then spend most of the words on why it matters HERE: which idea of this conversation it shows, and how (a scene, a mechanism, a character). Use the conversation\'s own ideas and words.',
+      creator ? '' : 'Its author is not known here: name no author, and never take a person from the conversation for its author.',
       'Plain simple words, no preamble, no quotation marks, never the ending. Three or four sentences, all finished. If you do not know the work, say so in five words.',
       overview ? `Catalogue synopsis (for facts only): ${String(overview).slice(0, 1200)}` : '',
       '=== THE CONVERSATION (latest turns) ===', msgs.slice(-6000),
