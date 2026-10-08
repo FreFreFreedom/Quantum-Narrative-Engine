@@ -44,6 +44,9 @@ export function bindBookFacts(database) {
   // How long the book is. '' means never looked for, '-' means looked for and no
   // catalogue said — so a book nobody counted is not re-asked on every repaint.
   try { db.exec("ALTER TABLE book_facts ADD COLUMN pages TEXT NOT NULL DEFAULT ''"); } catch (err) { /* already there */ }
+  // Every boot, a book still without a cover is asked about again on its next view,
+  // so a better matcher reaches the old misses without waiting out the retry hours.
+  try { db.exec("UPDATE book_facts SET fetched_at='2000-01-01 00:00:00' WHERE cover IS NULL OR cover=''"); } catch (err) { /* next boot */ }
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
@@ -80,6 +83,17 @@ function surname(who) {
   return parts.length ? parts[parts.length - 1] : '';
 }
 
+function nearly(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return false;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j += 1) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length] <= 2;
+}
+
 // > 0 means "this is the book". The number itself only orders the candidates.
 function scoreCandidate(cand, fullTitle, who) {
   const head = words(mainTitle(fullTitle));
@@ -108,6 +122,8 @@ function scoreCandidate(cand, fullTitle, who) {
       // A name cut off at the edge of a screenshot ("Herb Boy" for Herb Boyd) still
       // counts, but only as the start of a real surname and never below 3 letters.
       if (sn.length >= 3 && toks.some((t) => t.length > sn.length && t.startsWith(sn))) clipped = true;
+      // A name misspelled by a letter or two ("Slimane" for Slimani) is still hers.
+      else if (sn.length >= 5 && toks.some((t) => t.length >= 5 && nearly(t, sn))) clipped = true;
       // A long title that matches whole is the book even when the name beside it is
       // wrong. A model naming a real book often puts the wrong author to it — "Judge
       // Frank M. Johnson Jr. and Human Rights in Alabama" is Tinsley Yarbrough's, not
@@ -173,7 +189,40 @@ function googleUrl(q) {
 // both catalogues is scored against the title and author we actually hold, and the
 // best one answers — asking three ways and taking whatever came back first is what
 // put a Mills & Boon jacket on a book about child protective services.
-export async function lookupBook(title, creator) {
+// What a shop adds to a title is not part of it: "(Vintage Classics)", "(P.S.)",
+// "(Volumes 1, 2 & 3)", "― A Pulitzer Prize-Winning Civil Rights History". Left in,
+// the subtitle check wants those words in the catalogue's title too, and eighteen
+// real books sat without a cover (2026-10-08).
+export function shopClean(title) {
+  let t = String(title || '').replace(/\s*[([][^)\]]*[)\]]/g, ' ');
+  t = t.replace(/\s*[\u2015|]\s*.*$/, '');
+  t = t.replace(/\s*[-\u2013\u2014:]\s*(?:an?\s+)?(?:new york times|national|pulitzer|international|#1|the instant|winner|finalist|award)[^:]*$/i, '');
+  return t.replace(/\s{2,}/g, ' ').replace(/[\s:,;\u2013\u2014-]+$/, '').trim() || String(title || '');
+}
+// Degrees are not names: "Saul Kassin Ph.D" has the surname Kassin, not "phd".
+const noDegrees = (a) => String(a || '').replace(/,?\s*\b(?:ph\.?\s?d|m\.?d|j\.?d|esq|mba|psy\.?d|ed\.?d)\b\.?/ig, '').trim();
+
+export async function lookupBook(rawTitle, rawCreator, again = true) {
+  const out = await lookupOnce(rawTitle, rawCreator);
+  // No author saved, and the catalogues file the book under its main title alone,
+  // so the subtitle check could not be met ("Devil in the Grove", "Licensed to
+  // Lie"). The catalogue's own author for that exact title lets the ordinary
+  // author check do its job instead — a stranger's book still has to match it.
+  if (!out.cover && again && !noDegrees(rawCreator)) {
+    const main = mainTitle(shopClean(rawTitle));
+    const j = await getJson('https://openlibrary.org/search.json?limit=8&fields=title,author_name,cover_i&title=' + encodeURIComponent(main));
+    const same = (j?.docs || []).filter((d) => norm(d.title) === norm(main) && d.author_name?.length);
+    const who = same.find((d) => d.cover_i)?.author_name[0] || same[0]?.author_name[0];
+    if (who) {
+      const found = await lookupBook(rawTitle, who, false);
+      if (found.cover) return found;
+    }
+  }
+  return out;
+}
+
+async function lookupOnce(rawTitle, rawCreator) {
+  const title = shopClean(rawTitle), creator = noDegrees(rawCreator);
   const main = mainTitle(title), who = personName(creator);
   const cands = [];
 
