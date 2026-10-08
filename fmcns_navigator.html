@@ -3569,6 +3569,8 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-size input::-moz-range-track { height:1px; background:transparent; }
 .shelf-size input::-moz-range-thumb { width:6px; height:6px; border:0; border-radius:50%; background:var(--c-ink-5); }
 .shelf-card { position:relative; min-width:0; }
+.shelf-card[draggable="true"] { cursor:grab; }
+.se-compose.is-work-over { outline:2px dashed var(--c-accent, #b38b45); outline-offset:3px; border-radius:10px; }
 /* A book and its film in one place (pick B5): the poster tucked behind the book,
    sliding out into the next place on hover — to the left from the last column. */
 .lib-pair { position:relative; min-width:0; }
@@ -3627,6 +3629,17 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    kind menu it opens drops just under it, wherever the wall is scrolled to (his ask,
    2026-10-08: no scrolling back up to reach it). */
 #roomCards > #roomTabs { position:sticky; top:-14px; z-index:7; margin-top:-14px; padding-top:14px; background:inherit; }
+.room-tabs .room-split { flex:none; margin-left:auto; width:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; opacity:.55; }
+.room-tabs .room-split svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.3; }
+.room-tabs .room-split:hover, .room-tabs .room-split[aria-pressed="true"] { opacity:1; color:var(--c-accent); }
+.room-split-grip { display:none; }
+#roomCards.split-layout > #roomTabs { order:0; }
+#roomCards.split-layout > #roomSide.is-active { order:1; flex:1 1 0; min-height:120px; }
+#roomCards.split-layout > .room-split-grip { order:2; display:block; flex:none; height:9px; margin:2px 0; cursor:row-resize; position:relative; }
+#roomCards.split-layout > .room-split-grip::after { content:''; position:absolute; left:40%; right:40%; top:3px; height:3px; border-radius:3px; background:var(--c-border); }
+#roomCards.split-layout > .room-split-grip:hover::after { background:var(--c-accent); }
+#roomCards.split-layout > #roomInterests.is-active { order:3; flex:0 0 var(--lib-split-h, 45%); min-height:120px; overflow-y:auto; overflow-x:hidden; border-top:1px solid var(--c-border); padding-top:6px; }
+#roomCards.split-layout #roomInterests .lib-top { top:-6px; }
 #roomInterests .shelf-cover.is-lit { animation:fmcnsFade .35s ease both; }
 #roomInterests .lib-top { position:sticky; top:calc(var(--room-tabs-h, 40px) - 14px); z-index:6; }
 .lib-top:empty { display:none; }
@@ -6107,6 +6120,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-tabs" id="roomTabs" role="tablist">
           <button type="button" data-room-primary="library" role="tab">Library</button>
           <button type="button" data-room-primary="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
+          <button type="button" class="room-split" data-room-split title="Library and side talk together" aria-label="Library and side talk together" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M2.5 8h11"/></svg></button>
           <button type="button" data-room-pane="attached" role="tab">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
@@ -6129,6 +6143,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <div id="roomCardList"></div>
           <div id="roomCardsNote" class="room-note"></div>
         </div>
+        <div class="room-split-grip" id="roomSplitGrip" title="Drag to share the height"></div>
         <div class="room-pane" id="roomInterests"></div>
         <div class="room-pane room-mind" id="roomMind">
           <div class="room-remember">
@@ -15459,12 +15474,21 @@ function initRoom() {
   if (strip) {
     let pane = 'attached';
     try { const saved = localStorage.getItem(ROOM_PANE_KEY); if (saved && ROOM_PANES[saved]) pane = ['papers', 'apps', 'analogies'].includes(saved) ? 'interests' : saved; } catch (e) {}
+    // The Library and a side talk can share the column, one above the other, so a
+    // card can be dragged into the side talk's box (his ask, 2026-10-08).
+    let split = false;
+    try { split = localStorage.getItem('fmcns_room_split') === '1'; } catch (e) {}
+    const together = () => split && (pane === 'side' || pane === 'interests');
     const apply = () => {
-      document.getElementById('roomCards').classList.toggle('side-layout', pane === 'side');
+      const both = together();
+      document.getElementById('roomCards').classList.toggle('side-layout', pane === 'side' || both);
+      document.getElementById('roomCards').classList.toggle('split-layout', both);
+      const sb = strip.querySelector('[data-room-split]');
+      if (sb) sb.setAttribute('aria-pressed', String(split));
       applyRoomCardsWidth();
       Object.entries(ROOM_PANES).forEach(([k, id]) => {
         const el = document.getElementById(id);
-        if (el) el.classList.toggle('is-active', k === pane);
+        if (el) el.classList.toggle('is-active', k === pane || (both && (k === 'side' || k === 'interests')));
       });
       strip.querySelectorAll('[data-room-pane]').forEach((b) => {
         const on = b.getAttribute('data-room-pane') === pane;
@@ -15476,9 +15500,9 @@ function initRoom() {
       const mode = pane === 'interests' ? recRead('library.mode', 'saved') : '';
       strip.querySelectorAll('[data-room-primary]').forEach((b) => {
         const key = b.getAttribute('data-room-primary');
-        const on = (key === 'discover' && pane === 'interests' && mode === 'discover')
-          || (key === 'library' && pane === 'interests' && mode !== 'discover')
-          || (key === 'side' && pane === 'side');
+        const on = (key === 'discover' && (pane === 'interests' || both) && mode === 'discover')
+          || (key === 'library' && (pane === 'interests' || both) && mode !== 'discover')
+          || (key === 'side' && (pane === 'side' || both));
         b.classList.toggle('active', on);
         b.setAttribute('aria-selected', String(on));
       });
@@ -15488,20 +15512,27 @@ function initRoom() {
         moreBtn.classList.toggle('active', on);
         moreBtn.setAttribute('aria-expanded', String(!strip.querySelector('#roomSecondaryTabs')?.hidden));
       }
-      if (pane === 'interests') renderInterestLibrary();
+      if (pane === 'interests' || both) renderInterestLibrary();
       if (pane === 'papers' || pane === 'apps') openRoomRecommendations(pane);
       if (typeof applyRoomFold === 'function') applyRoomFold();
     };
     strip.onclick = (ev) => {
+      if (ev.target.closest('[data-room-split]')) {
+        split = !split;
+        try { localStorage.setItem('fmcns_room_split', split ? '1' : '0'); } catch (e) {}
+        if (split && pane !== 'side' && pane !== 'interests') { pane = 'side'; try { localStorage.setItem(ROOM_PANE_KEY, pane); } catch (e) {} }
+        apply();
+        return;
+      }
       const primary = ev.target.closest('[data-room-primary]');
       if (primary) {
         const key = primary.getAttribute('data-room-primary');
-        if (key === 'library' && pane === 'interests') {
+        if (key === 'library' && (pane === 'interests' || together())) {
           libKindOpen = !libKindOpen;
           renderInterestLibrary({ quiet: true });
           return;
         }
-        if (key === 'side' && pane === 'side') {
+        if (key === 'side' && (pane === 'side' || together())) {
           openRoomSideMenu(primary);
           return;
         }
@@ -15533,6 +15564,22 @@ function initRoom() {
       const menu = strip.querySelector('#roomSecondaryTabs');
       if (menu && !menu.hidden && !strip.contains(ev.target)) { menu.hidden = true; apply(); }
     }, true);
+    // The line between the two is dragged to share the height, and remembered.
+    const grip = document.getElementById('roomSplitGrip');
+    const cardsEl = document.getElementById('roomCards');
+    const setSplitH = (pct) => cardsEl.style.setProperty('--lib-split-h', Math.max(15, Math.min(85, pct)) + '%');
+    try { const h = Number(localStorage.getItem('fmcns_room_split_h')); if (h) setSplitH(h); } catch (e) {}
+    if (grip) grip.onpointerdown = (ev) => {
+      ev.preventDefault();
+      const box = cardsEl.getBoundingClientRect();
+      let pct = 45;
+      const move = (e) => { pct = 100 * (box.bottom - e.clientY) / box.height; setSplitH(pct); };
+      const up = () => {
+        window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+        try { localStorage.setItem('fmcns_room_split_h', String(Math.round(Math.max(15, Math.min(85, pct))))); } catch (e) {}
+      };
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    };
     apply();
   }
   const passHost = document.getElementById('roomPassagesHost');
@@ -19379,6 +19426,32 @@ function libAddedMs(t) {
   const n = Date.parse(/[zZ]$|[+-]\d\d:?\d\d$/.test(v) ? v : v + 'Z');
   return Number.isNaN(n) ? 0 : n;
 }
+// Dragged into a message box, a card becomes its name, written so the Room's model
+// finds it in the Library (his ask, 2026-10-08: main chat and side talks alike).
+function libDragText(it) {
+  const r = it.raw || {};
+  const year = r.year || '';
+  const what = r.kind === 'film' ? 'the film ' : r.kind === 'series' ? 'the series ' : 'the book ';
+  return what + '“' + it.title + '”' + (r.episode ? ', episode ' + r.episode : '')
+    + (it.creator || year ? ' (' + [it.creator, year].filter(Boolean).join(', ') + ')' : '');
+}
+document.addEventListener('dragstart', (ev) => {
+  const card = ev.target && ev.target.closest && ev.target.closest('.shelf-card[data-drag]');
+  if (!card || !ev.dataTransfer) return;
+  ev.dataTransfer.setData('application/x-qne-work', card.dataset.drag);
+  ev.dataTransfer.setData('text/plain', card.dataset.drag);
+  ev.dataTransfer.effectAllowed = 'copy';
+});
+// Put the dragged name where the caret is, with a space on either side as needed.
+function roomInsertWork(input, text) {
+  const v = input.value, a = input.selectionStart ?? v.length, b = input.selectionEnd ?? v.length;
+  const before = v.slice(0, a), after = v.slice(b);
+  const piece = (before && !/\s$/.test(before) ? ' ' : '') + text + (after && !/^\s/.test(after) ? ' ' : '');
+  input.value = before + piece + after;
+  const at = (before + piece).length;
+  input.focus(); input.setSelectionRange(at, at);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
 function libCard(it) {
   const open = libOpen && libOpen.type === it.type && libOpen.id === it.id;
   // Something that just came in from a drop arrives with a glow, once.
@@ -19391,7 +19464,7 @@ function libCard(it) {
   const art = it.type === 'media' && !cover
     ? roomMediaArtMarkup(it.raw, 'shelf-cover')       // filled in by the catalogue once it answers
     : '<span class="shelf-cover"' + cover + '></span>';
-  return '<div class="shelf-card' + (open ? ' is-open' : '') + (fresh ? ' is-new' : '') + '" data-lib="' + qEscAttr(it.type + ':' + it.id) + '">'
+  return '<div class="shelf-card' + (open ? ' is-open' : '') + (fresh ? ' is-new' : '') + '" data-lib="' + qEscAttr(it.type + ':' + it.id) + '" draggable="true" data-drag="' + qEscAttr(libDragText(it)) + '">'
     + '<button type="button" class="shelf-open" data-open aria-label="' + qEscAttr(it.title) + '">' + art
     + (facts && facts.rating ? '<span class="lib-badge">' + facts.rating.toFixed(1) + '</span>' : '')
     + (libIsScreen(it.raw) ? '<span class="lib-kind">' + (it.raw.kind === 'series' ? '◗' : '▶') + '</span>' : '')
@@ -31263,8 +31336,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       attachBtn.onclick = function(ev){ ev.stopPropagation(); if(e.convoId && !e.busy) fileInput.click(); };
       fileInput.onchange = function(){ var files = fileInput.files; fileInput.value = ''; addFiles(files); };
       var compose = host.querySelector('.se-compose');
-      compose.ondragover = function(ev){ ev.preventDefault(); };
-      compose.ondrop = function(ev){ ev.preventDefault(); addFiles(ev.dataTransfer && ev.dataTransfer.files); };
+      var isWork = function(ev){ return Array.from((ev.dataTransfer && ev.dataTransfer.types) || []).includes('application/x-qne-work'); };
+      compose.ondragover = function(ev){ ev.preventDefault(); if(isWork(ev)){ ev.dataTransfer.dropEffect = 'copy'; compose.classList.add('is-work-over'); } };
+      compose.ondragleave = function(ev){ if(!compose.contains(ev.relatedTarget)) compose.classList.remove('is-work-over'); };
+      compose.ondrop = function(ev){
+        ev.preventDefault(); compose.classList.remove('is-work-over');
+        if(isWork(ev)){ roomInsertWork(input, ev.dataTransfer.getData('application/x-qne-work')); return; }
+        addFiles(ev.dataTransfer && ev.dataTransfer.files);
+      };
       // The Room lets a file land anywhere in its window; this is where it goes.
       host._addFiles = addFiles;
       input.addEventListener('paste', function(ev){
