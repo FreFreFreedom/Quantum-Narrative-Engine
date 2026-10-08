@@ -2069,6 +2069,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 /* the active mode has to read at 52px, where the label is invisible: a filled
    pill plus an accent bar hard against the left edge */
 a.rail-item, a.room-row { text-decoration:none; box-sizing:border-box; }
+a.qne-wrap { display:contents; color:inherit; text-decoration:none; }
 .rail-item.active { background:var(--c-surface-2); color:var(--c-ink); font-weight:var(--fw-medium); }
 .rail-item.active::before { content:''; position:absolute; left:-6px; top:7px; bottom:7px; width:2px; border-radius:0 2px 2px 0; background:var(--c-accent); }
 /* Something is waiting on you: the Queue item warms up so it reads at 52px. */
@@ -2813,7 +2814,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-cover.is-right { float:right; clear:both; margin-left:24px; }
 .se-cover.is-left { float:left; clear:both; margin-right:24px; }
 .se-cover-row { float:right; clear:both; width:min(260px, 46%); margin:6px 0 12px 24px; display:flex; flex-wrap:wrap; gap:10px; }
-.se-cover-row > .se-cover { float:none; clear:none; width:calc(50% - 5px); margin:0; }
+.se-cover-row > .se-cover, .se-cover-row > .qne-wrap > .se-cover { float:none; clear:none; width:calc(50% - 5px); margin:0; }
 .se-cover > span { display:flex; align-items:center; justify-content:center; width:100%; height:auto; aspect-ratio:2/3; border-radius:4px;
   background:var(--c-hover-wash) center/cover no-repeat; box-shadow:0 8px 20px rgba(0,0,0,.28);
   font:var(--fs-xs)/1.25 var(--font-ui); color:var(--c-ink-5); text-align:center; padding:8px; overflow:hidden;
@@ -2827,7 +2828,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-face > .se-face-name { display:block; width:auto; aspect-ratio:auto; background:none; box-shadow:none; transform:none !important;
   margin-top:6px; padding:0; font:var(--fs-xs)/1.3 var(--font-ui); color:var(--c-ink-4); text-align:center; }
 @media (max-width:520px) { .se-face { width:110px; } }
-@media (max-width:520px) { .se-cover { width:130px; } .se-cover > span { width:130px; height:195px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } .se-cover-row { width:200px; margin-left:14px; } .se-cover-row > .se-cover, .se-cover-row > .se-cover > span { width:100%; height:auto; } .se-cover-row > .se-cover { width:calc(50% - 5px); } }
+@media (max-width:520px) { .se-cover { width:130px; } .se-cover > span { width:130px; height:195px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } .se-cover-row { width:200px; margin-left:14px; } .se-cover-row > .se-cover, .se-cover-row > .se-cover > span, .se-cover-row > .qne-wrap > .se-cover, .se-cover-row > .qne-wrap > .se-cover > span { width:100%; height:auto; } .se-cover-row > .se-cover, .se-cover-row > .qne-wrap > .se-cover { width:calc(50% - 5px); } }
 .se-card { position:fixed; z-index:var(--z-popover); width:min(560px, calc(100vw - 16px)); max-height:min(720px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
   padding:28px 32px 28px; border-radius:16px; font-family:var(--font-ui); color:var(--c-ink); }
@@ -14777,6 +14778,69 @@ function goBootPlace() {
   if (kid === 'content' || kid === 'map') setMode(kid);
   else if (['room', 'graph', 'blocks', 'mind', 'flow'].includes(kid)) goCoreDest(kid);
   syncAddress();
+  if (kid === 'room' && parts[2] && parts[3]) {
+    let payload = parts.slice(3).join('/');
+    try { payload = decodeURIComponent(payload); } catch (e) {}
+    if (['side', 'person', 'work'].includes(parts[2])) openInsideRoom(parts[2], payload);
+  }
+}
+// Inside the Room, a side talk and a person's or a work's card have addresses too
+// (#room/<id>/side/<sid>, …/person/<json>, …/work/<json>). They are buttons and keep
+// their styles; the link the browser needs is put around one (display:contents, so
+// nothing moves) the moment a right button goes down on it, and ⌘/middle clicks are
+// left to that same link.
+var QNE_LINKABLE = '.se-person, .se-face, .se-work, .se-cover, [data-side-rib], [data-side-pick]';
+function linkableHref(el) {
+  if (!roomSel) return null;
+  const base = '#room/' + encodeURIComponent(roomSel);
+  const side = el.getAttribute('data-side-rib') || el.getAttribute('data-side-pick');
+  if (side) return base + '/side/' + encodeURIComponent(side);
+  if (el.matches('.se-person, .se-face')) {
+    const d = el.dataset;
+    if (!d.pName) return null;
+    return base + '/person/' + encodeURIComponent(JSON.stringify({ pName: d.pName, pFull: d.pFull || '', pKind: d.pKind || '', pFrom: d.pFrom || '', convo: d.convo || '' }));
+  }
+  const span = el.querySelector('[data-cover-art]');
+  if (!span) return null;
+  return base + '/work/' + encodeURIComponent(JSON.stringify(Object.assign({ convo: el.dataset.convo || '' }, span.dataset)));
+}
+function linkWrap(ev) {
+  const el = ev.target.closest && ev.target.closest(QNE_LINKABLE);
+  if (!el) return;
+  const href = linkableHref(el);
+  if (!href) return;
+  let a = el.parentElement && el.parentElement.classList.contains('qne-wrap') ? el.parentElement : null;
+  if (!a) {
+    a = document.createElement('a');
+    a.className = 'qne-wrap'; a.setAttribute('data-nav', '');
+    el.parentNode.insertBefore(a, el); a.appendChild(el);
+  }
+  a.setAttribute('href', href);
+}
+document.addEventListener('pointerdown', (ev) => { if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey) linkWrap(ev); }, true);
+// What a tab opened on one of those addresses opens, once the Room has what it needs.
+function openInsideRoom(kind, payload) {
+  let tries = 0;
+  const step = () => {
+    if (++tries > 60) return;
+    if (kind === 'side') {
+      if (!roomSides.some(s => s.id === payload)) return setTimeout(step, 250);
+      return roomSideOpen(payload);
+    }
+    const open = kind === 'person' ? window.qneOpenPersonCard : window.qneOpenWorkCard;
+    if (!open || !roomSel || !document.getElementById('roomConvo')) return setTimeout(step, 250);
+    let d = null;
+    try { d = JSON.parse(payload); } catch (e) { return; }
+    const a = document.createElement('button');
+    a.type = 'button'; a.className = kind === 'person' ? 'se-person' : 'se-work';
+    a.style.cssText = 'position:fixed;top:64px;left:50%;width:1px;height:1px;opacity:0;pointer-events:none;';
+    a.dataset.convo = d.convo || '';
+    if (kind === 'person') Object.assign(a.dataset, d);
+    else { const sp = document.createElement('span'); Object.keys(d).forEach(k => { if (k !== 'convo') sp.dataset[k] = d[k]; }); a.appendChild(sp); }
+    document.body.appendChild(a);
+    open(a);
+  };
+  setTimeout(step, 600);
 }
 // A plain click stays in this tab and the app's own handler runs; a click with
 // ⌘/Ctrl/Shift or the middle button is left to the browser, which opens the tab.
@@ -34554,6 +34618,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (!btn.dataset.imgId) return;
     seImgUrl(btn.dataset.convo, btn.dataset.imgId).then(function(b){ show(URL.createObjectURL(b)); }).catch(function(){});
   }
+  window.qneOpenPersonCard = sePersonOpen; window.qneOpenWorkCard = seCardOpen; // a tab opened on a card's address
   document.addEventListener('click', function(ev){
     var ib = ev.target.closest && ev.target.closest('.se-message-file.is-image');
     if (ib) { ev.preventDefault(); ev.stopPropagation(); seImgOpen(ib); return; }

@@ -505,7 +505,11 @@ Room conversation is `<a href="#place" data-nav>` (`#room/<id>`, `#content`, `#m
 `#architecture`, `#blocks`, `#signals`, `#flow`); a plain click is caught and handled in
 the tab, a ⌘/middle click is left to the browser, the address bar follows where you are
 (`syncAddress`), and a tab opened on an address goes there (`goBootPlace`). A new thing
-that takes you somewhere gets an address and a link, not a `<button>`.
+that takes you somewhere gets an address and a link, not a `<button>`. Inside the Room, side talks and
+the people/work cards are addressed too (`#room/<id>/side/<sid>`, `…/person/<json>`,
+`…/work/<json>`): they stay buttons, and `linkWrap` puts a `display:contents` link around
+one on a right or ⌘ press — so a CSS rule with `> .se-cover` must also allow
+`> .qne-wrap > .se-cover`.
 
 **Nothing is drawn twice.** The single most expensive mistake in this app's chrome
 has been the same navigation existing in two or three places at once — a rail
