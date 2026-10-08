@@ -45,6 +45,7 @@ import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
 import { bindInterestLibrary, interestContext, INTEREST_POINTED, INTEREST_TOOLS, interestTool, saveSuggestedWorks } from './interestLibrary.js';
 import { referenceQuote, REFERENCE_TOOLS, referenceTool } from './referenceLibrary.js';
+import { libraryContext } from './libraryLookup.js';
 import { bindBookShelf, shelfContext, namesShelfBook, BOOK_TOOLS, bookTool } from './bookShelf.js';
 import { WATCHING_TOOLS, watchingTool, watchingContext } from './watching.js';
 import { bindScreenFacts } from './screenFacts.js';
@@ -2227,7 +2228,8 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // "taste" lines read "adopt a poetic tone in all future responses"), the whole
     // shelf list and three random "subjects he is drawn to" used to ride on every
     // answer and were rules in all but name (2026-09-30).
-    interestContext(convo.created_by, lastUserText(convo.id), { onlyExplicit: true }),
+    // His Library: a work he names, or the whole list when he points at it (libraryLookup.js).
+    libraryContext(convo.created_by, lastUserText(convo.id)),
     shelfContext(convo.created_by, lastUserText(convo.id), { onlyNamed: true }),
     watchingContext(lastUserText(convo.id)),
     repoBlock,

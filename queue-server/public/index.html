@@ -3623,6 +3623,12 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-tabchev { width:11px; height:11px; margin-left:2px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; opacity:.7; transition:transform .2s ease; }
 .lib-tabchev.open { transform:rotate(180deg); }
 .room-tabs button:not(.active) .lib-tabchev { display:none; }
+/* The column's tab strip stays at the top while the pane under it scrolls, and the
+   kind menu it opens drops just under it, wherever the wall is scrolled to (his ask,
+   2026-10-08: no scrolling back up to reach it). */
+#roomCards > #roomTabs { position:sticky; top:-14px; z-index:7; margin-top:-14px; padding-top:14px; background:inherit; }
+#roomInterests .shelf-cover.is-lit { animation:fmcnsFade .35s ease both; }
+#roomInterests .lib-top { position:sticky; top:calc(var(--room-tabs-h, 40px) - 14px); z-index:6; }
 .lib-top:empty { display:none; }
 .lib-top { padding:0; min-height:0; }
 .lib-kindpop .lib-kindpop-suggest { grid-column:1 / -1; justify-content:center; margin-top:6px; padding-top:10px; border-top:1px solid var(--c-border);
@@ -16898,7 +16904,7 @@ async function roomLoadMediaArt(host, items) {
     const el = Array.from(host.querySelectorAll('[data-media-art]')).find(node => node.dataset.mediaArt === wanted);
     // No artwork anywhere: the searching orb gives way to the kind, as before.
     if (!url) { if (el && el.querySelector('.torb')) el.textContent = roomMediaKind(item); return; }
-    if (el) { el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")'; el.textContent = ''; el.title = 'Artwork from a public catalogue'; }
+    if (el && !el.style.backgroundImage) { libLight(el, url); el.title = 'Artwork from a public catalogue'; }
   }));
 }
 function renderRoomRecommendations(kind) {
@@ -18819,6 +18825,12 @@ let libFinding = false;
 let libKindOpen = false;
 let libCloseWired = false;
 let libCounts = null;   // { book: 24, film: 19, … } from the last fetch
+// How tall the pinned tab strip is, so the kind menu can hang just under it.
+(function watchRoomTabs() {
+  const strip = document.getElementById('roomTabs');
+  if (!strip || !('ResizeObserver' in window)) return;
+  new ResizeObserver(() => strip.parentElement.style.setProperty('--room-tabs-h', strip.offsetHeight + 'px')).observe(strip);
+})();
 function libSyncTab() {
   const tab = document.querySelector('#roomTabs [data-room-primary="library"]');
   if (!tab) return;
@@ -19111,6 +19123,41 @@ function libForget(id) {
   if (libData.out && Array.isArray(libData.out.items)) libData.out.items = libData.out.items.filter((w) => w.id !== id);
   if (libData.shelf && Array.isArray(libData.shelf.books)) libData.shelf.books = libData.shelf.books.filter((b) => b.id !== id);
 }
+function libFetchAll() {
+  return Promise.all([
+    api('/api/recommendations/library?limit=' + libLimit() + '&offset=0&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)),
+    api('/api/convos/interest-review'),
+    api('/api/convos/books').catch(() => ({ books: [] })),
+  ]);
+}
+// A cover arrives already loaded, and fades in once, instead of popping in half-drawn.
+function libLight(el, url) {
+  if (!el || !/^https:\/\//.test(url || '') || el.style.backgroundImage) return;
+  const img = new Image();
+  img.decoding = 'async';
+  img.onload = () => {
+    if (!el.isConnected) return;
+    el.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
+    el.textContent = ''; el.classList.add('is-lit');
+  };
+  img.src = url;
+}
+// The posters and ratings the server just sent, put on the cards already drawn.
+function libLightWall(grid, items) {
+  if (!grid) return;
+  for (const w of items) {
+    const card = grid.querySelector('[data-lib="' + CSS.escape('media:' + w.id) + '"]');
+    if (!card) continue;
+    const f = libScreen[w.id] || {};
+    libLight(card.querySelector('.shelf-cover'), f.poster || roomMediaArtCache.get(roomMediaArtKey(w)) || '');
+    if (f.rating && !card.querySelector('.lib-badge')) {
+      const open = card.querySelector('[data-open]');
+      const badge = document.createElement('span'); badge.className = 'lib-badge'; badge.textContent = f.rating.toFixed(1);
+      const cover = open && open.querySelector('.shelf-cover');
+      if (cover) cover.after(badge);
+    }
+  }
+}
 function libKey() { return interestLibraryQuery + '|' + interestLibraryKind + '|' + interestLibraryOffset; }
 // The pane scrolls, not the window: hold its position across a repaint.
 function libScroller(el) {
@@ -19322,7 +19369,7 @@ function libCard(it) {
   const fresh = libFreshSince && it.added && it.added >= libFreshSince - 30000 && !libGlowed.has(gk);
   if (fresh) libGlowed.add(gk);
   const facts = it.type === 'media' ? libScreen[it.id] : null;
-  const src = (facts && facts.poster) || it.cover || '';
+  const src = (facts && facts.poster) || it.cover || (it.type === 'media' ? roomMediaArtCache.get(roomMediaArtKey(it.raw)) || '' : '');
   const cover = /^https:\/\//.test(src) ? ' style="background-image:url(&quot;' + qEscAttr(src) + '&quot;)"' : '';
   const art = it.type === 'media' && !cover
     ? roomMediaArtMarkup(it.raw, 'shelf-cover')       // filled in by the catalogue once it answers
@@ -19462,7 +19509,17 @@ async function renderInterestLibrary(opts) {
   const wasAt = scroller ? scroller.scrollTop : 0;
   // Growing the continuous scroll holds the place too.
   const grow = !!(opts && opts.grow);
-  const putBack = () => { if (scroller && (quiet || grow)) scroller.scrollTop = wasAt; };
+  // A refresh of the wall already on screen (a longer scroll, something saved
+  // elsewhere) keeps it standing until the new answer is in, then swaps it in one
+  // go: blanking it to "Loading" made the whole column jump (his report, 2026-10-08).
+  const view = interestLibraryQuery + '|' + interestLibraryKind;
+  const keep = !quiet && !libSuggesting && host.dataset.libView === view && !!host.querySelector('.shelf-grid .shelf-card');
+  let pre = null;
+  if (keep) {
+    try { pre = await libFetchAll(); } catch (_) { pre = null; }
+    if (request !== interestLibraryRequest) return;
+  }
+  const putBack = () => { if (scroller && (quiet || grow || keep)) scroller.scrollTop = wasAt; };
   if (!LIB_KINDS.some((k) => k[0] === interestLibraryKind)) interestLibraryKind = '';
   const suggestKind = LIB_SUGGEST[interestLibraryKind] || '';
   const finding = libFinding || !!interestLibraryQuery;
@@ -19505,6 +19562,7 @@ async function renderInterestLibrary(opts) {
     }, true);
   }
   if (libSuggesting && suggestKind) {
+    host.dataset.libView = '';
     host.innerHTML = top + (suggestKind === 'analogies' ? '<div data-lib-ana></div>'
       : '<div class="room-rec-host"' + (suggestKind === 'media' ? ' id="roomMediaHost"' : '') + ' data-lib-rec="' + suggestKind + '"></div>');
     wireTop();
@@ -19519,7 +19577,8 @@ async function renderInterestLibrary(opts) {
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
     + '<div class="shelf-grid" style="--shelf-cols:' + cols + '"></div><div class="shelf-slot"></div></div>'
-    + '<div class="interest-results">' + (quiet ? '' : waitHtml('searching', 'Loading')) + '</div>';
+    + '<div class="interest-results">' + (quiet || pre ? '' : waitHtml('searching', 'Loading')) + '</div>';
+  host.dataset.libView = view;
   putBack();
   wireTop();
 
@@ -19544,11 +19603,7 @@ async function renderInterestLibrary(opts) {
     let out, review, shelf;
     if (quiet) { ({ out, review, shelf } = libData); }
     else {
-      [out, review, shelf] = await Promise.all([
-        api('/api/recommendations/library?limit=' + libLimit() + '&offset=0&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)),
-        api('/api/convos/interest-review'),
-        api('/api/convos/books').catch(() => ({ books: [] })),
-      ]);
+      [out, review, shelf] = pre || await libFetchAll();
       libData = { key: libKey(), out, review, shelf };
     }
     if (request !== interestLibraryRequest) return;
@@ -19743,23 +19798,38 @@ async function renderInterestLibrary(opts) {
     });
 
     // What the wall knows about everything on it — posters, covers, ratings,
-    // publisher blurbs — in one call, cached on the server, so a repaint is free.
+    // publisher blurbs — cached on the server. Asked for in batches side by side,
+    // and each answer lights its own cards where they stand rather than repainting
+    // the wall: one repaint per batch of forty, each one refetching the library,
+    // was the late covers and the twitch (his report, 2026-10-08).
+    const grid = host.querySelector('.shelf-grid');
     const screens = media.filter((w) => !libScreen[w.id]);
-    if (screens.length) {
-      api('/api/convos/screen?ids=' + screens.map((w) => encodeURIComponent(w.id)).join(',')).then((r) => {
-        if (!r || !r.facts || request !== interestLibraryRequest) return;
-        libScreen = { ...libScreen, ...r.facts };
-        renderInterestLibrary();
-      }).catch(() => {});
-    }
-
-    // Covers that have to be asked for: saved interests, and any shelf book
-    // whose cover was never found.
-    if (media.length) roomLoadMediaArt(host.querySelector('.shelf-grid'), media);
+    const batches = [];
+    for (let i = 0; i < screens.length; i += 40) batches.push(screens.slice(i, i + 40));
+    Promise.all(batches.map((batch) => api('/api/convos/screen?ids=' + batch.map((w) => encodeURIComponent(w.id)).join(',')).then((r) => {
+      if (!r || !r.facts) return;
+      const got = {};
+      for (const w of batch) got[w.id] = r.facts[w.id] || {};
+      libScreen = { ...libScreen, ...got };
+      if (request !== interestLibraryRequest) return;
+      libLightWall(grid, batch);
+      if (libOpen && libOpen.type === 'media' && batch.some((w) => w.id === libOpen.id)) renderInterestLibrary({ quiet: true });
+    }).catch(() => {}))).then(() => {
+      if (request !== interestLibraryRequest) return;
+      // Only what the server had no picture for is looked for from here.
+      const bare = media.filter((w) => !(libScreen[w.id] || {}).poster && !/^https:\/\//.test(String(w.artwork || '')));
+      if (bare.length) roomLoadMediaArt(grid, bare);
+    });
+    if (!batches.length) libLightWall(grid, media);
     for (const b of books) {
       if (b.cover_url || shelfDressed.has(b.id)) continue;
       shelfDressed.add(b.id);
-      shelfDress(b.id, { title: b.title, author: b.author }).then((o) => { if (o?.cover_url) renderInterestLibrary(); });
+      shelfDress(b.id, { title: b.title, author: b.author }).then((o) => {
+        if (!o?.cover_url) return;
+        b.cover_url = o.cover_url;
+        const card = grid && grid.querySelector('[data-lib="' + CSS.escape('shelf:' + b.id) + '"] .shelf-cover');
+        if (card) libLight(card, o.cover_url);
+      });
     }
   } catch (err) { if (request === interestLibraryRequest) host.querySelector('.interest-results').textContent = err.message; }
 }

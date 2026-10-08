@@ -18,6 +18,7 @@ import { wholeSentences, looksCut, PROSE_TOKENS, NOTE_WORDS, tooShort, writeAbou
 import { imdbRatings } from './imdbRatings.js';
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
+import { eachLimited } from './bookFacts.js';
 
 let db = null;
 export function bindScreenFacts(database) {
@@ -228,17 +229,30 @@ function shape(owner, row, asked) {
 // outbound requests at once.
 const FETCH_CAP = 10;
 const SCREEN_MATCHER = 2;
+// A title no catalogue knew (or IMDb has not rated) is asked about again only
+// after six hours, not on every visit to the Library (2026-10-08).
+const screenMissedAt = new Map();
+const SCREEN_RETRY_MS = 6 * 3600000;
+
+// What is already known about a film or series, without asking any catalogue.
+export function cachedScreenFacts(owner, kind, title, year) {
+  if (!db) return null;
+  const k = kind === 'series' ? 'series' : 'film';
+  return shape(owner, rowOf(k, title, year), { title, kind: k, year });
+}
 export async function screenFactsFor(owner, items = []) {
   if (!db) return {};
   const out = {};
   let fetched = 0;
-  for (const it of items) {
-    if (!it || !it.title) continue;
+  await eachLimited(items, 4, async (it) => {
+    if (!it || !it.title) return;
     const kind = it.kind === 'series' ? 'series' : 'film';
     let row = rowOf(kind, it.title, it.year);
+    const key = keyOf(kind, it.title, it.year);
+    const recentMiss = Date.now() - (screenMissedAt.get(key) || 0) < SCREEN_RETRY_MS;
     // A row cached before IMDb was wired in has no tconst: fetch it once more so
     // the number becomes the real one.
-    if ((!row || (!row.imdb_id && row.rating_from !== 'imdb') || row.extra == null || Number(row.matcher || 0) < SCREEN_MATCHER) && fetched < FETCH_CAP) {
+    if ((!row || (!row.imdb_id && row.rating_from !== 'imdb') || row.extra == null || Number(row.matcher || 0) < SCREEN_MATCHER) && !recentMiss && fetched < FETCH_CAP) {
       fetched += 1;
       const facts = await fetchFacts(kind, it.title, it.year);
       if (facts) {
@@ -250,7 +264,8 @@ export async function screenFactsFor(owner, items = []) {
           .run(keyOf(kind, it.title, it.year), kind, it.title, String(facts.year || it.year || ''), facts.tmdb_id, facts.imdb_id,
             facts.rating_from, facts.poster, facts.rating, facts.votes, facts.overview, facts.from_book, facts.extra, SCREEN_MATCHER);
         row = rowOf(kind, it.title, it.year);
-      }
+        if (!facts.imdb_id) screenMissedAt.set(key, Date.now());
+      } else screenMissedAt.set(key, Date.now());
     }
     if (row && row.imdb_id && !row.book_checked && fetched < FETCH_CAP) {
       fetched += 1;
@@ -261,8 +276,9 @@ export async function screenFactsFor(owner, items = []) {
         row = rowOf(kind, it.title, it.year);
       }
     }
-    if (row && row.rating_from !== 'imdb' && row.imdb_id) {
+    if (row && row.rating_from !== 'imdb' && row.imdb_id && !recentMiss) {
       const real = (await imdbRatings([row.imdb_id]))[row.imdb_id];
+      if (!real?.rating) screenMissedAt.set(key, Date.now());
       if (real?.rating) {
         db.prepare("UPDATE screen_facts SET rating=?, votes=?, rating_from='imdb' WHERE key=?")
           .run(real.rating, real.votes, keyOf(kind, it.title, it.year));
@@ -271,7 +287,7 @@ export async function screenFactsFor(owner, items = []) {
     }
     const shaped = shape(owner, row, { ...it, kind });
     if (shaped) out[it.id] = shaped;
-  }
+  });
   return out;
 }
 

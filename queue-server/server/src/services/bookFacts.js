@@ -513,21 +513,36 @@ function ageHours(stamp) {
   const t = Date.parse(String(stamp || '').replace(' ', 'T') + (String(stamp || '').endsWith('Z') ? '' : 'Z'));
   return Number.isNaN(t) ? Infinity : (Date.now() - t) / 3600000;
 }
+// A book no catalogue knew is asked about again only after COVER_RETRY_HOURS:
+// it used to be looked up afresh on every visit to the Library, eight in a row,
+// which held the whole wall's covers back by twenty seconds (2026-10-08).
+const missedAt = new Map();
+// A few at a time rather than one after another.
+export async function eachLimited(items, n, fn) {
+  let at = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (at < items.length) { const i = at++; await fn(items[i], i); }
+  }));
+}
 export async function bookFactsFor(owner, items = []) {
   if (!db) return {};
   const out = {};
   let fetched = 0;
-  for (const it of items) {
-    if (!it || !it.title) continue;
+  await eachLimited(items, 4, async (it) => {
+    if (!it || !it.title) return;
+    const key = keyOf(it.title, it.creator);
     let row = rowOf(it.title, it.creator);
     // A row with neither cover nor blurb — or one an older matcher answered — is
     // worth one more try later, not on every call.
     // A row with a blurb but no cover is stale too, every few hours: the cover is
     // what shows, and a catalogue that timed out once (Open Library slow, Google's
     // anonymous quota spent) left "Shattered Bonds" blank for good (2026-09-25).
-    const stale = !row || (!row.cover && !row.blurb) || Number(row.found_by || 0) < MATCHER
-      || String(row.pages || '') === ''
-      || (!row.cover && ageHours(row.fetched_at) >= COVER_RETRY_HOURS);
+    const recentMiss = Date.now() - (missedAt.get(key) || 0) < COVER_RETRY_HOURS * 3600000;
+    const stale = (!row && !recentMiss)
+      || (row && !row.cover && !row.blurb && ageHours(row.fetched_at) >= COVER_RETRY_HOURS)
+      || (row && Number(row.found_by || 0) < MATCHER)
+      || (row && String(row.pages || '') === '')
+      || (row && !row.cover && ageHours(row.fetched_at) >= COVER_RETRY_HOURS);
     if (stale && fetched < FETCH_CAP) {
       fetched += 1;
       const facts = await lookupBook(it.title, it.creator);
@@ -537,20 +552,28 @@ export async function bookFactsFor(owner, items = []) {
       if (facts.cover || facts.blurb || facts.year || rematch) {
         save(it.title, it.creator, facts);
         // save() keeps an old cover when the new answer has none; a re-match must not.
-        if (rematch) { try { db.prepare("UPDATE book_facts SET cover=?, isbn=?, goodreads='' WHERE key=?").run(facts.cover || '', facts.isbn || '', keyOf(it.title, it.creator)); } catch (err) { /* next time */ } }
+        if (rematch) { try { db.prepare("UPDATE book_facts SET cover=?, isbn=?, goodreads='' WHERE key=?").run(facts.cover || '', facts.isbn || '', key); } catch (err) { /* next time */ } }
         row = rowOf(it.title, it.creator);
       }
-      else if (row) { try { db.prepare('UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP WHERE key=?').run(keyOf(it.title, it.creator)); } catch (err) { /* next time */ } }
+      else if (row) { try { db.prepare('UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP WHERE key=?').run(key); } catch (err) { /* next time */ } }
+      else missedAt.set(key, Date.now());
     }
     // The Goodreads page, once per book, checked against the title (see goodreadsFor).
     if (row && row.isbn && !row.goodreads) {
       const g = await goodreadsFor(row.isbn, it.title);
-      try { db.prepare('UPDATE book_facts SET goodreads=? WHERE key=?').run(g || '-', keyOf(it.title, it.creator)); } catch (err) { /* next time */ }
+      try { db.prepare('UPDATE book_facts SET goodreads=? WHERE key=?').run(g || '-', key); } catch (err) { /* next time */ }
       row = { ...row, goodreads: g || '-' };
     }
     out[it.id] = shape(row, it);
-  }
+  });
   return out;
+}
+
+// What is already known about a book, without asking any catalogue.
+export function cachedBookFacts(title, creator) {
+  if (!db) return null;
+  const row = rowOf(title, creator);
+  return row ? shape(row, { title, creator }) : null;
 }
 
 export async function bookRelevance(owner, item, { refresh = false } = {}) {
