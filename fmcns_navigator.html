@@ -3634,14 +3634,16 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-tabs .room-split { flex:none; margin-left:auto; width:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; opacity:.55; }
 .room-tabs .room-split svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.3; }
 .room-tabs .room-split:hover, .room-tabs .room-split[aria-pressed="true"] { opacity:1; color:var(--c-accent); }
-.room-split-grip { display:none; }
-#roomCards.split-layout > #roomTabs { order:0; }
-#roomCards.split-layout > #roomSide.is-active { order:1; flex:1 1 0; min-height:120px; }
-#roomCards.split-layout > .room-split-grip { order:2; display:block; flex:none; height:9px; margin:2px 0; cursor:row-resize; position:relative; }
-#roomCards.split-layout > .room-split-grip::after { content:''; position:absolute; left:40%; right:40%; top:3px; height:3px; border-radius:3px; background:var(--c-border); }
-#roomCards.split-layout > .room-split-grip:hover::after { background:var(--c-accent); }
-#roomCards.split-layout > #roomInterests.is-active { order:3; flex:0 0 var(--lib-split-h, 45%); min-height:120px; overflow-y:auto; overflow-x:hidden; border-top:1px solid var(--c-border); padding-top:6px; }
-#roomCards.split-layout #roomInterests .lib-top { top:-6px; }
+#wsRoom.has-shelf { padding-bottom:var(--room-shelf-h, 104px); }
+.room-shelfbar { position:absolute; left:0; right:0; bottom:0; height:var(--room-shelf-h, 104px); display:flex; align-items:center; gap:10px; padding:10px 14px; box-sizing:border-box; border-top:1px solid var(--c-border); background:color-mix(in srgb, var(--c-bg) 90%, var(--c-ink)); z-index:5; }
+.room-shelfbar[hidden] { display:none; }
+.rsb-find { flex:none; width:110px; padding:5px 8px; font:inherit; font-size:12px; color:var(--c-ink); background:var(--c-surface, transparent); border:1px solid var(--c-border); border-radius:8px; align-self:center; }
+.rsb-row { flex:1; min-width:0; height:100%; display:flex; gap:8px; align-items:flex-end; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; }
+.rsb-card { flex:none; width:56px; height:82px; border-radius:4px; cursor:grab; background:var(--c-surface-2, #2f3847) center/cover no-repeat; box-shadow:0 2px 6px rgba(0,0,0,.35); transition:transform .15s ease; display:flex; align-items:flex-end; overflow:hidden; }
+.rsb-card:hover { transform:translateY(-4px); }
+.rsb-card.is-lit { animation:fmcnsFade .35s ease both; }
+.rsb-card > i { font-style:normal; font-size:9px; line-height:1.15; padding:4px; color:var(--c-ink-3, #afb0b0); }
+.rsb-card[style*="background-image"] > i { display:none; }
 #roomInterests .shelf-cover.is-lit { animation:fmcnsFade .35s ease both; }
 #roomInterests .lib-top { position:sticky; top:calc(var(--room-tabs-h, 40px) - 14px); z-index:6; }
 .lib-top:empty { display:none; }
@@ -6122,7 +6124,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-tabs" id="roomTabs" role="tablist">
           <button type="button" data-room-primary="library" role="tab">Library</button>
           <button type="button" data-room-primary="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
-          <button type="button" class="room-split" data-room-split title="Library and side talk together" aria-label="Library and side talk together" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M2.5 8h11"/></svg></button>
+          <button type="button" class="room-split" data-room-split title="Library shelf along the bottom" aria-label="Library shelf along the bottom" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M2.5 10.5h11M5 12v-1M7.5 12v-1M10 12v-1"/></svg></button>
           <button type="button" data-room-pane="attached" role="tab">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
@@ -6145,7 +6147,6 @@ button:active { transform: translateY(1px) scale(.99); }
           <div id="roomCardList"></div>
           <div id="roomCardsNote" class="room-note"></div>
         </div>
-        <div class="room-split-grip" id="roomSplitGrip" title="Drag to share the height"></div>
         <div class="room-pane" id="roomInterests"></div>
         <div class="room-pane room-mind" id="roomMind">
           <div class="room-remember">
@@ -6171,6 +6172,10 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-pane room-ideas" id="roomSide">
           <div id="roomSideHost"></div>
         </div>
+      </div>
+      <div class="room-shelfbar" id="roomShelfBar" hidden>
+        <input class="rsb-find" id="roomShelfFind" type="search" placeholder="Find" aria-label="Find in the Library" autocomplete="off">
+        <div class="rsb-row" id="roomShelfRow"></div>
       </div>
     </div>
   </div>
@@ -15476,17 +15481,18 @@ function initRoom() {
   if (strip) {
     let pane = 'attached';
     try { const saved = localStorage.getItem(ROOM_PANE_KEY); if (saved && ROOM_PANES[saved]) pane = ['papers', 'apps', 'analogies'].includes(saved) ? 'interests' : saved; } catch (e) {}
-    // The Library and a side talk can share the column, one above the other, so a
-    // card can be dragged into the side talk's box (his ask, 2026-10-08).
+    // The Library as a shelf of covers along the bottom of the Room, under the chat
+    // and the side talks alike, so any cover can be dragged into either (his pick B,
+    // 2026-10-08). The Library tab is unchanged.
     let split = false;
-    try { split = localStorage.getItem('fmcns_room_split') === '1'; } catch (e) {}
-    const together = () => split && (pane === 'side' || pane === 'interests');
+    try { split = localStorage.getItem('fmcns_room_shelf') === '1'; } catch (e) {}
+    const together = () => false;
     const apply = () => {
-      const both = together();
-      document.getElementById('roomCards').classList.toggle('side-layout', pane === 'side' || both);
-      document.getElementById('roomCards').classList.toggle('split-layout', both);
+      const both = false;
+      document.getElementById('roomCards').classList.toggle('side-layout', pane === 'side');
       const sb = strip.querySelector('[data-room-split]');
       if (sb) sb.setAttribute('aria-pressed', String(split));
+      roomShelfShow(split);
       applyRoomCardsWidth();
       Object.entries(ROOM_PANES).forEach(([k, id]) => {
         const el = document.getElementById(id);
@@ -15521,8 +15527,7 @@ function initRoom() {
     strip.onclick = (ev) => {
       if (ev.target.closest('[data-room-split]')) {
         split = !split;
-        try { localStorage.setItem('fmcns_room_split', split ? '1' : '0'); } catch (e) {}
-        if (split && pane !== 'side' && pane !== 'interests') { pane = 'side'; try { localStorage.setItem(ROOM_PANE_KEY, pane); } catch (e) {} }
+        try { localStorage.setItem('fmcns_room_shelf', split ? '1' : '0'); } catch (e) {}
         apply();
         return;
       }
@@ -15566,22 +15571,6 @@ function initRoom() {
       const menu = strip.querySelector('#roomSecondaryTabs');
       if (menu && !menu.hidden && !strip.contains(ev.target)) { menu.hidden = true; apply(); }
     }, true);
-    // The line between the two is dragged to share the height, and remembered.
-    const grip = document.getElementById('roomSplitGrip');
-    const cardsEl = document.getElementById('roomCards');
-    const setSplitH = (pct) => cardsEl.style.setProperty('--lib-split-h', Math.max(15, Math.min(85, pct)) + '%');
-    try { const h = Number(localStorage.getItem('fmcns_room_split_h')); if (h) setSplitH(h); } catch (e) {}
-    if (grip) grip.onpointerdown = (ev) => {
-      ev.preventDefault();
-      const box = cardsEl.getBoundingClientRect();
-      let pct = 45;
-      const move = (e) => { pct = 100 * (box.bottom - e.clientY) / box.height; setSplitH(pct); };
-      const up = () => {
-        window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
-        try { localStorage.setItem('fmcns_room_split_h', String(Math.round(Math.max(15, Math.min(85, pct))))); } catch (e) {}
-      };
-      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
-    };
     apply();
   }
   const passHost = document.getElementById('roomPassagesHost');
@@ -19438,10 +19427,10 @@ function libDragText(it) {
     + (it.creator || year ? ' (' + [it.creator, year].filter(Boolean).join(', ') + ')' : '');
 }
 document.addEventListener('dragstart', (ev) => {
-  const card = ev.target && ev.target.closest && ev.target.closest('.shelf-card[data-drag]');
+  const card = ev.target && ev.target.closest && ev.target.closest('.shelf-card[data-drag], .rsb-card[data-drag]');
   if (!card || !ev.dataTransfer) return;
   const [type, id] = String(card.dataset.lib || '').split(/:(.+)/);
-  const el = card.querySelector('.shelf-cover');
+  const el = card.querySelector('.shelf-cover') || card;
   const cover = card.dataset.dragCover || ((el && el.style.backgroundImage.match(/url\("?(https:[^")]+)/)) || [])[1] || '';
   ev.dataTransfer.setData('application/x-qne-work', JSON.stringify({ type, id, cover, label: card.dataset.drag }));
   ev.dataTransfer.setData('text/plain', card.dataset.drag);
@@ -19452,7 +19441,7 @@ document.addEventListener('dragstart', (ev) => {
 const libIsWorkDrag = (ev) => Array.from((ev.dataTransfer && ev.dataTransfer.types) || []).includes('application/x-qne-work');
 function libDropHost(ev) {
   const t = ev.target && ev.target.closest ? ev.target : null;
-  if (!t || t.closest('#roomInterests')) return null;
+  if (!t || t.closest('#roomInterests, #roomShelfBar')) return null;
   if (t.closest('#roomSide')) return document.getElementById('roomSideEmbed');
   if (t.closest('#roomConvo')) return document.getElementById('roomConvo');
   return null;
@@ -19477,6 +19466,61 @@ function libDropHost(ev) {
   }, true);
   document.addEventListener('dragend', () => light(null), true);
 })();
+let roomShelfReq = 0, roomShelfTimer = 0;
+function roomShelfShow(on) {
+  const bar = document.getElementById('roomShelfBar'), ws = document.getElementById('wsRoom');
+  if (!bar || !ws) return;
+  bar.hidden = !on; ws.classList.toggle('has-shelf', !!on);
+  if (!on) return;
+  const find = document.getElementById('roomShelfFind');
+  if (find && !find.dataset.wired) {
+    find.dataset.wired = '1';
+    find.oninput = () => { clearTimeout(roomShelfTimer); roomShelfTimer = setTimeout(roomShelfFill, 300); };
+  }
+  if (!bar.dataset.filled) roomShelfFill();
+}
+async function roomShelfFill() {
+  const row = document.getElementById('roomShelfRow'), bar = document.getElementById('roomShelfBar');
+  if (!row) return;
+  const req = ++roomShelfReq;
+  const q = (document.getElementById('roomShelfFind') || {}).value || '';
+  let out, shelf;
+  try {
+    [out, shelf] = await Promise.all([
+      api('/api/recommendations/library?limit=2000&offset=0&query=' + encodeURIComponent(q)),
+      api('/api/convos/books').catch(() => ({ books: [] })),
+    ]);
+  } catch (_) { return; }
+  if (req !== roomShelfReq) return;
+  bar.dataset.filled = '1';
+  const books = (shelf.books || []).filter((b) => !q || (Array.isArray(out.shelfHits) ? out.shelfHits.includes(b.id) : libNorm(b.title).includes(libNorm(q))));
+  const onShelf = new Set(books.map((b) => libWorkKey(b.title)));
+  const items = books.map((b) => ({ type: 'shelf', id: b.id, title: b.title, creator: b.author, cover: b.cover_url || '', raw: b, added: libAddedMs(b.created_at) }))
+    .concat((out.items || []).filter((w) => w.type === 'media' && !(w.kind === 'book' && onShelf.has(libWorkKey(w.title))))
+      .map((w) => ({ type: 'media', id: w.id, title: w.title, creator: w.creator || '', cover: String(w.artwork || ''), raw: w, added: Number(w.added) || 0 })))
+    .sort((a, b) => (b.added || 0) - (a.added || 0));
+  row.innerHTML = items.map((it) => {
+    const src = (it.type === 'media' && libScreen[it.id] && libScreen[it.id].poster) || it.cover || '';
+    return '<div class="rsb-card" draggable="true" data-lib="' + qEscAttr(it.type + ':' + it.id) + '" data-drag="' + qEscAttr(libDragText(it)) + '" title="' + qEscAttr(libShortTitle(it.title)) + '"'
+      + (/^https:\/\//.test(src) ? ' data-drag-cover="' + qEscAttr(src) + '" style="background-image:url(&quot;' + qEscAttr(src) + '&quot;)"' : '') + '><i>' + qEsc(libShortTitle(it.title)) + '</i></div>';
+  }).join('');
+  row.scrollLeft = 0;
+  // Posters the page does not have yet, asked for forty at a time and lit in place.
+  const need = items.filter((it) => it.type === 'media' && !libScreen[it.id] && !/^https:/.test(it.cover));
+  for (let i = 0; i < need.length; i += 40) {
+    const batch = need.slice(i, i + 40);
+    api('/api/convos/screen?ids=' + batch.map((w) => encodeURIComponent(w.id)).join(',')).then((r) => {
+      if (!r || !r.facts) return;
+      for (const w of batch) {
+        libScreen[w.id] = { ...(libScreen[w.id] || {}), ...(r.facts[w.id] || {}) };
+        const p = libScreen[w.id].poster;
+        if (req !== roomShelfReq || !/^https:\/\//.test(p || '')) continue;
+        const el = row.querySelector('[data-lib="media:' + (window.CSS && CSS.escape ? CSS.escape(w.id) : w.id) + '"]');
+        if (el && !el.style.backgroundImage) { el.dataset.dragCover = p; libLight(el, p); }
+      }
+    }).catch(() => {});
+  }
+}
 function libCard(it) {
   const open = libOpen && libOpen.type === it.type && libOpen.id === it.id;
   // Something that just came in from a drop arrives with a glow, once.

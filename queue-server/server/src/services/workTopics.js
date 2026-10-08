@@ -69,7 +69,7 @@ async function tagBatch(works) {
   const text = String(out?.text || '');
   const json = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
   let parsed = null;
-  try { parsed = JSON.parse(json); } catch { return 0; }
+  try { parsed = JSON.parse(json); } catch { console.warn('[topics] unreadable answer:', out?.error || out?.message || text.slice(0, 200) || 'empty'); return 0; }
   let n = 0;
   for (const r of Array.isArray(parsed?.works) ? parsed.works : []) {
     const w = works[Number(r.n) - 1];
@@ -88,6 +88,7 @@ export async function tagAll() {
     const todo = untagged();
     for (let i = 0, b = 0; i < todo.length && b < BATCHES_PER_RUN; i += BATCH, b += 1) {
       const n = await tagBatch(todo.slice(i, i + BATCH)).catch((err) => { console.warn('[topics] batch failed:', err.message); return 0; });
+      console.log('[topics] tagged', n, 'of', Math.min(BATCH, todo.length - i), '—', todo.length - i - n, 'left');
       if (!n) break;
     }
   } finally { running = false; }
