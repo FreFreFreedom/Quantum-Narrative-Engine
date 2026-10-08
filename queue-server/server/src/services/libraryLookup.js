@@ -12,9 +12,11 @@ import { listInterests } from './interestLibrary.js';
 import { listBooks } from './bookShelf.js';
 import { cachedBookFacts } from './bookFacts.js';
 import { cachedScreenFacts } from './screenFacts.js';
+import { topicsFor } from './workTopics.js';
 
 const POINTED = /\b(?:library|librar(?:y|ies)|biblioth[eè]que|shelf|[eé]tag[eè]re|saved|my (?:books?|films?|movies?|series|shows?|list)|mes (?:livres|films|s[eé]ries)|ma liste)\b/i;
-const LIST_CAP = 24000;
+const LIST_CAP = 40000;
+const LIKELY_CAP = 30;
 const NAMED_CAP = 8;
 
 const plain = (t) => String(t || '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
@@ -46,15 +48,33 @@ function allWorks(owner) {
   return works;
 }
 
-function line(w) {
-  return `${w.kind} · ${w.title}${w.creator ? ` — ${w.creator}` : ''}${w.year ? ` (${w.year})` : ''}${w.episode ? ` · episode ${w.episode}` : ''}${w.whole ? ' · whole text on the shelf' : ''}`;
+function line(w, withTopics = false) {
+  const topics = withTopics ? topicsFor(w.kind, w.title, w.creator) : '';
+  return `${w.kind} · ${w.title}${w.creator ? ` — ${w.creator}` : ''}${w.year ? ` (${w.year})` : ''}${w.episode ? ` · episode ${w.episode}` : ''}${w.whole ? ' · whole text on the shelf' : ''}${topics && topics !== 'not a work' ? ` [${topics}]` : ''}`;
+}
+
+// Which works his message is closest to, by what they are about — their topic
+// words and what the catalogue says — not only by their titles (his ask,
+// 2026-10-08: "find the right ones", from a message about Palantir, war, prison
+// and the lineage of the protector). Every word of four letters or more counts,
+// stemmed, and a word met in a work's topics or title counts double.
+const STOP = new Set('that this with what have been they them their there these those your yours like know about from were would could should which while where when also just really very into than then more most much some such only even same other because cause seems thing things people want need make made does doing being here what'.split(' '));
+const stem = (w) => { const t = w.replace(/(ically|ical|ics|ic|ies|es|s|ing|ed|al|ly)$/, ''); return t.length >= 4 ? t : w; };
+function wordsOf(text) { return [...new Set(plain(text).split(' ').filter((w) => w.length >= 4 && !STOP.has(w)).map(stem))]; }
+function score(owner, w, words) {
+  const key = plain([w.title, w.creator, topicsFor(w.kind, w.title, w.creator)].join(' '));
+  let about = '';
+  try { const f = w.kind === 'book' ? cachedBookFacts(w.title, w.creator) : cachedScreenFacts(owner, w.kind, w.title, w.year); about = plain(f?.overview || ''); } catch {}
+  let n = 0;
+  for (const x of words) { if (key.includes(x)) n += 2; else if (about.includes(x)) n += 1; }
+  return n;
 }
 
 function described(owner, w) {
   const f = (w.kind === 'book' ? cachedBookFacts(w.title, w.creator) : cachedScreenFacts(owner, w.kind, w.title, w.year)) || {};
   return [
-    line(w),
-    f.overview ? `What it is: ${String(f.overview).slice(0, 900)}` : '',
+    line(w, true),
+    f.overview ? `What it is: ${String(f.overview).slice(0, 600)}` : '',
     f.rating ? `Rated ${Number(f.rating).toFixed(1)}/10 by ${f.votes || 'some'} people${f.ratingFrom === 'imdb' ? ' on IMDb' : ''}.` : '',
     f.book?.title ? `Made from the book "${f.book.title}"${f.book.author ? ` by ${f.book.author}` : ''}.` : '',
     f.relevance ? `Why it is in his library (written earlier): ${String(f.relevance).slice(0, 700)}` : '',
@@ -84,14 +104,19 @@ export function libraryContext(owner, text) {
   if (named.length) parts.push('\nTHE ONES HE NAMES:\n' + named.map((w) => described(owner, w)).join('\n\n'));
   if (pointed) {
     const wantKind = /\b(books?|livres?)\b/i.test(text) ? 'book' : /\b(films?|movies?)\b/i.test(text) ? 'film' : /\b(series|s[eé]ries|shows?)\b/i.test(text) ? 'series' : '';
-    const pool = wantKind ? works.filter((w) => w.kind === wantKind) : works;
+    const pool = (wantKind ? works.filter((w) => w.kind === wantKind) : works).filter((w) => topicsFor(w.kind, w.title, w.creator) !== 'not a work');
+    const words = wordsOf(text);
+    const likely = words.length ? pool.map((w) => ({ w, n: score(owner, w, words) })).filter((x) => x.n >= 2)
+      .sort((a, b) => b.n - a.n).slice(0, LIKELY_CAP).map((x) => x.w) : [];
+    if (likely.length) parts.push('\nCLOSEST TO WHAT HE IS SAYING, by what each work is about (a first sift by shared words, not a judgment — judge each against his actual thought, and look through the whole list below too, since a work can fit without sharing a word):\n'
+      + likely.map((w) => described(owner, w)).join('\n\n'));
     let list = '', n = 0;
     for (const w of pool) {
-      const l = line(w) + '\n';
+      const l = line(w, true) + '\n';
       if (list.length + l.length > LIST_CAP) break;
       list += l; n += 1;
     }
-    parts.push(`\nEVERYTHING IN IT${wantKind ? ` (${wantKind === 'series' ? 'series' : wantKind + 's'})` : ''}, newest first${n < pool.length ? ` — the newest ${n} of ${pool.length}` : ''}:\n${list.trim()}`);
+    parts.push(`\nEVERYTHING IN IT${wantKind ? ` (${wantKind === 'series' ? 'series' : wantKind + 's'})` : ''}, newest first, each with its topic words${n < pool.length ? ` — the newest ${n} of ${pool.length}` : ''}:\n${list.trim()}`);
   }
   return parts.join('\n');
 }
