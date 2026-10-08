@@ -19730,7 +19730,7 @@ async function renderInterestLibrary(opts) {
     // One wall. A saved interest that is also a book on the shelf appears once,
     // as the shelf copy — the same thing, not two.
     const books = (interestLibraryKind && interestLibraryKind !== 'book') ? [] : (shelf.books || []).filter((b) =>
-      (!interestLibraryQuery || libNorm(interestLibraryQuery).split(' ').every((w) => libNorm(b.title + ' ' + (b.author || '')).includes(w)))
+      (!interestLibraryQuery || (Array.isArray(out.shelfHits) ? out.shelfHits.includes(b.id) : libNorm(interestLibraryQuery).split(' ').every((w) => libNorm(b.title + ' ' + (b.author || '')).includes(w))))
       && libInYears(b.year));
     // With or without its subtitle: "Golden Gulag" on the shelf and "Golden Gulag:
     // Prisons, Surplus…" saved as an interest are one book.

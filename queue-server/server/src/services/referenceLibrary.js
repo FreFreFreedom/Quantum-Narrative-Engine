@@ -2,12 +2,15 @@ import { randomUUID } from 'node:crypto';
 import { workFingerprint, sameEntry } from './sameWork.js';
 import { cachedBookFacts } from './bookFacts.js';
 import { cachedScreenFacts } from './screenFacts.js';
+import { bindWorkTopics, topicsFor } from './workTopics.js';
+import { listBooks } from './bookShelf.js';
 let db;
 const parse = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
 const fail = (s, status = 400) => { throw Object.assign(new Error(s), { status }); };
 const norm=s=>String(s||'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 export function bindReferenceLibrary(database) {
   db = database;
+  bindWorkTopics(database);
   db.exec(`CREATE TABLE IF NOT EXISTS reference_saves (
     id TEXT PRIMARY KEY, owner TEXT NOT NULL, identity TEXT NOT NULL, source_id TEXT NOT NULL,
     snapshot TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE(owner,identity)
@@ -94,12 +97,15 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40,from=''
   if(words.length||yFrom||yTo) for(const r of media){
     let f=null;
     try{f=r.kind==='book'?cachedBookFacts(r.title,r.creator):cachedScreenFacts(owner,r.kind,r.title,r.year);}catch(e){f=null;}
-    r.text=f?.overview||'';
+    r.text=(f?.overview||'')+' '+topicsFor(r.kind,r.title,r.creator);
     r.yearN=yearOf(r.year)||yearOf(f?.year);
   }
   const inYears=(r)=>{if(!yFrom&&!yTo)return true;if(r.type!=='media'&&!['book','film','series'].includes(r.kind))return false;
     const y=r.yearN||yearOf(r.year);return !!y&&(!yFrom||y>=yFrom)&&(!yTo||y<=yTo);};
-  const hit=(r)=>inYears(r)&&words.every(w=>[r.title,r.creator,r.text,r.sentence].join(' ').toLowerCase().includes(w));
+  // A word finds its relatives too: "geopolitics" finds "geopolitical", "prisons" finds "prison".
+  const stem=(w)=>{const n=norm(w);const t=n.replace(/(ical|ically|ics|ic|ies|es|s|ing|ed|al)$/,'');return t.length>=4?t:n;};
+  const stems=words.map(stem).filter(Boolean);
+  const hit=(r)=>inYears(r)&&(()=>{const hay=norm([r.title,r.creator,r.text,r.sentence].join(' '));return stems.every(w=>hay.includes(w));})();
   // A saved suggestion that is the same work as a Library entry is shown once, as
   // the entry — matched with or without subtitle, author or year (2026-09-28).
   const twinOf=(r)=>{const fp=workFingerprint(r);return !!fp&&media.some(m=>workFingerprint(m)===fp&&sameEntry(m,r));};
@@ -116,7 +122,11 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40,from=''
     counts[r.kind]=(counts[r.kind]||0)+1;
     if(r.kind==='book') bookTitles.push(r.title);
   }
-  return {items:items.slice(start,start+cap).map(({text,yearN,...r})=>({...r,...(yearN&&!yearOf(r.year)?{year:String(yearN)}:{}),excerpt:r.type==='media'?undefined:text?.slice(0,r.kind==='passage'?2000:300)})),total:items.length,counts,bookTitles};
+  // The whole books on the shelf are filtered in the page; with words, the page
+  // takes this list instead, so the topic words reach them too.
+  let shelfHits;
+  if(stems.length){try{shelfHits=listBooks(owner).filter(b=>{const hay=norm([b.title,b.author,cachedBookFacts(b.title,b.author)?.overview,topicsFor('book',b.title,b.author)].join(' '));return stems.every(w=>hay.includes(w));}).map(b=>b.id);}catch(e){shelfHits=undefined;}}
+  return {shelfHits,items:items.slice(start,start+cap).map(({text,yearN,...r})=>({...r,...(yearN&&!yearOf(r.year)?{year:String(yearN)}:{}),excerpt:r.type==='media'?undefined:text?.slice(0,r.kind==='passage'?2000:300)})),total:items.length,counts,bookTitles};
 }
 // ─── Analogies found in conversation ────────────────────────────────────────
 // The mind harvest reads each Room conversation every few messages; when it meets a
