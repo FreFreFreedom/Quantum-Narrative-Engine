@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## An ontology is not a static database schema but the living perceptual architecture of a consciousness that defines its reality.
+
+Traditional philosophy and early computer science treated ontologies as static blueprints of categories. When applied to entities—whether humans, corporations, states, or post-human collectives—an ontology is the structural grid through which reality is experienced, determining what is signal, noise, friend, threat, or possible. A fractured ontology produces dissociation and internal war.
+
 ## Software ontologies and money function identically as energy condensers and amplifiers, accelerating whatever inherent will or pathology already exists within an entity.
 
 Much like money, which has no moral agenda and simply amplifies the inherent pattern, drives, and paranoia of whoever wields it, an ontological software platform is a neutral amplifier that accelerates the timeline of what a particular entity is already trying to accomplish.
