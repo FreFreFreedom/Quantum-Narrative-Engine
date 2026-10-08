@@ -27,6 +27,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Lower East Side abandonment phenomenon — side talk of Comparative politics across structural scales — notes/lower-east-side-abandonment-phenomenon-side-talk-of-comparative-politics-across-.md
 - Note: Mapping Psychological Walls Across Cultures and Media — notes/mapping-psychological-walls-across-cultures-and-media.md
 - Note: Ontological Warfare and Geopolitical Power Struggles — side talk of Palantir's Role in Modern Societal Infrastructure — notes/ontological-warfare-and-geopolitical-power-struggles-side-talk-of-palantir-s-rol.md
+- Note: Ontology Integration as Institutional Ego Work — notes/ontology-integration-as-institutional-ego-work.md
 - Note: Palantir's Role in Modern Societal Infrastructure — notes/palantir-s-role-in-modern-societal-infrastructure.md
 - Note: Policy as frozen posture toward pain — side talk of Comparative politics across structural scales — notes/policy-as-frozen-posture-toward-pain-side-talk-of-comparative-politics-across-st.md
 - Note: Policy as response to institutional pain — side talk of Comparative politics across structural scales — notes/policy-as-response-to-institutional-pain-side-talk-of-comparative-politics-acros.md
