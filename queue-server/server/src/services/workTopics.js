@@ -14,8 +14,8 @@ import { cachedScreenFacts } from './screenFacts.js';
 
 let db = null;
 let running = false;
-const BATCH = 30;
-const BATCHES_PER_RUN = 6;
+const BATCH = 15;
+const BATCHES_PER_RUN = 30;
 
 const norm = (s) => String(s || '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 export const topicKey = (kind, title, creator) => [kind === 'book' ? 'book' : 'screen', norm(title), kind === 'book' ? norm(creator) : ''].join('|');
@@ -65,11 +65,13 @@ async function tagBatch(works) {
     'Return only JSON: {"works":[{"n":1,"topics":["...","..."]}]}',
     JSON.stringify(list),
   ].join('\n\n');
-  const out = await generateText({ prompt, feature: 'studio', label: 'library-topics', maxTokens: 4000, timeoutMs: 120_000, maxAttempts: 2 });
+  const out = await generateText({ prompt, feature: 'studio', label: 'library-topics', maxTokens: 3000, timeoutMs: 120_000, maxAttempts: 2 });
   const text = String(out?.text || '');
-  const json = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
-  let parsed = null;
-  try { parsed = JSON.parse(json); } catch { console.warn('[topics] unreadable answer:', out?.error || out?.message || text.slice(0, 200) || 'empty'); return 0; }
+  // Each work is read on its own, so an answer cut short still gives the ones it finished.
+  const rows = [...text.matchAll(/\{\s*"n"\s*:\s*(\d+)\s*,\s*"topics"\s*:\s*(\[[^\]]*\])/g)]
+    .map((m) => { try { return { n: Number(m[1]), topics: JSON.parse(m[2]) }; } catch { return null; } }).filter(Boolean);
+  if (!rows.length) { console.warn('[topics] unreadable answer:', out?.error || out?.message || text.slice(0, 200) || 'empty'); return 0; }
+  const parsed = { works: rows };
   let n = 0;
   for (const r of Array.isArray(parsed?.works) ? parsed.works : []) {
     const w = works[Number(r.n) - 1];
