@@ -267,14 +267,14 @@ export async function screenFactsFor(owner, items = []) {
         if (!facts.imdb_id) screenMissedAt.set(key, Date.now());
       } else screenMissedAt.set(key, Date.now());
     }
-    if (row && row.imdb_id && !row.book_checked && fetched < FETCH_CAP) {
+    if (row && row.imdb_id && !row.book_checked && !recentMiss && fetched < FETCH_CAP) {
       fetched += 1;
       const src = await sourceBook(row.imdb_id);
       if (src !== undefined) {
         db.prepare('UPDATE screen_facts SET book_title=?, book_author=?, book_checked=1, from_book=? WHERE key=?')
           .run(src?.title || null, src?.author || null, src?.title ? 1 : 0, keyOf(kind, it.title, it.year));
         row = rowOf(kind, it.title, it.year);
-      }
+      } else screenMissedAt.set(key, Date.now());
     }
     if (row && row.rating_from !== 'imdb' && row.imdb_id && !recentMiss) {
       const real = (await imdbRatings([row.imdb_id]))[row.imdb_id];

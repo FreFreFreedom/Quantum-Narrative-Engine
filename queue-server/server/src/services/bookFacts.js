@@ -555,7 +555,7 @@ export async function bookFactsFor(owner, items = []) {
         if (rematch) { try { db.prepare("UPDATE book_facts SET cover=?, isbn=?, goodreads='' WHERE key=?").run(facts.cover || '', facts.isbn || '', key); } catch (err) { /* next time */ } }
         row = rowOf(it.title, it.creator);
       }
-      else if (row) { try { db.prepare('UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP WHERE key=?').run(key); } catch (err) { /* next time */ } }
+      else if (row) { try { db.prepare("UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP, pages=CASE WHEN pages='' THEN '-' ELSE pages END WHERE key=?").run(key); } catch (err) { /* next time */ } }
       else missedAt.set(key, Date.now());
     }
     // The Goodreads page, once per book, checked against the title (see goodreadsFor).
