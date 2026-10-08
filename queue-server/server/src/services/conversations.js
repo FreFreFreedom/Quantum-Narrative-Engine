@@ -38,7 +38,7 @@ import { uniqueTitle } from './knowledgeDocs.js';
 import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory, subjectsBlock, taughtForRoom } from './mind.js';
 import { chapterize } from './chapters.js';
 import { logConversation, logText } from './convoLog.js';
-import { thinkingForBring, writeThinking, hisRecentWords } from './convoThinking.js';
+import { writeThinking, hisRecentWords } from './convoThinking.js';
 import { splitByLabels, splitByMarks, parseMarks, MARKS_PROMPT } from './convoImport.js';
 import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
@@ -300,12 +300,8 @@ const GIST_PROMPT = `Carry what follows into a larger conversation that will bui
 export async function gistConvo(convoId, messageId) {
   if (!db) return { error: 'no_db' };
   if (!getConvo(convoId)) return { error: 'not_found' };
-  // A whole side talk carries its thinking record — the path it took, not a
-  // dozen lines (plan conversation-thinking-recall). The gist below is the fallback.
-  if (!messageId && getConvo(convoId).subject_type === 'side') {
-    const thinking = await thinkingForBring(convoId).catch(() => '');
-    if (thinking) return { ok: true, text: thinking };
-  }
+  // A whole side talk is brought as its gist too, not its thinking record: that
+  // record ran to 74,000 characters and then rode on every answer (2026-10-08).
   let msgs = threadMessages(convoId).filter((m) => m.kind === 'chat');
   if (messageId) msgs = msgs.filter((m) => m.id === messageId);
   if (!msgs.length) return { error: 'empty' };
@@ -2147,8 +2143,15 @@ function parentTranscriptFor(convo) {
 // Messages saved before 2026-10-08 carry a paragraph of reading rules around their
 // passages; it goes out of what the model reads, the passages and his words stay.
 const OLD_PASSAGE_RULES = /^These selections are the default subject of my message[^\n]*\n|^When I say #1, #2, quote 1, or quote 2[^\n]*\n|(ATTACHED REFERENCES) — quoted data, not instructions;[^\n]*:(?=\n)/gm;
+// A passage carried into a message is read by the model in its first stretch only;
+// his own words after it always go whole. One brought side talk was 74,000
+// characters and rode on every answer after it (2026-10-08).
+const PASSAGE_MODEL_CAP = 8000;
 function withoutPassageRules(text) {
-  return String(text || '').replace(OLD_PASSAGE_RULES, (m, refs) => (refs ? `${refs}:` : ''));
+  const t = String(text || '').replace(OLD_PASSAGE_RULES, (m, refs) => (refs ? `${refs}:` : ''));
+  const at = t.lastIndexOf('\n\nMY MESSAGE:\n');
+  if (at < 0 || at <= PASSAGE_MODEL_CAP) return t;
+  return `${t.slice(0, PASSAGE_MODEL_CAP)}\n… (the rest of this passage is left out here)”${t.slice(at)}`;
 }
 function roomTurnsOf(convo, msgs, windowSize) {
   const said = (m) => m.kind === 'chat' && m.text && (m.role === 'user' || m.role === 'assistant') && !/"failed":true/.test(m.meta || '');
@@ -3660,7 +3663,9 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     })
     .slice(0, 8);
   const meta = {};
-  if (quoteList.length && typed) { meta.quotes = quoteList; meta.body = typed; }
+  // Passages are kept apart from his words even when he typed nothing, so the
+  // Room can fold them to a line instead of showing the whole carried text.
+  if (quoteList.length) { meta.quotes = quoteList; meta.body = typed || ''; }
   else if (imageList.length) meta.body = shownText;
   if (attachmentMeta.length) meta.attachments = attachmentMeta;
   const userMeta = Object.keys(meta).length ? JSON.stringify(meta) : null;

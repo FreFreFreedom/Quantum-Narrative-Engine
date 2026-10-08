@@ -358,7 +358,14 @@ the "he asked for N words" block with its after-the-fact stretching, and Intervi
 (its button, `/interview`, `/grill-me` and the "ask me questions" phrase) are gone. A
 length he names is just his words in his message. An answer written **beside** another
 (`pairAnswerBeside`) now sees the conversation only up to the question
-(`buildTurnPrompt({ uptoId })`) — it used to read the first answer and copy it. See `plans/conversation-thinking-recall.md`. Harvested
+(`buildTurnPrompt({ uptoId })`) — it used to read the first answer and copy it.
+
+**Carried text stays small (2026-10-08).** "Everything this aside found" used to bring the
+side talk's whole thinking record — 74,000 characters once, re-sent with every answer after
+it. It now brings the same gist as "Its essence", over the whole aside. For the model, a
+message's passages are cut at 8,000 characters (`PASSAGE_MODEL_CAP`); his own words after
+them always go whole. On screen, passages always fold to one line above his words, even
+when he typed nothing, and older messages are read back into that shape. See `plans/conversation-thinking-recall.md`. Harvested
 memory stays out.
 
 **Blank models (his ask, 2026-09-30).** The picker's "Blank" group — Gemini and GPT-4.1 —

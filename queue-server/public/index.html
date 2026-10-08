@@ -29737,7 +29737,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // Two models answered this question: which pair, which side, and whether
         // this is the one the thread follows (plan two-models-side-by-side).
         if (meta.pair) { out.pair = meta.pair; out.side = meta.side || 'a'; out.pairOf = meta.pair_of || null; out.kept = meta.kept === true; }
-        if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
+        if (Array.isArray(meta.quotes) && meta.quotes.length && typeof meta.body === 'string') { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) { out.attachments = meta.attachments; if (meta.body && !out.body) out.body = meta.body; }
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
         // 2 since 2026-09-28: answers whose titles were written in a shape the old
@@ -29832,8 +29832,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(carriedQuotes?.some(q=>q.reference))e.referenceFlight={body:typed,quotes:carriedQuotes};
     var attachmentMeta = carriedAttachments ? carriedAttachments.map(function(a){ return { name: a.name, mimeType: a.mimeType || '' }; }) : null;
     e.msgs.push({ role: 'user', kind: 'chat', text: text,
-      body: carriedQuotes && typed ? typed : undefined,
-      quotes: carriedQuotes && typed ? carriedQuotes : undefined,
+      body: carriedQuotes ? typed : undefined,
+      quotes: carriedQuotes || undefined,
       attachments: attachmentMeta || undefined,
       // Raw image bytes stay only in this browser session. They let the small
       // answer-again button retry the same visual question on another model,
@@ -29872,7 +29872,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // key entirely, so the server falls back to whatever is already stored.
       body: JSON.stringify((function(){
         var payload = { text: text };
-        if(carriedQuotes && typed){ payload.quotes = carriedQuotes; payload.body = typed; }
+        if(carriedQuotes){ payload.quotes = carriedQuotes; payload.body = typed; }
         if(carriedAttachments){
           payload.attachments = attachmentMeta;
           payload.images = carriedAttachments.filter(function(a){ return a.kind === 'image' && a.dataUrl; })
@@ -34807,6 +34807,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // one folded grey line per quote, and clicking it walks back to the answer
       // it was taken from and lights the passage up there.
       var foldHtml = '';
+      // Older messages kept their passages inside the text; read them back out so
+      // they fold the same way (2026-10-08 — a carried side talk filled the screen).
+      if (you && !m.quotes && /^(SELECTED PASSAGES FOR THIS MESSAGE:|Selected passage #1)/.test(m.text || '')) {
+        var cut = String(m.text).lastIndexOf('\n\nMY MESSAGE:\n');
+        var head = cut >= 0 ? String(m.text).slice(0, cut) : String(m.text);
+        var qs = [], re = /Selected passage #\d+[^\n]*:\n\u201c([\s\S]*?)\u201d(?=\n\nSelected passage #|$)/g, mm;
+        while ((mm = re.exec(head))) qs.push(mm[1]);
+        if (qs.length) { m.quotes = qs; m.body = cut >= 0 ? String(m.text).slice(cut + 14) : ''; }
+      }
       if (you && m.quotes && m.quotes.length) {
         foldHtml = m.quotes.map(function(q, qi){
           var qt = (typeof q === 'string' ? q : (q && q.text) || '');
@@ -34828,7 +34837,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           return '<button type="button" class="se-message-file is-image" data-img-id="' + qEscAttr(a.imageId || '') + '" data-img-key="' + key + '" data-convo="' + qEscAttr(e.convoId || '') + '"><span>' + qEsc(a.name || 'image') + '</span></button>';
         }).join('') + '</div>';
       }
-      var shown = (you && m.body) ? m.body : m.text;
+      var shown = (you && (m.body || m.quotes)) ? (m.body || '') : m.text;
       var renderedBody = plan ? qEsc(m.text) : fmtBody(you ? shown : seProseFromList(shown), !you, m.id || null);
       if(!you && !plan) renderedBody = srcStripHtml(renderedBody);
       if(!you && !plan && m.works && m.works.length) renderedBody = seHangCovers(renderedBody, m.works, e.convoId);
