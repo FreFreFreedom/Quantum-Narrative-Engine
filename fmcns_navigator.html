@@ -2832,6 +2832,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-card { position:fixed; z-index:var(--z-popover); width:min(560px, calc(100vw - 16px)); max-height:min(720px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
   padding:28px 32px 28px; border-radius:16px; font-family:var(--font-ui); color:var(--c-ink); }
+.se-card .bk-cover[style*="background-image"] { cursor:zoom-in; }
 .se-card-band { margin:-28px -32px 20px; padding:12px 32px; background:color-mix(in srgb, var(--c-accent) 11%, transparent);
   font-size:14px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-accent); }
 .se-card-screen { display:flex; gap:14px; flex-wrap:wrap; margin-top:18px; padding-top:16px; border-top:1px solid var(--c-border); }
@@ -35186,7 +35187,25 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   document.addEventListener('keydown', function(ev){
     if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('span.se-person, span.se-work')) { ev.preventDefault(); ev.target.click(); }
   });
+  // A cover in a card opens big (his ask, 2026-10-09), at the largest size its
+  // source serves; a click or Escape puts it away and the card stays open.
+  function seCoverBig(el){
+    var u = ((el.style.backgroundImage || '').match(/url\("?(https:[^")]+)/) || [])[1];
+    if (!u) return;
+    u = u.replace(/\/\d+x\d+bb\.(jpg|png)$/, '/1400x1400bb.jpg').replace(/-[SM]\.jpg$/, '-L.jpg').replace(/&fife=w\d+/, '&fife=w1000');
+    var box = document.createElement('div'); box.className = 'se-imgview';
+    var img = document.createElement('img'); img.src = u; img.alt = '';
+    box.appendChild(img);
+    var close = function(){ box.remove(); document.removeEventListener('keydown', onKey, true); };
+    var onKey = function(ev){ if (ev.key === 'Escape') { ev.stopPropagation(); close(); } };
+    box.addEventListener('click', close);
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(box);
+  }
   document.addEventListener('click', function(ev){
+    if (ev.target.closest && ev.target.closest('.se-imgview')) return;
+    var bc = ev.target.closest && ev.target.closest('.se-card .bk-cover');
+    if (bc && bc.style.backgroundImage) { ev.preventDefault(); seCoverBig(bc); return; }
     var ib = ev.target.closest && ev.target.closest('.se-message-file.is-image');
     if (ib) { ev.preventDefault(); ev.stopPropagation(); seImgOpen(ib); return; }
     var pb = ev.target.closest && ev.target.closest('.se-person');
