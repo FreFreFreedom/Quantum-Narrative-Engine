@@ -32124,19 +32124,47 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!sel || !sel.rangeCount) return;
     var r = sel.getRangeAt(0);
     if(r.collapsed) return;
-    var s = r.startContainer, so = r.startOffset, e = r.endContainer, eo = r.endOffset, moved = false;
-    if(s.nodeType === 3){
-      var a = s.data;
-      while(so > 0 && WORD_CH.test(a.charAt(so)) && WORD_CH.test(a.charAt(so - 1))){ so--; moved = true; }
+    // A word can be split over several pieces of text — a bold part, a link, a kept
+    // line — so the edge is walked across them, not only inside the piece the hand
+    // stopped in. Stopping at the piece's end left "reali|sm" cut in half.
+    var root = r.commonAncestorContainer;
+    while(root && root.nodeType === 1 && /^(SPAN|A|B|I|EM|STRONG|MARK|CODE|U|S|SUB|SUP)$/.test(root.nodeName)) root = root.parentNode;
+    if(root && root.nodeType === 3) root = root.parentNode;
+    var block = function(n){ var el = n.nodeType === 1 ? n : n.parentElement; while(el && el !== root && /^(SPAN|A|B|I|EM|STRONG|MARK|CODE|U|S|SUB|SUP)$/.test(el.nodeName)) el = el.parentElement; return el; };
+    var texts = function(){ var out = [], w = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT), n; while((n = w.nextNode())) out.push(n); return out; };
+    var all = texts();
+    // An end that sits on an element, not inside text, is moved to the text beside it.
+    var toText = function(node, off, atStart){
+      if(node.nodeType === 3) return { n: node, o: off };
+      var child = node.childNodes[off];
+      var probe = document.createRange();
+      for(var i = 0; i < all.length; i++){
+        probe.setStart(all[i], 0);
+        if(child ? probe.comparePoint(child, 0) <= 0 : probe.comparePoint(node, node.childNodes.length) <= 0){
+          return atStart ? { n: all[i], o: 0 } : (i ? { n: all[i - 1], o: all[i - 1].data.length } : null);
+        }
+      }
+      return atStart ? null : (all.length ? { n: all[all.length - 1], o: all[all.length - 1].data.length } : null);
+    };
+    var st = toText(r.startContainer, r.startOffset, true), en = toText(r.endContainer, r.endOffset, false);
+    if(!st || !en) return;
+    var si = all.indexOf(st.n), ei = all.indexOf(en.n), moved = false;
+    var charBefore = function(i, o){ while(o === 0 && i > 0 && block(all[i - 1]) === block(all[i])){ i--; o = all[i].data.length; } return o > 0 ? { i: i, o: o, c: all[i].data.charAt(o - 1) } : null; };
+    var charAfter = function(i, o){ while(o >= all[i].data.length && i < all.length - 1 && block(all[i + 1]) === block(all[i])){ i++; o = 0; } return o < all[i].data.length ? { i: i, o: o, c: all[i].data.charAt(o) } : null; };
+    // Grow the start back while it sits inside a word.
+    var a = charAfter(si, st.o), b = charBefore(si, st.o);
+    if(a && b && WORD_CH.test(a.c) && WORD_CH.test(b.c)){
+      while((b = charBefore(si, st.o)) && WORD_CH.test(b.c)){ si = b.i; st = { n: all[b.i], o: b.o - 1 }; moved = true; }
     }
-    if(e.nodeType === 3){
-      var b = e.data;
-      while(eo < b.length && WORD_CH.test(b.charAt(eo)) && WORD_CH.test(b.charAt(eo - 1))){ eo++; moved = true; }
+    // And the end forward.
+    a = charAfter(ei, en.o); b = charBefore(ei, en.o);
+    if(a && b && WORD_CH.test(a.c) && WORD_CH.test(b.c)){
+      while((a = charAfter(ei, en.o)) && WORD_CH.test(a.c)){ ei = a.i; en = { n: all[a.i], o: a.o + 1 }; moved = true; }
     }
     if(!moved) return;
     try{
       var nr = document.createRange();
-      nr.setStart(s, so); nr.setEnd(e, eo);
+      nr.setStart(st.n, st.o); nr.setEnd(en.n, en.o);
       sel.removeAllRanges(); sel.addRange(nr);
     }catch(_){}
   }
@@ -32407,6 +32435,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(!card.isConnected) return;
       var sel = window.getSelection && window.getSelection();
       if(!sel || !sel.rangeCount) return;
+      snapSelectionToWords(sel);
       var passage = String(sel).trim().replace(/\s+/g, ' ');
       var range = sel.getRangeAt(0);
       if(passage.length < 2 || !card.contains(range.startContainer) || !card.contains(range.endContainer)) return;
