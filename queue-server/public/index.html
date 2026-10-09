@@ -2832,6 +2832,8 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-card { position:fixed; z-index:var(--z-popover); width:min(560px, calc(100vw - 16px)); max-height:min(720px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
   padding:28px 32px 28px; border-radius:16px; font-family:var(--font-ui); color:var(--c-ink); }
+.se-card-genre { margin-top:6px; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--c-ink-3); }
+.se-card-genre b { font-weight:600; color:var(--c-accent, var(--c-ink)); }
 .se-card.is-person-card { width:auto; min-width:min(360px, calc(100vw - 16px)); max-width:min(500px, calc(100vw - 16px)); padding:22px 26px; }
 .se-card.is-person-card .se-card-title { font-size:25px; }
 .se-card.is-person-card .se-card-meta { font-size:15px; }
@@ -32286,8 +32288,36 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var node=sel.anchorNode, el=node && (node.nodeType===1?node:node.parentElement);
     var log=el && el.closest && el.closest('.se-log');
     if(log && log.quoteOffer)log.quoteOffer(80);
+    else if(el && el.closest && el.closest('.se-card'))cardDefineOffer(el.closest('.se-card'));
     else killQuotePop();
   });
+  // A word in a book or person card (his ask, 2026-10-09): the same meaning as in an
+  // answer, read in the sentence around it, and nothing else in the bar.
+  function cardDefineOffer(card){
+    clearTimeout(quoteOfferTimer);
+    quoteOfferTimer = setTimeout(function(){
+      if(!card.isConnected) return;
+      var sel = window.getSelection && window.getSelection();
+      if(!sel || !sel.rangeCount) return;
+      var passage = String(sel).trim().replace(/\s+/g, ' ');
+      var range = sel.getRangeAt(0);
+      if(passage.length < 2 || !card.contains(range.startContainer) || !card.contains(range.endContainer)) return;
+      if(quotePop && quotePop.dataset.passage === passage) return;
+      var nWords = passage.split(' ').length;
+      var one = /^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage) || isAcronym(passage);
+      if(!one && !(nWords >= 2 && nWords <= 150 && /[A-Za-z]/.test(passage))) return;
+      killQuotePop();
+      quotePop = document.createElement('div');
+      quotePop.className = 'se-quote-pop se-card-define';
+      quotePop.dataset.passage = passage;
+      quotePop.onmousedown = function(x){ x.stopPropagation(); };
+      document.body.appendChild(quotePop);
+      var e = { convoId: card.dataset.convo || '' };
+      defineHere(e, passage, sentenceAround(range, passage), quotePop, null);
+      if(one) defineWord(passage, quotePop);
+      placeQuotePop();
+    }, 250);
+  }
 
   // "Answer this again, on that model." Any earlier question of yours, not only the
   // last one, and an explicit pick rather than the lane tag's fixed three-way cycle
@@ -34864,7 +34894,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }).join('') + '</ol><small class="se-card-src">' + qEsc(cc.source) + '</small>' : '';
       return '<div class="bk-head"><span class="bk-cover"' + (/^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '') + '></span>'
         + '<div class="bk-id"><b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
-        + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '') + '</div>'
+        + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '')
+        + (f.fiction ? '<div class="se-card-genre"><b>' + qEsc(f.fiction) + '</b>' + (f.genre ? ' · ' + qEsc(f.genre) : '') + '</div>' : '') + '</div>'
         + bookOutMenu(bookLinks(bw, ff)) + '</div>'
         + bookTabs(about, toc);
     }
@@ -34905,6 +34936,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (host && seCardAnchor && seCardAnchor.isConnected && !host.contains(seCardAnchor)) btn = seCardAnchor;
     seCardClose();
     seCard = document.createElement('div'); seCard.className = 'se-card'; seCard.setAttribute('role', 'dialog');
+    seCard.dataset.convo = btn.dataset.convo || ((btn.closest('[data-convo]') || {dataset:{}}).dataset.convo || '');
     seCardFor = d.coverArt; seCardAnchor = btn;
     document.body.appendChild(seCard);
     var paint = function(card){ if (!seCard || seCardFor !== d.coverArt) return; seCard.innerHTML = seCardHtml(d, card); seCardPlace(btn); };
@@ -35025,6 +35057,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (seCardFor === id) { seCardClose(); return; }
     seCardClose();
     seCard = document.createElement('div'); seCard.className = 'se-card is-person-card'; seCard.setAttribute('role', 'dialog');
+    seCard.dataset.convo = btn.dataset.convo || ((btn.closest('[data-convo]') || {dataset:{}}).dataset.convo || '');
     seCardFor = id; seCardAnchor = btn;
     document.body.appendChild(seCard);
     var card = null;
@@ -35092,6 +35125,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (fb) { ev.preventDefault(); sePersonOpen(fb); return; }
     var btn = ev.target.closest && ev.target.closest('.se-cover, .se-work');
     if (btn) { ev.preventDefault(); seCardOpen(btn); return; }
+    if (ev.target.closest('.se-quote-pop')) return;
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
   });
   document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') seCardClose(); });

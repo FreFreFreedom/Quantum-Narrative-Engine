@@ -9,7 +9,7 @@ import * as thinking from '../services/convoThinking.js';
 import * as shelf from '../services/bookShelf.js';
 import * as screen from '../services/screenFacts.js';
 import { bookContents } from '../services/bookContents.js';
-import { workNote } from '../services/workNotes.js';
+import { workNote, bookGenre } from '../services/workNotes.js';
 import { personCard, scanPeople, KINDS as PERSON_KINDS } from '../services/personNotes.js';
 import { convoImage } from '../services/convoImages.js';
 import * as bookFacts from '../services/bookFacts.js';
@@ -175,8 +175,11 @@ export function conversationsRoutes() {
     const facts = it.kind === 'book'
       ? (await bookFacts.bookFactsFor(owner, [it])).x || {}
       : (await screen.screenFactsFor(owner, [it])).x || {};
-    const note = await workNote(req.params.id, { ...it, year: facts.year || it.year, overview: facts.overview || '' }, { refresh: req.query.refresh === '1' });
-    res.json({ ...facts, note: note.text, author: it.kind === 'book' ? it.creator : '' });
+    const [note, genre] = await Promise.all([
+      workNote(req.params.id, { ...it, year: facts.year || it.year, overview: facts.overview || '' }, { refresh: req.query.refresh === '1' }),
+      it.kind === 'book' ? bookGenre(it).catch(() => null) : null,
+    ]);
+    res.json({ ...facts, note: note.text, author: it.kind === 'book' ? it.creator : '', fiction: genre?.fiction || '', genre: genre?.genre || '' });
   }));
 
   // The card a person's name opens in a Room answer: their years, the main pattern

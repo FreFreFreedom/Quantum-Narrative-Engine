@@ -73,3 +73,32 @@ export async function workNote(convoId, { kind = 'film', title = '', creator = '
     ON CONFLICT(convo_id, key) DO UPDATE SET text=excluded.text, v=excluded.v, created_at=CURRENT_TIMESTAMP`).run(convoId, key, text, NOTE_V);
   return { text };
 }
+
+// Fiction or not, and the genre in a few words (his ask, 2026-10-09): one tiny call
+// per book, kept for good — the same book is the same genre in every conversation.
+const genreAsked = new Map();
+export async function bookGenre({ title = '', creator = '' } = {}) {
+  if (!db || !norm(title)) return null;
+  db.exec(`CREATE TABLE IF NOT EXISTS book_genres (key TEXT PRIMARY KEY, fiction TEXT NOT NULL, genre TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  const key = norm(title) + '|' + norm(creator);
+  const row = db.prepare('SELECT fiction, genre FROM book_genres WHERE key=?').get(key);
+  if (row) return row;
+  if (genreAsked.has(key)) return genreAsked.get(key);
+  const job = (async () => {
+    const out = await generateText({
+      feature: 'summary', maxTokens: 200, label: 'room:book-genre', timeoutMs: 20_000, maxAttempts: 2,
+      prompt: `The book "${title}"${creator ? ` by ${creator}` : ''}.\nReply with JSON only: {"fiction": "Fiction" or "Non-fiction", "genre": its genre in one to three plain words, like "Legal thriller", "Courtroom memoir", "History", "Philosophy", "Crime novel"}. If you do not know the book, reply {}.`,
+    });
+    const m = String(out.text || '').match(/\{[\s\S]*\}/);
+    let j = null; try { j = m ? JSON.parse(m[0]) : null; } catch {}
+    const fiction = /^non/i.test(j?.fiction || '') ? 'Non-fiction' : /^fiction$/i.test(String(j?.fiction || '').trim()) ? 'Fiction' : '';
+    const genre = plain(String(j?.genre || '')).replace(/[."]+$/, '').trim().slice(0, 40);
+    if (!fiction) return null;
+    const val = { fiction, genre: genre.charAt(0).toUpperCase() + genre.slice(1) };
+    db.prepare('INSERT OR REPLACE INTO book_genres (key, fiction, genre) VALUES (?,?,?)').run(key, val.fiction, val.genre);
+    return val;
+  })().catch(() => null).finally(() => genreAsked.delete(key));
+  genreAsked.set(key, job);
+  return job;
+}
