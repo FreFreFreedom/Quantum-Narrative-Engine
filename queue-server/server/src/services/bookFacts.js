@@ -44,6 +44,8 @@ export function bindBookFacts(database) {
   // How long the book is. '' means never looked for, '-' means looked for and no
   // catalogue said — so a book nobody counted is not re-asked on every repaint.
   try { db.exec("ALTER TABLE book_facts ADD COLUMN pages TEXT NOT NULL DEFAULT ''"); } catch (err) { /* already there */ }
+  // The catalogue's whole title. NULL means never looked for, '' looked for and none.
+  try { db.exec('ALTER TABLE book_facts ADD COLUMN full_title TEXT'); } catch (err) { /* already there */ }
   // Every boot, a book still without a cover is asked about again on its next view,
   // so a better matcher reaches the old misses without waiting out the retry hours.
   try { db.exec("UPDATE book_facts SET fetched_at='2000-01-01 00:00:00' WHERE cover IS NULL OR cover=''"); } catch (err) { /* next boot */ }
@@ -283,7 +285,7 @@ async function lookupOnce(rawTitle, rawCreator) {
       for (const r of a?.results || []) {
         const name = r.trackName || r.collectionName || '';
         const score = scoreCandidate({ title: name, authors: [r.artistName || ''] }, title, who);
-        if (score > 0 && r.artworkUrl100) cands.push({ score: score + 0.25, src: 'apple', art: String(r.artworkUrl100).replace(/\/\d+x\d+bb\.(jpg|png)$/, '/600x600bb.jpg'), year: String(r.releaseDate || '').slice(0, 4) });
+        if (score > 0 && r.artworkUrl100) cands.push({ score: score + 0.25, src: 'apple', name, art: String(r.artworkUrl100).replace(/\/\d+x\d+bb\.(jpg|png)$/, '/600x600bb.jpg'), year: String(r.releaseDate || '').slice(0, 4) });
       }
       if (cands.some((c) => c.src === 'apple')) break;
     }
@@ -326,7 +328,40 @@ async function lookupOnce(rawTitle, rawCreator) {
   }
 
   cands.sort((a, b) => b.score - a.score);
-  const out = { cover: '', blurb: '', year: '', isbn: '', pages: '' };
+  const out = { cover: '', blurb: '', year: '', isbn: '', pages: '', full: '' };
+  // The whole title, subtitle included, as a catalogue that is sure of the book
+  // files it (his ask, 2026-10-09): the answer often names only what comes before
+  // the colon. The longest among the near-best matches, edition notes dropped.
+  {
+    const top = cands.length ? cands[0].score : 0;
+    const names = cands.filter((c) => c.score >= top - 2 && (c.src === 'ol' || c.src === 'g' || (c.src === 'apple' && c.name)))
+      .map((c) => c.src === 'apple' ? c.name : (c.src === 'ol' ? [c.doc.title, c.doc.subtitle] : [c.v.title, c.v.subtitle]).filter(Boolean).join(': '))
+      .map((t) => String(t).replace(/\s*[(\[][^)\]]*[)\]]\s*/g, ' ').replace(/\s+/g, ' ').trim())
+      .filter((t) => t.length <= 200 && words(t).slice(0, words(main).length).join(' ') === words(main).join(' '));
+    out.full = names.sort((a, b) => b.length - a.length)[0] || '';
+    // Search results leave the subtitle out; the editions of the best Open Library
+    // match carry it. The one most editions agree on, never a blurb ("…Ever
+    // Written!"), a genre note ("récit") or the title said again.
+    const ol = cands.find((c) => c.src === 'ol' && c.score >= top - 2 && c.doc.key);
+    if (ol && !out.full.includes(':')) {
+      const eds = await getJson('https://openlibrary.org' + ol.doc.key + '/editions.json?limit=40');
+      const tally = new Map();
+      for (const e of eds?.entries || []) {
+        const sub = String(e.subtitle || '').replace(/\s+/g, ' ').trim().replace(/[.;,]$/, '');
+        if (sub.length < 6 || sub.length > 140 || /[!?]/.test(sub) || words(sub).length < 2 || norm(sub) === norm(main)) continue;
+        if (norm(e.title || '') !== norm(main)) continue;
+        // A translation's subtitle ("ngưxoi tù") on an English book is not its own.
+        if (titleLang(title) !== 'fr' && !/^[\x20-\x7E\u2018\u2019\u201C\u201D\u2013\u2014]+$/.test(sub)) continue;
+        const k = norm(sub);
+        const t = tally.get(k) || { n: 0, best: sub };
+        t.n += 1;
+        if (/^[A-Z]/.test(sub) && !/^[A-Z]/.test(t.best)) t.best = sub;
+        tally.set(k, t);
+      }
+      const pick = [...tally.values()].sort((a, b) => b.n - a.n)[0];
+      if (pick) out.full = (out.full || ol.doc.title || main).replace(/\s*:.*$/, '') + ': ' + pick.best;
+    }
+  }
   // The best Apple match close to the top answers the cover before anything else.
   const top = cands.length ? cands[0].score : 0;
   const apple = cands.find((c) => c.src === 'apple' && c.score >= top - 3);
@@ -566,15 +601,16 @@ function rowOf(title, creator) {
   catch (err) { return null; }
 }
 function save(title, creator, facts) {
-  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by, isbn, pages)
-              VALUES (?,?,?,?,?,?,?,?,?)
+  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by, isbn, pages, full_title)
+              VALUES (?,?,?,?,?,?,?,?,?,?)
               ON CONFLICT(key) DO UPDATE SET cover=COALESCE(NULLIF(excluded.cover,''), book_facts.cover),
                 blurb=COALESCE(NULLIF(excluded.blurb,''), book_facts.blurb),
                 year=COALESCE(NULLIF(excluded.year,''), book_facts.year),
                 isbn=COALESCE(NULLIF(excluded.isbn,''), book_facts.isbn),
                 pages=COALESCE(NULLIF(excluded.pages,''), book_facts.pages),
+                full_title=COALESCE(NULLIF(excluded.full_title,''), book_facts.full_title, ''),
                 found_by=excluded.found_by, fetched_at=CURRENT_TIMESTAMP`)
-    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '', MATCHER, facts.isbn || '', facts.pages || '-');
+    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '', MATCHER, facts.isbn || '', facts.pages || '-', facts.full || '');
 }
 
 // The same shape a film's facts come back in, so the wall draws both the same way.
@@ -607,6 +643,7 @@ function shape(row, item) {
     overview: row?.about || row?.blurb || '', fromBook: false, book: null,
     isbn: row?.isbn || '',
     pages: Number(row?.pages) > 0 ? Number(row.pages) : 0,
+    fullTitle: row?.full_title || '',
     goodreads: /^https:\/\//.test(row?.goodreads || '') ? row.goodreads : '',
     relevance: row?.relevance || '',
   };
@@ -648,6 +685,7 @@ export async function bookFactsFor(owner, items = []) {
       || (row && !row.cover && !row.blurb && ageHours(row.fetched_at) >= COVER_RETRY_HOURS)
       || (row && Number(row.found_by || 0) < MATCHER)
       || (row && String(row.pages || '') === '')
+      || (row && row.full_title == null)
       || (row && !row.cover && ageHours(row.fetched_at) >= COVER_RETRY_HOURS);
     if (stale && fetched < FETCH_CAP) {
       fetched += 1;
@@ -661,7 +699,7 @@ export async function bookFactsFor(owner, items = []) {
         if (rematch) { try { db.prepare("UPDATE book_facts SET cover=?, isbn=?, goodreads='' WHERE key=?").run(facts.cover || '', facts.isbn || '', key); } catch (err) { /* next time */ } }
         row = rowOf(it.title, it.creator);
       }
-      else if (row) { try { db.prepare("UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP, pages=CASE WHEN pages='' THEN '-' ELSE pages END WHERE key=?").run(key); } catch (err) { /* next time */ } }
+      else if (row) { try { db.prepare("UPDATE book_facts SET fetched_at=CURRENT_TIMESTAMP, pages=CASE WHEN pages='' THEN '-' ELSE pages END, full_title=COALESCE(full_title,'') WHERE key=?").run(key); } catch (err) { /* next time */ } }
       else missedAt.set(key, Date.now());
     }
     // The Goodreads page, once per book, checked against the title (see goodreadsFor).

@@ -2833,6 +2833,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
   padding:28px 32px 28px; border-radius:16px; font-family:var(--font-ui); color:var(--c-ink); }
 .se-card .bk-cover[style*="background-image"] { cursor:zoom-in; }
+.se-card-sub { font-family:var(--font-read, Georgia, serif); font-style:italic; font-size:17px; line-height:1.35; color:var(--c-ink-2); margin-top:4px; }
 .se-card-band { margin:-28px -32px 20px; padding:12px 32px; background:color-mix(in srgb, var(--c-accent) 11%, transparent);
   font-size:14px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-accent); }
 .se-card-screen { display:flex; gap:14px; flex-wrap:wrap; margin-top:18px; padding-top:16px; border-top:1px solid var(--c-border); }
@@ -34913,6 +34914,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // His pick C (2026-09-27): small cover, title, ↗ for every link; About and
       // Contents as tabs. A click outside or Escape closes it, so no ✕ here.
       var bw = { kind: kind, title: d.coverTitle, creator: who };
+      // The whole title (his ask, 2026-10-09): the catalogue's, subtitle included,
+      // else what the answer wrote; the subtitle on its own line under the name.
+      var whole = String(f.fullTitle || d.coverTitle || ''), colon = whole.indexOf(':');
+      var fullHead = colon > 0 ? whole.slice(0, colon).trim() : whole.trim();
+      var fullSub = colon > 0 ? whole.slice(colon + 1).trim() : '';
       var ff = (f.goodreads || f.isbn) ? f : (seOutFacts[d.coverArt] || null);
       var cov = (seOutFacts[d.coverArt] || {}).cover || roomMediaArtCache.get(d.coverArt) || '';
       var about = f.note ? '<p class="se-card-note">' + qEsc(f.note) + '</p>'
@@ -34923,7 +34929,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }).join('') + '</ol><small class="se-card-src">' + qEsc(cc.source) + '</small>' : '';
       return (f.fiction ? '<div class="se-card-band">' + qEsc(f.fiction) + (f.genre ? ' · ' + qEsc(f.genre) : '') + '</div>' : '')
         + '<div class="bk-head"><span class="bk-cover"' + (/^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '') + '></span>'
-        + '<div class="bk-id"><b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
+        + '<div class="bk-id"><b class="se-card-title">' + qEsc(fullHead) + '</b>'
+        + (fullSub ? '<div class="se-card-sub">' + qEsc(fullSub) + '</div>' : '')
         + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '')
         + '</div>'
         + bookOutMenu(bookLinks(bw, ff)) + '</div>'
