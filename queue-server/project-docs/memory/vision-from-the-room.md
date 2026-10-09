@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Familial abuse, systemic abandonment, and institutional failure create a domestic cage that imprison individuals long before they encounter street or penal violence.
+
+The selected passage describes a pre‑street architecture of trauma: abuse and neglect act as structural walls that lock a person into silence and powerlessness. This mirrors the same self‑reinforcing loops identified in carceral and street systems, showing that the root of the ‘monster‑making’ process begins at home. Recognizing this earlier tier is essential for mapping the full feedback cycle of disadvantage across scales.
+
 ## Multiple distinct societal pressures can interlock to form a self-sustaining cycle of disadvantage.
 
 It covers the complete range of interconnected factors, including domestic background, community economics, ancestral neglect, law enforcement presence, and carceral design. The purpose is to understand how these elements reinforce one another rather than operating in isolation.

@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Manufacturing Monsters: Street Sociology and Crime Literature — conversations/manufacturing-monsters-street-sociology-and-crime-literature-565a6e84.md
+- Street‑Generated Violence: Mapping the Monster‑Making Machine — conversations/street-generated-violence-mapping-the-monster-making-machine-565a6e84.md
 - Parental archetypes and civilizational defense mechanisms — conversations/parental-archetypes-and-civilizational-defense-mechanisms-a969a91c.md
 - Mapping Psychological Walls Across Cultures and Media — conversations/mapping-psychological-walls-across-cultures-and-media-30b86c18.md
 - State Experiments in Constitutional Decision‑Making — conversations/state-experiments-in-constitutional-decision-making-cf34af05.md
