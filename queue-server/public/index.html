@@ -2813,6 +2813,12 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-body.md h1, .se-body.md h2, .se-body.md h3, .se-body.md h4, .se-body.md hr { clear:both; }
 .se-body.md .se-wrap-by { clear:none; }
 .se-cover.is-right { float:right; clear:both; margin-left:24px; }
+.se-cover { position:relative; }
+.se-fav { position:absolute; top:6px; left:6px; z-index:2; width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; font-style:normal; font-size:16px; line-height:1; color:#fff; background:rgba(0,0,0,.5); opacity:0; transition:opacity .15s; cursor:pointer; }
+.se-cover:hover .se-fav, .se-fav:focus-visible, .se-fav.on { opacity:1; }
+.se-fav.on { color:#d4a24c; }
+@media (hover:none) { .se-fav { opacity:.85; } }
 .se-cover.is-left { float:left; clear:both; margin-right:24px; }
 .se-cover-row { float:right; clear:both; width:min(260px, 46%); margin:6px 0 12px 24px; display:flex; flex-wrap:wrap; gap:10px; }
 .se-cover-row > .se-cover, .se-cover-row > .qne-wrap > .se-cover { float:none; clear:none; width:calc(50% - 5px); margin:0; }
@@ -34855,7 +34861,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       btn.title = w.title + (w.episode ? ' · ' + w.episode : '') + (w.creator ? ' — ' + w.creator : '');
       btn.dataset.convo = convoId || '';
       btn.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '" data-cover-episode="' + qEscAttr(w.episode || '') + '"'
-        + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"' : '') + '>' + (art ? '' : qEsc(libShortTitle(w.title))) + '</span>';
+        + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"' : '') + '>' + (art ? '' : qEsc(libShortTitle(w.title))) + '</span>'
+        + seFavMark(w);
       if(pl.bi >= blocks.length){ var last = blocks[blocks.length - 1]; last.parentNode.insertBefore(btn, last.nextSibling); return; }
       // Two or more covers for one paragraph sit side by side in one small float,
       // never stacked into a column taller than the text beside it.
@@ -34922,6 +34929,48 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // round. A film or a series is an entity; the channel that aired it is a shelf.
   // The cover is the picture, this is the name, and both open the same card.
   //
+  // A star on every cover in an answer (his ask, 2026-10-09): one press saves the
+  // work to the Library if it is not there yet and makes it a favourite; again
+  // takes the favourite off. The Library's own favourites, the same list.
+  var seFavList = null, seFavAsked = false;
+  function seFavKey(w){ return (w.kind === 'film' || w.kind === 'series' ? 'screen' : w.kind || 'book') + '|' + libWorkKey(w.title); }
+  function seFavFind(w){ var k = seFavKey(w); return (seFavList || []).find(function(f){ return seFavKey(f) === k; }) || null; }
+  function seFavLoad(){
+    if (seFavAsked) return; seFavAsked = true;
+    api('/api/convos/favs?works=1').then(function(o){ seFavList = o.works || []; seFavPaint(); }).catch(function(){ seFavAsked = false; });
+  }
+  function seFavPaint(){
+    document.querySelectorAll('.se-fav').forEach(function(el){
+      var on = !!seFavFind({ kind: el.dataset.kind, title: el.dataset.title });
+      el.classList.toggle('on', on); el.textContent = on ? '\u2605' : '\u2606';
+      el.setAttribute('aria-pressed', String(on)); el.title = on ? 'Unfavourite' : 'Favourite';
+    });
+  }
+  function seFavMark(w){
+    seFavLoad();
+    var on = !!seFavFind(w);
+    return '<i class="se-fav' + (on ? ' on' : '') + '" role="button" tabindex="0" aria-label="Favourite" aria-pressed="' + on + '" title="' + (on ? 'Unfavourite' : 'Favourite') + '"'
+      + ' data-kind="' + qEscAttr(w.kind || 'book') + '" data-title="' + qEscAttr(w.title) + '" data-creator="' + qEscAttr(w.creator || '') + '" data-year="' + qEscAttr(w.year || '') + '">' + (on ? '\u2605' : '\u2606') + '</i>';
+  }
+  window.addEventListener('click', function(ev){
+    var el = ev.target.closest && ev.target.closest('.se-fav'); if (!el) return;
+    ev.preventDefault(); ev.stopPropagation();
+    if (el.dataset.busy) return; el.dataset.busy = '1';
+    var w = { kind: el.dataset.kind, title: el.dataset.title, creator: el.dataset.creator, year: el.dataset.year };
+    var had = seFavFind(w);
+    var done = function(){ delete el.dataset.busy; seFavPaint(); libFavs = null; libData = null; };
+    if (had) {
+      seFavList = seFavList.filter(function(f){ return f !== had; }); seFavPaint();
+      apiWrite('/api/convos/favs', 'POST', { key: had.key, on: false }).catch(function(){ seFavList.push(had); }).finally(done);
+      return;
+    }
+    var mine = { key: '', kind: w.kind, title: w.title }; seFavList = (seFavList || []).concat([mine]); seFavPaint();
+    apiWrite('/api/convos/interests', 'POST', { works: [w] }).then(function(o){
+      var s = (o.saved || [])[0]; if (!s || !s.id) throw new Error('not saved');
+      mine.key = (s.shelf ? 'shelf:' : 'media:') + s.id;
+      return apiWrite('/api/convos/favs', 'POST', { key: mine.key, on: true });
+    }).catch(function(){ seFavList = seFavList.filter(function(f){ return f !== mine; }); }).finally(done);
+  }, true);
   // Longest titles first, so "S.W.A.T.: Under Siege" claims its heading before
   // "S.W.A.T." goes looking for one.
   function seMarkWorks(html, works, convoId){

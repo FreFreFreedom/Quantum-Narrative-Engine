@@ -506,7 +506,7 @@ export function saveSuggestedWorks(owner, works = []) {
     if (c.kind === 'book') {
       let shelf = null;
       try { shelf = db.prepare('SELECT id,title,author FROM shelf_books WHERE owner=?').all(owner).find(b => sameWork(b.title, c.title)); } catch (_) {}
-      if (shelf) { out.push({ ...c, creator: shelf.author || c.creator, id: shelf.id, added: false }); continue; }
+      if (shelf) { out.push({ ...c, creator: shelf.author || c.creator, id: shelf.id, shelf: true, added: false }); continue; }
     }
     const saved = saveWork(owner, c, true);
     if (!saved) continue;
@@ -580,6 +580,20 @@ export function interestTool(owner, name, args = {}) {
 
 export function listFavs(owner) {
   return db.prepare('SELECT key FROM lib_favs WHERE owner=? ORDER BY created_at DESC').all(owner).map((r) => r.key);
+}
+// The favourites as works, so a cover in an answer knows it is one (2026-10-09).
+export function favWorks(owner) {
+  const out = [];
+  for (const key of listFavs(owner)) {
+    const [type, id] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':') + 1)];
+    let r = null;
+    try {
+      if (type === 'shelf') { r = db.prepare('SELECT title, author AS creator FROM shelf_books WHERE id=?').get(id); if (r) r.kind = 'book'; }
+      else r = db.prepare('SELECT kind, title, creator FROM interest_works WHERE id=?').get(id);
+    } catch (_) {}
+    if (r) out.push({ key, kind: r.kind, title: r.title, creator: r.creator || '' });
+  }
+  return out;
 }
 export function setFav(owner, input = {}) {
   const key = clean(String(input.key || ''), 200);
