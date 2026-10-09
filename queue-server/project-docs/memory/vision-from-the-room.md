@@ -11,6 +11,14 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The Bronx criminal court represents the raw, unfiltered baseline of American systemic power.
+
+It acts as an industrial processing plant for human misery that strips away constitutional polite fictions and reveals how the state grinds down the marginalized on a mass scale, manufacturing criminals through sheer bureaucratic indifference.
+
+## The carceral system is a self-reinforcing feedback loop that extracts human agency and processes friction into containment.
+
+Operating like a living organism that feeds on expansion, the carceral system converts poverty, trauma, and rebellion into profit, bureaucratic justification, and state control. It relies on physical isolation and psychological powerlessness to sever connection, and its mechanics bleed outward to mirror hierarchies in families, corporations, and states.
+
 ## Strategy is the comprehensive direction of power and the architecture of reality, translating an entity's will into physical coherence.
 
 Rather than a corporate buzzword or a mere tactic, true strategy is the primordial art of aligning an entity's values, resources, and institutional will to survive and govern its domain across scales.
