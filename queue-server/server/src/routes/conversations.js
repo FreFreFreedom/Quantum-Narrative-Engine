@@ -265,7 +265,8 @@ export function conversationsRoutes() {
   router.get('/books/:id', (req, res) => {
     const out = shelf.bookDetail(req.user?.id || 'antoine', req.params.id);
     if (out.error) return res.status(statusFor(out.error)).json(out);
-    res.json(out);
+    const st = bookFacts.starsFor(out.title);
+    res.json(st ? { ...out, stars: st.stars, starCount: st.count } : out);
   });
 
   // The two summaries — the publisher's, and what the book is doing here. The

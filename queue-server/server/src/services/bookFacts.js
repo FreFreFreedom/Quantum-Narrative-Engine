@@ -47,6 +47,12 @@ export function bindBookFacts(database) {
   try { db.exec("ALTER TABLE book_facts ADD COLUMN pages TEXT NOT NULL DEFAULT ''"); } catch (err) { /* already there */ }
   // The catalogue's whole title. NULL means never looked for, '' looked for and none.
   try { db.exec('ALTER TABLE book_facts ADD COLUMN full_title TEXT'); } catch (err) { /* already there */ }
+  // The stars a book has on Amazon, read off the page it was sent from (his ask,
+  // 2026-10-09). Keyed by its main title, so the shelf copy and the saved copy of
+  // the same book share them.
+  db.exec(`CREATE TABLE IF NOT EXISTS book_stars (
+    key TEXT PRIMARY KEY, stars REAL NOT NULL, count INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
   // Whether the cover is sharp: NULL never measured, 1 sharp, 0 blurry (see coverIsSharp).
   try { db.exec('ALTER TABLE book_facts ADD COLUMN cover_ok INTEGER'); } catch (err) { /* already there */ }
   // Every boot, a book still without a cover is asked about again on its next view,
@@ -68,6 +74,22 @@ export function bindBookFacts(database) {
       db.exec("INSERT INTO book_facts_marks (name) VALUES ('pages-middle')");
     }
   } catch (err) { /* next boot */ }
+}
+
+const starKey = (title) => norm(mainTitle(shopClean(title)));
+export function saveStars(title, stars, count) {
+  const s = Number(stars), n = Math.round(Number(count) || 0);
+  if (!db || !(s > 0 && s <= 5) || !title) return;
+  try {
+    db.prepare(`INSERT INTO book_stars (key, stars, count) VALUES (?,?,?)
+      ON CONFLICT(key) DO UPDATE SET stars=excluded.stars, count=excluded.count, updated_at=CURRENT_TIMESTAMP`)
+      .run(starKey(title), Math.round(s * 10) / 10, n);
+  } catch (err) { /* next send */ }
+}
+export function starsFor(title) {
+  if (!db || !title) return null;
+  try { const r = db.prepare('SELECT stars, count FROM book_stars WHERE key=?').get(starKey(title)); return r ? { stars: r.stars, count: r.count } : null; }
+  catch (err) { return null; }
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
@@ -706,6 +728,7 @@ async function goodreadsFor(isbn, title) {
 }
 
 function shape(row, item) {
+  const st = starsFor(item.title);
   return {
     title: item.title, kind: 'book', year: row?.year || item.year || '',
     poster: row?.cover || '', rating: 0, votes: 0,
@@ -715,6 +738,8 @@ function shape(row, item) {
     fullTitle: row?.full_title || '',
     goodreads: /^https:\/\//.test(row?.goodreads || '') ? row.goodreads : '',
     relevance: row?.relevance || '',
+    stars: st?.stars || 0,
+    starCount: st?.count || 0,
   };
 }
 

@@ -3763,6 +3763,37 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
    five times used to push it off the row and leave it floating mid-wall. */
 .shelf-panel-head [data-close] { position:absolute; top:14px; right:14px; z-index:2;
   width:24px; height:24px; min-width:0; padding:0; border-radius:50%; font-size:var(--fs-xs); line-height:1; flex:none; }
+/* The open card, over the Library pane (his pick B3, 2026-10-09): the shelf blurred
+   and dimmed behind, the cover large over a blur of itself. */
+.lib-over { position:fixed; z-index:40; }
+#roomInterests:not(.is-active) .lib-over { display:none; }
+.lib-over-dim { position:absolute; inset:0; background:color-mix(in srgb, var(--c-bg) 35%, transparent);
+  backdrop-filter:blur(5px) brightness(.5); -webkit-backdrop-filter:blur(5px) brightness(.5); animation:fmcnsFade .2s ease both; }
+.lib-over > .shelf-panel { position:absolute; left:10px; right:10px; top:10px; max-height:calc(100% - 20px); margin:0;
+  overflow:auto; overscroll-behavior:contain; isolation:isolate; box-shadow:0 20px 50px rgba(0,0,0,.55); animation:fmcnsFade .2s ease both; }
+.lib-pop-bg { position:absolute; left:0; right:0; top:0; height:340px; z-index:-1; pointer-events:none;
+  background-size:cover; background-position:center; filter:blur(18px) saturate(1.1); opacity:.5; transform:scale(1.2);
+  -webkit-mask-image:linear-gradient(#000 35%, transparent); mask-image:linear-gradient(#000 35%, transparent); }
+.shelf-panel-head.is-pop { flex-direction:column; gap:16px; padding-right:0; }
+.shelf-panel-head.is-pop > div { width:100%; }
+.shelf-panel-head.is-pop .lib-pop-cv { width:44%; max-width:210px; flex:none; border-radius:7px; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+.shelf-panel-head.is-pop > div > b { font-size:22px; }
+.shelf-panel-head.is-pop .bk-out { position:absolute; top:14px; right:48px; margin:0; }
+.lib-stats { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; text-align:center; margin:16px 0 4px;
+  background:color-mix(in srgb, var(--c-bg) 45%, transparent); border-radius:12px; }
+.lib-stats > div { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 4px; min-width:0; }
+.lib-stats > div + div { border-left:1px solid var(--c-border-2); }
+.lib-stats b { display:flex; align-items:center; gap:5px; font-family:var(--font-read); font-size:22px; font-weight:600; line-height:1.15; color:var(--c-ink); }
+.lib-stats small { display:block; margin-top:3px; font-size:11px; color:var(--c-ink-4); }
+.lib-starrow { display:flex; gap:1px; margin-top:2px; }
+.lib-starrow svg { width:11px; height:11px; }
+.lib-starrow .off { fill:var(--c-ink-5); opacity:.45; }
+.lib-starrow .on { fill:#d4a24c; }
+.lib-ic { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.4; }
+.lib-ic.is-gold { stroke:#d4a24c; }
+.lib-rule { display:block; width:28px; height:1px; margin:5px auto; background:var(--c-border-2); }
+.lib-pages { display:flex; align-items:center; gap:4px; font-family:var(--font-read); font-size:15px; font-weight:600; color:var(--c-ink-4); }
+.lib-pages .lib-ic { width:13px; height:13px; }
 .shelf-facts { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
 .shelf-facts span { font-size:var(--fs-base); color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:999px; padding:2px 9px; }
 .shelf-note { margin-top:22px; }
@@ -19214,18 +19245,14 @@ function shelfPanel(b) {
   const d = shelfDetail && shelfDetail.id === b.id ? shelfDetail : null;
   const cover = /^https:\/\//.test(b.cover_url || '')
     ? ' style="background-image:url(&quot;' + qEscAttr(b.cover_url) + '&quot;)"' : '';
-  if (!d) return '<div class="shelf-panel"><div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
-    + '<div><b>' + qEsc(b.title) + '</b><small>Opening…</small></div></div></div>';
-  const facts = [d.pages ? d.pages + ' pages' : '', d.year || '', d.talks ? 'named in ' + d.talks + (d.talks === 1 ? ' talk' : ' talks') : '',
+  if (!d) return '<div class="shelf-panel is-pop">' + libPopHead(b.cover_url || '', b.title, '', '<small>Opening…</small>', '', '') + '</div>';
+  const facts = [d.talks ? 'named in ' + d.talks + (d.talks === 1 ? ' talk' : ' talks') : '',
     d.passages.length ? d.passages.length + (d.passages.length === 1 ? ' passage kept' : ' passages kept') : '']
     .filter(Boolean).map((f) => '<span>' + qEsc(f) + '</span>').join('');
-  return '<div class="shelf-panel">'
-    + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
-    + '<div><b>' + qEsc(d.title) + '</b>' + (d.author ? '<small>' + qEsc(d.author) + '</small>' : '')
-    + '<div class="shelf-facts">' + facts + '</div>'
-    + '</div>'
-    + bookOutMenu(bookLinks({ kind: 'book', title: d.title, creator: d.author || '' }, null))
-    + '<button type="button" data-close aria-label="Close">✕</button></div>'
+  return '<div class="shelf-panel is-pop">'
+    + libPopHead(b.cover_url || '', d.title, d.author || '', facts ? '' : '',
+      bookOutMenu(bookLinks({ kind: 'book', title: d.title, creator: d.author || '' }, null)),
+      libStatStrip(d.stars, d.starCount, Number(d.pages) || 0, d.year || '') + (facts ? '<div class="shelf-facts">' + facts + '</div>' : ''))
     + bookTabs(shelfNotesMarkup(d)
       // What sat here when nothing was kept was the book's first page — the
       // publisher's front matter in capitals, which reads as broken text.
@@ -19563,6 +19590,42 @@ function libStars(v) {
   return '<span class="stars"><i>★★★★★</i><b style="width:' + pct.toFixed(1) + '%">★★★★★</b></span>';
 }
 function libVotes(n) { return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : String(n || 0); }
+// Five stars out of five, a half one drawn as half a star (his pick, 2026-10-09).
+function libStarRow(v) {
+  const d = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z';
+  let out = '';
+  for (let i = 0; i < 5; i++) {
+    const fill = Math.max(0, Math.min(1, (Number(v) || 0) - i));
+    const part = fill >= .75 ? 1 : fill >= .25 ? .5 : 0;
+    out += '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '" class="off"/>'
+      + (part ? '<path d="' + d + '" class="on"' + (part < 1 ? ' style="clip-path:inset(0 50% 0 0)"' : '') + '/>' : '') + '</svg>';
+  }
+  return '<span class="lib-starrow">' + out + '</span>';
+}
+// The card's three numbers under the title (his picks B2 and 5g2, 2026-10-09): the
+// Amazon stars, the length in blocks of 4,000 words over the page count, the year.
+// A number nobody knows leaves its cell out rather than showing a dash.
+function libStatStrip(stars, count, pages, year) {
+  const cells = [];
+  if (stars > 0) cells.push('<b>' + Number(stars).toFixed(1) + '</b>' + libStarRow(stars)
+    + '<small>' + (count ? Number(count).toLocaleString('en-US') + (count === 1 ? ' rating' : ' ratings') : 'rating') + '</small>');
+  if (pages > 0 && pages <= 2000) {
+    const n = Math.max(1, Math.round(pages * 275 / 4000));
+    cells.push('<b title="Blocks of 4,000 words"><svg class="lib-ic is-gold" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg> ' + n + '</b>'
+      + '<i class="lib-rule"></i><span class="lib-pages" title="Pages"><svg class="lib-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5z"/><path d="M9.5 1.5v3h3"/></svg> ' + pages + '</span>');
+  }
+  if (year) cells.push('<b>' + qEsc(String(year)) + '</b><small>published</small>');
+  return cells.length ? '<div class="lib-stats">' + cells.map((c) => '<div>' + c + '</div>').join('') + '</div>' : '';
+}
+// A book card's head: its cover large over a blur of itself, the whole title, the
+// author, then the numbers.
+function libPopHead(src, title, creator, extra, out, stats) {
+  const bg = /^https:\/\//.test(src || '') ? ' style="background-image:url(&quot;' + qEscAttr(src) + '&quot;)"' : '';
+  return '<div class="lib-pop-bg"' + bg + '></div>'
+    + '<div class="shelf-panel-head is-pop"><span class="shelf-cover lib-pop-cv"' + bg + '></span>'
+    + '<div><b title="' + qEscAttr(title) + '">' + qEsc(title) + '</b>' + extra + (creator ? '<small>' + qEsc(creator) + '</small>' : '') + '</div>'
+    + out + '<button type="button" data-close aria-label="Close">✕</button></div>' + stats;
+}
 
 function libAddedMs(t) {
   if (!t) return 0;
@@ -19762,14 +19825,9 @@ function libScreenPanel(w) {
       + (f.relevance
         ? '<div class="shelf-note is-ours"><h6>Why it is here<button type="button" data-rescreen title="Write it again">⟳</button></h6><p>' + qEsc(libForty(f.relevance)) + '</p></div>'
         : (libScreenBusy ? waitHtml('weaving', 'Working out what it gives you', 'p', 'shelf-note-wait') : ''));
-    return '<div class="shelf-panel">'
-      + '<div class="shelf-panel-head"><span class="shelf-cover sm"' + cover + '></span>'
-      + '<div><b title="' + qEscAttr(w.title) + '">' + qEsc(libShortTitle(w.title)) + '</b>'
-      + (w.episode ? '<small>Episode · ' + qEsc(w.episode) + '</small>' : '')
-      + (w.creator ? '<small>' + qEsc(w.creator) + '</small>' : '')
-      + ((f.year || w.year) ? '<div class="shelf-facts"><span>' + qEsc(f.year || w.year) + '</span></div>' : '') + '</div>'
-      + bookOutMenu(bookLinks(w, f))
-      + '<button type="button" data-close aria-label="Close">✕</button></div>'
+    return '<div class="shelf-panel is-pop">'
+      + libPopHead(src, f.fullTitle || w.title, w.creator || '', w.episode ? '<small>Episode · ' + qEsc(w.episode) + '</small>' : '',
+        bookOutMenu(bookLinks(w, f)), libStatStrip(f.stars, f.starCount, f.pages, f.year || w.year))
       + bookTabs(about, libContentsMarkup(libShortTitle(w.title), w.creator || '', f.isbn || '', true))
       + '<div class="shelf-acts">' + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</div></div>';
   }
@@ -19843,11 +19901,36 @@ function libWall(items, cols) {
   const at = cells.findIndex((c) => c.some(isOpen));
   const after = at < 0 ? -1 : Math.min(cells.length - 1, Math.floor(at / cols) * cols + cols - 1);
   const openIt = at < 0 ? null : cells[at].find(isOpen);
+  // The open card no longer unfolds under its row: it opens over the Library
+  // panel, the shelf dimmed behind it (his pick B3, 2026-10-09). See libPlaceOver.
+  libOverHtml = openIt ? (openIt.type === 'shelf' ? shelfPanel(openIt.raw) : libMediaPanel(openIt.raw)) : '';
   return cells.map((c, i) => (c.length === 2
       ? '<div class="lib-pair' + (i % cols === cols - 1 ? ' is-edge' : '') + '">' + libCard(c[0]) + libCard(c[1]) + '</div>'
-      : libCard(c[0]))
-    + (i === after ? (openIt.type === 'shelf' ? shelfPanel(openIt.raw) : libMediaPanel(openIt.raw)) : '')).join('');
+      : libCard(c[0]))).join('');
 }
+let libOverHtml = '';
+// Over the part of the Library pane in view, under its tabs: fixed to the screen,
+// so the shelf can scroll behind it and the card stays where it opened.
+function libPlaceOver(host) {
+  let over = host.querySelector('.lib-over');
+  if (!libOverHtml) { if (over) over.remove(); return null; }
+  if (!over) {
+    over = document.createElement('div'); over.className = 'lib-over';
+    host.appendChild(over);
+  }
+  over.innerHTML = '<div class="lib-over-dim" data-over-dim></div>' + libOverHtml;
+  libSizeOver(host);
+  return over;
+}
+function libSizeOver(host) {
+  const over = host && host.querySelector('.lib-over'); if (!over) return;
+  const pane = host.closest('.room-cards') || host;
+  const r = pane.getBoundingClientRect();
+  const tabs = pane.querySelector('.room-tabs:not([hidden])');
+  const top = Math.max(r.top, tabs ? tabs.getBoundingClientRect().bottom : r.top);
+  Object.assign(over.style, { left: r.left + 'px', top: top + 'px', width: r.width + 'px', height: Math.max(120, r.bottom - top) + 'px' });
+}
+window.addEventListener('resize', () => libSizeOver(document.getElementById('roomInterests')));
 
 async function renderInterestLibrary(opts) {
   const host = document.getElementById('roomInterests'); if (!host) return;
@@ -20014,6 +20097,7 @@ async function renderInterestLibrary(opts) {
     if (libFavOnly) for (let i = wall.length - 1; i >= 0; i--) if (!libFavs.has(wall[i].type + ':' + wall[i].id)) wall.splice(i, 1);
 
     host.querySelector('.shelf-grid').innerHTML = wall.length ? libWall(wall, cols) : '';
+    libPlaceOver(host);
     const results = host.querySelector('.interest-results');
     results.innerHTML = review.entries.map(e => '<div class="interest-item" data-review="' + qEscAttr(e.id) + '"><div>' + qEsc(e.observed || e.candidate.title || 'Unclear title') + '</div><small>Needs review · ' + qEsc(e.filename) + '</small><button data-edit>Review</button> <button data-dismiss>Dismiss</button></div>').join('')
       + rest.map(w => {
@@ -20073,6 +20157,8 @@ async function renderInterestLibrary(opts) {
     if (panel) {
       const close = panel.querySelector('[data-close]');
       if (close) close.onclick = () => { libOpen = null; shelfOpen = ''; shelfDetail = null; shelfNotes = null; renderInterestLibrary({ quiet: true }); };
+      const dim = host.querySelector('[data-over-dim]');
+      if (dim && close) dim.onclick = close.onclick;
       const rescreen = panel.querySelector('[data-rescreen]');
       if (rescreen) rescreen.onclick = () => { if (!libScreenBusy && libOpen) { libScreen[libOpen.id] = { ...(libScreen[libOpen.id] || {}), relevance: '' }; libLoadScreenNotes(libOpen.id, true); } };
       const renote = panel.querySelector('[data-renote]');

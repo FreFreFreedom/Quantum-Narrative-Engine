@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readInterestScreenshot } from './interestScreenshot.js';
-import { canonicalBook, bookKnown, authorInTitle, bookFactsFor } from './bookFacts.js';
+import { canonicalBook, bookKnown, authorInTitle, bookFactsFor, saveStars } from './bookFacts.js';
 import { generateText } from './ai/text.js';
 import { workKey, sameWork, kindGroup, sameMaker, sameEntry, workFingerprint, sameEpisode } from './sameWork.js';
 
@@ -492,6 +492,7 @@ export function saveSuggestedWorks(owner, works = []) {
   for (const raw of (Array.isArray(works) ? works : []).slice(0, 12)) {
     const c = candidate(raw);
     if (!c.title || !c.kind) continue;
+    if (c.kind === 'book' && raw && raw.stars) saveStars(c.title, raw.stars, raw.ratings);
     // Already in the Library under any spelling — with or without its subtitle,
     // "The" or not, saved as a film when it is a series — or already on the shelf
     // as a whole book: reuse it, never add a second copy (his rule, 2026-09-23).
