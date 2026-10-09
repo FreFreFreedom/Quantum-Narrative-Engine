@@ -2229,7 +2229,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // shelf list and three random "subjects he is drawn to" used to ride on every
     // answer and were rules in all but name (2026-09-30).
     // His Library: a work he names, or the whole list when he points at it (libraryLookup.js).
-    libraryContext(convo.created_by, lastUserText(convo.id)),
+    libraryContext(convo.created_by, ownWords(lastUserText(convo.id))),
     shelfContext(convo.created_by, lastUserText(convo.id), { onlyNamed: true }),
     watchingContext(lastUserText(convo.id)),
     repoBlock,
@@ -2252,7 +2252,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // prefix and roughly quadruple the token cost of every turn. See
     // plans/room-shared-memory.md §3 and conversation-voice-and-project-map.md.
     mindBlock(lastUserText(convo.id)),
-    interestContext(convo.created_by, lastUserText(convo.id)),
+    interestContext(convo.created_by, ownWords(lastUserText(convo.id))),
     shelfContext(convo.created_by, lastUserText(convo.id)),
     watchingContext(lastUserText(convo.id)),
     repoBlock,
@@ -3033,6 +3033,13 @@ async function runImplementProposal(convoId, turn) {
 function parseMsgMeta(meta) {
   if (!meta) return {};
   try { return typeof meta === 'string' ? JSON.parse(meta) : meta; } catch { return {}; }
+}
+// What he wrote himself, without the cards he dropped in. A dropped Library card
+// carries "Saved interest" in its record, which read as him pointing at his Library
+// and brought the whole list along — so "best books like these two" was answered
+// from his own shelf instead of from everything there is (his report, 2026-10-09).
+function ownWords(text) {
+  return String(text || '').replace(/\n*ATTACHED REFERENCES:[\s\S]*$/, '');
 }
 function lastUserText(convoId) {
   const msgs = threadMessages(convoId).filter((m) => m.kind === 'chat');

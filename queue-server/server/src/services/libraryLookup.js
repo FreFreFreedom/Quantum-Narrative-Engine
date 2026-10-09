@@ -100,7 +100,8 @@ export function libraryContext(owner, text) {
   if (!named.length && !pointed) return '';
 
   const parts = ['\n=== HIS LIBRARY ===',
-    'What he has saved in the app\'s Library. Saved means he was drawn to it, not that he has read or watched it.'];
+    'What he has saved in the app\'s Library. Saved means he was drawn to it, not that he has read or watched it.',
+    'This is never a limit on what you may suggest. Asked for books, films or series like something, look across everything that exists, not only this list; when one you name is already here, say so.'];
   if (named.length) parts.push('\nTHE ONES HE NAMES:\n' + named.map((w) => described(owner, w)).join('\n\n'));
   if (pointed) {
     const wantKind = /\b(books?|livres?)\b/i.test(text) ? 'book' : /\b(films?|movies?)\b/i.test(text) ? 'film' : /\b(series|s[eé]ries|shows?)\b/i.test(text) ? 'series' : '';
