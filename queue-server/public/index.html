@@ -32128,8 +32128,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // line — so the edge is walked across them, not only inside the piece the hand
     // stopped in. Stopping at the piece's end left "reali|sm" cut in half.
     var root = r.commonAncestorContainer;
-    while(root && root.nodeType === 1 && /^(SPAN|A|B|I|EM|STRONG|MARK|CODE|U|S|SUB|SUP)$/.test(root.nodeName)) root = root.parentNode;
     if(root && root.nodeType === 3) root = root.parentNode;
+    while(root && root.nodeType === 1 && /^(SPAN|A|B|I|EM|STRONG|MARK|CODE|U|S|SUB|SUP)$/.test(root.nodeName)) root = root.parentNode;
     var block = function(n){ var el = n.nodeType === 1 ? n : n.parentElement; while(el && el !== root && /^(SPAN|A|B|I|EM|STRONG|MARK|CODE|U|S|SUB|SUP)$/.test(el.nodeName)) el = el.parentElement; return el; };
     var texts = function(){ var out = [], w = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT), n; while((n = w.nextNode())) out.push(n); return out; };
     var all = texts();
