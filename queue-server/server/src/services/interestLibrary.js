@@ -77,6 +77,8 @@ export function bindInterestLibrary(database) {
   // One episode of a series is its own entry: title is the series (so its cover
   // and facts are found), episode names which one (his ask, 2026-09-30).
   try { db.exec("ALTER TABLE interest_works ADD COLUMN episode TEXT NOT NULL DEFAULT ''"); } catch {}
+  // His favourites, any card on the Library wall, by its 'type:id' (his pick, 2026-10-09).
+  db.exec('CREATE TABLE IF NOT EXISTS lib_favs (owner TEXT NOT NULL, key TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (owner, key))');
   try { db.exec('ALTER TABLE interest_works ADD COLUMN episode_note TEXT'); } catch {}
   try { mergeDoubles(); } catch (err) { console.warn('[interests] merging doubles failed:', err.message); }
   // One server owns this SQLite queue; resume interrupted reads after boot.
@@ -557,4 +559,15 @@ export const INTEREST_TOOLS = [
 ];
 export function interestTool(owner, name, args = {}) {
   return name === 'read_interest_item' ? readInterest(owner, String(args.id || '')) : { items: listInterests(owner, { ...args, limit: 20 }), certainty: 'Screenshot transcriptions; not verified catalogue metadata.' };
+}
+
+export function listFavs(owner) {
+  return db.prepare('SELECT key FROM lib_favs WHERE owner=? ORDER BY created_at DESC').all(owner).map((r) => r.key);
+}
+export function setFav(owner, input = {}) {
+  const key = clean(String(input.key || ''), 200);
+  if (!/^[a-z]+:.+/.test(key)) fail('Which card?');
+  if (input.on) db.prepare('INSERT OR IGNORE INTO lib_favs(owner,key) VALUES(?,?)').run(owner, key);
+  else db.prepare('DELETE FROM lib_favs WHERE owner=? AND key=?').run(owner, key);
+  return { favs: listFavs(owner) };
 }

@@ -3776,6 +3776,21 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   display:flex; align-items:center; justify-content:center; font-size:var(--fs-xs); line-height:1; white-space:nowrap; overflow:hidden;
   opacity:0; transition:opacity .12s; background:rgba(var(--c-surface-rgb),.85); }
 .shelf-card:hover [data-drop], .shelf-card [data-drop]:focus-visible { opacity:1; }
+/* Favourites (his pick B + 2, 2026-10-09): a gold corner folded on the cover; the
+   star to set it shows on hover, top-left, since the ✕ holds the right corner. */
+.shelf-fav { position:absolute; top:0; right:0; z-index:2; width:0; height:0; border-top:30px solid #c9a14a; border-left:30px solid transparent;
+  border-top-right-radius:5px; pointer-events:none; transition:opacity .12s; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+.shelf-fav::after { content:'★'; position:absolute; top:-29px; right:2px; font-size:11px; line-height:1; color:#141a26; }
+.shelf-card:hover .shelf-fav { opacity:0; }
+.shelf-card [data-fav] { position:absolute; top:4px; left:4px; z-index:3; width:22px; height:22px; min-width:0; padding:0; border-radius:50%; border:0;
+  display:flex; align-items:center; justify-content:center; font-size:13px; line-height:1; cursor:pointer; color:var(--c-ink-3);
+  opacity:0; transition:opacity .12s, color .12s; background:rgba(var(--c-surface-rgb),.85); }
+.shelf-card:hover [data-fav], .shelf-card [data-fav]:focus-visible { opacity:1; }
+.shelf-card.is-fav [data-fav] { color:#c9a14a; }
+.lib-bar { align-items:center; gap:10px; }
+.lib-favonly { width:26px; height:26px; min-width:0; padding:0; border-radius:50%; border:1px solid var(--c-border-2); background:none;
+  display:flex; align-items:center; justify-content:center; font-size:13px; line-height:1; color:var(--c-ink-4); cursor:pointer; }
+.lib-favonly.on { background:#c9a14a; border-color:#c9a14a; color:#141a26; }
 /* On its way out — it leaves on the click, not on the server's answer. */
 .shelf-card.is-going, .interest-item.is-going { opacity:0; transform:scale(.94); pointer-events:none;
   transition:opacity .16s var(--ease), transform .16s var(--ease); }
@@ -19194,6 +19209,8 @@ async function renderRoomShelf() { return renderInterestLibrary(); }
 // one grid at whatever size he set; everything else (papers, projects, kept
 // passages) keeps a quiet list under it. Clicking a cover unfolds its panel in
 // place, under the row it sits on.
+let libFavs = null;          // Set of 'type:id' he starred, null until read
+let libFavOnly = (() => { try { return localStorage.getItem('qne-lib-favonly') === '1'; } catch (_) { return false; } })();
 let libOpen = null;          // { type:'shelf'|'media', id }
 let libMedia = null;         // the saved item whose panel is open
 let libScreen = {};          // what the catalogues know about each saved work, by item id
@@ -19615,11 +19632,14 @@ function libCard(it) {
     ? roomMediaArtMarkup(it.raw, 'shelf-cover')       // filled in by the catalogue once it answers
     : '<span class="shelf-cover"' + cover + '></span>';
   const titled = art.replace(/^<(div|span) class="shelf-cover"/, '<$1 class="shelf-cover" data-title="' + qEscAttr(libShortTitle(it.title)) + '"');
-  return '<div class="shelf-card' + (open ? ' is-open' : '') + (fresh ? ' is-new' : '') + '" data-lib="' + qEscAttr(it.type + ':' + it.id) + '" draggable="true" data-drag="' + qEscAttr(libDragText(it)) + '" data-drag-cover="' + qEscAttr(/^https:\/\//.test(src) ? src : '') + '">'
+  const fav = !!(libFavs && libFavs.has(it.type + ':' + it.id));
+  return '<div class="shelf-card' + (open ? ' is-open' : '') + (fresh ? ' is-new' : '') + (fav ? ' is-fav' : '') + '" data-lib="' + qEscAttr(it.type + ':' + it.id) + '" draggable="true" data-drag="' + qEscAttr(libDragText(it)) + '" data-drag-cover="' + qEscAttr(/^https:\/\//.test(src) ? src : '') + '">'
     + '<button type="button" class="shelf-open" data-open aria-label="' + qEscAttr(it.title) + '">' + titled
     + (facts && facts.rating ? '<span class="lib-badge">' + facts.rating.toFixed(1) + '</span>' : '')
     + (libIsScreen(it.raw) ? '<span class="lib-kind">' + (it.raw.kind === 'series' ? '◗' : '▶') + '</span>' : '')
     + libHoverName(it) + '</button>'
+    + '<i class="shelf-fav"' + (fav ? '' : ' hidden') + '></i>'
+    + '<button type="button" data-fav title="' + (fav ? 'Unfavourite' : 'Favourite') + '" aria-pressed="' + fav + '" aria-label="Favourite">' + (fav ? '★' : '☆') + '</button>'
     // Every card on the wall can go with one click on its corner, without opening
     // it first (his ask, 2026-10-02) — not only the whole books on the shelf.
     + (it.type === 'shelf'
@@ -19818,7 +19838,7 @@ async function renderInterestLibrary(opts) {
 
   const cols = 5 - shelfSize();
   host.innerHTML = top
-    + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><span class="shelf-size" title="Cover size">'
+    + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><button type="button" class="lib-favonly' + (libFavOnly ? ' on' : '') + '" data-fav-only aria-pressed="' + libFavOnly + '" title="Only favourites">★</button><span class="shelf-size" title="Cover size">'
     + '<i class="shelf-ticks"><b></b><b></b><b></b><b></b></i><i class="shelf-fill"></i>'
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
@@ -19827,6 +19847,12 @@ async function renderInterestLibrary(opts) {
   host.dataset.libView = view;
   putBack();
   wireTop();
+  const favOnly = host.querySelector('[data-fav-only]');
+  if (favOnly) favOnly.onclick = () => {
+    libFavOnly = !libFavOnly;
+    try { localStorage.setItem('qne-lib-favonly', libFavOnly ? '1' : ''); } catch (_) {}
+    renderInterestLibrary({ quiet: true });
+  };
 
   // The wall narrows as he types, a beat after he stops; the field he is typing in
   // keeps its focus across the repaint.
@@ -19892,6 +19918,11 @@ async function renderInterestLibrary(opts) {
     const wall = books.map((b) => ({ type: 'shelf', id: b.id, title: b.title, creator: b.author, cover: b.cover_url || '', raw: b, added: libAddedMs(b.created_at) }))
       .concat(media.map((w) => ({ type: 'media', id: w.id, title: w.title, creator: w.creator || '', cover: String(w.artwork || ''), raw: w, added: Number(w.added) || 0 })))
       .sort((a, b) => b.added - a.added);
+    if (!libFavs) {
+      try { libFavs = new Set((await api('/api/convos/favs')).favs || []); } catch (_) { libFavs = new Set(); }
+      if (request !== interestLibraryRequest) return;
+    }
+    if (libFavOnly) for (let i = wall.length - 1; i >= 0; i--) if (!libFavs.has(wall[i].type + ':' + wall[i].id)) wall.splice(i, 1);
 
     host.querySelector('.shelf-grid').innerHTML = wall.length ? libWall(wall, cols) : '';
     const results = host.querySelector('.interest-results');
@@ -19982,6 +20013,21 @@ async function renderInterestLibrary(opts) {
       // A shelf book's own ✕ lives in its panel too.
       if (libOpen && libOpen.type === 'shelf' && !libMedia) { /* handled by the card's ✕ below */ }
     }
+    host.querySelectorAll('.shelf-card [data-fav]').forEach((b) => {
+      const card = b.closest('[data-lib]'), key = card.dataset.lib;
+      b.onclick = async (ev) => {
+        ev.stopPropagation();
+        const on = !libFavs.has(key);
+        const paint = (v) => {
+          if (v) libFavs.add(key); else libFavs.delete(key);
+          card.classList.toggle('is-fav', v); b.textContent = v ? '★' : '☆'; b.setAttribute('aria-pressed', String(v)); b.title = v ? 'Unfavourite' : 'Favourite';
+          const corner = card.querySelector('.shelf-fav'); if (corner) corner.hidden = !v;
+        };
+        paint(on);
+        try { await apiWrite('/api/convos/favs', 'POST', { key, on }); if (libFavOnly && !on) renderInterestLibrary({ quiet: true }); }
+        catch (err) { paint(!on); b.title = err.message; }
+      };
+    });
     host.querySelectorAll('.shelf-card [data-drop]').forEach((b) => {
       const card = b.closest('[data-lib]'); const [type, id] = card.dataset.lib.split(/:(.+)/);
       const it = wall.find((x) => x.type === type && x.id === id);

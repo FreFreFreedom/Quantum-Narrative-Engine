@@ -69,6 +69,8 @@ export function conversationsRoutes() {
   // author, year — so nothing is read by a model. Doubles fold in saveSuggestedWorks.
   router.post('/interests', interestRoute((req, owner) => ({ saved: interests.saveSuggestedWorks(owner, (req.body || {}).works || []) })));
   router.get('/interests', interestRoute((req, owner) => ({ items: interests.listInterests(owner, req.query) })));
+  router.get('/favs', interestRoute((req, owner) => ({ favs: interests.listFavs(owner) })));
+  router.post('/favs', interestRoute((req, owner) => interests.setFav(owner, req.body || {})));
   router.get('/interest-review', interestRoute((req, owner) => ({ entries: interests.pendingInterestReview(owner) })));
   router.get('/interest-imports/:batchId/image', interestRoute((req, owner) => interests.importImage(owner,req.params.batchId)));
   router.patch('/interests/:itemId', interestRoute((req, owner) => interests.changeInterest(owner, req.params.itemId, req.body || {})));
