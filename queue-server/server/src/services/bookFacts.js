@@ -424,6 +424,18 @@ export async function canonicalBook(title, creator) {
   return Object.keys(out).length ? out : null;
 }
 
+// A book saved with no author at all — most come off Amazon, whose page title
+// was kept whole (61 of 100 books, his screenshot 2026-10-09). The shop's own
+// tail often names the author ("…: Earley, Pete: 8601404518355", "…, Smil,
+// Vaclav, eBook - Amazon.com").
+export function authorInTitle(title) {
+  const t = String(title || '');
+  let m = t.match(/^(.*?):\s*([\p{L}.'\- ]{2,40}),\s*([\p{L}.'\- ]{2,40}):\s*[\dX]{10,13}\b/u);
+  if (m) return { title: m[1].trim(), creator: `${m[3].trim()} ${m[2].trim()}` };
+  m = t.match(/^(.*?),\s*([\p{L}.'\- ]{2,40}),\s*([\p{L}.'\- ]{2,40}),\s*(?:eBook|Kindle|Paperback|Hardcover)\b.*$/iu);
+  if (m) return { title: m[1].trim(), creator: `${m[3].trim()} ${m[2].trim()}` };
+  return null;
+}
 function isbn10(isbn) {
   const d = String(isbn || '').replace(/[^0-9Xx]/g, '');
   if (d.length === 10) return d.toUpperCase();
