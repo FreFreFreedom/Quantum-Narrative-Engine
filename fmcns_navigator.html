@@ -32020,6 +32020,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   function defineHere(e, word, sentence, pop, messageId){
     if(!e || !e.convoId) return;
+    if(pop) pop.dataset.convo = e.convoId;
     var key = e.convoId + '|' + (isAcronym(word) ? 'acronym:' + word : word.toLowerCase().replace(/[’']s$/, '').slice(0, 600));
     var paint = function(text){
       if(!text) return;
@@ -32366,22 +32367,37 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var passage = String(sel).trim().replace(/\s+/g, ' ');
       var range = sel.getRangeAt(0);
       if(passage.length < 2 || !card.contains(range.startContainer) || !card.contains(range.endContainer)) return;
-      if(quotePop && quotePop.dataset.passage === passage) return;
+      if(quotePop && quotePop !== card && quotePop.dataset.passage === passage) return;
       var nWords = passage.split(' ').length;
       var one = /^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage) || isAcronym(passage);
       if(!one && !(nWords >= 2 && nWords <= 150 && /[A-Za-z]/.test(passage))) return;
+      // Read before the old bar goes: a word picked inside a meaning replaces it.
+      var convo = card.dataset.convo || '', sentence = sentenceAround(range, passage), r0 = range.getBoundingClientRect();
       killQuotePop();
       quotePop = document.createElement('div');
       quotePop.className = 'se-quote-pop se-card-define';
       quotePop.dataset.passage = passage;
       quotePop.onmousedown = function(x){ x.stopPropagation(); };
       document.body.appendChild(quotePop);
-      var e = { convoId: card.dataset.convo || '' };
-      defineHere(e, passage, sentenceAround(range, passage), quotePop, null);
+      var e = { convoId: convo };
+      defineHere(e, passage, sentence, quotePop, null);
       if(one) defineWord(passage, quotePop);
       placeQuotePop();
     }, 250);
   }
+  // Letting go of a selection in any card — a book, a film, a person, or a meaning
+  // itself — looks the words up (his ask, 2026-10-09). While the hand is still
+  // dragging nothing is offered, so the moment of letting go is the one to answer.
+  document.addEventListener('mouseup', function(ev){
+    setTimeout(function(){
+      var sel = window.getSelection && window.getSelection();
+      if(!sel || !sel.rangeCount || !String(sel).trim()) return;
+      var n = sel.anchorNode, el = n && (n.nodeType === 1 ? n : n.parentElement);
+      if(!el || !el.closest) return;
+      var host = el.closest('.se-card') || (el.closest('.se-define .here, .se-define-chat .it') && el.closest('.se-quote-pop'));
+      if(host && host.dataset.convo) cardDefineOffer(host);
+    }, 0);
+  });
 
   // "Answer this again, on that model." Any earlier question of yours, not only the
   // last one, and an explicit pick rather than the lane tag's fixed three-way cycle
