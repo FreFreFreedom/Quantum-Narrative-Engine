@@ -179,7 +179,16 @@ export function conversationsRoutes() {
       workNote(req.params.id, { ...it, year: facts.year || it.year, overview: facts.overview || '' }, { refresh: req.query.refresh === '1' }),
       it.kind === 'book' ? bookGenre(it).catch(() => null) : null,
     ]);
-    res.json({ ...facts, note: note.text, author: it.kind === 'book' ? it.creator : '', fiction: genre?.fiction || '', genre: genre?.genre || '' });
+    // What the book became on screen: only what the film catalogue really knows,
+    // so a title the model half-remembers never shows up as a blank poster.
+    let onScreen = [];
+    if (genre?.screen?.length) {
+      const items = genre.screen.map((x, i) => ({ id: 's' + i, kind: x.kind === 'series' ? 'series' : 'film', title: x.title, year: x.year }));
+      const sf = await screen.screenFactsFor(owner, items).catch(() => ({}));
+      onScreen = genre.screen.map((x, i) => ({ ...x, year: sf['s' + i]?.year || x.year, poster: sf['s' + i]?.poster || '' }))
+        .filter((x, i) => sf['s' + i]?.poster);
+    }
+    res.json({ ...facts, note: note.text, author: it.kind === 'book' ? it.creator : '', fiction: genre?.fiction || '', genre: genre?.genre || '', screen: onScreen });
   }));
 
   // The card a person's name opens in a Room answer: their years, the main pattern

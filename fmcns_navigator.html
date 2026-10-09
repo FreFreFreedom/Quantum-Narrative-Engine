@@ -2832,8 +2832,15 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-card { position:fixed; z-index:var(--z-popover); width:min(560px, calc(100vw - 16px)); max-height:min(720px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
   padding:28px 32px 28px; border-radius:16px; font-family:var(--font-ui); color:var(--c-ink); }
-.se-card-genre { margin-top:6px; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--c-ink-3); }
-.se-card-genre b { font-weight:600; color:var(--c-accent, var(--c-ink)); }
+.se-card-band { margin:-28px -32px 20px; padding:12px 32px; background:color-mix(in srgb, var(--c-accent) 11%, transparent);
+  font-size:14px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-accent); }
+.se-card-screen { display:flex; gap:14px; flex-wrap:wrap; margin-top:18px; padding-top:16px; border-top:1px solid var(--c-border); }
+.se-card-film { all:unset; cursor:pointer; width:96px; display:flex; flex-direction:column; gap:3px; }
+.se-card-film span { display:block; width:96px; height:140px; border-radius:5px; background:var(--c-border) center/cover no-repeat;
+  box-shadow:0 3px 10px rgba(0,0,0,.35); transition:transform .15s, box-shadow .15s; }
+.se-card-film:hover span, .se-card-film.on span { transform:translateY(-3px); box-shadow:0 0 0 2px var(--c-accent); }
+.se-card-film b { font-size:13px; font-weight:500; line-height:1.25; margin-top:5px; }
+.se-card-film small { font-size:11px; color:var(--c-ink-3); }
 .se-card.is-person-card { width:auto; min-width:min(360px, calc(100vw - 16px)); max-width:min(500px, calc(100vw - 16px)); padding:22px 26px; }
 .se-card.is-person-card .se-card-title { font-size:25px; }
 .se-card.is-person-card .se-card-meta { font-size:15px; }
@@ -19517,7 +19524,7 @@ document.addEventListener('dragstart', (ev) => {
 // A cover or a title in an answer drags the same way (his ask, 2026-10-09). It has
 // no Library id, so it travels as what it is and the server finds it by title.
 document.addEventListener('dragstart', (ev) => {
-  const btn = ev.target && ev.target.closest && ev.target.closest('.se-cover, .se-work');
+  const btn = ev.target && ev.target.closest && ev.target.closest('.se-cover, .se-work, .se-card-film');
   const d = btn && btn.querySelector('[data-cover-title]');
   if (!d || !ev.dataTransfer) return;
   const w = d.dataset, art = (d.style.backgroundImage.match(/url\("?(https:[^")]+)/) || [])[1] || '';
@@ -34835,7 +34842,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
 
   // ---------- The card a cover opens ----------
   var seCard = null, seCardFor = null, seCardAnchor = null;
-  function seCardClose(){ if (seCard) { seCard.remove(); seCard = null; seCardFor = null; seCardAnchor = null; } }
+  function seCardClose(){ seCard2Close(); if (seCard) { seCard.remove(); seCard = null; seCardFor = null; seCardAnchor = null; } }
   function seCardPlace(anchor){
     if (!seCard || !anchor.isConnected) return;
     var r = anchor.getBoundingClientRect(), w = seCard.offsetWidth, h = seCard.offsetHeight;
@@ -34892,12 +34899,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var toc = cc && !cc.busy && cc.entries.length ? '<ol class="se-card-toc">' + cc.entries.map(function(x){
           return '<li class="' + (x.l ? 'sub' : (/^(part|pt\.|book|section|volume)\b/i.test(x.t) ? 'part' : '')) + '"><span>' + qEsc(x.t) + '</span>' + (x.p ? '<em>' + qEsc(x.p) + '</em>' : '') + '</li>';
         }).join('') + '</ol><small class="se-card-src">' + qEsc(cc.source) + '</small>' : '';
-      return '<div class="bk-head"><span class="bk-cover"' + (/^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '') + '></span>'
+      return (f.fiction ? '<div class="se-card-band">' + qEsc(f.fiction) + (f.genre ? ' · ' + qEsc(f.genre) : '') + '</div>' : '')
+        + '<div class="bk-head"><span class="bk-cover"' + (/^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '') + '></span>'
         + '<div class="bk-id"><b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
         + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '')
-        + (f.fiction ? '<div class="se-card-genre"><b>' + qEsc(f.fiction) + '</b>' + (f.genre ? ' · ' + qEsc(f.genre) : '') + '</div>' : '') + '</div>'
+        + '</div>'
         + bookOutMenu(bookLinks(bw, ff)) + '</div>'
-        + bookTabs(about, toc);
+        + bookTabs(about, toc)
+        + seCardScreen(f.screen, d);
     }
     var html = '<button type="button" class="se-card-x" data-card-close aria-label="Close">✕</button>'
       + '<b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
@@ -34925,6 +34934,46 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       return '<a class="se-card-out" href="' + qEscAttr(o.url) + '" target="_blank" rel="noopener noreferrer">' + qEsc(o.label) + ' <span aria-hidden="true">↗</span></a>';
     }).join('') + '</div>';
     return html;
+  }
+  // What the book became on screen (his pick 2 with row E, 2026-10-09): posters in a
+  // row under the text; a click opens that film's own card beside this one.
+  function seCardScreen(list, d){
+    if (!list || !list.length) return '';
+    var KIND = { film: 'Film', series: 'Series', documentary: 'Documentary' };
+    return '<div class="se-card-screen">' + list.map(function(x){
+      var k = x.kind === 'series' ? 'series' : 'film';
+      var w = { kind: k, title: x.title, creator: '' };
+      return '<button type="button" class="se-card-film" draggable="true" title="' + qEscAttr(x.title) + '" data-convo="' + qEscAttr(seCard && seCard.dataset.convo || '') + '">'
+        + '<span data-cover-art="' + qEscAttr(roomMediaArtKey(w)) + '" data-cover-kind="' + k + '" data-cover-title="' + qEscAttr(x.title) + '" data-cover-creator="" data-cover-year="' + qEscAttr(x.year || '') + '" data-cover-episode=""'
+        + ' style="background-image:url(&quot;' + qEscAttr(x.poster) + '&quot;)"></span>'
+        + '<b>' + qEsc(x.title) + '</b><small>' + (KIND[x.kind] || 'Film') + (x.year ? ' · ' + qEsc(x.year) : '') + '</small></button>';
+    }).join('') + '</div>';
+  }
+  var seCard2 = null, seCard2For = null;
+  function seCard2Close(){ if (seCard2) { seCard2.remove(); seCard2 = null; seCard2For = null; } }
+  function seCard2Place(){
+    if (!seCard2 || !seCard) return;
+    var r = seCard.getBoundingClientRect(), w = seCard2.offsetWidth, h = seCard2.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+    var left = r.right + 14 + w <= vw - 8 ? r.right + 14 : r.left - 14 - w >= 8 ? r.left - 14 - w : Math.max(8, vw - w - 8);
+    seCard2.style.left = left + 'px'; seCard2.style.top = Math.max(8, Math.min(r.top, vh - h - 8)) + 'px';
+  }
+  function seCardBeside(btn){
+    var span = btn.querySelector('[data-cover-art]'); if (!span) return;
+    var d = span.dataset;
+    if (seCard2For === d.coverArt) { seCard2Close(); return; }
+    seCard2Close();
+    seCard2 = document.createElement('div'); seCard2.className = 'se-card is-beside'; seCard2.setAttribute('role', 'dialog');
+    seCard2.dataset.convo = btn.dataset.convo || '';
+    seCard2For = d.coverArt;
+    document.body.appendChild(seCard2);
+    if (seCard) seCard.querySelectorAll('.se-card-film').forEach(function(b){ b.classList.toggle('on', b === btn); });
+    var paint = function(card){ if (!seCard2 || seCard2For !== d.coverArt) return; seCard2.innerHTML = seCardHtml(d, card); seCard2Place(); };
+    paint(null);
+    if (btn.dataset.convo) {
+      api('/api/convos/' + encodeURIComponent(btn.dataset.convo) + '/work-card?kind=' + encodeURIComponent(d.coverKind) + '&title=' + encodeURIComponent(d.coverTitle)
+        + '&creator=&year=' + encodeURIComponent(d.coverYear || ''))
+        .then(function(card){ paint(card || {}); }).catch(function(){ paint({}); });
+    }
   }
   function seCardOpen(btn){
     var span = btn.querySelector('[data-cover-art]'); if (!span) return;
@@ -35126,6 +35175,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var btn = ev.target.closest && ev.target.closest('.se-cover, .se-work');
     if (btn) { ev.preventDefault(); seCardOpen(btn); return; }
     if (ev.target.closest('.se-quote-pop')) return;
+    var fm = ev.target.closest && ev.target.closest('.se-card-film');
+    if (fm) { ev.preventDefault(); seCardBeside(fm); return; }
+    if (seCard2 && seCard2.contains(ev.target)) { if (ev.target.closest('[data-card-close]')) seCard2Close(); return; }
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
   });
   document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') seCardClose(); });
@@ -35188,7 +35240,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   window.addEventListener('resize', function(){
     if (!seCard || seZoomed()) return;
     if (!seCardAnchor || !seCardAnchor.isConnected) { seCardClose(); return; }
-    seCardPlace(seCardAnchor);
+    seCardPlace(seCardAnchor); seCard2Place();
   });
   // Clicking a cover can scroll the pane a little (the button takes focus), so a
   // scroll moves the card with its cover and only closes it once the cover has
@@ -35197,7 +35249,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (!seCard || seZoomed() || seCard.contains(ev.target)) return;
     if (!seCardAnchor || !seCardAnchor.isConnected) { seCardClose(); return; }
     var r = seCardAnchor.getBoundingClientRect();
-    if (r.bottom < 0 || r.top > window.innerHeight) seCardClose(); else seCardPlace(seCardAnchor);
+    if (r.bottom < 0 || r.top > window.innerHeight) seCardClose(); else { seCardPlace(seCardAnchor); seCard2Place(); }
   }, true);
 
   function logHtml(e){

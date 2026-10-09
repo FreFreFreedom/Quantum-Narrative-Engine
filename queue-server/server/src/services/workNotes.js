@@ -74,29 +74,35 @@ export async function workNote(convoId, { kind = 'film', title = '', creator = '
   return { text };
 }
 
-// Fiction or not, and the genre in a few words (his ask, 2026-10-09): one tiny call
-// per book, kept for good — the same book is the same genre in every conversation.
+// Fiction or not, the genre in a few words, and what was made from it for the
+// screen (his asks, 2026-10-09): one tiny call per book, kept for good — the same
+// book is the same genre in every conversation.
 const genreAsked = new Map();
 export async function bookGenre({ title = '', creator = '' } = {}) {
   if (!db || !norm(title)) return null;
   db.exec(`CREATE TABLE IF NOT EXISTS book_genres (key TEXT PRIMARY KEY, fiction TEXT NOT NULL, genre TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  try { db.exec('ALTER TABLE book_genres ADD COLUMN screen TEXT'); } catch {}
   const key = norm(title) + '|' + norm(creator);
-  const row = db.prepare('SELECT fiction, genre FROM book_genres WHERE key=?').get(key);
-  if (row) return row;
+  const row = db.prepare('SELECT fiction, genre, screen FROM book_genres WHERE key=?').get(key);
+  if (row && row.screen != null) { let sc = []; try { sc = JSON.parse(row.screen); } catch {} return { fiction: row.fiction, genre: row.genre, screen: sc }; }
   if (genreAsked.has(key)) return genreAsked.get(key);
   const job = (async () => {
     const out = await generateText({
-      feature: 'summary', maxTokens: 200, label: 'room:book-genre', timeoutMs: 20_000, maxAttempts: 2,
-      prompt: `The book "${title}"${creator ? ` by ${creator}` : ''}.\nReply with JSON only: {"fiction": "Fiction" or "Non-fiction", "genre": its genre in one to three plain words, like "Legal thriller", "Courtroom memoir", "History", "Philosophy", "Crime novel"}. If you do not know the book, reply {}.`,
+      feature: 'summary', maxTokens: 400, label: 'room:book-genre', timeoutMs: 20_000, maxAttempts: 2,
+      prompt: `The book "${title}"${creator ? ` by ${creator}` : ''}.\nReply with JSON only: {"fiction": "Fiction" or "Non-fiction", "genre": its genre in one to three plain words, like "Legal thriller", "Courtroom memoir", "History", "Philosophy", "Crime novel", "screen": the films, TV series and documentaries made from this book or directly about it, at most four, only ones you are sure exist, as [{"title": exact release title, "year": "1962", "kind": "film" or "series" or "documentary"}], or [] if none}. If you do not know the book, reply {}.`,
     });
     const m = String(out.text || '').match(/\{[\s\S]*\}/);
     let j = null; try { j = m ? JSON.parse(m[0]) : null; } catch {}
     const fiction = /^non/i.test(j?.fiction || '') ? 'Non-fiction' : /^fiction$/i.test(String(j?.fiction || '').trim()) ? 'Fiction' : '';
     const genre = plain(String(j?.genre || '')).replace(/[."]+$/, '').trim().slice(0, 40);
     if (!fiction) return null;
-    const val = { fiction, genre: genre.charAt(0).toUpperCase() + genre.slice(1) };
-    db.prepare('INSERT OR REPLACE INTO book_genres (key, fiction, genre) VALUES (?,?,?)').run(key, val.fiction, val.genre);
+    const screen = (Array.isArray(j?.screen) ? j.screen : []).slice(0, 4)
+      .map((x) => ({ title: String(x?.title || '').slice(0, 160).trim(), year: String(x?.year || '').replace(/\D/g, '').slice(0, 4),
+        kind: /series/i.test(x?.kind) ? 'series' : /doc/i.test(x?.kind) ? 'documentary' : 'film' }))
+      .filter((x) => x.title);
+    const val = { fiction, genre: genre.charAt(0).toUpperCase() + genre.slice(1), screen };
+    db.prepare('INSERT OR REPLACE INTO book_genres (key, fiction, genre, screen) VALUES (?,?,?,?)').run(key, val.fiction, val.genre, JSON.stringify(screen));
     return val;
   })().catch(() => null).finally(() => genreAsked.delete(key));
   genreAsked.set(key, job);
