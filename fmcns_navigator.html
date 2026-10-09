@@ -34880,12 +34880,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var top = Math.max(8, Math.min(r.top, vh - h - 8));
     seCard.style.left = left + 'px'; seCard.style.top = top + 'px';
   }
-  // 300 words a page, shown to two telling figures: 86,000 rather than 86,400.
-  function bkWords(pages){
-    var n = Math.round(pages * 300);
-    var step = n >= 20000 ? 1000 : n >= 2000 ? 500 : 100;
-    n = Math.round(n / step) * step;
-    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  // How long a book is in his own unit (his ask, 2026-10-09): blocks of 4,000
+  // words. A printed page holds about 275 words once notes, index and blank pages
+  // are counted in the catalogue's page total, so this leans low rather than high.
+  // A count past 2,000 pages is an omnibus or a wrong record: nothing is shown.
+  function bkBlocks(pages){
+    if (!(pages > 0) || pages > 2000) return '';
+    var n = Math.max(1, Math.round(pages * 275 / 4000));
+    return '~' + n + (n === 1 ? ' block' : ' blocks') + ' of 4k words';
   }
   function seCardHtml(d, card){
     var kind = d.coverKind, book = kind === 'book';
@@ -34899,7 +34901,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // How long it is, before he opens it: the catalogue's page count, and the
       // words it comes to at the usual 300 a page, rounded so it reads as the
       // estimate it is.
-      if (f.pages > 0) { meta.push(f.pages + ' pages'); meta.push('~' + bkWords(f.pages) + ' words'); } }
+      if (f.pages > 0) { meta.push(f.pages + ' pages'); var bl = bkBlocks(f.pages); if (bl) meta.push(bl); } }
     else {
       if (f.year || d.coverYear) meta.push(f.year || d.coverYear);
       if (f.runtime) meta.push(kind === 'series' ? f.runtime + ' min/ep' : Math.floor(f.runtime / 60) + 'h ' + String(f.runtime % 60).padStart(2, '0'));
