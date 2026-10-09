@@ -17456,6 +17456,19 @@ function roomSideName(s) {
   if (s.title && s.title !== 'Side talk') return s.title;
   return 'Aside ' + (roomSideKids(s.parent_convo_id).indexOf(s) + 1);
 }
+// The browser tab is named after what he is reading (his ask, 2026-10-09): the open
+// side talk when that pane is showing, else the Room conversation, else the app.
+setInterval(function () {
+  let t = 'Quantum Narrative Engine';
+  const room = document.getElementById('wsRoom');
+  if (room && room.offsetParent !== null && roomSel) {
+    const tab = document.querySelector('#roomTabs [data-room-primary="side"]');
+    const side = roomSideOpenId && tab && tab.classList.contains('active') ? roomSideOf(roomSideOpenId) : null;
+    const th = roomThreads.find((x) => x.id === roomSel);
+    t = (side && roomSideName(side)) || (th && th.title) || t;
+  }
+  if (document.title !== t) document.title = t;
+}, 1000);
 function roomSidePathOf(id) {
   const path = [];
   let cur = roomSideOf(id);
