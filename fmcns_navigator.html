@@ -4348,6 +4348,10 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
 .se-filechip span, .se-message-file span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .se-message-file.is-image { font:inherit; font-size:var(--fs-xs); cursor:zoom-in; }
 .se-message-file.is-image:hover { color:var(--c-ink-2); border-color:var(--c-ink-4); }
+.se-message-file.is-thumb { width:auto; height:150px; aspect-ratio:16/10; max-width:260px; padding:0; border-radius:10px; border:1px solid var(--c-border);
+  background:var(--c-surface-2) center/cover no-repeat; box-shadow:0 6px 18px rgba(0,0,0,.35); transition:transform .2s ease, box-shadow .2s ease; }
+.se-message-file.is-thumb:hover { transform:translateY(-2px); box-shadow:0 10px 26px rgba(0,0,0,.45); border-color:color-mix(in srgb, var(--c-accent) 50%, var(--c-border)); }
+.se-message-files:has(.is-thumb) { justify-content:flex-end; gap:10px; margin:0 0 10px; }
 .se-imgview { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:24px;
   background:rgba(6,8,14,.86); cursor:zoom-out; }
 .se-imgview img { max-width:100%; max-height:100%; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.6); }
@@ -34942,6 +34946,20 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return fetch(API_BASE + '/api/convos/' + convoId + '/images/' + id, { headers: { 'Authorization': 'Bearer ' + TOKEN } })
       .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); });
   }
+  // A sent image's small picture in the thread: fetched once, then kept for the session.
+  var seThumbs = {};
+  window.qneImgThumb = function(convoId, id){
+    if (!convoId || !id) return '';
+    if (seThumbs[id] && seThumbs[id] !== 1) return seThumbs[id];
+    if (!seThumbs[id]) {
+      seThumbs[id] = 1;
+      seImgUrl(convoId, id).then(function(b){
+        seThumbs[id] = URL.createObjectURL(b);
+        document.querySelectorAll('.se-message-file.is-thumb[data-img-id="' + id + '"]').forEach(function(el){ el.style.backgroundImage = 'url("' + seThumbs[id] + '")'; });
+      }).catch(function(){ delete seThumbs[id]; });
+    }
+    return '';
+  };
   function seImgOpen(btn){
     var show = function(src){
       var box = document.createElement('div'); box.className = 'se-imgview';
@@ -35178,7 +35196,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var local = (m.retryAttachments || []).find(function(r){ return r.name === a.name && r.dataUrl; });
           var key = local ? seImgKeep(local.dataUrl) : '';
           if (!a.imageId && !key) return '<span class="se-message-file"><span>' + qEsc(a.name || 'file') + '</span></span>';
-          return '<button type="button" class="se-message-file is-image" data-img-id="' + qEscAttr(a.imageId || '') + '" data-img-key="' + key + '" data-convo="' + qEscAttr(e.convoId || '') + '"><span>' + qEsc(a.name || 'image') + '</span></button>';
+          // The picture itself, not its file name (his ask, 2026-10-09: "more elegant").
+          var thumb = local ? local.dataUrl : (window.qneImgThumb ? window.qneImgThumb(e.convoId, a.imageId) : '');
+          return '<button type="button" class="se-message-file is-image is-thumb" data-img-id="' + qEscAttr(a.imageId || '') + '" data-img-key="' + key + '" data-convo="' + qEscAttr(e.convoId || '') + '" title="' + qEscAttr(a.name || 'image') + '" aria-label="' + qEscAttr(a.name || 'image') + '"'
+            + (thumb ? ' style="background-image:url(&quot;' + qEscAttr(thumb) + '&quot;)"' : '') + '></button>';
         }).join('') + '</div>';
       }
       var shown = (you && (m.body || m.quotes)) ? (m.body || '') : m.text;
