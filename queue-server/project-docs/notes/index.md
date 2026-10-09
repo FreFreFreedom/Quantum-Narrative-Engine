@@ -2,6 +2,7 @@
 
 Saved conversations, mirrored automatically for the coding agent.
 
+- Note: . by Michael Sierra-Arévalo — side talk of American Justice: Institutional Power and Systemic Failure — notes/by-michael-sierra-arevalo-side-talk-of-american-justice-institutional-power-and-.md
 - Note: Anthony Bourdain: Kitchen Confidential's Toughest Lessons — notes/anthony-bourdain-kitchen-confidential-s-toughest-lessons.md
 - Note: Biomedical Ontologies as Geopolitical Battlegrounds — side talk of Algorithmic Warfare: The Automated Kill Chain — notes/biomedical-ontologies-as-geopolitical-battlegrounds-side-talk-of-algorithmic-war.md
 - Note: Boy A: Redemption and Identity Reconstruction — notes/boy-a-redemption-and-identity-reconstruction.md
@@ -22,6 +23,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Fractal reasoning across civic and justice narratives — notes/fractal-reasoning-across-civic-and-justice-narratives.md
 - Note: Fractal reasoning across civic and justice narratives (fork) — notes/fractal-reasoning-across-civic-and-justice-narratives-fork.md
 - Note: Gilmore tracing economic crisis into prison — side talk of Comparative politics across structural scales — notes/gilmore-tracing-economic-crisis-into-prison-side-talk-of-comparative-politics-ac.md
+- Note: Immersive, ethnographic, tense, and grounded in over 1,00… — side talk of American Justice: Institutional Power and Systemic Failure — notes/immersive-ethnographic-tense-and-grounded-in-over-1-00-side-talk-of-american-jus.md
 - Note: Kinetic workout media selection — notes/kinetic-workout-media-selection.md
 - Note: Legal Realism in Better Call Saul — side talk of State Experiments in Constitutional Decision‑Making — notes/legal-realism-in-better-call-saul-side-talk-of-state-experiments-in-constitution.md
 - Note: Lower East Side abandonment phenomenon — side talk of Comparative politics across structural scales — notes/lower-east-side-abandonment-phenomenon-side-talk-of-comparative-politics-across-.md
@@ -44,3 +46,4 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: The Living Grammar of Fractal Resonance — notes/the-living-grammar-of-fractal-resonance.md
 - Note: The trap mistaken for home — side talk of Comparative politics across structural scales — notes/the-trap-mistaken-for-home-side-talk-of-comparative-politics-across-structural-s.md
 - Note: Trauma and the Conspiratorial Mindset — notes/trauma-and-the-conspiratorial-mindset.md
+- Note: over 1,000 hours of riding shotgun in patrol cars. — side talk of American Justice: Institutional Power and Systemic Failure — notes/over-1-000-hours-of-riding-shotgun-in-patrol-cars-side-talk-of-american-justice-.md

@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Multiple distinct societal pressures can interlock to form a self-sustaining cycle of disadvantage.
+
+It covers the complete range of interconnected factors, including domestic background, community economics, ancestral neglect, law enforcement presence, and carceral design. The purpose is to understand how these elements reinforce one another rather than operating in isolation.
+
 ## The Bronx criminal court represents the raw, unfiltered baseline of American systemic power.
 
 It acts as an industrial processing plant for human misery that strips away constitutional polite fictions and reveals how the state grinds down the marginalized on a mass scale, manufacturing criminals through sheer bureaucratic indifference.
