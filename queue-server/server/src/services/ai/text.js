@@ -915,7 +915,10 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // when a paid lane fails, which arrives with no feature) is never held back by
   // the reserve below; everything else is background work.
   // A chapter name is one tiny call he asked for by clicking, so it counts as his too.
-  const forAnswer = feature === 'studio' || /^conversations:(chat|length-continuation|chapter-name)\b/.test(String(label || ''));
+  // The works an answer names are part of the answer he reads: their covers and
+  // clickable titles came back empty all evening once the background share ran out
+  // (2026-10-09), so that reading counts as the answer too.
+  const forAnswer = feature === 'studio' || /^conversations:(chat|length-continuation|chapter-name|works)\b/.test(String(label || ''));
   // Rough token count, the same 3.6-chars-a-token rule promptCharBudget uses.
   const promptTokens = Math.ceil(String(prompt || '').length / 3.6);
 

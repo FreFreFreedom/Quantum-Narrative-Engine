@@ -2411,7 +2411,10 @@ async function worksFromAnswer(userId, text) {
     // came back was cut off mid-JSON — which reads as a failure, so nothing was
     // saved at all. (2026-09-28)
     feature: 'summary', maxTokens: 1600, label: 'conversations:works', timeoutMs: 30_000, maxAttempts: 2,
-    prompt: 'Below is an answer from a reading-and-film advisor. List every book, film and TV series the answer recommends or puts forward as a suggestion, and every single episode of a series it points to. Skip works it only mentions in passing as background.\n'
+    // Every free lane spent or dead still leaves Claude on the Mac: a list of books
+    // with no cover and no link is the failure he sees (2026-10-09).
+    claudeLastResort: true, helperWaitMs: 120_000,
+    prompt: 'Below is an answer from a reading-and-film advisor. List every book, film and TV series the answer names by its title — recommended or only mentioned — and every single episode of a series it points to. Each one he reads about should be clickable.\n'
       + 'An episode is its own entry: kind "episode", title = the series title, episode = the episode as the answer names it (season and number, and its name if known, e.g. "S3E11 — Middle Ground").\n'
       + 'Reply with JSON only: {"works":[{"kind":"book"|"film"|"series"|"episode","title":"exact title, no subtitle","episode":"only for an episode","creator":"author for a book, director for a film, creator for a series","year":"year if known","where":"4 to 8 words copied letter for letter from the answer, where it first speaks of this work — by title, or as \'the memoir\', \'on screen\', its author\'s name"}]}. {"works":[]} if there are none.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 20000),
@@ -2483,7 +2486,8 @@ async function mentionedWorks(convoId, userId) {
 // narrowly, so answers full of books were marked read with nothing found. Raising
 // the number sends those back to be read again — an answer that already found
 // works is left alone, so nothing is re-read for nothing.
-export const WORKS_V = 2;
+// 3 since 2026-10-09: works only mentioned are listed too, so each title he reads is clickable.
+export const WORKS_V = 3;
 const worksScanning = new Set();
 const worksFailures = new Map();
 export async function scanWorks(convoId, { limit = 8, userId = 'antoine' } = {}) {
