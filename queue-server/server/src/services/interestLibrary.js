@@ -87,6 +87,7 @@ export function bindInterestLibrary(database) {
   purge();
   setTimeout(() => void drain(), 1000).unref();
   setTimeout(() => void tidyBooks(), 20000).unref();
+  setInterval(() => void tidyBooks(), 15 * 60_000).unref();
   // Works saved with a model's "not specified" for a name: blanked, and a book is
   // sent back to the catalogue to be given its real author.
   try {
@@ -133,8 +134,9 @@ async function tidyBooks() {
 // 2026-10-09: 61 of 100 books had none). The shop's tail names it when it can;
 // otherwise a model names it, seeing the whole shelf so "Better" or "Life After
 // Death" are read as the books beside them suggest, and a catalogue must confirm
-// that this author wrote this title before it is kept. Tried once per boot.
-const authorTried = new Set();
+// that this author wrote this title before it is kept. Any book still without one is
+// tried again every six hours, and every new book on the next sweep.
+const authorTried = new Map();
 function setAuthor(w, title, creator) {
   title = clean(title || w.title); creator = clean(creator);
   const identity = ['book', norm(title), norm(creator)].join('|');
@@ -148,8 +150,8 @@ function setAuthor(w, title, creator) {
 async function fillAuthors() {
   const todo = [];
   for (const w of db.prepare("SELECT id,owner,title FROM interest_works WHERE kind='book' AND creator=''").all()) {
-    if (authorTried.has(w.id)) continue;
-    authorTried.add(w.id);
+    if (Date.now() - (authorTried.get(w.id) || 0) < 6 * 3600_000) continue;
+    authorTried.set(w.id, Date.now());
     const inside = authorInTitle(w.title);
     if (inside) setAuthor(w, inside.title, inside.creator); else todo.push(w);
   }
