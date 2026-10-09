@@ -4,7 +4,9 @@
 // language. One cheap call on the free lane, cached per conversation and word.
 import { generateText, generateTextDirect } from './ai/text.js';
 import * as router from './ai/router.js';
-import { getConvo, listMessages } from './conversations.js';
+import { getConvo, listMessages, createSideTalk, renameConvo } from './conversations.js';
+import { randomUUID } from 'node:crypto';
+import { broadcastAll } from '../realtime.js';
 import { STOPWORDS } from '../lib/stopwords.js';
 import { mindBlock } from './mind.js';
 
@@ -268,4 +270,45 @@ export async function glossaryFor(convoId, messageId) {
   }
   db.prepare('INSERT OR REPLACE INTO message_glossaries (message_id, convo_id, json) VALUES (?,?,?)').run(messageId, convoId, JSON.stringify(words));
   return { ok: true, words };
+}
+
+// A question about a meaning, asked in the meaning's own card (his pick B,
+// 2026-10-09): a small chat that is kept as a side talk of the conversation, named
+// after the word, so nothing asked there is lost. The first question opens the side
+// talk with the meaning as its opening line; later ones continue it.
+export async function askAboutWord(convoId, { word = '', sentence = '', meaning = '', question = '', sideId = null } = {}) {
+  if (!db || !getConvo(convoId)) return { error: 'not_found' };
+  word = String(word).trim().slice(0, 200); question = String(question).trim().slice(0, 1000);
+  meaning = String(meaning).trim().slice(0, 1500); sentence = String(sentence).trim().slice(0, 600);
+  if (!word || !question) return { error: 'empty' };
+  let side = sideId ? getConvo(sideId) : null;
+  if (side && side.parent_convo_id !== convoId) side = null;
+  if (!side) {
+    const made = createSideTalk(convoId, { title: word.length > 60 ? word.slice(0, 57) + '…' : word });
+    if (made.error) return made;
+    side = made.convo;
+    try { renameConvo(side.id, side.title); } catch {}
+    addLine(side.id, 'assistant', `**${word}** — ${meaning || '…'}` + (sentence ? `\n\n> ${sentence}` : ''));
+  }
+  const earlier = listMessages(side.id).slice(-8).map((m) => (m.role === 'user' ? 'HE ASKED: ' : 'ANSWER: ') + String(m.text || '').slice(0, 800)).join('\n');
+  addLine(side.id, 'user', question);
+  const prompt = `He is reading a conversation and asked about "${word}".${sentence ? `\nThe sentence it is in: ${sentence}` : ''}
+${meaning ? `What it was said to mean: ${meaning}\n` : ''}
+=== SO FAR ===
+${earlier}
+
+=== HIS QUESTION ===
+${question}
+
+Answer it in two to four short sentences. Plain simple English, his second language. True facts only — if you are not sure of a number or a name, say so instead of guessing. No preamble.`;
+  const out = await quickText(prompt);
+  const text = String(out?.text || '').trim();
+  if (!text) return { error: 'generation_failed', sideId: side.id };
+  addLine(side.id, 'assistant', text);
+  return { sideId: side.id, answer: text };
+}
+function addLine(convoId, role, text) {
+  db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`).run(randomUUID(), convoId, role, 'chat', text);
+  db.prepare(`UPDATE convos SET turns=turns+1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convoId);
+  broadcastAll('convos:updated', { convoId });
 }

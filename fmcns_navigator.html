@@ -3954,6 +3954,15 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-quote-pop .se-define { order:1; flex:1 1 100%; width:0; min-width:100%; margin:0; padding:13px 18px 14px; border-top:0;
   border-bottom:1px solid color-mix(in srgb, var(--c-on-solid) 16%, transparent);
   font-family:var(--font-read); font-size:20px; line-height:1.35; color:inherit; white-space:normal; }
+.se-define-chat .thread { display:flex; flex-direction:column; gap:8px; margin-top:12px; max-height:240px; overflow:auto; }
+.se-define-chat .thread:empty { display:none; }
+.se-define-chat .you { align-self:flex-end; max-width:78%; padding:7px 12px; border-radius:14px 14px 4px 14px; background:var(--c-ink, #1e2430); color:var(--c-bg, #e9e6df); font:400 14px/1.4 var(--font-ui); }
+.se-define-chat .it { align-self:flex-start; max-width:88%; padding:7px 12px; border-radius:14px 14px 14px 4px; background:color-mix(in srgb, currentColor 7%, transparent); font-size:16px; line-height:1.45; }
+.se-define-chat .it.wait { opacity:.55; }
+.se-define-chat .ask { display:flex; align-items:center; gap:6px; margin-top:12px; border:1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius:99px; padding:3px 6px 3px 14px; }
+.se-define-chat input { flex:1; border:0; outline:0; background:none; color:inherit; font:italic 400 15px var(--font-read, Georgia, serif); padding:5px 0; }
+.se-define-chat .ask button { border:0; background:none; color:var(--pop-gold, var(--c-accent)); font-size:16px; cursor:pointer; padding:2px 6px; }
+.se-define-side { margin-left:auto; border:0; background:none; cursor:pointer; font:500 12px var(--font-ui); color:#6b8f71; padding:0; }
 .se-define { user-select:text; -webkit-user-select:text; cursor:text; }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
 .se-define .w { font-family:'Cinzel', var(--font-read); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
@@ -32011,12 +32020,43 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var slot = box.querySelector('.here');
       slot.innerHTML = (full ? '<p class="full">' + qEsc(full) + '</p>' : '') + '<p>' + qEsc(text) + '</p>';
       slot.hidden = false;
+      defineChat(e, word, sentence, text, box);
       placeQuotePop();
     };
     if(key in defineHereCache){ paint(defineHereCache[key]); return; }
     apiWrite('/api/convos/' + e.convoId + '/define', 'POST', { word: word, sentence: sentence, messageId: messageId || null })
       .then(function(d){ var t = d && d.text ? (d.expansion ? { text: d.text, expansion: d.expansion } : d.text) : ''; defineHereCache[key] = t; paint(t); })
       .catch(function(){});
+  }
+  // Ask about the meaning, right in its card (his pick B, 2026-10-09): a small chat
+  // whose questions and answers are kept as a side talk named after the word; the
+  // dot in the corner opens it. The card stays put while he types.
+  function defineChat(e, word, sentence, meaning, box){
+    if(!e || !e.convoId || box.querySelector('.se-define-chat')) return;
+    var chat = document.createElement('div'); chat.className = 'se-define-chat';
+    chat.innerHTML = '<div class="thread"></div><form class="ask"><input type="text" placeholder="Ask…" aria-label="Ask about this"><button type="submit" aria-label="Ask">↵</button></form>';
+    box.appendChild(chat);
+    var mark = document.createElement('button'); mark.type = 'button'; mark.className = 'se-define-side'; mark.hidden = true;
+    mark.textContent = '● Side talk'; mark.title = 'Open the side talk this chat is saved in';
+    box.querySelector('.head').appendChild(mark);
+    var sideId = null, busy = false, thread = chat.querySelector('.thread'), input = chat.querySelector('input');
+    mark.onclick = function(){ if(sideId && typeof roomSideOpen === 'function'){ killQuotePop(); var tab = document.querySelector('#roomTabs [data-room-primary="side"]'); if(tab && !tab.classList.contains('on')) tab.click(); roomSideOpen(sideId); } };
+    input.addEventListener('focus', function(){ var pop = box.closest('.se-quote-pop'); if(pop) pop.classList.add('is-chatting'); });
+    chat.querySelector('form').onsubmit = function(ev){
+      ev.preventDefault();
+      var q = input.value.trim(); if(!q || busy) return;
+      busy = true; input.value = '';
+      var you = document.createElement('div'); you.className = 'you'; you.textContent = q; thread.appendChild(you);
+      var it = document.createElement('div'); it.className = 'it wait'; it.textContent = '…'; thread.appendChild(it);
+      thread.scrollTop = thread.scrollHeight;
+      apiWrite('/api/convos/' + e.convoId + '/define/ask', 'POST', { word: word, sentence: sentence, meaning: meaning, question: q, sideId: sideId })
+        .then(function(d){
+          if(d && d.sideId){ sideId = d.sideId; mark.hidden = false; if(typeof loadRoomSides === 'function') loadRoomSides().catch(function(){}); }
+          it.classList.remove('wait'); it.textContent = (d && d.answer) || 'No answer came back. Ask again.';
+        })
+        .catch(function(){ it.classList.remove('wait'); it.textContent = 'No answer came back. Ask again.'; })
+        .then(function(){ busy = false; thread.scrollTop = thread.scrollHeight; input.focus(); });
+    };
   }
   // A drag by hand lands mid-word at both ends, so the wash cut words in half and
   // the passage carried half a word with it. Grow the ends out to the word edges —
@@ -32102,6 +32142,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   function placeQuotePop(){
     if(!quotePop) return;
+    if(quotePop.classList.contains('is-chatting')) return;
     if(quotePop.classList.contains('se-kept-pop')) return killQuotePop();
     if(quotePop.classList.contains('se-like-pop')) return;
     var sel = window.getSelection && window.getSelection();
@@ -32286,7 +32327,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Clicking away clears the selection; the offer goes with it.
   document.addEventListener('selectionchange', function(){
     inkFollow();
-    if(quotePop && quotePop.contains(document.activeElement))return;
+    if(quotePop && (quotePop.contains(document.activeElement) || quotePop.classList.contains('is-chatting')))return;
     var sel=window.getSelection();
     // Selecting inside the bar itself (the meaning, to copy it) keeps the bar.
     var inPop=sel && sel.anchorNode && quotePop && quotePop.contains(sel.anchorNode);
