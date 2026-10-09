@@ -19512,6 +19512,18 @@ document.addEventListener('dragstart', (ev) => {
   ev.dataTransfer.setData('text/plain', card.dataset.drag);
   ev.dataTransfer.effectAllowed = 'copy';
 });
+// A cover or a title in an answer drags the same way (his ask, 2026-10-09). It has
+// no Library id, so it travels as what it is and the server finds it by title.
+document.addEventListener('dragstart', (ev) => {
+  const btn = ev.target && ev.target.closest && ev.target.closest('.se-cover, .se-work');
+  const d = btn && btn.querySelector('[data-cover-title]');
+  if (!d || !ev.dataTransfer) return;
+  const w = d.dataset, art = (d.style.backgroundImage.match(/url\("?(https:[^")]+)/) || [])[1] || '';
+  const label = libDragText({ title: w.coverTitle, creator: w.coverCreator, raw: { kind: w.coverKind, year: w.coverYear, episode: w.coverEpisode } });
+  ev.dataTransfer.setData('application/x-qne-work', JSON.stringify({ type: 'work', kind: w.coverKind, title: w.coverTitle, creator: w.coverCreator, year: w.coverYear, cover: art, label }));
+  ev.dataTransfer.setData('text/plain', label);
+  ev.dataTransfer.effectAllowed = 'copy';
+});
 // Let go anywhere over the main conversation or a side talk, a card lands as an
 // attachment of that box, like a screenshot does — never as typed words.
 const libIsWorkDrag = (ev) => Array.from((ev.dataTransfer && ev.dataTransfer.types) || []).includes('application/x-qne-work');
@@ -19538,7 +19550,7 @@ function libDropHost(ev) {
     ev.preventDefault(); ev.stopPropagation();
     let ref = null;
     try { ref = JSON.parse(ev.dataTransfer.getData('application/x-qne-work')); } catch (_) {}
-    if (ref && ref.id) h._attachRef(ref);
+    if (ref && (ref.id || ref.title)) h._attachRef(ref);
   }, true);
   document.addEventListener('dragend', () => light(null), true);
 })();
@@ -31366,11 +31378,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // A Library card dropped on this conversation (main or side talk) joins its box.
     host._attachRef = async function(ref){
       try {
-        var quote = await apiWrite('/api/recommendations/library/attach', 'POST', { type: ref.type, id: ref.id });
+        var quote = await apiWrite('/api/recommendations/library/attach', 'POST', ref.type === 'work' ? ref : { type: ref.type, id: ref.id });
         if(!e.quotes) e.quotes = [];
         if(e.quotes.length >= 20){ e.note = 'Attach up to twenty at once.'; repaint(); return; }
         if(ref.cover) quote.cover = ref.cover;
-        if(!e.quotes.some(function(q){ return (quote.identity && q.identity === quote.identity) || (q.reference && q.reference.type === quote.reference.type && q.reference.id === quote.reference.id); })) e.quotes.push(quote);
+        if(!e.quotes.some(function(q){ return (quote.identity && q.identity === quote.identity) || (q.reference && quote.reference && q.reference.type === quote.reference.type && q.reference.id === quote.reference.id); })) e.quotes.push(quote);
         saveDraft(e); repaint();
         try { input.focus(); } catch(err) {}
       } catch(err){ e.note = (err && err.message) || 'Could not attach that.'; repaint(); }
@@ -34506,7 +34518,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var btn = document.createElement('button');
       // Always on the right (his ask, 2026-09-27): covers alternating sides, next to
       // bullets, read as chaos. One column of covers, the text in order beside it.
-      btn.type = 'button'; btn.className = 'se-cover is-right';
+      btn.type = 'button'; btn.className = 'se-cover is-right'; btn.draggable = true;
       btn.title = w.title + (w.episode ? ' · ' + w.episode : '') + (w.creator ? ' — ' + w.creator : '');
       btn.dataset.convo = convoId || '';
       btn.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '" data-cover-episode="' + qEscAttr(w.episode || '') + '"'
@@ -34598,7 +34610,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // A span, not a button: a button never breaks across lines, so a long title
         // beside a cover dropped whole below it and left a hole in the text (2026-10-09).
         var btn = document.createElement('span');
-        btn.setAttribute('role', 'button'); btn.tabIndex = 0; btn.className = 'se-work';
+        btn.setAttribute('role', 'button'); btn.tabIndex = 0; btn.className = 'se-work'; btn.draggable = true;
         btn.title = w.title + (w.creator ? ' \u2014 ' + w.creator : '');
         btn.dataset.convo = convoId || '';
         // The same dataset a cover carries, so the card that opens is the same card.

@@ -184,7 +184,28 @@ export function removeReference(owner,ref) {
   } else fail('This item is not saved.');
   return {ok:true};
 }
+// A cover or a title in an answer carries no Library id, only what it is (his ask,
+// 2026-10-09: drag them into the box too). It is found in the Library by its title;
+// a work the Library does not hold still goes in, named by what the answer knew.
+function findWork(owner,ref) {
+  const want=norm(ref.title);
+  if(!want)fail('Choose a reference.');
+  const rows=db.prepare('SELECT id,kind,title FROM interest_works WHERE owner=?').all(owner)
+    .filter(r=>!ref.kind||r.kind===ref.kind||(ref.kind==='book')===(r.kind==='book'));
+  const hit=rows.find(r=>norm(r.title)===want)
+    ||rows.find(r=>{const t=norm(r.title);return t.startsWith(want+' ')||want.startsWith(t+' ');});
+  return hit?{type:'media',id:hit.id}:null;
+}
 export function referenceQuote(owner,ref) {
+  if(ref&&ref.type==='work'){
+    const found=findWork(owner,ref);
+    if(found)ref=found;
+    else{
+      const item={kind:String(ref.kind||'book').slice(0,20),title:String(ref.title).slice(0,300),creator:String(ref.creator||'').slice(0,200)||undefined,
+        year:String(ref.year||'').slice(0,10)||undefined,origin:'Named in an earlier answer'};
+      return {text:JSON.stringify(item),title:item.title,identity:'work:'+norm(item.kind+' '+item.title),msgId:null};
+    }
+  }
   const item=resolveReference(owner,ref);
   const text=item.kind==='passage' ? `Kept passage (${item.speaker || 'original attribution unavailable'}):\n${item.text}`
     : JSON.stringify(item);
