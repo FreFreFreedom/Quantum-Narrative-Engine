@@ -2252,7 +2252,10 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // prefix and roughly quadruple the token cost of every turn. See
     // plans/room-shared-memory.md §3 and conversation-voice-and-project-map.md.
     mindBlock(lastUserText(convo.id)),
-    interestContext(convo.created_by, ownWords(lastUserText(convo.id))),
+    // Only when he points at what he saved: matched on any shared word, it put a
+    // dozen of his own books in front of every "what are the best books on…", and
+    // the answer came back as his shelf read back to him (2026-10-09).
+    interestContext(convo.created_by, ownWords(lastUserText(convo.id)), { onlyExplicit: true }),
     shelfContext(convo.created_by, lastUserText(convo.id)),
     watchingContext(lastUserText(convo.id)),
     repoBlock,
