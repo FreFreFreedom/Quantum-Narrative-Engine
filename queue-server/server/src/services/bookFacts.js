@@ -47,6 +47,16 @@ export function bindBookFacts(database) {
   // Every boot, a book still without a cover is asked about again on its next view,
   // so a better matcher reaches the old misses without waiting out the retry hours.
   try { db.exec("UPDATE book_facts SET fetched_at='2000-01-01 00:00:00' WHERE cover IS NULL OR cover=''"); } catch (err) { /* next boot */ }
+  // Covers taken by ISBN alone before the number was checked against the book, and
+  // Google's grey "no image" card: each is matched again (see isbnIsThisBook).
+  try {
+    db.exec("CREATE TABLE IF NOT EXISTS book_facts_marks (name TEXT PRIMARY KEY)");
+    if (!db.prepare("SELECT 1 FROM book_facts_marks WHERE name='isbn-covers-checked'").get()) {
+      db.exec(`UPDATE book_facts SET found_by=0 WHERE cover LIKE '%images-na.ssl-images-amazon.com/images/P/%'
+        OR cover LIKE '%covers.openlibrary.org/b/isbn/%' OR cover LIKE '%books.google.com/books/content?vid=ISBN%'`);
+      db.exec("INSERT INTO book_facts_marks (name) VALUES ('isbn-covers-checked')");
+    }
+  } catch (err) { /* next boot */ }
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
@@ -79,7 +89,8 @@ const STOP = new Set(['the', 'a', 'an', 'of', 'and', 'or', 'in', 'on', 'to', 'fo
   'notes', 'new', 'edition', 'vol', 'volume', 'book', 'story', 'stories', 'america', 'american']);
 const words = (s) => norm(s).split(' ').filter((w) => w.length > 2 && !STOP.has(w));
 function surname(who) {
-  const parts = norm(who).split(' ').filter((p) => p.length > 1);
+  // "Jr." and "III" are not a surname: "Robert F. Kennedy Jr." is a Kennedy.
+  const parts = norm(who).split(' ').filter((p) => p.length > 1 && !/^(jr|sr|ii|iii|iv|phd|md|esq)$/.test(p));
   return parts.length ? parts[parts.length - 1] : '';
 }
 
@@ -292,6 +303,18 @@ async function lookupOnce(rawTitle, rawCreator) {
       const hit = words([doc.title, doc.subtitle].filter(Boolean).join(' ')).filter((w) => want.has(w)).length;
       if (hit) mine.push({ score: 1 + hit, src: 'ol', doc, year: doc.first_publish_year ? String(doc.first_publish_year) : '', name: norm(doc.title) });
     }
+    // The author's name as the catalogue spells it may differ ("Robert F. Kennedy
+    // Jr." is filed as Robert Francis Kennedy), so the surname and the title's
+    // telling words are also asked together, and two shared words are needed.
+    if (!mine.length && want.size) {
+      const q = await getJson('https://openlibrary.org/search.json?limit=10&fields=cover_i,key,title,subtitle,author_name,first_publish_year,isbn,number_of_pages_median&q='
+        + encodeURIComponent('author:' + sn + ' AND (' + [...want].slice(0, 6).join(' OR ') + ')'));
+      for (const doc of q?.docs || []) {
+        if (!norm((doc.author_name || []).join(' ')).split(' ').includes(sn)) continue;
+        const hit = words([doc.title, doc.subtitle].filter(Boolean).join(' ')).filter((w) => want.has(w)).length;
+        if (hit >= 2) mine.push({ score: 1 + hit, src: 'ol', doc, year: doc.first_publish_year ? String(doc.first_publish_year) : '', name: norm(doc.title) });
+      }
+    }
     const ap = await getJson('https://itunes.apple.com/search?limit=25&media=ebook&term=' + encodeURIComponent(who));
     for (const r of ap?.results || []) {
       if (!norm(r.artistName || '').split(' ').includes(sn) || !r.artworkUrl100) continue;
@@ -360,7 +383,7 @@ async function lookupOnce(rawTitle, rawCreator) {
     const isbns = [out.isbn, ...(await catalogueIsbns(title, creator).catch(() => []))].filter(Boolean);
     if (!out.isbn && isbns.length) out.isbn = isbns.find((i) => i.length === 10) || isbns[0];
     for (const i of out.cover ? [] : isbns.slice(0, 5)) {
-      const u = await coverFromIsbn(i);
+      const u = await coverFromIsbn(i, title, who);
       if (u) { out.cover = u; break; }
     }
   }
@@ -465,7 +488,22 @@ async function imageSize(url) {
 }
 // Three places serve a cover from an ISBN alone. Amazon answers a missing one with
 // a 43-byte blank, Google with its own 10,047-byte "no image" card — both refused.
-async function coverFromIsbn(isbn) {
+// A cover fetched by ISBN alone shows whatever book that number belongs to, and a
+// loose catalogue match can hand over a stranger's number: "The Judge" got a Judge
+// Dredd comic (his screenshot, 2026-10-09). So the number is looked up first, and
+// its cover used only when the book it names is ours. A number no catalogue knows
+// proves nothing, and is not used.
+async function isbnIsThisBook(isbn, title, who) {
+  const j = await getJson('https://openlibrary.org/search.json?limit=3&fields=title,subtitle,author_name&isbn=' + encodeURIComponent(isbn));
+  const docs = j?.docs || [];
+  if (docs.length) return docs.some((d) => scoreCandidate({ title: [d.title, d.subtitle].filter(Boolean).join(': '), authors: d.author_name || [] }, title, who) > 0);
+  const a = await getJson('https://itunes.apple.com/lookup?isbn=' + encodeURIComponent(isbn));
+  const r = a?.results?.[0];
+  if (r) return scoreCandidate({ title: r.trackName || r.collectionName || '', authors: [r.artistName || ''] }, title, who) > 0;
+  return false;
+}
+async function coverFromIsbn(isbn, title, who) {
+  if (!(await isbnIsThisBook(isbn, title, who))) return '';
   const ten = isbn10(isbn);
   if (ten) {
     const u = `https://images-na.ssl-images-amazon.com/images/P/${ten}.01.L.jpg`;
@@ -473,9 +511,8 @@ async function coverFromIsbn(isbn) {
   }
   const ol = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
   if (await imageSize(ol + '?default=false') > 1500) return ol;
-  const g = `https://books.google.com/books/content?vid=ISBN${isbn}&printsec=frontcover&img=1&zoom=1`;
-  const n = await imageSize(g);
-  if (n > 3000 && n !== 10047) return g;
+  // Google's cover-by-ISBN is not asked: its grey "no image" card comes in several
+  // sizes (10,047 and 10,794 bytes at least), so no weight check can refuse it.
   return '';
 }
 

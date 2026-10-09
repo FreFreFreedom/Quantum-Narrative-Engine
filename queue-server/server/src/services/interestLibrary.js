@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readInterestScreenshot } from './interestScreenshot.js';
-import { canonicalBook, bookKnown, authorInTitle } from './bookFacts.js';
+import { canonicalBook, bookKnown, authorInTitle, bookFactsFor } from './bookFacts.js';
 import { generateText } from './ai/text.js';
 import { workKey, sameWork, kindGroup, sameMaker, sameEntry, workFingerprint, sameEpisode } from './sameWork.js';
 
@@ -129,7 +129,20 @@ async function tidyBooks() {
     await fillAuthors();
     mergeDoubles();
     await twinBooks();
+    await checkCovers();
   } finally { tidying = false; }
+}
+
+// Every book on the shelf has its cover checked on the same sweep, not only the
+// ones opened (his ask, 2026-10-09): a missing cover is looked for again, and one
+// found by an older, looser matcher is matched again (bookFacts.js decides which).
+async function checkCovers() {
+  const books = db.prepare("SELECT id,owner,title,creator,year FROM interest_works WHERE kind='book'").all();
+  for (let i = 0; i < books.length; i += 8) {
+    const part = books.slice(i, i + 8);
+    try { await bookFactsFor(part[0].owner, part.map((b) => ({ id: b.id, kind: 'book', title: b.title, creator: b.creator || '', year: b.year || '' }))); }
+    catch (err) { console.warn('[interests] cover check failed:', err?.message || err); }
+  }
 }
 
 // A book still with no author after that check is given one (his screenshot,
