@@ -3647,9 +3647,12 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 #wsRoom.has-shelf { padding-bottom:var(--room-shelf-h, 104px); }
 .room-shelfbar { position:absolute; left:0; right:0; bottom:0; height:var(--room-shelf-h, 104px); display:flex; align-items:center; gap:10px; padding:10px 14px; box-sizing:border-box; border-top:1px solid var(--c-border); background:color-mix(in srgb, var(--c-bg) 90%, var(--c-ink)); z-index:5; }
 .room-shelfbar[hidden] { display:none; }
+/* The bar's top edge is a grip: drag it to set how tall the shelf is (his ask, 2026-10-09). */
+.rsb-grip { position:absolute; left:0; right:0; top:-4px; height:8px; cursor:ns-resize; z-index:1; }
+.rsb-grip:hover, .rsb-grip.is-on { background:linear-gradient(transparent 3px, var(--c-accent) 3px, var(--c-accent) 5px, transparent 5px); opacity:.6; }
 .rsb-find { flex:none; width:110px; padding:5px 8px; font:inherit; font-size:12px; color:var(--c-ink); background:var(--c-surface, transparent); border:1px solid var(--c-border); border-radius:8px; align-self:center; }
 .rsb-row { flex:1; min-width:0; height:100%; display:flex; gap:8px; align-items:flex-end; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; }
-.rsb-card { flex:none; width:56px; height:82px; border-radius:4px; cursor:grab; background:var(--c-surface-2, #2f3847) center/cover no-repeat; box-shadow:0 2px 6px rgba(0,0,0,.35); transition:transform .15s ease; display:flex; align-items:flex-end; overflow:hidden; }
+.rsb-card { flex:none; height:calc(var(--room-shelf-h, 104px) - 22px); width:calc((var(--room-shelf-h, 104px) - 22px) * .68); border-radius:4px; cursor:grab; background:var(--c-surface-2, #2f3847) center/cover no-repeat; box-shadow:0 2px 6px rgba(0,0,0,.35); transition:transform .15s ease; display:flex; align-items:flex-end; overflow:hidden; }
 .rsb-card:hover { transform:translateY(-4px); }
 .rsb-card.is-lit { animation:fmcnsFade .35s ease both; }
 .rsb-card > i { font-style:normal; font-size:9px; line-height:1.15; padding:4px; color:var(--c-ink-3, #afb0b0); }
@@ -6184,6 +6187,7 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
       </div>
       <div class="room-shelfbar" id="roomShelfBar" hidden>
+        <div class="rsb-grip" id="roomShelfGrip" title="Drag to resize"></div>
         <input class="rsb-find" id="roomShelfFind" type="search" placeholder="Find" aria-label="Find in the Library" autocomplete="off">
         <div class="rsb-row" id="roomShelfRow"></div>
       </div>
@@ -19486,7 +19490,29 @@ function roomShelfShow(on) {
     find.dataset.wired = '1';
     find.oninput = () => { clearTimeout(roomShelfTimer); roomShelfTimer = setTimeout(roomShelfFill, 300); };
   }
+  roomShelfGrip(bar, ws);
   if (!bar.dataset.filled) roomShelfFill();
+}
+function roomShelfGrip(bar, ws) {
+  const KEY = 'fmcns_room_shelf_h', clamp = (h) => Math.max(70, Math.min(Math.round(window.innerHeight * 0.6), Math.round(h)));
+  const set = (h) => ws.style.setProperty('--room-shelf-h', clamp(h) + 'px');
+  try { const h = Number(localStorage.getItem(KEY)); if (h) set(h); } catch (_) {}
+  const grip = document.getElementById('roomShelfGrip');
+  if (!grip || grip.dataset.wired) return;
+  grip.dataset.wired = '1';
+  grip.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId); grip.classList.add('is-on');
+    const y0 = e.clientY, h0 = bar.getBoundingClientRect().height;
+    const move = (ev) => set(h0 + (y0 - ev.clientY));
+    const up = () => {
+      grip.classList.remove('is-on');
+      grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); grip.removeEventListener('pointercancel', up);
+      try { localStorage.setItem(KEY, String(Math.round(bar.getBoundingClientRect().height))); } catch (_) {}
+    };
+    grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', up);
+  });
+  grip.addEventListener('dblclick', () => { ws.style.removeProperty('--room-shelf-h'); try { localStorage.removeItem(KEY); } catch (_) {} });
 }
 async function roomShelfFill() {
   const row = document.getElementById('roomShelfRow'), bar = document.getElementById('roomShelfBar');
