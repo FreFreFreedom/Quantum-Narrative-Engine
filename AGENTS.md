@@ -332,6 +332,12 @@ answer" items **no longer ride at all** — audit 2026-10-08: five of them ("poe
 "extreme brevity", "the same pattern across scales", "a line from private life to society")
 pushed every answer into one shape and contradicted each other; phrased as facts, they
 were still rules. The bold-words line (2026-10-07) went the same day, for the same reason.
+Since 2026-10-09 Teach no longer even proposes a "how" item: it keeps subjects, ideas and
+facts about him only, and says so when all he asks to keep is a style.
+
+**His Library is never a limit on suggestions (2026-10-09).** Saved interests ride only
+when he points at them ("my library", "saved"), and a dropped Library card's record no
+longer counts as pointing — "best books on X" had been answered from his own shelf.
 
 **The Room sends real turns (2026-10-08).** On Gemini and OpenAI lanes a full Room answer
 goes as a system message (the context above) followed by the conversation as real
