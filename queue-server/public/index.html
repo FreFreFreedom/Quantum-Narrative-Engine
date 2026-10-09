@@ -2834,6 +2834,14 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
   padding:28px 32px 28px; border-radius:16px; font-family:var(--font-ui); color:var(--c-ink); }
 .se-card .bk-cover[style*="background-image"] { cursor:zoom-in; }
+/* A book card in an answer wears the Library card's look (his picks B3, B2, 5g2,
+   2026-10-09): the cover large over a blur of itself, then stars, length, year. */
+.se-card { isolation:isolate; }
+.se-card .lib-pop-bg { height:360px; }
+.se-card .bk-head.is-pop { flex-direction:column; align-items:flex-start; gap:16px; position:relative; }
+.se-card .bk-head.is-pop .bk-cover { width:44%; max-width:210px; height:auto; aspect-ratio:2/3; border-radius:7px; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+.se-card .bk-head.is-pop .bk-out { position:absolute; top:0; right:0; margin:0; }
+.se-card .bk-head.is-pop .bk-id { width:100%; }
 .se-card-sub { font-family:var(--font-read, Georgia, serif); font-style:italic; font-size:17px; line-height:1.35; color:var(--c-ink-2); margin-top:4px; }
 .se-card-band { margin:-28px -32px 20px; padding:12px 32px; background:color-mix(in srgb, var(--c-accent) 11%, transparent);
   font-size:14px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-accent); }
@@ -35213,13 +35221,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var toc = cc && !cc.busy && cc.entries.length ? '<ol class="se-card-toc">' + cc.entries.map(function(x){
           return '<li class="' + (x.l ? 'sub' : (/^(part|pt\.|book|section|volume)\b/i.test(x.t) ? 'part' : '')) + '"><span>' + qEsc(x.t) + '</span>' + (x.p ? '<em>' + qEsc(x.p) + '</em>' : '') + '</li>';
         }).join('') + '</ol><small class="se-card-src">' + qEsc(cc.source) + '</small>' : '';
-      return (f.fiction ? '<div class="se-card-band">' + qEsc(f.fiction) + (f.genre ? ' · ' + qEsc(f.genre) : '') + '</div>' : '')
-        + '<div class="bk-head"><span class="bk-cover"' + (/^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '') + '></span>'
+      var bg = /^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '';
+      return '<div class="lib-pop-bg"' + bg + '></div>'
+        + (f.fiction ? '<div class="se-card-band">' + qEsc(f.fiction) + (f.genre ? ' · ' + qEsc(f.genre) : '') + '</div>' : '')
+        + '<div class="bk-head is-pop"><span class="bk-cover"' + bg + '></span>'
         + '<div class="bk-id"><b class="se-card-title">' + qEsc(fullHead) + '</b>'
         + (fullSub ? '<div class="se-card-sub">' + qEsc(fullSub) + '</div>' : '')
-        + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '')
+        + (who ? '<div class="se-card-meta">' + qEsc(who) + '</div>' : '')
         + '</div>'
         + bookOutMenu(bookLinks(bw, ff)) + '</div>'
+        + libStatStrip(f.stars, f.starCount, Number(f.pages) || 0, f.year || d.coverYear || '')
         + bookTabs(about, toc)
         + seCardScreen(f.screen, d);
     }

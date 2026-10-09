@@ -188,7 +188,8 @@ export function conversationsRoutes() {
       onScreen = genre.screen.map((x, i) => ({ ...x, year: sf['s' + i]?.year || x.year, poster: sf['s' + i]?.poster || '' }))
         .filter((x, i) => sf['s' + i]?.poster);
     }
-    res.json({ ...facts, note: note.text, author: it.kind === 'book' ? it.creator : '', fiction: genre?.fiction || '', genre: genre?.genre || '', screen: onScreen });
+    const st = it.kind === 'book' ? bookFacts.starsFor(facts.fullTitle || it.title) || bookFacts.starsFor(it.title) : null;
+    res.json({ ...facts, ...(st ? { stars: st.stars, starCount: st.count } : {}), note: note.text, author: it.kind === 'book' ? it.creator : '', fiction: genre?.fiction || '', genre: genre?.genre || '', screen: onScreen });
   }));
 
   // The card a person's name opens in a Room answer: their years, the main pattern
