@@ -54,6 +54,7 @@ export async function namedPeople(answer) {
   if (text.length < 80 || !NAME_HINT.test(text)) return null;
   const result = await generateText({
     feature: 'summary', maxTokens: 3500, label: 'room:people', timeoutMs: 45_000, maxAttempts: 2,
+    claudeLastResort: true, helperWaitMs: 60_000,
     prompt: 'Below is an answer. List the beings it names, of three kinds:\n'
       + '- real: real people, living or historical\n'
       + '- fictional: characters from books, films and series\n'
@@ -113,6 +114,7 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
   const what = spec.what(who, from);
   const out = await generateText({
     feature: 'summary', maxTokens: 800, label: 'room:person-card', timeoutMs: 30_000, maxAttempts: 2,
+    claudeLastResort: true, helperWaitMs: 60_000,
     prompt: [
       `Write a short card about ${what}, for the conversation below.`,
       LENS,

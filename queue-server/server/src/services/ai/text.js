@@ -918,7 +918,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // The works an answer names are part of the answer he reads: their covers and
   // clickable titles came back empty all evening once the background share ran out
   // (2026-10-09), so that reading counts as the answer too.
-  const forAnswer = feature === 'studio' || /^(conversations:(chat|length-continuation|chapter-name|works)|room:(work-note|book-genre))\b/.test(String(label || ''));
+  const forAnswer = feature === 'studio' || /^(conversations:(chat|length-continuation|chapter-name|works)|room:(work-note|book-genre|people|person-card))\b/.test(String(label || ''));
   // Rough token count, the same 3.6-chars-a-token rule promptCharBudget uses.
   const promptTokens = Math.ceil(String(prompt || '').length / 3.6);
 
