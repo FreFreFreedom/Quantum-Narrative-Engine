@@ -299,13 +299,34 @@ ${meaning ? `What it was said to mean: ${meaning}\n` : ''}${source ? `\n=== THE 
 ${question}
 
 Use whatever above helps — who a person is, what a book is, what the conversation was about — and what you know yourself. Answer in two to four short sentences. Plain simple English, his second language.
-Facts must be right: a record, a date, a number or a comparison you are not certain of is said as "I'm not sure", never guessed. Plain text, no bold, no preamble.`;
+Facts must be right: a record, a date, a number or a comparison you are not certain of is never guessed.
+@@LOOKUP@@Plain text, no bold, no preamble.`;
   // The Room's own lane, not the fastest one: the fast free models answered "666
   // was Chicago's record" (it was 970, in 1974) on the first try (2026-10-09).
-  const out = await generateText({ prompt, feature: 'studio', label: 'room:define-ask', maxTokens: 900, timeoutMs: 45_000 });
-  const text = String(out?.text || '').trim();
+  const ask = (p) => generateText({ prompt: p, feature: 'studio', label: 'room:define-ask', maxTokens: 900, timeoutMs: 45_000 });
+  // First pass may ask for a lookup instead of answering "I'm not sure": a
+  // date or fact not in the text above ("when what years?") is fetched from
+  // Wikipedia and the question is asked again with it.
+  let text = String((await ask(prompt.replace('@@LOOKUP@@', 'If the answer needs a fact that is not above and you are not certain of it, reply with only one line: SEARCH: <a short search for it, with the book or person named>\n')))?.text || '').trim();
+  const want = text.match(/^SEARCH:\s*(.+)$/im);
+  if (want) {
+    const found = await wikiFacts(want[1].trim().slice(0, 200));
+    text = String((await ask(prompt.replace('@@LOOKUP@@', (found ? `=== LOOKED UP ===\n${found}\n\n` : '') + 'What you are still not certain of, say "I\'m not sure" for that part only.\n')))?.text || '').trim();
+    if (/^SEARCH:/i.test(text)) text = '';
+  }
   if (!text) return { error: 'generation_failed' };
   return { answer: text };
+}
+
+async function wikiFacts(query) {
+  const api = 'https://en.wikipedia.org/w/api.php?format=json&origin=*&';
+  const get = (q) => fetch(api + q, { headers: { 'User-Agent': 'QNE/1.0 (personal reading tool)' }, signal: AbortSignal.timeout(8000) }).then((r) => r.json());
+  try {
+    const hits = (await get('action=query&list=search&srlimit=2&srsearch=' + encodeURIComponent(query)))?.query?.search || [];
+    if (!hits.length) return '';
+    const pages = (await get('action=query&prop=extracts&explaintext=1&redirects=1&titles=' + encodeURIComponent(hits.map((h) => h.title).join('|'))))?.query?.pages || {};
+    return Object.values(pages).map((pg) => `${pg.title}:\n${String(pg.extract || '').slice(0, 5000)}`).join('\n\n');
+  } catch { return ''; }
 }
 
 // The Side talk button: the meaning and every question and answer so far, kept as
