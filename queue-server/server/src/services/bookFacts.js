@@ -377,13 +377,14 @@ async function lookupOnce(rawTitle, rawCreator) {
 // Morgenthau" by Andrew Meier is in no catalogue at all, while his "Morgenthau"
 // is (2026-09-28), and the made-up one was sitting in the Library as a second copy.
 export async function bookKnown(title, creator) {
-  const shown = String(title || '').replace(/\s*(?:…|\.\.\.)\s*$/, '').trim();
+  const shown = shopClean(title).replace(/\s*(?:…|\.\.\.)\s*$/, '').trim();
   const who = personName(creator);
   if (!mainTitle(shown) || !surname(who)) return null;
   // Existence, not a cover: the main title whole and the author's surname are
   // enough here ("Morgenthau" by Andrew Meier is the book, whatever its subtitle).
   const head = words(mainTitle(shown)), sn = surname(who);
-  const hit = (t, authors) => { const got = new Set(words(t)); return head.length > 0 && head.every((x) => got.has(x)) && norm((authors || []).join(' ')).split(' ').includes(sn); };
+  // A surname spelled a letter or two apart ("Dostoevsky", "Dostoyevsky") is still his.
+  const hit = (t, authors) => { const got = new Set(words(t)); return head.length > 0 && head.every((x) => got.has(x)) && norm((authors || []).join(' ')).split(' ').some((x) => x === sn || (sn.length >= 5 && x.length >= 5 && nearly(x, sn))); };
   let reached = false;
   const ol = await getJson('https://openlibrary.org/search.json?limit=8&fields=title,subtitle,author_name&q=' + encodeURIComponent(mainTitle(shown) + ' ' + who));
   if (ol) {
@@ -394,6 +395,13 @@ export async function bookKnown(title, creator) {
   if (gb) {
     reached = true;
     if ((gb.items || []).some((i) => hit([i.volumeInfo?.title, i.volumeInfo?.subtitle].filter(Boolean).join(': '), i.volumeInfo?.authors))) return true;
+  }
+  // Apple Books: keyless, no daily quota — the one still answering when Google's is spent.
+  for (const media of ['ebook', 'audiobook']) {
+    const a = await getJson('https://itunes.apple.com/search?limit=10&media=' + media + '&term=' + encodeURIComponent(mainTitle(shown) + ' ' + sn));
+    if (!a) continue;
+    reached = true;
+    if ((a.results || []).some((r) => hit(r.trackName || r.collectionName || '', [r.artistName || '']))) return true;
   }
   return reached ? false : null;
 }
