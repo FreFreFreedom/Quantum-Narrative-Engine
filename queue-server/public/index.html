@@ -3994,16 +3994,16 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-define-chat .ask { display:flex; align-items:center; gap:6px; margin-top:12px; border:1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius:99px; padding:3px 6px 3px 14px; }
 .se-define-chat input { flex:1; border:0; outline:0; background:none; color:inherit; font:italic 400 15px var(--font-read, Georgia, serif); padding:5px 0; }
 .se-define-chat .ask button { border:0; background:none; color:var(--pop-gold, var(--c-accent)); font-size:16px; cursor:pointer; padding:2px 6px; }
-.se-define-side { position:relative; margin-left:auto; flex:none; width:32px; height:32px; min-width:0; padding:0; border-radius:50%;
+.se-quote-pop .se-define-side { position:relative; margin-left:auto; flex:none; order:0; gap:0; font:inherit; width:32px; height:32px; min-width:0; padding:0; border-radius:50%;
   border:1px solid color-mix(in srgb, currentColor 30%, transparent); background:none; color:inherit; cursor:pointer; display:grid; place-items:center; }
-.se-define-side svg { grid-area:1/1; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; transition:opacity .2s, transform .2s; }
-.se-define-side .tick { opacity:0; transform:scale(.4); color:#6b8f71; stroke-width:1.8; }
-.se-define-side:hover { border-color:currentColor; }
+.se-quote-pop .se-define-side svg { grid-area:1/1; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; transition:opacity .2s, transform .2s; }
+.se-quote-pop .se-define-side .tick { opacity:0; transform:scale(.4); color:#6b8f71; stroke-width:1.8; }
+.se-quote-pop .se-define-side:hover { border-color:currentColor; }
 /* Saved (his pick A, 2026-10-09): a green ring grows out and the branch turns to a tick. */
-.se-define-side.is-saved { border-color:#6b8f71; animation:seSidePop .35s ease; }
-.se-define-side.is-saved .br { opacity:0; transform:scale(.4); }
-.se-define-side.is-saved .tick { opacity:1; transform:none; transition-delay:.15s; }
-.se-define-side.is-saved::after { content:""; position:absolute; inset:-1px; border-radius:50%; border:2px solid #6b8f71; animation:seSideRing .7s ease-out forwards; pointer-events:none; }
+.se-quote-pop .se-define-side.is-saved { border-color:#6b8f71; animation:seSidePop .35s ease; }
+.se-quote-pop .se-define-side.is-saved .br { opacity:0; transform:scale(.4); }
+.se-quote-pop .se-define-side.is-saved .tick { opacity:1; transform:none; transition-delay:.15s; }
+.se-quote-pop .se-define-side.is-saved::after { content:""; position:absolute; inset:-1px; border-radius:50%; border:2px solid #6b8f71; animation:seSideRing .7s ease-out forwards; pointer-events:none; }
 @keyframes seSidePop { 50% { transform:scale(.85); } }
 @keyframes seSideRing { from { transform:scale(1); opacity:1; } to { transform:scale(2.4); opacity:0; } }
 .se-define { user-select:text; -webkit-user-select:text; cursor:text; }
