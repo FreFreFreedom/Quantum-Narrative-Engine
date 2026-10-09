@@ -34426,6 +34426,31 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .slice(0, Math.max(0, SE_FLOAT_MAX - named.length));
     placed = placed.filter(function(pl){ return named.indexOf(pl) >= 0 || guessed.indexOf(pl) >= 0; });
     placed.sort(function(x, y){ return x.bi - y.bi || x.at - y.at || x.i - y.i; });
+    // Spread out (his ask, 2026-10-09): a paragraph naming three books kept all three
+    // covers in one cluster beside it. The first stays there; each other one moves
+    // down to the next paragraph with no cover of its own — one that names that work
+    // or its author first, else simply the next free one — so the covers walk down
+    // the answer beside the text. Only when no paragraph is free do they share a row.
+    var held = {};
+    placed.forEach(function(pl){ held[pl.bi] = true; });
+    var seenBlock = {};
+    placed.forEach(function(pl){
+      if(!seenBlock[pl.bi]){ seenBlock[pl.bi] = true; return; }
+      var name = seCoverNorm(libShortTitle(pl.w.title).replace(/…$/, '')).trim();
+      var who = seCoverNorm(String(pl.w.creator || '').split(',')[0]).trim().split(' ').pop() || '';
+      var free = [];
+      for(var j = pl.bi + 1; j < blocks.length && free.length < 6; j++){
+        if(held[j] || /^H[1-4]$/.test(blocks[j].tagName) || texts[j].length < 60) continue;
+        free.push(j);
+      }
+      if(!free.length) return;
+      var pick = free.filter(function(j){ return (name.length >= 4 && texts[j].indexOf(name) >= 0) || (who.length > 2 && texts[j].indexOf(who) >= 0); })[0];
+      var to = pick != null ? pick : free[0];
+      var k = name.length >= 4 ? texts[to].indexOf(name) : -1;
+      if(k < 0 && who.length > 2) k = texts[to].indexOf(who);
+      pl.bi = to; pl.at = Math.max(0, k); held[to] = true;
+    });
+    placed.sort(function(x, y){ return x.bi - y.bi || x.at - y.at || x.i - y.i; });
     // Two works named in the same sentence share its start; the later one steps to
     // the next sentence so they do not open on the same line.
     var lastAt = {}, rowOf = {}, perBlock = {};
