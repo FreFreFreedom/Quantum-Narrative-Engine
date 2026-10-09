@@ -300,8 +300,11 @@ ${earlier}
 === HIS QUESTION ===
 ${question}
 
-Answer it in two to four short sentences. Plain simple English, his second language. True facts only — if you are not sure of a number or a name, say so instead of guessing. No preamble.`;
-  const out = await quickText(prompt);
+Answer it in two to four short sentences. Plain simple English, his second language.
+Facts must be right: a record, a date, a number or a comparison you are not certain of is said as "I'm not sure", never guessed. Plain text, no bold, no preamble.`;
+  // The Room's own lane, not the fastest one: the fast free models answered "666
+  // was Chicago's record" (it was 970, in 1974) on the first try (2026-10-09).
+  const out = await generateText({ prompt, feature: 'studio', label: 'room:define-ask', maxTokens: 900, timeoutMs: 45_000 });
   const text = String(out?.text || '').trim();
   if (!text) return { error: 'generation_failed', sideId: side.id };
   addLine(side.id, 'assistant', text);
