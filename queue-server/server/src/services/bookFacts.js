@@ -339,6 +339,13 @@ async function lookupOnce(rawTitle, rawCreator) {
       .map((t) => String(t).replace(/\s*[(\[][^)\]]*[)\]]\s*/g, ' ').replace(/\s+/g, ' ').trim())
       .filter((t) => t.length <= 200 && words(t).slice(0, words(main).length).join(' ') === words(main).join(' '));
     out.full = names.sort((a, b) => b.length - a.length)[0] || '';
+    // The length is the middle of what the matching records say, not the first
+    // one's: Google gave "A Trial by Jury" 146 pages where every print edition
+    // says 208 to 224 (2026-10-09), and the card's length must not be a wild guess.
+    const counts = cands.filter((c) => c.score >= top - 3)
+      .map((c) => Number(c.src === 'g' ? c.v.pageCount : c.src === 'ol' ? c.doc.number_of_pages_median : 0))
+      .filter((n) => n >= 40 && n <= 3000).sort((a, b) => a - b);
+    if (counts.length) out.pagesMid = String(Math.round(counts.length % 2 ? counts[(counts.length - 1) / 2] : (counts[counts.length / 2 - 1] + counts[counts.length / 2]) / 2));
     // Search results leave the subtitle out; the editions of the best Open Library
     // match carry it. The one most editions agree on, never a blurb ("…Ever
     // Written!"), a genre note ("récit") or the title said again.
@@ -422,6 +429,8 @@ async function lookupOnce(rawTitle, rawCreator) {
       if (u) { out.cover = u; break; }
     }
   }
+  if (out.pagesMid) out.pages = out.pagesMid;
+  delete out.pagesMid;
   return out;
 }
 
