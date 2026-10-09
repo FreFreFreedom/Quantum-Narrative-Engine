@@ -32164,7 +32164,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var slot = box.querySelector('.here');
       slot.innerHTML = (full ? '<p class="full">' + qEsc(full) + '</p>' : '') + '<p>' + qEsc(text) + '</p>';
       slot.hidden = false;
-      defineChat(e, word, sentence, text, box);
+      defineChat(e, word, sentence, text, box, messageId);
       placeQuotePop();
     };
     if(key in defineHereCache){ paint(defineHereCache[key]); return; }
@@ -32173,18 +32173,32 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .catch(function(){});
   }
   // Ask about the meaning, right in its card (his pick B, 2026-10-09): a small chat
-  // whose questions and answers are kept as a side talk named after the word; the
-  // dot in the corner opens it. The card stays put while he types.
-  function defineChat(e, word, sentence, meaning, box){
+  // that stays in the card. Nothing is saved until the Side talk button is pressed
+  // (his ask, 2026-10-09); pressing it keeps the meaning and every question and
+  // answer as a side talk named after the words, then opens it.
+  function defineChat(e, word, sentence, meaning, box, messageId){
     if(!e || !e.convoId || box.querySelector('.se-define-chat')) return;
     var chat = document.createElement('div'); chat.className = 'se-define-chat';
     chat.innerHTML = '<div class="thread"></div><form class="ask"><input type="text" placeholder="Ask…" aria-label="Ask about this"><button type="submit" aria-label="Ask">↵</button></form>';
     box.appendChild(chat);
-    var mark = document.createElement('button'); mark.type = 'button'; mark.className = 'se-define-side'; mark.hidden = true;
-    mark.textContent = '● Side talk'; mark.title = 'Open the side talk this chat is saved in';
+    var mark = document.createElement('button'); mark.type = 'button'; mark.className = 'se-define-side';
+    mark.textContent = '● Side talk'; mark.title = 'Keep this as a side talk';
     box.querySelector('.head').appendChild(mark);
-    var sideId = null, busy = false, thread = chat.querySelector('.thread'), input = chat.querySelector('input');
-    mark.onclick = function(){ if(sideId && typeof roomSideOpen === 'function'){ killQuotePop(); var tab = document.querySelector('#roomTabs [data-room-primary="side"]'); if(tab && !tab.classList.contains('on')) tab.click(); roomSideOpen(sideId); } };
+    var sideId = null, busy = false, turns = [], thread = chat.querySelector('.thread'), input = chat.querySelector('input');
+    var openSide = function(){ if(sideId && typeof roomSideOpen === 'function'){ killQuotePop(); var tab = document.querySelector('#roomTabs [data-room-primary="side"]'); if(tab && !tab.classList.contains('on')) tab.click(); roomSideOpen(sideId); } };
+    mark.onclick = function(){
+      if(mark.disabled) return;
+      mark.disabled = true;
+      apiWrite('/api/convos/' + e.convoId + '/define/keep', 'POST', { word: word, sentence: sentence, meaning: meaning, turns: turns, sideId: sideId })
+        .then(function(d){
+          if(!d || !d.sideId) throw new Error('not kept');
+          sideId = d.sideId;
+          if(typeof loadRoomSides === 'function') loadRoomSides().catch(function(){});
+          openSide();
+        })
+        .catch(function(){ mark.textContent = 'Not saved. Try again'; })
+        .then(function(){ mark.disabled = false; });
+    };
     input.addEventListener('focus', function(){ var pop = box.closest('.se-quote-pop'); if(pop) pop.classList.add('is-chatting'); });
     chat.querySelector('form').onsubmit = function(ev){
       ev.preventDefault();
@@ -32193,10 +32207,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var you = document.createElement('div'); you.className = 'you'; you.textContent = q; thread.appendChild(you);
       var it = document.createElement('div'); it.className = 'it wait'; it.textContent = '…'; thread.appendChild(it);
       thread.scrollTop = thread.scrollHeight;
-      apiWrite('/api/convos/' + e.convoId + '/define/ask', 'POST', { word: word, sentence: sentence, meaning: meaning, question: q, sideId: sideId })
+      apiWrite('/api/convos/' + e.convoId + '/define/ask', 'POST', { word: word, sentence: sentence, meaning: meaning, question: q, messageId: messageId || null, turns: turns })
         .then(function(d){
-          if(d && d.sideId){ sideId = d.sideId; mark.hidden = false; if(typeof loadRoomSides === 'function') loadRoomSides().catch(function(){}); }
-          it.classList.remove('wait'); it.textContent = (d && d.answer) || 'No answer came back. Ask again.';
+          var a = d && d.answer;
+          it.classList.remove('wait'); it.textContent = a || 'No answer came back. Ask again.';
+          if(a) turns.push({ q: q, a: a });
         })
         .catch(function(){ it.classList.remove('wait'); it.textContent = 'No answer came back. Ask again.'; })
         .then(function(){ busy = false; thread.scrollTop = thread.scrollHeight; input.focus(); });

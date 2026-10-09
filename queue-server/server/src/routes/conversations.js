@@ -22,7 +22,7 @@ import { completeDraft, sharpenDraft, recordTaste, recordTail, helperStats } fro
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import * as interests from '../services/interestLibrary.js';
-import { lookupWord, glossaryFor, askAboutWord } from '../services/wordLookup.js';
+import { lookupWord, glossaryFor, askAboutWord, keepWordTalk } from '../services/wordLookup.js';
 
 // The lanes the manual model picker (plan "chat-model-picker") may point a
 // conversation at. Kept in sync by hand with turnRouter.js's FORCED_LANES and
@@ -564,13 +564,21 @@ export function conversationsRoutes() {
     res.json(out);
   }));
 
-  // POST /api/convos/:id/define/ask — a question about a meaning, kept as a side talk.
+  // POST /api/convos/:id/define/ask — a question about a meaning, answered in its card.
   router.post('/:id/define/ask', asyncHandler(async (req, res) => {
     const b = req.body || {};
-    const out = await askAboutWord(req.params.id, { word: b.word, sentence: b.sentence, meaning: b.meaning, question: b.question, sideId: b.sideId || null });
-    if (out.error && !out.sideId) return res.status(out.error === 'not_found' ? 404 : out.error === 'empty' ? 400 : 500).json(out);
+    const out = await askAboutWord(req.params.id, { word: b.word, sentence: b.sentence, meaning: b.meaning, question: b.question, messageId: b.messageId || null, turns: b.turns || [] });
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : out.error === 'empty' ? 400 : 500).json(out);
     res.json(out);
   }));
+
+  // POST /api/convos/:id/define/keep — the Side talk button: that little chat, kept.
+  router.post('/:id/define/keep', (req, res) => {
+    const b = req.body || {};
+    const out = keepWordTalk(req.params.id, { word: b.word, sentence: b.sentence, meaning: b.meaning, turns: b.turns || [], sideId: b.sideId || null });
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
+    res.json(out);
+  });
 
   // GET /api/convos/:id/glossary/:messageId — one answer's words, read ahead of time.
   router.get('/:id/glossary/:messageId', asyncHandler(async (req, res) => {

@@ -276,39 +276,60 @@ export async function glossaryFor(convoId, messageId) {
 // 2026-10-09): a small chat that is kept as a side talk of the conversation, named
 // after the word, so nothing asked there is lost. The first question opens the side
 // talk with the meaning as its opening line; later ones continue it.
-export async function askAboutWord(convoId, { word = '', sentence = '', meaning = '', question = '', sideId = null } = {}) {
-  if (!db || !getConvo(convoId)) return { error: 'not_found' };
-  word = String(word).trim().slice(0, 200); question = String(question).trim().slice(0, 1000);
+// A question about a meaning, asked right in its card. Nothing is saved: the card
+// holds the little thread, and only the Side talk button keeps it (his ask,
+// 2026-10-09 — every question used to open a side talk on its own). The answer
+// reads more than the selection: the whole answer it came from and the last few
+// turns of the conversation, so "was he a cop?" can be answered from what the
+// conversation says about him, not guessed from one line.
+export async function askAboutWord(convoId, { word = '', sentence = '', meaning = '', question = '', messageId = null, turns = [] } = {}) {
+  const convo = db && getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  word = String(word).trim().slice(0, 600); question = String(question).trim().slice(0, 1000);
   meaning = String(meaning).trim().slice(0, 1500); sentence = String(sentence).trim().slice(0, 600);
   if (!word || !question) return { error: 'empty' };
-  let side = sideId ? getConvo(sideId) : null;
-  if (side && side.parent_convo_id !== convoId) side = null;
-  if (!side) {
-    const made = createSideTalk(convoId, { title: word.length > 60 ? word.slice(0, 57) + '…' : word });
-    if (made.error) return made;
-    side = made.convo;
-    try { renameConvo(side.id, side.title); } catch {}
-    addLine(side.id, 'assistant', `**${word}** — ${meaning || '…'}` + (sentence ? `\n\n> ${sentence}` : ''));
-  }
-  const earlier = listMessages(side.id).slice(-8).map((m) => (m.role === 'user' ? 'HE ASKED: ' : 'ANSWER: ') + String(m.text || '').slice(0, 800)).join('\n');
-  addLine(side.id, 'user', question);
-  const prompt = `He is reading a conversation and asked about "${word}".${sentence ? `\nThe sentence it is in: ${sentence}` : ''}
-${meaning ? `What it was said to mean: ${meaning}\n` : ''}
-=== SO FAR ===
-${earlier}
-
+  const earlier = (Array.isArray(turns) ? turns : []).slice(-6)
+    .map((t) => 'HE ASKED: ' + String(t?.q || '').slice(0, 600) + '\nANSWER: ' + String(t?.a || '').slice(0, 800)).join('\n');
+  const source = messageText(convoId, messageId).slice(0, 6000);
+  const around = listMessages(convoId).filter((m) => m.id !== messageId && String(m.text || '').trim()).slice(-4)
+    .map((m) => (m.role === 'user' ? 'HE WROTE: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1500)).join('\n\n');
+  const prompt = `He is reading a conversation${convo.title ? ` titled "${convo.title}"` : ''} and selected "${word}".${sentence ? `\nThe sentence it is in: ${sentence}` : ''}
+${meaning ? `What it was said to mean: ${meaning}\n` : ''}${source ? `\n=== THE ANSWER HE SELECTED IT FROM ===\n${source}\n` : ''}${around ? `\n=== THE CONVERSATION AROUND IT (most recent last) ===\n${around}\n` : ''}${earlier ? `\n=== WHAT HE ASKED ABOUT IT SO FAR ===\n${earlier}\n` : ''}
 === HIS QUESTION ===
 ${question}
 
-Answer it in two to four short sentences. Plain simple English, his second language.
+Use whatever above helps — who a person is, what a book is, what the conversation was about — and what you know yourself. Answer in two to four short sentences. Plain simple English, his second language.
 Facts must be right: a record, a date, a number or a comparison you are not certain of is said as "I'm not sure", never guessed. Plain text, no bold, no preamble.`;
   // The Room's own lane, not the fastest one: the fast free models answered "666
   // was Chicago's record" (it was 970, in 1974) on the first try (2026-10-09).
   const out = await generateText({ prompt, feature: 'studio', label: 'room:define-ask', maxTokens: 900, timeoutMs: 45_000 });
   const text = String(out?.text || '').trim();
-  if (!text) return { error: 'generation_failed', sideId: side.id };
-  addLine(side.id, 'assistant', text);
-  return { sideId: side.id, answer: text };
+  if (!text) return { error: 'generation_failed' };
+  return { answer: text };
+}
+
+// The Side talk button: the meaning and every question and answer so far, kept as
+// one side talk named after the words. Pressed again later, the same side talk
+// takes the turns added since.
+export function keepWordTalk(convoId, { word = '', sentence = '', meaning = '', turns = [], sideId = null } = {}) {
+  if (!db || !getConvo(convoId)) return { error: 'not_found' };
+  word = String(word).trim().slice(0, 600);
+  if (!word) return { error: 'empty' };
+  const list = (Array.isArray(turns) ? turns : []).slice(0, 40).filter((t) => t && t.q && t.a);
+  let side = sideId ? getConvo(sideId) : null;
+  if (side && side.parent_convo_id !== convoId) side = null;
+  let from = 0;
+  if (!side) {
+    const made = createSideTalk(convoId, { title: word.length > 60 ? word.slice(0, 57) + '…' : word });
+    if (made.error) return made;
+    side = made.convo;
+    try { renameConvo(side.id, side.title); } catch {}
+    addLine(side.id, 'assistant', `**${word}** — ${String(meaning).trim().slice(0, 1500) || '…'}` + (sentence ? `\n\n> ${String(sentence).trim().slice(0, 600)}` : ''));
+  } else {
+    from = listMessages(side.id).filter((m) => m.role === 'user').length;
+  }
+  for (const t of list.slice(from)) { addLine(side.id, 'user', String(t.q).slice(0, 1000)); addLine(side.id, 'assistant', String(t.a).slice(0, 4000)); }
+  return { sideId: side.id };
 }
 function addLine(convoId, role, text) {
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`).run(randomUUID(), convoId, role, 'chat', text);
