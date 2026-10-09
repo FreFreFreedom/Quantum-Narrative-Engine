@@ -57,6 +57,7 @@ export async function workNote(convoId, { kind = 'film', title = '', creator = '
   const what = kind === 'book' ? 'book' : kind === 'series' ? (episode ? `episode ${episode} of the TV series` : 'TV series') : 'film';
   const out = await generateText({
     feature: 'summary', maxTokens: 1000, label: 'room:work-note', timeoutMs: 30_000, maxAttempts: 2,
+    claudeLastResort: true, helperWaitMs: 60_000,
     prompt: [
       `Write ${MAX_WORDS - 10} to ${MAX_WORDS + 5} words about the ${what} "${title}"${creator ? ` (${creator}${year ? ', ' + year : ''})` : year ? ` (${year})` : ''} for the conversation below.`,
       'Not a catalogue synopsis. Say, in one short clause, what happens in it — then spend most of the words on why it matters HERE: which idea of this conversation it shows, and how (a scene, a mechanism, a character). Use the conversation\'s own ideas and words.',
