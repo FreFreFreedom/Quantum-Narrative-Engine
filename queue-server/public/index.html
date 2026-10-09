@@ -4195,6 +4195,14 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
 .se-qfold-n { flex:none; min-width:13px; height:13px; border-radius:var(--r-xs); background:var(--c-border);
   color:var(--c-ink-4); font-family:var(--font-ui); font-size:var(--fs-2xs); line-height:13px; text-align:center; }
 .se-qfold-txt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.se-qrefs { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; margin:0 0 10px; }
+.se-qref { display:flex; align-items:center; gap:10px; max-width:300px; padding:6px 12px 6px 6px; border-radius:10px;
+  border:1px solid var(--c-border); background:color-mix(in srgb, var(--c-surface, var(--c-bg)) 70%, transparent); }
+.se-qref-cover { flex:none; width:34px; height:50px; border-radius:3px; background:var(--c-surface-2, #2f3847) center/cover no-repeat; box-shadow:0 2px 6px rgba(0,0,0,.35); }
+.se-qref-txt { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.se-qref-t { font-family:var(--font-read); font-style:italic; font-size:14px; line-height:1.3; color:var(--c-ink-2);
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.se-qref-by { font:500 10.5px/1.3 'Cinzel', var(--font-read); letter-spacing:.12em; text-transform:uppercase; color:var(--c-ink-4); }
 .se-qfold.open .se-qfold-txt { white-space:normal; max-height:40vh; overflow:auto; }
 .se-quotes-clear { align-self:flex-start; background:none; border:none; cursor:pointer; font-family:inherit; font-size:var(--fs-xs);
   color:var(--c-ink-5); padding:1px 0 4px; }
@@ -35125,13 +35133,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (qs.length) { m.quotes = qs; m.body = cut >= 0 ? String(m.text).slice(cut + 14) : ''; }
       }
       if (you && m.quotes && m.quotes.length) {
-        foldHtml = m.quotes.map(function(q, qi){
+        // A Library work dropped in shows as itself — its cover, its title, who made
+        // it — never the record the model is given (his ask, 2026-10-09: "elegance").
+        var refHtml = m.quotes.filter(function(q){ return q && q.reference; }).map(function(q){
+          var w = {}; try { w = JSON.parse(q.text || '{}') || {}; } catch (_) {}
+          var title = libShortTitle(q.title || w.title || ''), who = w.creator || w.author || '';
+          var cover = /^https:\/\//.test(q.cover || '') ? q.cover : '';
+          return '<span class="se-qref">' + (cover ? '<span class="se-qref-cover" style="background-image:url(&quot;' + qEscAttr(cover) + '&quot;)"></span>' : '')
+            + '<span class="se-qref-txt"><span class="se-qref-t">' + qEsc(title) + '</span>' + (who ? '<span class="se-qref-by">' + qEsc(who) + '</span>' : '') + '</span></span>';
+        }).join('');
+        foldHtml = (refHtml ? '<div class="se-qrefs">' + refHtml + '</div>' : '') + m.quotes.map(function(q, qi){
+          if (q && q.reference) return '';
           var qt = (typeof q === 'string' ? q : (q && q.text) || '');
           var where = (typeof q === 'string' ? null : (q && q.msgId) || null);
           return '<button type="button" class="se-qfold' + (where ? ' can-jump' : '')
                + '" data-qjump="' + idx + ':' + qi + '"'
                + (where ? ' title="Go back to where this was said"' : ' title="The passage this question is about"')
-               + '>' + (m.quotes.length > 1 ? '<span class="se-qfold-n">' + (qi + 1) + '</span>' : '')
+               + '>' + (m.quotes.filter(function(x){ return !(x && x.reference); }).length > 1 ? '<span class="se-qfold-n">' + (qi + 1) + '</span>' : '')
                + '<span class="se-qfold-txt">\u201c' + qEsc(qt) + '\u201d</span></button>';
         }).join('');
       }

@@ -3546,7 +3546,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     try {
       if(convo.created_by!==userId) throw new Error('Conversation not available.');
       if(quotes.length>20) throw new Error('Attach up to twenty references at once.');
-      quotes=quotes.map(q=>q?.reference?referenceQuote(userId,q.reference):q);
+      quotes=quotes.map(q=>q?.reference?{...referenceQuote(userId,q.reference),...(/^https:\/\//.test(String(q.cover||''))?{cover:String(q.cover).slice(0,600)}:{})}:q);
       if(JSON.stringify(quotes).length>40000)throw new Error('These references are too long together. Remove some before sending.');
       trimmed=String(body||'Discuss these references.').trim();
       if(trimmed.startsWith('/'))throw new Error('Send references with a normal chat message, not a slash command.');
