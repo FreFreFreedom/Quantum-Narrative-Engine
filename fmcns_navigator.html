@@ -19293,7 +19293,11 @@ document.addEventListener('mouseover', (ev) => {
   box.dataset.fit = String(box.clientWidth);
   box.style.removeProperty('--sn-k');
   const parts = box.querySelectorAll('.sn-t, .sn-s, .sn-by');
-  const over = () => box.scrollHeight > box.clientHeight + 1 || [...parts].some((p) => p.scrollHeight > p.clientHeight + 1);
+  // A line is cut only when a good part of one is hidden: italic letters reach a
+  // few pixels past their own line, which made every short title shrink too (2026-10-09).
+  if (box.clientHeight < 40) { box.dataset.fit = ''; return; }
+  const cut = (p) => p.scrollHeight - p.clientHeight > 0.6 * (parseFloat(getComputedStyle(p).lineHeight) || 16);
+  const over = () => box.scrollHeight - box.clientHeight > 4 || [...parts].some(cut);
   for (let k = 1; k >= 0.5 && over(); k -= 0.06) box.style.setProperty('--sn-k', k.toFixed(2));
 });
 function libShortTitle(t) {
