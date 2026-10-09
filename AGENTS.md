@@ -672,6 +672,11 @@ row, a composer whose text box had zero width — all passed every syntax check 
 were only visible on screen. See "Ship directly" below for the checks that are
 worth running first; they do not replace opening it.
 
+**Anything added to test is removed after (hard, Antoine 2026-10-09).** A book, a
+series, a film or any row put into his live Library or data to check a feature is
+deleted the moment the check is done — a "Selftest Show" left on his shelf is what
+prompted this. Prefer checks that read what is already there.
+
 **A mockup carries almost no words (hard, Antoine 2026-09-13).** His words: *"when
 you show me mark ups, please minimize the text that I have to read... make this a rule
 for future conversations also."* A mockup or moodboard page gets a short title, the

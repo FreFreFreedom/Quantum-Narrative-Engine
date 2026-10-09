@@ -15,6 +15,7 @@
 // dependable — that needs an account, so it stays optional: BOOKS_API_KEY.
 
 import { generateText } from './ai/text.js';
+import jpeg from 'jpeg-js';
 import { mindBlock } from './mind.js';
 import { catalogueIsbns } from './bookContents.js';
 
@@ -46,6 +47,8 @@ export function bindBookFacts(database) {
   try { db.exec("ALTER TABLE book_facts ADD COLUMN pages TEXT NOT NULL DEFAULT ''"); } catch (err) { /* already there */ }
   // The catalogue's whole title. NULL means never looked for, '' looked for and none.
   try { db.exec('ALTER TABLE book_facts ADD COLUMN full_title TEXT'); } catch (err) { /* already there */ }
+  // Whether the cover is sharp: NULL never measured, 1 sharp, 0 blurry (see coverIsSharp).
+  try { db.exec('ALTER TABLE book_facts ADD COLUMN cover_ok INTEGER'); } catch (err) { /* already there */ }
   // Every boot, a book still without a cover is asked about again on its next view,
   // so a better matcher reaches the old misses without waiting out the retry hours.
   try { db.exec("UPDATE book_facts SET fetched_at='2000-01-01 00:00:00' WHERE cover IS NULL OR cover=''"); } catch (err) { /* next boot */ }
@@ -196,6 +199,50 @@ async function coverIsReal(url) {
     clearTimeout(timer);
     return r.ok && Number(r.headers.get('content-length') || 9999) > 1500;
   } catch (err) { return false; }
+}
+
+// A cover blown up from a tiny thumbnail is soft at every edge (his screenshot,
+// 2026-10-09: Google's 128-pixel "The Innocent Man" stretched to 300). The size of
+// the file says nothing — Google and Apple both enlarge a small original on request
+// — so the picture itself is read: on a sharp jacket an edge climbs most of its
+// height in one pixel; on a blown-up one it climbs over several. Measured on the
+// whole Library, every soft cover scored under 0.6 and every sharp one over 0.65.
+function edgeSharpness(buf) {
+  const img = jpeg.decode(buf, { useTArray: true, maxMemoryUsageInMB: 256 });
+  const w = img.width, h = img.height, d = img.data;
+  const g = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) g[i] = 0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2];
+  const vals = [];
+  for (let y = 3; y < h - 3; y++) for (let x = 3; x < w - 3; x++) {
+    const i = y * w + x, gx = Math.abs(g[i + 1] - g[i]), gy = Math.abs(g[i + w] - g[i]), step = Math.max(gx, gy);
+    if (step < 20) continue;
+    let mn = 255, mx = 0;
+    for (let k = -3; k <= 3; k++) { const a = gx >= gy ? g[i + k] : g[i + k * w]; if (a < mn) mn = a; if (a > mx) mx = a; }
+    if (mx - mn >= 80) vals.push(step / (mx - mn));
+  }
+  if (vals.length < 500) return { w, sharp: 1 };   // a plain jacket has too few edges to judge
+  vals.sort((a, b) => a - b);
+  const top = vals.slice(Math.floor(vals.length * 0.9));
+  return { w, sharp: top.reduce((a, b) => a + b, 0) / top.length };
+}
+export async function coverIsSharp(url) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const r = await fetch(url, { signal: ctrl.signal, redirect: 'follow' });
+    clearTimeout(timer);
+    if (!r.ok) return null;
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf[0] !== 0xFF || buf[1] !== 0xD8) return true;   // not a JPEG: not judged
+    const { w, sharp } = edgeSharpness(buf);
+    return w >= 250 && sharp >= 0.6;
+  } catch (err) { return null; }
+}
+// The first sharp cover among those found, in the order they were found; failing
+// that the first one, since a soft jacket still beats a blank card.
+async function pickCover(covers) {
+  for (const u of covers) if ((await coverIsSharp(u)) === true) return { cover: u, ok: 1 };
+  return { cover: covers[0] || '', ok: covers.length ? 0 : null };
 }
 
 const GOOGLE = 'https://www.googleapis.com/books/v1/volumes?maxResults=8&q=';
@@ -378,12 +425,14 @@ async function lookupOnce(rawTitle, rawCreator) {
   // The best Apple match close to the top answers the cover before anything else.
   const top = cands.length ? cands[0].score : 0;
   const apple = cands.find((c) => c.src === 'apple' && c.score >= top - 3);
-  if (apple) out.cover = apple.art;
+  const covers = [];
+  const addCover = (u) => { if (u && !covers.includes(u) && covers.length < 4) covers.push(u); };
+  if (apple) addCover(apple.art);
   for (const c of cands) {
-    if (out.cover && out.blurb && out.isbn && out.pages) break;
+    if (covers.length >= 3 && out.blurb && out.isbn && out.pages) break;
     if (!out.year && c.year) out.year = c.year;
     if (c.src === 'apple') {
-      if (!out.cover) out.cover = c.art;
+      addCover(c.art);
       // Apple's jacket file is named by the book's ISBN — enough for Goodreads.
       const n = (c.art.match(/\b(97[89]\d{10})\b/) || [])[1];
       if (!out.isbn && n) out.isbn = n;
@@ -397,9 +446,9 @@ async function lookupOnce(rawTitle, rawCreator) {
         if (pick && pick.identifier) out.isbn = String(pick.identifier).replace(/[^0-9Xx]/g, '');
       }
       const img = c.v.imageLinks?.thumbnail || c.v.imageLinks?.smallThumbnail || '';
-      if (!out.cover && img && !DUD_COVER.test(img)) {
+      if (covers.length < 4 && img && !DUD_COVER.test(img)) {
         const u = img.replace(/^http:/, 'https:').replace(/&edge=curl/, '');
-        if (await googleCoverIsJacket(u)) out.cover = u + '&fife=w400';
+        if (await googleCoverIsJacket(u)) addCover(u + '&fife=w400');
       }
       const d = String(c.v.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
       if (!out.blurb && d.length > 140) out.blurb = d.slice(0, 2000);
@@ -409,9 +458,9 @@ async function lookupOnce(rawTitle, rawCreator) {
         const ten = c.doc.isbn.find((x) => String(x).length === 10);
         out.isbn = String(ten || c.doc.isbn[0]).replace(/[^0-9Xx]/g, '');
       }
-      if (!out.cover && c.doc.cover_i) {
+      if (covers.length < 4 && c.doc.cover_i) {
         const url = `https://covers.openlibrary.org/b/id/${c.doc.cover_i}-L.jpg`;
-        if (await coverIsReal(url + '?default=false')) out.cover = url;
+        if (await coverIsReal(url + '?default=false')) addCover(url);
       }
       if (!out.blurb && c.doc.key) {
         const work = await getJson('https://openlibrary.org' + c.doc.key + '.json');
@@ -426,13 +475,17 @@ async function lookupOnce(rawTitle, rawCreator) {
   // Library of Congress still knows the ISBN, and a cover can be had from that.
   // That fallback matches on the main title alone, so it is skipped when a short
   // title with no author could be someone else's book — the same rule as above.
+  Object.assign(out, await pickCover(covers));
   const head = words(main), loose = !surname(who) && head.length < 4 && words(title).some((w) => !head.includes(w));
-  if ((!out.cover || !out.isbn) && !(loose && !cands.length)) {
+  // A soft cover sends it here too: the publisher's own jacket, by ISBN, is often sharp.
+  if ((out.ok !== 1 || !out.isbn) && !(loose && !cands.length)) {
     const isbns = [out.isbn, ...(await catalogueIsbns(title, creator).catch(() => []))].filter(Boolean);
     if (!out.isbn && isbns.length) out.isbn = isbns.find((i) => i.length === 10) || isbns[0];
-    for (const i of out.cover ? [] : isbns.slice(0, 5)) {
+    for (const i of out.ok === 1 ? [] : [...new Set(isbns)].slice(0, 5)) {
       const u = await coverFromIsbn(i, title, who);
-      if (u) { out.cover = u; break; }
+      if (!u) continue;
+      if (!out.cover) { out.cover = u; out.ok = 0; }
+      if ((await coverIsSharp(u)) === true) { out.cover = u; out.ok = 1; break; }
     }
   }
   if (out.pagesMid) out.pages = out.pagesMid;
@@ -616,16 +669,17 @@ function rowOf(title, creator) {
   catch (err) { return null; }
 }
 function save(title, creator, facts) {
-  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by, isbn, pages, full_title)
-              VALUES (?,?,?,?,?,?,?,?,?,?)
+  db.prepare(`INSERT INTO book_facts (key, title, creator, year, cover, blurb, found_by, isbn, pages, full_title, cover_ok)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?)
               ON CONFLICT(key) DO UPDATE SET cover=COALESCE(NULLIF(excluded.cover,''), book_facts.cover),
                 blurb=COALESCE(NULLIF(excluded.blurb,''), book_facts.blurb),
                 year=COALESCE(NULLIF(excluded.year,''), book_facts.year),
                 isbn=COALESCE(NULLIF(excluded.isbn,''), book_facts.isbn),
                 pages=COALESCE(NULLIF(excluded.pages,''), book_facts.pages),
                 full_title=COALESCE(NULLIF(excluded.full_title,''), book_facts.full_title, ''),
+                cover_ok=CASE WHEN excluded.cover<>'' THEN excluded.cover_ok ELSE book_facts.cover_ok END,
                 found_by=excluded.found_by, fetched_at=CURRENT_TIMESTAMP`)
-    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '', MATCHER, facts.isbn || '', facts.pages || '-', facts.full || '');
+    .run(keyOf(title, creator), title, String(creator || ''), facts.year || '', facts.cover || '', facts.blurb || '', MATCHER, facts.isbn || '', facts.pages || '-', facts.full || '', facts.ok ?? null);
 }
 
 // The same shape a film's facts come back in, so the wall draws both the same way.
@@ -685,7 +739,7 @@ export async function eachLimited(items, n, fn) {
 export async function bookFactsFor(owner, items = []) {
   if (!db) return {};
   const out = {};
-  let fetched = 0;
+  let fetched = 0, measured = 0;
   await eachLimited(items, 4, async (it) => {
     if (!it || !it.title) return;
     const key = keyOf(it.title, it.creator);
@@ -696,12 +750,25 @@ export async function bookFactsFor(owner, items = []) {
     // what shows, and a catalogue that timed out once (Open Library slow, Google's
     // anonymous quota spent) left "Shattered Bonds" blank for good (2026-09-25).
     const recentMiss = Date.now() - (missedAt.get(key) || 0) < COVER_RETRY_HOURS * 3600000;
-    const stale = (!row && !recentMiss)
+    let stale = (!row && !recentMiss)
       || (row && !row.cover && !row.blurb && ageHours(row.fetched_at) >= COVER_RETRY_HOURS)
       || (row && Number(row.found_by || 0) < MATCHER)
       || (row && String(row.pages || '') === '')
       || (row && row.full_title == null)
-      || (row && !row.cover && ageHours(row.fetched_at) >= COVER_RETRY_HOURS);
+      || (row && !row.cover && ageHours(row.fetched_at) >= COVER_RETRY_HOURS)
+      // A soft cover is looked for again every few hours, until a sharp one turns up.
+      || (row && row.cover && row.cover_ok === 0 && ageHours(row.fetched_at) >= COVER_RETRY_HOURS);
+    // A cover saved before sharpness was measured is measured once, and if soft,
+    // looked for again right away.
+    if (row && row.cover && row.cover_ok == null && measured < FETCH_CAP) {
+      measured += 1;
+      const ok = await coverIsSharp(row.cover);
+      if (ok !== null) {
+        try { db.prepare('UPDATE book_facts SET cover_ok=? WHERE key=?').run(ok ? 1 : 0, key); } catch (err) { /* next time */ }
+        row = { ...row, cover_ok: ok ? 1 : 0 };
+        if (!ok) stale = true;
+      }
+    }
     if (stale && fetched < FETCH_CAP) {
       fetched += 1;
       const facts = await lookupBook(it.title, it.creator);
