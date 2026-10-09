@@ -34638,12 +34638,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, {
         acceptNode: function(n){ return n.parentElement.closest('.se-cover, .se-person, .se-work, a, code, pre') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
       });
-      var node, m;
-      while((node = walker.nextNode())){
+      // The first mention in the text, and the title again wherever it heads a part
+      // of the answer — "1. Unfair: The New Science… by Adam Benforado" is where the
+      // eye looks for it (his screenshot, 2026-10-09). One mark per heading or lead.
+      var node, m, nodes = [], first = true, leads = [];
+      while((node = walker.nextNode())) nodes.push(node);
+      nodes.forEach(function(node){
+        var lead = node.parentElement.closest('h1, h2, h3, h4, h5, h6') || seLeadOf(node);
+        if(!first && (!lead || leads.indexOf(lead) >= 0)) return;
         m = null;
         for(var k = 0; k < res.length && !m; k++) m = res[k].exec(node.nodeValue);
-        if(!m) continue;
-        var word = node.splitText(m.index + m[1].length); word.splitText(m[2].length);
+        if(!m) return;
+        if(lead) leads.push(lead);
+        first = false;
+        // The whole italic title, subtitle included, when the name opens it.
+        var par = node.parentElement, len = m[2].length, at = m.index + m[1].length;
+        if(at === 0 && /^(EM|I|STRONG|B)$/.test(par.tagName) && par.childNodes.length === 1 && /^\s*:/.test(node.nodeValue.slice(len))) len = node.nodeValue.replace(/\s+$/, '').length;
+        var word = node.splitText(at); word.splitText(len);
         // A span, not a button: a button never breaks across lines, so a long title
         // beside a cover dropped whole below it and left a hole in the text (2026-10-09).
         var btn = document.createElement('span');
@@ -34659,10 +34670,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         span.dataset.coverYear = w.year || '';
         span.dataset.coverEpisode = w.episode || '';
         word.parentNode.replaceChild(btn, word); span.appendChild(word); btn.appendChild(span);
-        break;
-      }
+      });
     });
     return box.innerHTML;
+  }
+  // The bold or italic words that open a paragraph or a list item: a title used as
+  // the item's own heading.
+  function seLeadOf(node){
+    var el = node.parentElement && node.parentElement.closest('em, i, strong, b');
+    var block = el && el.closest('p, li');
+    if(!block) return null;
+    var t = block.textContent.replace(/^[\s\d.)•*-]+/, '');
+    return t.indexOf(el.textContent.trim()) === 0 ? block : null;
   }
   // Put `el` at character `pos` of block's text (whitespace folded as in
   // seCoverNorm), splitting the text node there. Covers already placed are skipped
