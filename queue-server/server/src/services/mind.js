@@ -949,17 +949,20 @@ export function subjectsBlock(n = 3) {
 // Moon, not finger, at the one place it matters most: what is saved is the
 // understanding, never his sentence and never the passage's images. A proposal that
 // lifts a phrase or a name from the passage is asked for again in other words.
-const TEACH_KINDS = ['how', 'subject', 'idea', 'about'];
+// No "how" any more (his call, 2026-10-09): a liking for how answers are written was
+// saved but never reached an answer, since answers carry no rules — so Teach keeps
+// only what is understood: subjects, ideas, facts about him.
+const TEACH_KINDS = ['subject', 'idea', 'about'];
 
 function teachPrompt({ passage, turns, avoid }) {
   const convo = turns.map((t) => `${t.role === 'ai' ? 'YOU' : 'HIM'}: ${String(t.text || '').slice(0, 4000)}`).join('\n');
   return `You are the memory of a personal thinking app with one user. He selected a passage in an answer and is telling you, in his own words, what to keep from it. English is his second language: read what he MEANS.
 
 Work out what he wants kept. It is one or more of:
-- "how": what he loves in the way an answer thinks or is written (a move, a stance, a reach, a rhythm), whatever the subject. Write it as a fact about him ("He loves it when…"), never as an order to follow — in its detail too: no "should", "must", "always", "adopt", "from now on", "in future answers".
 - "subject": a subject he is drawn to — a person, an institution, an idea, a place, a work, a field. Its text is just its usual short name, at most five words — a name, never a sentence.
 - "idea": an understanding about the world or about the paradigm (what something really is, how it works, what it does) — the thing itself, as a claim.
 - "about": a fact about him.
+Never keep how answers should be written — a style, a tone, a move he liked. If that is all he asks, propose no item and say in "reply", in one line, that the app keeps what he understands, not how answers are written.
 
 KEEP ITS SHAPE. What he asks to keep is often not one idea but a structure: several parts, a range (what is done, what is being worked on, what could be done), a purpose behind it (why he wants it), a practice he is building. Never flatten that into one generic line — a reduced version is a wrong one.
 - "text" is the headline: the whole of it in one sentence, specific, in his own terms.
@@ -967,16 +970,16 @@ KEEP ITS SHAPE. What he asks to keep is often not one idea but a structure: seve
 - Several distinct things → several items (up to 6). One layered thing → one item with a rich detail. Never drop a part he said.
 - His own words for his subject are his, not the passage's: keep them ("essential operations", "cognitive muscle") — the rule below is about the passage.
 - When he points ("this", "this type of", "these"), say what he points AT: name the concept from the passage in plain words. The object of his interest is the heart of what he teaches — never keep only his purpose and lose what it is about.
-- An exploration he wants (other forms of something across worlds, what exists, what is in progress, what is still missing) is an "idea" or "about" item about THAT, not a "how" about answer style — unless he says it is about how answers are written.
+- An exploration he wants (other forms of something across worlds, what exists, what is in progress, what is still missing) is an "idea" or "about" item about THAT.
 
 THE OTHER RULE — point at the moon, not at the finger. Future answers will read what you save and copy any concrete thing in it. So save the UNDERSTANDING in your own plain words: never quote him, never quote or paraphrase the passage, never carry over its images, metaphors, names or distinctive words (a "subject" item's name is the only exception).
 - Keep the subject HE named, by its name. If he says "about the nature of policing", the idea says "policing" — never widen it into "institutions" or "systems" in general. The moon rule is about the passage's images, not about his subject.
-- A "how" item names the MOVE, never a kind of imagery, and never names any field or source of comparison at all — no body, medicine, biology, nature, machines, war, law or any other domain, and not "an institution" either. Not "use biological metaphors" (that sends every answer to biology) but what the move does — e.g. finding a comparison in a far, unexpected place that makes the thing's hidden behaviour suddenly visible.${avoid.length ? `\nYour last attempt lifted these from the passage — say it without them: ${avoid.join(', ')}.` : ''}
+${avoid.length ? `\nYour last attempt lifted these from the passage — say it without them: ${avoid.join(', ')}.` : ''}
 
-If you understand him, propose the items and say in "reply" one short plain line of what you will keep — "I'll keep…", never "saved": nothing is saved until he presses Save. If something real is unclear — which of two things he means, or how wide it should go — ask ONE question with 2 to 4 short choices instead (items may then hold your best guess, or be empty). Never ask when it is clear. But when his words do not say WHAT to keep — "this", "keep it", "save", "yes", a single vague word — always ask, with choices built from what the passage actually offers (the idea in it, the way it is said, a subject it names, or all of them).
+If you understand him, propose the items and say in "reply" one short plain line of what you will keep — "I'll keep…", never "saved": nothing is saved until he presses Save. If something real is unclear — which of two things he means, or how wide it should go — ask ONE question with 2 to 4 short choices instead (items may then hold your best guess, or be empty). Never ask when it is clear. But when his words do not say WHAT to keep — "this", "keep it", "save", "yes", a single vague word — always ask, with choices built from what the passage actually offers (the idea in it, a subject it names, or both).
 
 Return ONLY JSON, no fence:
-{"reply": "<one short line to him>", "items": [{"kind": "how|subject|idea|about", "text": "<one complete sentence, at most 180 characters>", "detail": "<the full shape, at most 1200 characters — empty only for a subject>"}], "question": null or {"text": "<the question>", "options": ["<short choice>", "<short choice>"]}}
+{"reply": "<one short line to him>", "items": [{"kind": "subject|idea|about", "text": "<one complete sentence, at most 180 characters>", "detail": "<the full shape, at most 1200 characters — empty only for a subject>"}], "question": null or {"text": "<the question>", "options": ["<short choice>", "<short choice>"]}}
 
 THE PASSAGE HE SELECTED:
 ${passage || '(none — he is writing without a passage)'}
