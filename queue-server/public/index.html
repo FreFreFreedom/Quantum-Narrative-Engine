@@ -34470,8 +34470,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         for(var k = 0; k < res.length && !m; k++) m = res[k].exec(node.nodeValue);
         if(!m) continue;
         var word = node.splitText(m.index + m[1].length); word.splitText(m[2].length);
-        var btn = document.createElement('button');
-        btn.type = 'button'; btn.className = 'se-person';
+        // A span, not a button: a button never breaks across lines, so a long title
+        // beside a cover dropped whole below it and left a hole in the text (2026-10-09).
+        var btn = document.createElement('span');
+        btn.setAttribute('role', 'button'); btn.tabIndex = 0; btn.className = 'se-person';
         btn.dataset.pName = name; btn.dataset.pFull = p.full || name;
         btn.dataset.pKind = /^(fictional|myth)$/.test(p.kind || '') ? p.kind : 'real';
         btn.dataset.pFrom = p.from || ''; btn.dataset.convo = convoId || '';
@@ -34506,8 +34508,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         for(var k = 0; k < res.length && !m; k++) m = res[k].exec(node.nodeValue);
         if(!m) continue;
         var word = node.splitText(m.index + m[1].length); word.splitText(m[2].length);
-        var btn = document.createElement('button');
-        btn.type = 'button'; btn.className = 'se-work';
+        // A span, not a button: a button never breaks across lines, so a long title
+        // beside a cover dropped whole below it and left a hole in the text (2026-10-09).
+        var btn = document.createElement('span');
+        btn.setAttribute('role', 'button'); btn.tabIndex = 0; btn.className = 'se-work';
         btn.title = w.title + (w.creator ? ' \u2014 ' + w.creator : '');
         btn.dataset.convo = convoId || '';
         // The same dataset a cover carries, so the card that opens is the same card.
@@ -34977,6 +34981,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     seImgUrl(btn.dataset.convo, btn.dataset.imgId).then(function(b){ show(URL.createObjectURL(b)); }).catch(function(){});
   }
   window.qneOpenPersonCard = sePersonOpen; window.qneOpenWorkCard = seCardOpen; // a tab opened on a card's address
+  document.addEventListener('keydown', function(ev){
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('span.se-person, span.se-work')) { ev.preventDefault(); ev.target.click(); }
+  });
   document.addEventListener('click', function(ev){
     var ib = ev.target.closest && ev.target.closest('.se-message-file.is-image');
     if (ib) { ev.preventDefault(); ev.stopPropagation(); seImgOpen(ib); return; }
