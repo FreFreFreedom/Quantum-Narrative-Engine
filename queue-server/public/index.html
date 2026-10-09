@@ -19355,7 +19355,8 @@ function libNorm(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9]+/g
 // The same work under any spelling: without its subtitle or a leading article, as
 // the server's sameWork.js reads it, so the wall and the server agree on doubles.
 function libWorkKey(t) {
-  const raw = String(t || '').replace(/\s+/g, ' ').trim();
+  const raw0 = String(t || '').replace(/\s+/g, ' ').trim();
+  const raw = raw0.replace(/\s*[([][^()[\]]*[)\]]/g, '').trim() || raw0;   // "(Vintage Classics)" is not the name
   const main = raw.split(/\s*[:—–]\s*|\s+-\s+/)[0] || raw;
   return String(main.length >= 3 ? main : raw).normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/^(the|a|an|le|la|les|l) /, '');

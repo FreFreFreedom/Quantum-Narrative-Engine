@@ -202,10 +202,13 @@ function mergeInto(keep, drop) {
     db.prepare('UPDATE interest_entries SET work_id=? WHERE work_id=?').run(keep.id, drop.id);
     db.prepare('DELETE FROM interest_works WHERE id=?').run(drop.id);
     const creator = keep.creator || drop.creator || '', year = keep.year || drop.year || '';
-    const identity = [keep.kind, norm(String(keep.title || '')), norm(String(keep.kind === 'book' ? creator : year))].join('|');
+    // The name without a bracketed sales note is the one kept.
+    const bracketed = (t) => /[([]/.test(String(t || ''));
+    const title = bracketed(keep.title) && !bracketed(drop.title) ? drop.title : keep.title;
+    const identity = [keep.kind, norm(String(title || '')), norm(String(keep.kind === 'book' ? creator : year))].join('|');
     db.prepare('UPDATE interest_works SET kept=MAX(kept,?), state=CASE WHEN state=\'interested\' THEN ? ELSE state END WHERE id=?')
       .run(Number(drop.kept) || 0, drop.state || 'interested', keep.id);
-    try { db.prepare('UPDATE interest_works SET creator=?,year=?,identity=? WHERE id=?').run(creator, year, identity, keep.id); } catch (_) {}
+    try { db.prepare('UPDATE interest_works SET title=?,creator=?,year=?,identity=? WHERE id=?').run(title, creator, year, identity, keep.id); } catch (_) {}
   });
 }
 function mergeDoubles() {

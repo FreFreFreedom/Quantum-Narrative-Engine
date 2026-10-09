@@ -10,8 +10,12 @@ const norm = (s) => String(s || '').normalize('NFKD').replace(/\p{M}/gu, '').toL
   .replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
 // The title without its subtitle or a leading article.
+// A note in brackets is not part of the name: "Blood in the Water (Pulitzer Prize
+// Winner)" and "Notes from Underground (Vintage Classics)" are the books without
+// it (two doubles on the wall, 2026-10-09).
+export const unbracket = (t) => { const r = String(t || '').replace(/\s+/g, ' ').trim(); return r.replace(/\s*[([][^()[\]]*[)\]]/g, '').trim() || r; };
 export function workKey(t) {
-  const raw = String(t || '').replace(/\s+/g, ' ').trim();
+  const raw = unbracket(t);
   const main = raw.split(/\s*[:—–]\s*|\s+-\s+/)[0] || raw;
   return norm(main.length >= 3 ? main : raw).replace(/^(the|a|an|le|la|les|l) /, '');
 }
