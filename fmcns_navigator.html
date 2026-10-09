@@ -3697,13 +3697,13 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-name { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
   padding:8px; text-align:center; background:rgba(12,16,24,.86); border-radius:6px; container-type:inline-size;
   opacity:0; transition:opacity .18s ease; overflow:hidden; pointer-events:none; }
-.shelf-name .sn-t { font-family:'Spectral', var(--font-read); font-style:italic; font-size:calc(clamp(15px, 15.3cqi, 26px) * var(--sn-k, 1)); line-height:1.15; color:#f1ece0;
-  display:-webkit-box; -webkit-line-clamp:7; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; }
-.shelf-name .sn-s { margin-top:5px; font-family:'Spectral', var(--font-read); font-style:italic; font-size:calc(clamp(11px, 9.7cqi, 16px) * var(--sn-k, 1)); line-height:1.25; color:#bdb6a6;
-  display:-webkit-box; -webkit-line-clamp:9; -webkit-box-orient:vertical; overflow:hidden; }
+.shelf-name .sn-t { font-family:'Spectral', var(--font-read); font-style:italic; font-size:calc(15.3cqi * var(--sn-k, 1)); line-height:1.15; color:#f1ece0;
+  flex:none; max-width:100%; }
+.shelf-name .sn-s { margin-top:5px; font-family:'Spectral', var(--font-read); font-style:italic; font-size:calc(9.7cqi * var(--sn-k, 1)); line-height:1.25; color:#bdb6a6;
+  flex:none; max-width:100%; }
 .shelf-name .sn-r { flex:none; width:26px; height:1px; margin:10px 0; background:#b38b45; }
-.shelf-name .sn-by { font:500 calc(clamp(9px, 8cqi, 12px) * var(--sn-k, 1))/1.25 'Cinzel', var(--font-read); letter-spacing:.08em; text-transform:uppercase; color:#c9b98f;
-  display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+.shelf-name .sn-by { font:500 calc(8cqi * var(--sn-k, 1))/1.25 'Cinzel', var(--font-read); letter-spacing:.08em; text-transform:uppercase; color:#c9b98f;
+  flex:none; max-width:100%; }
 .shelf-card:hover .shelf-name, .shelf-card.is-open .shelf-name { opacity:1; }
 .shelf-dot { position:absolute; top:6px; left:6px; width:5px; height:5px; border-radius:50%; background:var(--c-ink); opacity:.75; }
 .lib-badge { position:absolute; top:5px; right:5px; background:rgba(8,12,13,.82); border-radius:999px;
@@ -19335,21 +19335,64 @@ function libHoverName(it) {
   return '<span class="shelf-name"><span class="sn-t">' + qEsc(main) + '</span>' + (sub ? '<span class="sn-s">' + qEsc(sub) + '</span>' : '')
     + (it.creator ? '<span class="sn-r"></span><span class="sn-by">' + qEsc(it.creator) + '</span>' : '') + '</span>';
 }
-// The whole title on hover, always (his ask, 2026-10-09): when it does not fit the
-// card, its letters shrink step by step until it does, instead of ending in "…".
+// The whole title on hover, always (his ask, 2026-10-09), subtitle included — taken
+// from the catalogue's full title when the saved one stops before the ":" — set in
+// the biggest letters that still fit the card, each title sized on its own.
+const libFullTitles = new Map();
+function libSubOf(main, full) {
+  const f = String(full || '').replace(/\s+/g, ' ').trim(), m = String(main || '').trim();
+  if (!f || !m || f.length <= m.length + 2 || f.toLowerCase().indexOf(m.toLowerCase()) !== 0) return '';
+  return f.slice(m.length).replace(/^\s*[:—–-]\s*/, '').trim();
+}
+function libFitName(box) {
+  if (!box || box.dataset.fit === String(box.clientWidth)) return;
+  if (box.clientHeight < 40) return;
+  box.dataset.fit = String(box.clientWidth);
+  const kids = [...box.children];
+  const parts = box.querySelectorAll('.sn-t, .sn-s, .sn-by');
+  const pad = 2 * (parseFloat(getComputedStyle(box).paddingTop) || 0);
+  const fits = () => {
+    const a = kids[0].getBoundingClientRect(), b = kids[kids.length - 1].getBoundingClientRect();
+    return b.bottom - a.top + pad <= box.clientHeight && [...parts].every((p) => p.scrollWidth <= p.clientWidth + 1);
+  };
+  // Largest size that fits, found by halving the gap between too big and fits.
+  let lo = 0.35, hi = 2.4;
+  for (let i = 0; i < 9; i++) {
+    const k = (lo + hi) / 2;
+    box.style.setProperty('--sn-k', k.toFixed(3));
+    if (fits()) lo = k; else hi = k;
+  }
+  box.style.setProperty('--sn-k', lo.toFixed(3));
+}
+function libAddSub(box, sub) {
+  if (!sub || box.querySelector('.sn-s')) return;
+  const t = box.querySelector('.sn-t');
+  if (!t) return;
+  t.insertAdjacentHTML('afterend', '<span class="sn-s">' + qEsc(sub) + '</span>');
+  box.dataset.fit = '';
+}
 document.addEventListener('mouseover', (ev) => {
   const card = ev.target.closest && ev.target.closest('.shelf-card');
   const box = card && card.querySelector('.shelf-name');
-  if (!box || box.dataset.fit === String(box.clientWidth)) return;
-  box.dataset.fit = String(box.clientWidth);
-  box.style.removeProperty('--sn-k');
-  const parts = box.querySelectorAll('.sn-t, .sn-s, .sn-by');
-  // A line is cut only when a good part of one is hidden: italic letters reach a
-  // few pixels past their own line, which made every short title shrink too (2026-10-09).
-  if (box.clientHeight < 40) { box.dataset.fit = ''; return; }
-  const cut = (p) => p.scrollHeight - p.clientHeight > 0.6 * (parseFloat(getComputedStyle(p).lineHeight) || 16);
-  const over = () => box.scrollHeight - box.clientHeight > 4 || [...parts].some(cut);
-  for (let k = 1; k >= 0.5 && over(); k -= 0.06) box.style.setProperty('--sn-k', k.toFixed(2));
+  if (!box) return;
+  const [type, ...rest] = String(card.dataset.lib || '').split(':');
+  const id = rest.join(':');
+  const main = (box.querySelector('.sn-t') || {}).textContent || '';
+  if (!box.querySelector('.sn-s')) {
+    if (type === 'media') libAddSub(box, libSubOf(main, (libScreen[id] || {}).fullTitle));
+    else if (type === 'shelf') {
+      const got = libFullTitles.get(id);
+      if (typeof got === 'string') libAddSub(box, libSubOf(main, got));
+      else if (!got) {
+        const who = (box.querySelector('.sn-by') || {}).textContent || '';
+        const ask = api('/api/convos/outlink?kind=book&title=' + encodeURIComponent(main) + '&creator=' + encodeURIComponent(who))
+          .then((r) => { libFullTitles.set(id, (r && r.fullTitle) || ''); libAddSub(box, libSubOf(main, r && r.fullTitle)); libFitName(box); })
+          .catch(() => libFullTitles.set(id, ''));
+        libFullTitles.set(id, ask);
+      }
+    }
+  }
+  libFitName(box);
 });
 function libShortTitle(t) {
   const raw = String(t || '').replace(/\s+/g, ' ').trim();
