@@ -3942,6 +3942,10 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-teach-items:empty { display:none; }
 .se-teach-item { display:flex; gap:8px; align-items:baseline; font-family:var(--font-read); font-size:var(--fs-sm); line-height:1.45; color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 7%, transparent); border-radius:8px; padding:6px 10px; }
 .se-teach-item .k { flex:none; font-family:var(--font-ui); }
+.se-teach-item > span:nth-child(2) { flex:1; min-width:0; }
+.se-teach-drop { flex:none; align-self:flex-start; width:22px; height:22px; min-width:0; padding:0; border:0; border-radius:50%; background:none;
+  color:var(--c-ink-5); font-size:11px; line-height:1; cursor:pointer; opacity:.6; }
+.se-teach-drop:hover { opacity:1; color:var(--c-ink); background:color-mix(in srgb, currentColor 10%, transparent); }
 .se-teach-q { display:flex; flex-direction:column; padding:6px 8px 0; }
 .se-teach-q:empty { display:none; }
 .se-teach-qt { font-size:var(--fs-sm); color:var(--c-ink); padding:4px 6px 6px; }
@@ -33359,7 +33363,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var paint = function(){
       logEl.innerHTML = st.turns.map(function(t){ return '<div class="se-teach-t ' + (t.role === 'ai' ? 'is-ai' : 'is-me') + '">' + qEsc(t.text) + '</div>'; }).join('')
         + (st.busy ? '<div class="se-teach-t is-ai is-wait">' + orbHtml('working', 14) + '</div>' : '');
-      itemsEl.innerHTML = st.items.map(function(it){ return '<div class="se-teach-item"><span class="k">' + (TEACH_ICON[it.kind] || '·') + '</span><span>' + qEsc(it.text) + (it.detail ? '<span class="se-teach-detail">' + qEsc(it.detail) + '</span>' : '') + '</span></div>'; }).join('');
+      itemsEl.innerHTML = st.items.map(function(it, i){ return '<div class="se-teach-item"><span class="k">' + (TEACH_ICON[it.kind] || '·') + '</span><span>' + qEsc(it.text) + (it.detail ? '<span class="se-teach-detail">' + qEsc(it.detail) + '</span>' : '') + '</span>'
+        + '<button type="button" class="se-teach-drop" data-drop-item="' + i + '" title="Don\u2019t keep this one" aria-label="Don\u2019t keep this one">✕</button></div>'; }).join('');
+      // One he does not want is taken off before Save (his ask, 2026-10-09), and
+      // stays off when the Mind answers again.
+      itemsEl.querySelectorAll('[data-drop-item]').forEach(function(b){ b.onclick = function(){
+        var it = st.items[Number(b.getAttribute('data-drop-item'))]; if(!it) return;
+        (st.dropped = st.dropped || []).push(String(it.text).toLowerCase());
+        st.items.splice(Number(b.getAttribute('data-drop-item')), 1); paint();
+      }; });
       qEl.innerHTML = st.question ? '<div class="se-teach-qt">' + qEsc(st.question.text) + '</div>' + st.question.options.map(function(o, i){ return '<button type="button" class="se-teach-opt" data-opt="' + i + '"><span class="n">' + (i + 1) + '</span>' + qEsc(o) + '</button>'; }).join('') : '';
       qEl.querySelectorAll('[data-opt]').forEach(function(b){ b.onclick = function(){ send(st.question.options[Number(b.getAttribute('data-opt'))]); }; });
       saveBtn.disabled = st.busy || !st.items.length;
@@ -33382,7 +33394,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           if(!out || out.error){ st.turns.push({ role: 'ai', text: '…' }); paint(); return; }
           var say = out.question ? (out.reply ? out.reply + ' ' : '') : (out.reply || '');
           if(say) st.turns.push({ role: 'ai', text: say.trim() });
-          st.items = out.items || []; st.question = out.question || null;
+          st.items = (out.items || []).filter(function(it){ return (st.dropped || []).indexOf(String(it.text).toLowerCase()) < 0; }); st.question = out.question || null;
           paint(); inp.focus();
         })
         .catch(function(){ st.busy = false; st.turns.push({ role: 'ai', text: '…' }); paint(); });
