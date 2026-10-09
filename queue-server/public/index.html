@@ -3994,7 +3994,18 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-define-chat .ask { display:flex; align-items:center; gap:6px; margin-top:12px; border:1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius:99px; padding:3px 6px 3px 14px; }
 .se-define-chat input { flex:1; border:0; outline:0; background:none; color:inherit; font:italic 400 15px var(--font-read, Georgia, serif); padding:5px 0; }
 .se-define-chat .ask button { border:0; background:none; color:var(--pop-gold, var(--c-accent)); font-size:16px; cursor:pointer; padding:2px 6px; }
-.se-define-side { margin-left:auto; border:0; background:none; cursor:pointer; font:500 12px var(--font-ui); color:#6b8f71; padding:0; }
+.se-define-side { position:relative; margin-left:auto; flex:none; width:32px; height:32px; min-width:0; padding:0; border-radius:50%;
+  border:1px solid color-mix(in srgb, currentColor 30%, transparent); background:none; color:inherit; cursor:pointer; display:grid; place-items:center; }
+.se-define-side svg { grid-area:1/1; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; transition:opacity .2s, transform .2s; }
+.se-define-side .tick { opacity:0; transform:scale(.4); color:#6b8f71; stroke-width:1.8; }
+.se-define-side:hover { border-color:currentColor; }
+/* Saved (his pick A, 2026-10-09): a green ring grows out and the branch turns to a tick. */
+.se-define-side.is-saved { border-color:#6b8f71; animation:seSidePop .35s ease; }
+.se-define-side.is-saved .br { opacity:0; transform:scale(.4); }
+.se-define-side.is-saved .tick { opacity:1; transform:none; transition-delay:.15s; }
+.se-define-side.is-saved::after { content:""; position:absolute; inset:-1px; border-radius:50%; border:2px solid #6b8f71; animation:seSideRing .7s ease-out forwards; pointer-events:none; }
+@keyframes seSidePop { 50% { transform:scale(.85); } }
+@keyframes seSideRing { from { transform:scale(1); opacity:1; } to { transform:scale(2.4); opacity:0; } }
 .se-define { user-select:text; -webkit-user-select:text; cursor:text; }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
 .se-define .w { font-family:'Cinzel', var(--font-read); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
@@ -32182,10 +32193,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     chat.innerHTML = '<div class="thread"></div><form class="ask"><input type="text" placeholder="Ask…" aria-label="Ask about this"><button type="submit" aria-label="Ask">↵</button></form>';
     box.appendChild(chat);
     var mark = document.createElement('button'); mark.type = 'button'; mark.className = 'se-define-side';
-    mark.textContent = '● Side talk'; mark.title = 'Keep this as a side talk';
+    mark.title = 'Keep this as a side talk'; mark.setAttribute('aria-label', 'Keep this as a side talk');
+    mark.innerHTML = '<svg class="br" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2v12"/><path d="M4 9c0-3 3-4.5 6.5-4.5"/><circle cx="12" cy="4.5" r="1.6"/></svg>'
+      + '<svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>';
     box.querySelector('.head').appendChild(mark);
     var sideId = null, busy = false, turns = [], thread = chat.querySelector('.thread'), input = chat.querySelector('input');
-    var openSide = function(){ if(sideId && typeof roomSideOpen === 'function'){ killQuotePop(); var tab = document.querySelector('#roomTabs [data-room-primary="side"]'); if(tab && !tab.classList.contains('on')) tab.click(); roomSideOpen(sideId); } };
     mark.onclick = function(){
       if(mark.disabled) return;
       mark.disabled = true;
@@ -32194,9 +32206,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           if(!d || !d.sideId) throw new Error('not kept');
           sideId = d.sideId;
           if(typeof loadRoomSides === 'function') loadRoomSides().catch(function(){});
-          openSide();
+          // Saved, and the card stays: the ring says so. Pressed again after more
+          // questions, the same side talk takes the new ones.
+          mark.classList.remove('is-saved'); void mark.offsetWidth; mark.classList.add('is-saved');
+          mark.title = 'Saved as a side talk. Press again to add new questions';
         })
-        .catch(function(){ mark.textContent = 'Not saved. Try again'; })
+        .catch(function(){ mark.title = 'Not saved. Press again'; })
         .then(function(){ mark.disabled = false; });
     };
     input.addEventListener('focus', function(){ var pop = box.closest('.se-quote-pop'); if(pop) pop.classList.add('is-chatting'); });
@@ -32212,6 +32227,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var a = d && d.answer;
           it.classList.remove('wait'); it.textContent = a || 'No answer came back. Ask again.';
           if(a) turns.push({ q: q, a: a });
+          if(a && sideId) mark.classList.remove('is-saved');
         })
         .catch(function(){ it.classList.remove('wait'); it.textContent = 'No answer came back. Ask again.'; })
         .then(function(){ busy = false; thread.scrollTop = thread.scrollHeight; input.focus(); });
