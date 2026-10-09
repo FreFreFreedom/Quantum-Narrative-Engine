@@ -20082,6 +20082,15 @@ async function renderInterestLibrary(opts) {
     else {
       [out, review, shelf] = pre || await libFetchAll();
       libData = { key: libKey(), out, review, shelf };
+      // Then the search by meaning: a beat later the wall is redrawn with what a
+      // librarian would hand him for those words, best first.
+      if (libNorm(interestLibraryQuery).length >= 3) {
+        const k = libKey();
+        api('/api/recommendations/library?meaning=1&limit=' + libLimit() + '&offset=0&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)
+          + '&from=' + encodeURIComponent(libYearFrom) + '&to=' + encodeURIComponent(libYearTo))
+          .then((o) => { if (!o || !o.order || !libData || libData.key !== k || libKey() !== k) return; libData.out = o; renderInterestLibrary({ quiet: true }); })
+          .catch(() => {});
+      }
     }
     if (request !== interestLibraryRequest) return;
     if (out.counts) {
@@ -20105,6 +20114,10 @@ async function renderInterestLibrary(opts) {
     const wall = books.map((b) => ({ type: 'shelf', id: b.id, title: b.title, creator: b.author, cover: b.cover_url || '', raw: b, added: libAddedMs(b.created_at) }))
       .concat(media.map((w) => ({ type: 'media', id: w.id, title: w.title, creator: w.creator || '', cover: String(w.artwork || ''), raw: w, added: Number(w.added) || 0 })))
       .sort((a, b) => b.added - a.added);
+    if (Array.isArray(out.order) && interestLibraryQuery) {
+      const rank = new Map(out.order.map((k, i) => [k, i]));
+      wall.sort((a, b) => (rank.get((a.type === 'shelf' ? 's:' : 'm:') + a.id) ?? 1e9) - (rank.get((b.type === 'shelf' ? 's:' : 'm:') + b.id) ?? 1e9));
+    }
     if (!libFavs) {
       try { libFavs = new Set((await api('/api/convos/favs')).favs || []); } catch (_) { libFavs = new Set(); }
       if (request !== interestLibraryRequest) return;

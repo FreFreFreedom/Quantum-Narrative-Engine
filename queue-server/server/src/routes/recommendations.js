@@ -8,7 +8,7 @@ export function recommendationRoutes() {
     catch (e) { res.status(e.status || 500).json({ error: e.status ? e.message : 'Could not update recommendations.' }); }
   };
   const owner=req=>req.user?.sub || req.user?.id;
-  router.get('/library', action(req=>library.listReferences(owner(req),req.query)));
+  router.get('/library', action(req=>req.query.meaning==='1'?library.searchByMeaning(owner(req),req.query):library.listReferences(owner(req),req.query)));
   router.post('/media-focus', action(req=>recommendations.focusMedia(req.body?.scope)));
   router.post('/library/save', action(req=>library.saveReference(owner(req),req.body)));
   router.post('/library/attach', action(req=>library.referenceQuote(owner(req),req.body)));
