@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Modern Strategy as an Ontological Blueprint — conversations/modern-strategy-as-an-ontological-blueprint-a969a91c.md
+- Parental archetypes and civilizational defense mechanisms — conversations/parental-archetypes-and-civilizational-defense-mechanisms-a969a91c.md
 - Prison Memoirs and Post‑Release Reintegration Dynamics — conversations/prison-memoirs-and-post-release-reintegration-dynamics-565a6e84.md
 - Mapping Psychological Walls Across Cultures and Media — conversations/mapping-psychological-walls-across-cultures-and-media-30b86c18.md
 - State Experiments in Constitutional Decision‑Making — conversations/state-experiments-in-constitutional-decision-making-cf34af05.md
