@@ -58,6 +58,12 @@ export function bindBookFacts(database) {
         OR cover LIKE '%covers.openlibrary.org/b/isbn/%' OR cover LIKE '%books.google.com/books/content?vid=ISBN%'`);
       db.exec("INSERT INTO book_facts_marks (name) VALUES ('isbn-covers-checked')");
     }
+    // Page counts taken from the first record found, before the middle of all of
+    // them was used: every book is asked once more (full_title NULL means "ask").
+    if (!db.prepare("SELECT 1 FROM book_facts_marks WHERE name='pages-middle'").get()) {
+      db.exec("UPDATE book_facts SET full_title=NULL");
+      db.exec("INSERT INTO book_facts_marks (name) VALUES ('pages-middle')");
+    }
   } catch (err) { /* next boot */ }
 }
 
