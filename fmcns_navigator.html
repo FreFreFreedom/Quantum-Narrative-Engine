@@ -3680,9 +3680,18 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-find .lib-year { width:46px; height:34px; border:0; background:transparent; padding:0 2px; outline:none; box-shadow:none; text-align:center;
   font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink); }
 .lib-bar { display:flex; justify-content:flex-end; margin:0 0 8px; }
-.shelf-name { position:absolute; inset:auto 0 0; padding:18px 7px 7px; font-size:var(--fs-2xs); line-height:1.3; text-align:left;
-  color:var(--c-ink); background:linear-gradient(transparent,rgba(0,0,0,.86)); border-radius:0 0 6px 6px;
-  opacity:0; transition:opacity .14s; overflow:hidden; max-height:60%; }
+/* On hover the cover dims and the whole title stands in its middle: the title, its
+   subtitle, a short gold rule, the author (his pick "F", 2026-10-09). */
+.shelf-name { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
+  padding:12px 10px; text-align:center; background:rgba(12,16,24,.86); border-radius:6px; container-type:inline-size;
+  opacity:0; transition:opacity .18s ease; overflow:hidden; pointer-events:none; }
+.shelf-name .sn-t { font-family:'Spectral', var(--font-read); font-style:italic; font-size:clamp(12px, 10.5cqi, 20px); line-height:1.22; color:#f1ece0;
+  display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:break-word; }
+.shelf-name .sn-s { margin-top:5px; font-family:'Spectral', var(--font-read); font-style:italic; font-size:clamp(10px, 6.8cqi, 13px); line-height:1.35; color:#bdb6a6;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.shelf-name .sn-r { flex:none; width:26px; height:1px; margin:10px 0; background:#b38b45; }
+.shelf-name .sn-by { font:500 clamp(8px, 5.2cqi, 10px)/1.3 'Cinzel', var(--font-read); letter-spacing:.14em; text-transform:uppercase; color:#c9b98f;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .shelf-card:hover .shelf-name, .shelf-card.is-open .shelf-name { opacity:1; }
 .shelf-dot { position:absolute; top:6px; left:6px; width:5px; height:5px; border-radius:50%; background:var(--c-ink); opacity:.75; }
 .lib-badge { position:absolute; top:5px; right:5px; background:rgba(8,12,13,.82); border-radius:999px;
@@ -19262,6 +19271,15 @@ function libIsScreen(w) { return w && (w.kind === 'film' || w.kind === 'series')
 // Protective Services—Notes of a Former Caseworker – A Groundbreaking
 // Investigation of Systemic". Show the book's name; the full string stays on the
 // element's tooltip.
+// The whole title for the hover: the title itself, then what follows its colon or
+// dash as the subtitle, then who made it.
+function libHoverName(it) {
+  const raw = String(it.title || '').replace(/\s+/g, ' ').trim();
+  const m = raw.match(/^(.{3,}?)\s*(?::|\s[—–-]\s)\s*(.+)$/);
+  const main = m ? m[1] : raw, sub = [m ? m[2] : '', it.raw && it.raw.episode ? String(it.raw.episode) : ''].filter(Boolean).join(' · ');
+  return '<span class="shelf-name"><span class="sn-t">' + qEsc(main) + '</span>' + (sub ? '<span class="sn-s">' + qEsc(sub) + '</span>' : '')
+    + (it.creator ? '<span class="sn-r"></span><span class="sn-by">' + qEsc(it.creator) + '</span>' : '') + '</span>';
+}
 function libShortTitle(t) {
   const raw = String(t || '').replace(/\s+/g, ' ').trim();
   let cut = raw.split(/\s*[—–]\s*|\s+-\s+/)[0].trim();
@@ -19581,7 +19599,7 @@ function libCard(it) {
     + '<button type="button" class="shelf-open" data-open aria-label="' + qEscAttr(it.title) + '">' + titled
     + (facts && facts.rating ? '<span class="lib-badge">' + facts.rating.toFixed(1) + '</span>' : '')
     + (libIsScreen(it.raw) ? '<span class="lib-kind">' + (it.raw.kind === 'series' ? '◗' : '▶') + '</span>' : '')
-    + '<span class="shelf-name">' + qEsc(libShortTitle(it.title)) + (it.raw && it.raw.episode ? ' · ' + qEsc(it.raw.episode) : '') + (it.creator ? ' · ' + qEsc(it.creator) : '') + '</span></button>'
+    + libHoverName(it) + '</button>'
     // Every card on the wall can go with one click on its corner, without opening
     // it first (his ask, 2026-10-02) — not only the whole books on the shelf.
     + (it.type === 'shelf'
