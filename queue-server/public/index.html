@@ -3790,7 +3790,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   -webkit-mask-image:linear-gradient(#000 35%, transparent); mask-image:linear-gradient(#000 35%, transparent); }
 .shelf-panel-head.is-pop { flex-direction:column; gap:16px; padding-right:0; }
 .shelf-panel-head.is-pop > div { width:100%; }
-.shelf-panel-head.is-pop .lib-pop-cv { width:44%; max-width:210px; flex:none; border-radius:7px; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+.shelf-panel-head.is-pop .lib-pop-cv { cursor:grab; width:44%; max-width:210px; flex:none; border-radius:7px; box-shadow:0 8px 24px rgba(0,0,0,.5); }
 .shelf-panel-head.is-pop > div > b { font-size:22px; }
 .shelf-panel-head.is-pop .bk-out { position:absolute; top:14px; right:48px; margin:0; }
 .lib-stats { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; text-align:center; margin:16px 0 4px;
@@ -19654,7 +19654,7 @@ function libStatStrip(stars, count, pages, year) {
 function libPopHead(src, title, creator, extra, out, stats) {
   const bg = /^https:\/\//.test(src || '') ? ' style="background-image:url(&quot;' + qEscAttr(src) + '&quot;)"' : '';
   return '<div class="lib-pop-bg"' + bg + '></div>'
-    + '<div class="shelf-panel-head is-pop"><span class="shelf-cover lib-pop-cv"' + bg + '></span>'
+    + '<div class="shelf-panel-head is-pop"><span class="shelf-cover lib-pop-cv" draggable="true"' + bg + '></span>'
     + '<div><b title="' + qEscAttr(title) + '">' + qEsc(title) + '</b>' + extra + (creator ? '<small>' + qEsc(creator) + '</small>' : '') + '</div>'
     + out + '<button type="button" data-close aria-label="Close">✕</button></div>' + stats;
 }
@@ -19675,7 +19675,10 @@ function libDragText(it) {
     + (it.creator || year ? ' (' + [it.creator, year].filter(Boolean).join(', ') + ')' : '');
 }
 document.addEventListener('dragstart', (ev) => {
-  const card = ev.target && ev.target.closest && ev.target.closest('.shelf-card[data-drag], .rsb-card[data-drag]');
+  // The big cover of an open book drags as that book's card (his ask, 2026-10-11).
+  const pop = ev.target && ev.target.closest && ev.target.closest('.lib-pop-cv');
+  const card = pop ? document.querySelector('.shelf-card.is-open[data-drag]')
+    : ev.target && ev.target.closest && ev.target.closest('.shelf-card[data-drag], .rsb-card[data-drag]');
   if (!card || !ev.dataTransfer) return;
   const [type, id] = String(card.dataset.lib || '').split(/:(.+)/);
   const el = card.querySelector('.shelf-cover') || card;
