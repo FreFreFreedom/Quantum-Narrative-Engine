@@ -4056,6 +4056,22 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 @keyframes seSidePop { 50% { transform:scale(.85); } }
 @keyframes seSideRing { from { transform:scale(1); opacity:1; } to { transform:scale(2.4); opacity:0; } }
 .se-define { user-select:text; -webkit-user-select:text; cursor:text; }
+/* The selection box as a night card (his picks E3, N5, F1, B4, 2026-10-11): navy in
+   every look, gold line across the top, the word as a gold italic title, no dividing
+   lines, "Ask…" on a gold underline with no send arrow (Enter sends), and the actions
+   as gold-outlined pills. Tripled class so it outranks the per-look colours above. */
+.se-quote-pop.se-quote-pop.se-quote-pop { background:#0e1320; color:#f1ece0; --pop-gold:#d9b877; border:1px solid rgba(217,184,119,.45);
+  border-radius:16px; box-shadow:0 30px 80px rgba(0,0,0,.65), 0 0 40px rgba(217,184,119,.08); justify-content:center; padding-bottom:14px; }
+.se-quote-pop.se-quote-pop:not(:has(.se-define)) { padding-top:10px; }
+.se-quote-pop.se-quote-pop .se-define { border-top:2px solid #d9b877; border-radius:16px 16px 0 0; border-bottom:0; margin-bottom:4px; }
+.se-quote-pop.se-quote-pop .se-define .w { font:italic 500 30px/1.15 'Spectral', var(--font-read); letter-spacing:0; text-transform:none; color:#d9b877; }
+.se-quote-pop.se-quote-pop .se-define .head + .here { padding-top:20px; }
+.se-quote-pop.se-quote-pop .se-define-chat .ask { border:0; border-bottom:1px solid rgba(217,184,119,.45); border-radius:0; padding-left:2px; }
+.se-quote-pop.se-quote-pop .se-define-chat .ask button { display:none; }
+.se-quote-pop.se-quote-pop > button { flex:0 0 auto; margin:4px 5px; padding:10px 16px; border:1px solid rgba(217,184,119,.4); border-radius:999px;
+  font-size:12px; color:#e9e2cf; opacity:.85; }
+.se-quote-pop.se-quote-pop > button + button { border-left:1px solid rgba(217,184,119,.4); }
+.se-quote-pop.se-quote-pop > button:hover { opacity:1; background:rgba(217,184,119,.12); }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
 .se-define .w { font-family:'Cinzel', var(--font-read); font-size:16px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
 .se-define .head + .here { position:relative; padding-top:16px; }
