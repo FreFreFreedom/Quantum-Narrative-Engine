@@ -20000,7 +20000,7 @@ async function renderInterestLibrary(opts) {
     + (libKindOpen ? '<div class="lib-kindpop" role="menu">'
       + LIB_KINDS.map(([k, label]) => '<button type="button" role="menuitem" data-lib-tab="' + k + '" class="' + (k === interestLibraryKind && !libSuggesting ? 'on' : '') + '"><span>' + label + '</span><b data-lib-count="' + k + '">' + libCountFor(k) + '</b></button>').join('')
       + '<div class="lib-kindpop-foot">'
-      + (suggestKind ? '<button type="button" role="menuitem" class="' + (libSuggesting ? 'on' : '') + '" data-lib-suggest>✦ ' + (libSuggesting ? 'Back to yours' : 'Suggestions') + '</button>' : '')
+      // Suggestions removed from the Library (his ask, 2026-10-11).
       + '<button type="button" role="menuitem" class="' + (finding ? 'on' : '') + '" data-lib-find><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg> ' + (finding ? 'Clear search' : 'Search') + '</button>'
       + '</div></div>' : '')
     + '</div>'
