@@ -1552,7 +1552,7 @@ body::after {
 /* His prompt: no bubble, set to the right with a gold line beside it (his pick 6,
    2026-09-24), a little smaller than the answers, and no "You" above it. */
 #wsRoom #roomConvo .se-turn.you .se-body, #roomConvo.room-convo .se-turn.you .se-body { max-width:70%; background:none; border:none; border-right:1.5px solid color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, transparent);
-  border-radius:0; padding:2px 16px 2px 0; text-align:right; font-size:calc(var(--room-size) * .9); color:var(--c-ink-2); }
+  border-radius:0; padding:2px 16px 2px 0; text-align:right; font-size:calc(var(--room-size) * .9); color:var(--c-ink-2); line-height:1.42; }
 #roomConvo.room-convo .se-turn.you .se-who { display:none; }
 #roomConvo.room-convo .se-turn.you .se-who:has(.se-lane) { display:flex; }
 /* The ink the Room's answers are read in, one per look, each taken from that look's own
@@ -3261,7 +3261,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 #roomSideEmbed .se-turn.you .se-who:has(.se-lane) { display:flex; }
 #roomSideEmbed .se-turn.you .se-body { max-width:82%; background:none; border:none; border-radius:0; padding:2px 14px 2px 0; text-align:right;
   border-right:1.5px solid color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 55%, transparent);
-  font-size:calc(var(--room-size) * .9); color:var(--c-ink-2); }
+  font-size:calc(var(--room-size) * .9); color:var(--c-ink-2); line-height:1.42; }
 #roomSideEmbed .se-turn:not(.you) .se-body { color:var(--c-read, var(--c-ink-2)); }
 #roomSideEmbed .se-turn:not(.you):not(.plan) .se-body > p:first-child::first-letter {
   float:left; font-size:3.2em; line-height:.86; padding:.06em .12em 0 0; font-weight:400; color:var(--c-kept-echo, var(--c-accent)); }
