@@ -301,9 +301,15 @@ ${question}
 Use whatever above helps — who a person is, what a book is, what the conversation was about — and what you know yourself. Answer in two to four short sentences. Plain simple English, his second language.
 Facts must be right: a record, a date, a number or a comparison you are not certain of is never guessed.
 @@LOOKUP@@Plain text, no bold, no preamble.`;
-  // The Room's own lane, not the fastest one: the fast free models answered "666
-  // was Chicago's record" (it was 970, in 1974) on the first try (2026-10-09).
-  const ask = (p) => generateText({ prompt: p, feature: 'studio', label: 'room:define-ask', maxTokens: 900, timeoutMs: 45_000 });
+  // Gemini Flash Lite answers (his pick, 2026-10-11); the Room's own lane only when it
+  // is spent or fails. The Wikipedia lookup below guards the facts.
+  const ask = async (p) => {
+    if (!router.isExhausted('google-ai-studio', 'gemini-flash-lite-latest')) {
+      const out = await generateTextDirect({ prompt: p, provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', maxTokens: 900, label: 'room:define-ask', timeoutMs: 20_000 }).catch(() => null);
+      if (out && out.text) return out;
+    }
+    return generateText({ prompt: p, feature: 'studio', label: 'room:define-ask', maxTokens: 900, timeoutMs: 45_000 });
+  };
   // First pass may ask for a lookup instead of answering "I'm not sure": a
   // date or fact not in the text above ("when what years?") is fetched from
   // Wikipedia and the question is asked again with it.
