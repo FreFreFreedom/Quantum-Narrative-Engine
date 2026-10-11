@@ -35663,6 +35663,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (bc && bc.style.backgroundImage) { ev.preventDefault(); seCoverBig(bc); return; }
     var ib = ev.target.closest && ev.target.closest('.se-message-file.is-image');
     if (ib) { ev.preventDefault(); ev.stopPropagation(); seImgOpen(ib); return; }
+    // Already open from hovering it: a click must not shut what he is about to read.
+    var hv = ev.target.closest && ev.target.closest(SE_HOVER_SEL);
+    if (hv && seCard && seCard.dataset.hover && seCardFor === seHoverId(hv)) { ev.preventDefault(); return; }
     var pb = ev.target.closest && ev.target.closest('.se-person');
     if (pb) { ev.preventDefault(); sePersonOpen(pb); return; }
     var fb = ev.target.closest && ev.target.closest('.se-face');
@@ -35676,6 +35679,42 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
   });
   document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') seCardClose(); });
+  // Resting the pointer on a cover, a title or a name opens its card — no click
+  // (his ask, 2026-10-11). A short dwell so reading across a line does not flash
+  // cards; leaving both the name and its card puts it away after a grace that
+  // lets the pointer cross the gap between them.
+  var SE_HOVER_SEL = '.se-cover, .se-work, .se-person, .se-face';
+  function seHoverId(el){
+    if (el.matches('.se-person, .se-face')) return 'p|' + (el.dataset.pFull || el.dataset.pName);
+    var sp = el.querySelector('[data-cover-art]'); return sp ? sp.dataset.coverArt : '';
+  }
+  var seHoverT = 0, seLeaveT = 0;
+  document.addEventListener('mouseover', function(ev){
+    var t = ev.target;
+    if (!t.closest) return;
+    if (seCard && seCard.contains(t)) { clearTimeout(seLeaveT); return; }
+    var el = t.closest(SE_HOVER_SEL);
+    if (!el || !el.closest('#roomConvo, #roomSideEmbed, .se-card')) return;
+    clearTimeout(seLeaveT);
+    if (seCard && seCardFor === seHoverId(el)) return;
+    clearTimeout(seHoverT);
+    seHoverT = setTimeout(function(){
+      if (!el.isConnected || !el.matches(':hover')) return;
+      if (el.matches('.se-person, .se-face')) sePersonOpen(el); else seCardOpen(el);
+      if (seCard) seCard.dataset.hover = '1';
+    }, 320);
+  }, true);
+  document.addEventListener('mouseout', function(ev){
+    var t = ev.target, to = ev.relatedTarget;
+    if (!t.closest) return;
+    var from = t.closest(SE_HOVER_SEL);
+    if (from) clearTimeout(seHoverT);
+    if (!seCard || !seCard.dataset.hover) return;
+    if (!from && !seCard.contains(t)) return;
+    if (to && to.closest && (seCard.contains(to) || (seCardAnchor && seCardAnchor.contains(to)))) return;
+    clearTimeout(seLeaveT);
+    seLeaveT = setTimeout(function(){ if (seCard && seCard.dataset.hover && !seCard.matches(':hover') && !(seCardAnchor && seCardAnchor.matches(':hover'))) seCardClose(); }, 380);
+  }, true);
   // ⌘⇧↓ (Ctrl+Shift+↓ off a Mac): to the end of the chat he was last in — the
   // side talk or the main thread, whichever his hand touched last (2026-09-30).
   var seLastChat = null;
