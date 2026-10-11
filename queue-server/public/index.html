@@ -32567,7 +32567,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // Selecting inside the bar itself (the meaning, to copy it) keeps the bar.
     var inPop=sel && sel.anchorNode && quotePop && quotePop.contains(sel.anchorNode);
     if(inPop)return;
-    if(!sel || !String(sel).trim()){clearTimeout(quoteOfferTimer);if(!(quotePop && (quotePop.classList.contains('se-kept-pop') || quotePop.classList.contains('se-like-pop'))))killQuotePop();return;}
+    if(!sel || !String(sel).trim()){
+      if(quotePop && quotePop.dataset.born && Date.now() - Number(quotePop.dataset.born) < 1000) return;
+      clearTimeout(quoteOfferTimer);if(!(quotePop && (quotePop.classList.contains('se-kept-pop') || quotePop.classList.contains('se-like-pop'))))killQuotePop();return;}
     if(mouseDragging)return;
     if(quotePop && quotePop.dataset && quotePop.dataset.passage === String(sel).trim().replace(/\s+/g,' ').slice(0,100000))return;
     var node=sel.anchorNode, el=node && (node.nodeType===1?node:node.parentElement);
@@ -32598,6 +32600,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       quotePop = document.createElement('div');
       quotePop.className = 'se-quote-pop se-card-define';
       quotePop.dataset.passage = passage;
+      // Removing the old meaning took the selection inside it with it; the empty
+      // selection that follows must not tear down this new one.
+      quotePop.dataset.born = String(Date.now());
       quotePop.onmousedown = function(x){ x.stopPropagation(); };
       document.body.appendChild(quotePop);
       var e = { convoId: convo };
