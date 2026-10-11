@@ -20019,8 +20019,11 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
     if (!peek) { peek = document.createElement('div'); peek.className = 'lib-peek'; document.body.appendChild(peek); }
     if (cur) cur.classList.remove('is-peeked');
     cur = card; card.classList.add('is-peeked'); h.classList.add('is-peek');
-    const art = card.dataset.dragCover || '';
-    peek.innerHTML = '<span class="lib-peek-cv"' + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"' : '') + '></span>'
+    // The cover as the card itself shows it — the drag address is empty for a cover
+    // that is not https or arrives late, which left the band without its picture.
+    const cvEl = card.querySelector('.shelf-cover');
+    const art = cvEl ? getComputedStyle(cvEl).backgroundImage : 'none';
+    peek.innerHTML = '<span class="lib-peek-cv"' + (art && art !== 'none' ? ' style="background-image:' + qEscAttr(art) + '"' : '') + '></span>'
       + '<span class="lib-peek-tx">' + name.innerHTML + '</span>';
     const r = (h.closest('.room-cards') || h).getBoundingClientRect();
     Object.assign(peek.style, { left: r.left + 'px', width: r.width + 'px', top: Math.max(r.top + 60, innerHeight * .22) + 'px' });
