@@ -35577,14 +35577,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // An archetype's card names who lives it, each a search of its own.
         // Films and series about this person or this institution, each opening its
         // own card (his ask, 2026-09-28). Posters load like any other cover.
-        + (f.screen && f.screen.length ? '<div class="se-card-screen">' + f.screen.map(function(x){
-            var it = { kind: x.kind || 'film', title: x.title, creator: '', year: x.year || '' };
+        // What they made themselves, before what was made about them (his ask, 2026-10-11).
+        + [['works', 'Works'], ['screen', 'On screen']].map(function(row){
+          var list = f[row[0]];
+          if (!list || !list.length) return '';
+          return (f.works && f.works.length && f.screen && f.screen.length ? '<h6>' + row[1] + '</h6>' : '') + '<div class="se-card-screen">' + list.map(function(x){
+            var it = { kind: x.kind || 'film', title: x.title, creator: row[0] === 'works' ? who : '', year: x.year || '' };
             var ky = roomMediaArtKey(it), a = roomMediaArtCache.get(ky) || '';
             return '<button type="button" class="se-cover se-screen" title="' + qEscAttr(x.title + (x.note ? ' — ' + x.note : '')) + '" data-convo="' + qEscAttr(d.convo || '') + '">'
-              + '<span data-cover-art="' + qEscAttr(ky) + '" data-cover-kind="' + qEscAttr(it.kind) + '" data-cover-title="' + qEscAttr(x.title) + '" data-cover-creator="" data-cover-year="' + qEscAttr(it.year) + '"'
+              + '<span data-cover-art="' + qEscAttr(ky) + '" data-cover-kind="' + qEscAttr(it.kind) + '" data-cover-title="' + qEscAttr(x.title) + '" data-cover-creator="' + qEscAttr(it.creator) + '" data-cover-year="' + qEscAttr(it.year) + '"'
               + (/^https:\/\//.test(a) ? ' style="background-image:url(&quot;' + qEscAttr(a) + '&quot;)"' : '') + '>' + (a ? '' : qEsc(libShortTitle(x.title))) + '</span>'
               + '<span class="se-screen-name">' + qEsc(x.title) + (x.year ? ' <i>' + qEsc(x.year) + '</i>' : '') + '</span></button>';
-          }).join('') + '</div>' : '')
+          }).join('') + '</div>';
+        }).join('')
         + (f.echoes && f.echoes.length ? '<h6>Echoes</h6><div class="se-card-echoes">' + f.echoes.map(function(x){
             return '<a href="https://en.wikipedia.org/w/index.php?search=' + encodeURIComponent(x) + '" target="_blank" rel="noopener noreferrer">' + qEsc(x) + '</a>';
           }).join('') + '</div>' : '');

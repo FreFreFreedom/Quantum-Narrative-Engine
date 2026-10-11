@@ -17,7 +17,7 @@ export const KINDS = new Set(['real', 'fictional', 'myth']);
 // (v9: places, institutions and archetypes are no longer marked).
 export const PEOPLE_V = 9;
 // Bumped when a card asks for something new, so cards written before it are written again (v2: the whole name).
-const CARD_V = 3;
+const CARD_V = 4;
 // Ten used to be the cap, and a long answer's list stopped there: Astraea and
 // Ma'at, named after ten lawyers, were never marked (2026-09-28).
 const MAX_PEOPLE = 25;
@@ -97,7 +97,7 @@ const bareLife = (t) => String(t || '').replace(/^\s*(a real person|a character|
 
 // What each kind's card asks for.
 const CARD = {
-  real: { what: (w, f) => `${w}${f ? ` (${f})` : ''}`, life: 'birth–death years, or born YEAR', pattern: 'the main pattern this person lives out', screen: 'about this person' },
+  real: { what: (w, f) => `${w}${f ? ` (${f})` : ''}`, life: 'birth–death years, or born YEAR', pattern: 'the main pattern this person lives out', screen: 'about this person', works: true },
   fictional: { what: (w, f) => `the fictional character ${w}${f ? ` (${f})` : ''}`, life: 'the work it comes from and its year', pattern: 'the main pattern this character lives out' },
   myth: { what: (w, f) => `${w}, a being of myth, religion or folklore${f ? ` (${f})` : ''}`, life: 'the tradition and its oldest source', pattern: 'the main pattern this being carries' },
 };
@@ -123,7 +123,10 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
         // Named wrongly they are worse than none, so the model is told to leave the
         // list empty unless it is sure the work exists and is really about this.
         + (spec.screen ? ',"screen":[{"title":"exact title","kind":"film"|"series","year":"YYYY","note":"3 to 6 words: a biopic, a documentary, a dramatisation of ONE episode"}]'
-          + ' — at most three films, series or documentaries ' + spec.screen + ', only ones you are sure exist under that exact title. Not a work it merely appears in, not a work it made. [] when there are none or you are unsure' : '') + '}',
+          + ' — at most three films, series or documentaries ' + spec.screen + ', only ones you are sure exist under that exact title. Not a work it merely appears in, not a work it made. [] when there are none or you are unsure' : '') 
+        // What they made themselves — an author's books, a director's films (his ask, 2026-10-11).
+        + (spec.works ? ',"works":[{"title":"exact title","kind":"book"|"film"|"series","year":"YYYY"}]'
+          + ' — up to six of their own best-known works: books they wrote, films they directed, series they created; most important first. Only works you are sure of. [] when they made none of these' : '') + '}',
       'If you do not know it, reply {"life":"","pattern":"","here":""}.',
       '=== THE CONVERSATION (latest turns) ===', msgs.slice(-6000),
     ].join('\n\n'),
@@ -144,7 +147,12 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
       kind: String(x?.kind) === 'series' ? 'series' : 'film',
       year: (String(x?.year || '').match(/\d{4}/) || [''])[0],
       note: plain(x?.note).slice(0, 44),
-    })).filter((x) => x.title).slice(0, 3) } : {}) };
+    })).filter((x) => x.title).slice(0, 3) } : {}),
+    ...(spec.works && Array.isArray(j.works) ? { works: j.works.map((x) => ({
+      title: plain(x?.title).slice(0, 80),
+      kind: ['film', 'series'].includes(String(x?.kind)) ? String(x.kind) : 'book',
+      year: (String(x?.year || '').match(/\d{4}/) || [''])[0],
+    })).filter((x) => x.title).slice(0, 6) } : {}) };
   if (!card.pattern && !card.here) return card;
   db.prepare(`INSERT INTO person_notes (convo_id, key, body) VALUES (?,?,?)
     ON CONFLICT(convo_id, key) DO UPDATE SET body=excluded.body, created_at=CURRENT_TIMESTAMP`).run(convoId, key, JSON.stringify(card));
