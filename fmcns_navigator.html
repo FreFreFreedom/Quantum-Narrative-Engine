@@ -4018,7 +4018,7 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 @keyframes seTick { to { stroke-dashoffset:0; } }
 @keyframes seSpin { to { transform:rotate(360deg); } }
 .se-like-note { width:260px; max-width:calc(100vw - 40px); border:none; outline:none; background:transparent; color:inherit; font:inherit; font-size:var(--fs-sm); padding:5px 4px; }
-.se-quote-pop { flex-wrap:wrap; width:max-content; max-width:min(620px, calc(100vw - 12px)); padding:0; gap:0; border-radius:12px;
+.se-quote-pop { flex-wrap:wrap; width:max-content; max-width:min(760px, calc(100vw - 12px)); padding:0; gap:0; border-radius:12px;
   background:var(--c-ink-solid); color:var(--c-on-solid); border-color:color-mix(in srgb, var(--c-on-solid) 18%, transparent);
   --pop-gold:var(--c-kept-echo, var(--c-accent)); }
 :root[data-look="creamnavy"] { --pnl:#2c3e5c; }
@@ -4026,22 +4026,22 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 /* The actions (his pick 3, 2026-09-24): bolder Cinzel capitals in the card's own cream,
    a small gold symbol before each, thin dividers between — the thin gold capitals were
    hard to read on the navy. */
-.se-quote-pop button { order:2; flex:1 1 0; min-width:0; justify-content:center; gap:7px; padding:11px 12px; border-radius:0; white-space:nowrap;
-  font:500 11px/1 'Cinzel', var(--font-read); letter-spacing:.14em; text-transform:uppercase; color:inherit; }
+.se-quote-pop button { order:2; flex:1 1 0; min-width:0; justify-content:center; gap:7px; padding:14px 12px; border-radius:0; white-space:nowrap;
+  font:500 13.5px/1 'Cinzel', var(--font-read); letter-spacing:.14em; text-transform:uppercase; color:inherit; }
 .se-quote-pop button + button { border-left:1px solid color-mix(in srgb, var(--c-on-solid) 12%, transparent); }
 :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .se-quote-pop button + button { border-left-color:rgba(241,232,212,.12); }
 .se-quote-pop button:hover { background:color-mix(in srgb, var(--pop-gold) 12%, transparent); color:inherit; }
-.se-quote-pop button .ic { display:block; width:13px; height:13px; color:var(--pop-gold); fill:none; stroke:currentColor; stroke-width:1.4; }
-.se-quote-pop .se-define { order:1; flex:1 1 100%; width:0; min-width:100%; margin:0; padding:13px 18px 14px; border-top:0;
+.se-quote-pop button .ic { display:block; width:16.5px; height:16.5px; color:var(--pop-gold); fill:none; stroke:currentColor; stroke-width:1.4; }
+.se-quote-pop .se-define { order:1; flex:1 1 100%; width:0; min-width:100%; margin:0; padding:18px 24px; border-top:0;
   border-bottom:1px solid color-mix(in srgb, var(--c-on-solid) 16%, transparent);
-  font-family:var(--font-read); font-size:20px; line-height:1.35; color:inherit; white-space:normal; }
+  font-family:var(--font-read); font-size:26px; line-height:1.4; color:inherit; white-space:normal; }
 .se-define-chat .thread { display:flex; flex-direction:column; gap:8px; margin-top:12px; max-height:240px; overflow:auto; }
 .se-define-chat .thread:empty { display:none; }
-.se-define-chat .you { align-self:flex-end; max-width:78%; padding:7px 12px; border-radius:14px 14px 4px 14px; background:var(--c-ink, #1e2430); color:var(--c-bg, #e9e6df); font:400 14px/1.4 var(--font-ui); }
-.se-define-chat .it { align-self:flex-start; max-width:88%; padding:7px 12px; border-radius:14px 14px 14px 4px; background:color-mix(in srgb, currentColor 7%, transparent); font-size:16px; line-height:1.45; }
+.se-define-chat .you { align-self:flex-end; max-width:78%; padding:7px 12px; border-radius:14px 14px 4px 14px; background:var(--c-ink, #1e2430); color:var(--c-bg, #e9e6df); font:400 18px/1.4 var(--font-ui); }
+.se-define-chat .it { align-self:flex-start; max-width:88%; padding:7px 12px; border-radius:14px 14px 14px 4px; background:color-mix(in srgb, currentColor 7%, transparent); font-size:21px; line-height:1.45; }
 .se-define-chat .it.wait { opacity:.55; }
 .se-define-chat .ask { display:flex; align-items:center; gap:6px; margin-top:12px; border:1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius:99px; padding:3px 6px 3px 14px; }
-.se-define-chat input { flex:1; border:0; outline:0; background:none; color:inherit; font:italic 400 15px var(--font-read, Georgia, serif); padding:5px 0; }
+.se-define-chat input { flex:1; border:0; outline:0; background:none; color:inherit; font:italic 400 19px var(--font-read, Georgia, serif); padding:5px 0; }
 .se-define-chat .ask button { border:0; background:none; color:var(--pop-gold, var(--c-accent)); font-size:16px; cursor:pointer; padding:2px 6px; }
 .se-quote-pop .se-define-side { position:relative; margin-left:auto; flex:none; order:0; gap:0; font:inherit; width:32px; height:32px; min-width:0; padding:0; border-radius:50%;
   border:1px solid color-mix(in srgb, currentColor 30%, transparent); background:none; color:inherit; cursor:pointer; display:grid; place-items:center; }
@@ -4057,12 +4057,12 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 @keyframes seSideRing { from { transform:scale(1); opacity:1; } to { transform:scale(2.4); opacity:0; } }
 .se-define { user-select:text; -webkit-user-select:text; cursor:text; }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
-.se-define .w { font-family:'Cinzel', var(--font-read); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
+.se-define .w { font-family:'Cinzel', var(--font-read); font-size:16px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
 .se-define .head + .here { position:relative; padding-top:16px; }
 .se-define .head + .here::before { content:''; position:absolute; top:6px; left:0; width:26px; height:1px; background:var(--pop-gold); }
 .se-define .here p { margin:0; color:inherit; }
 .se-define .here p.full { margin-bottom:8px; font-style:italic; font-weight:500; }
-.se-define .plain { margin-top:10px; font-size:19px; font-style:italic; color:color-mix(in srgb, var(--c-on-solid) 78%, transparent); }
+.se-define .plain { margin-top:10px; font-size:24px; font-style:italic; color:color-mix(in srgb, var(--c-on-solid) 78%, transparent); }
 .se-define .pos { font-family:'Cinzel', var(--font-read); font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:color-mix(in srgb, var(--c-on-solid) 65%, transparent); }
 :root:is([data-look="creamnavy"],[data-look="creamteal"],[data-look="creamolive"],[data-look="creamrose"],[data-look="creamcandle"]) .se-define .pos { color:#b8c1cf; }
 .se-define p { margin:4px 0 0; }
