@@ -116,6 +116,9 @@ export const PROVIDERS = [
       // broke every call using it by fixed id; aliases avoid repeating that.
       { id: 'gemini-flash-latest', codingRank: 70, contextTokens: 1000000, limits: { rpd: 20 } },
       { id: 'gemini-flash-lite-latest', codingRank: 55, contextTokens: 1000000, limits: { rpd: 500 } },
+      // His pick for Room answers only (2026-10-11). Twenty free a day, so pinnedOnly:
+      // nothing automatic may spend one — it answers only when the Room's picker names it.
+      { id: 'gemini-3.8-flash', codingRank: 72, contextTokens: 1000000, limits: { rpd: 20 }, pinnedOnly: true },
       // gemini-pro-latest is GONE, and deliberately not coming back as a hand pick
       // either. It has no usable free allowance at all: checked 2026-09-07 and
       // again 2026-09-12, on a key where both flash models answered in the same

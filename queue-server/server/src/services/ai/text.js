@@ -479,7 +479,7 @@ export async function getFallbackChain(feature, providerId, model, { noOpencodeB
     if (model) {
       const cat = getProviderCatalog(providerId);
       for (const m of cat?.models || []) {
-        if (m.id !== model) chain.push({ provider: providerId, model: m.id });
+        if (m.id !== model && !m.pinnedOnly) chain.push({ provider: providerId, model: m.id });
       }
     }
     return chain;

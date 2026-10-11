@@ -160,6 +160,7 @@ export function listModels() {
   const out = [];
   for (const p of providers) {
     for (const m of p.models) {
+      if (m.pinnedOnly) continue; // the Room's own pick, never a queue lane
       out.push({
         id: `${p.id}/${m.id}`,
         name: `${p.label}: ${m.id}`,
