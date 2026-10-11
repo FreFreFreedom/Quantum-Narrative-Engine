@@ -18990,8 +18990,10 @@ function libLimit() { return LIB_STEP + interestLibraryOffset; }
 let libMoreObs = null;
 // The library's own tabs (his pick D, 2026-09-24). Suggestions live inside one type,
 // behind its button, where the Discover tab and three panes used to be.
-const LIB_KINDS = [['', 'All'], ['book', 'Books'], ['film', 'Films'], ['series', 'Series'], ['paper', 'Papers'],
-  ['project', 'Projects'], ['analogy', 'Analogies'], ['passage', 'Passages']];
+const LIB_KINDS = [['', 'All'], ['book', 'Books'], ['film', 'Films'], ['series', 'Series'],
+  ['passage', 'Passages']];
+// Papers, projects and analogies are gone from the Library (his ask, 2026-10-11).
+const LIB_GONE = new Set(['paper', 'project', 'analogy']);
 const LIB_SUGGEST = { book: 'media', film: 'media', series: 'media', paper: 'papers', project: 'apps', analogy: 'analogies' };
 // The library's three actions as symbols (his picks, 2026-09-24): A's paperclip to
 // attach, E's bin to remove, and A's pen to edit to match the paperclip.
@@ -19033,7 +19035,7 @@ function libSyncTab() {
 }
 function libCountFor(k) {
   if (!libCounts) return '';
-  if (!k) return String(Object.values(libCounts).reduce((a, b) => a + b, 0) || '');
+  if (!k) return String(Object.entries(libCounts).reduce((a, [kk, b]) => a + (LIB_GONE.has(kk) ? 0 : b), 0) || '');
   return libCounts[k] ? String(libCounts[k]) : '';
 }
 // The years he narrows the wall to, from and to (his ask, 2026-10-08); either may be empty.
@@ -20124,7 +20126,7 @@ async function renderInterestLibrary(opts) {
     // Prisons, Surplus…" saved as an interest are one book.
     const shelfNames = new Set(books.map((b) => libWorkKey(b.title)));
     const media = out.items.filter((w) => (w.type === 'media' || ['book', 'film', 'series'].includes(w.kind)) && !(w.kind === 'book' && shelfNames.has(libWorkKey(w.title))));
-    const rest = out.items.filter((w) => !(w.type === 'media' || ['book', 'film', 'series'].includes(w.kind)));
+    const rest = out.items.filter((w) => !(w.type === 'media' || ['book', 'film', 'series'].includes(w.kind)) && !LIB_GONE.has(w.kind));
     // Newest first, books and saved works together (his ask, 2026-09-27).
     const wall = books.map((b) => ({ type: 'shelf', id: b.id, title: b.title, creator: b.author, cover: b.cover_url || '', raw: b, added: libAddedMs(b.created_at) }))
       .concat(media.map((w) => ({ type: 'media', id: w.id, title: w.title, creator: w.creator || '', cover: String(w.artwork || ''), raw: w, added: Number(w.added) || 0 })))
