@@ -34758,6 +34758,22 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       series: /\b(series|season|episode|episodes|show|showrunner)\b/,
       book: /\b(book|books|memoir|novel|print|pages|chapter|chapters|author|wrote|writes|essay)\b/ };
     var used = {};
+    // Each work's own words, so a paragraph that speaks of another work is known
+    // as that work's ground: a cover never hangs beside the text about a different
+    // book (his screenshot, 2026-10-10 — Blue Rage beside the Abbe Smith section).
+    var marks = works.map(function(w){
+      var n = seCoverNorm(libShortTitle(w.title).replace(/…$/, '')).trim();
+      var a = seCoverNorm(String(w.creator || '').split(',')[0]).trim().split(' ').pop() || '';
+      return { name: n, who: a };
+    });
+    var namesOther = function(t, i){
+      for(var o = 0; o < marks.length; o++){
+        if(o === i) continue;
+        if((marks[o].name.length >= 6 && t.indexOf(marks[o].name) >= 0) || (marks[o].who.length > 3 && t.indexOf(marks[o].who) >= 0)) return true;
+      }
+      return false;
+    };
+    var names = function(t, i){ return (marks[i].name.length >= 4 && t.indexOf(marks[i].name) >= 0) || (marks[i].who.length > 2 && t.indexOf(marks[i].who) >= 0); };
     var placed = works.map(function(w, i){
       var name = seCoverNorm(libShortTitle(w.title).replace(/…$/, '')).trim();
       var who = seCoverNorm(String(w.creator || '').split(',')[0]).trim().split(' ').pop() || '';
@@ -34798,14 +34814,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var cm = t.match(cue);
         if(cm){ score += 2; if(at < 0) at = cm.index; }
         if(used[bi]) score -= 5;
+        if(namesOther(t, i) && !names(t, i)) score -= 8;
         if(/^H[1-4]$/.test(blocks[bi].tagName)) score -= 4;
         if(!best || score > best.score) best = { score: score, bi: bi, at: Math.max(0, at) };
       }
-      // Nothing points anywhere: the first paragraph not yet holding a cover.
-      if(!best || best.score <= 0){
-        var free = 0; while(free < blocks.length - 1 && used[free]) free++;
-        best = { bi: free, at: 0 };
-      }
+      // Nothing points anywhere: no cover, rather than one beside the wrong text.
+      // The work is in the Library either way.
+      if(!best || best.score <= 0) return null;
       used[best.bi] = true;
       return { w: w, i: i, bi: best.bi, at: best.at, score: best.score || 0 };
     });
@@ -34817,6 +34832,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // title, its author, its own "Book:" line) keeps its cover wherever it is
     // named, up to ten; covers hung on nothing better than a hunch still share the
     // old five places between them. The rest are in the Library either way.
+    placed = placed.filter(Boolean);
     var byScore = function(x, y){ return (y.score || 0) - (x.score || 0) || x.i - y.i; };
     var named = placed.filter(function(pl){ return (pl.score || 0) >= 12; }).sort(byScore).slice(0, SE_COVER_MAX);
     var guessed = placed.filter(function(pl){ return (pl.score || 0) < 12; }).sort(byScore)
@@ -34836,8 +34852,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var name = seCoverNorm(libShortTitle(pl.w.title).replace(/…$/, '')).trim();
       var who = seCoverNorm(String(pl.w.creator || '').split(',')[0]).trim().split(' ').pop() || '';
       var free = [];
+      // Only within its own stretch of text: a new heading, or a paragraph that
+      // speaks of another work, is where its ground ends.
       for(var j = pl.bi + 1; j < blocks.length && free.length < 6; j++){
-        if(held[j] || /^H[1-4]$/.test(blocks[j].tagName) || texts[j].length < 60) continue;
+        if(/^H[1-4]$/.test(blocks[j].tagName)) break;
+        if(namesOther(texts[j], pl.i) && !names(texts[j], pl.i)) break;
+        if(held[j] || texts[j].length < 60) continue;
         free.push(j);
       }
       if(!free.length) return;
