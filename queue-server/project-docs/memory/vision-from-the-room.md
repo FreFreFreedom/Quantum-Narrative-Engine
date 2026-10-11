@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The detective's lens is the art of reverse-engineering a hidden reality from its residue, reading what systems do rather than what people say.
+
+While ordinary observers see surface facades, a true investigator reads a crime scene or breakdown as the terminal output of a complex, invisible web of human relations. The detective maps a living ecosystem governed by power gradients, unwritten laws, and structural failures, treating a single symptom as the loudest indicator of a chronic systemic infection.
+
 ## The descent of the shadow sovereign is a universal five-phase structural journey driven by unaddressed powerlessness.
 
 Across urban street gangs, domestic cartels, and national civil wars (as seen in Clockers, Life Sentence, and A Long Way Gone), the individual trajectory follows an identical architecture: (1) absolute wounding and foundational powerlessness, (2) a Faustian bargain adopting armor via a surrogate 'fake family', (3) illusory sovereignty through the mastery of violence, (4) the shrinking psychological cage of paranoia and addiction to force, and (5) eventual destruction or arduous rehabilitation.
