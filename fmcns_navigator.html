@@ -3832,10 +3832,17 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    screen, cover and whole title, so the eye never drops to find it (his pick
    "C1 upper", 2026-10-11). */
 #roomInterests.is-peek .shelf-card:not(.is-peeked) { filter:brightness(.18) blur(3px); }
-.lib-peek { position:fixed; z-index:45; pointer-events:none; display:flex; align-items:center; gap:24px; box-sizing:border-box;
+.lib-peek { position:fixed; z-index:45; display:flex; align-items:center; gap:24px; box-sizing:border-box;
   padding:24px 28px; background:#0b0f18; border-top:1px solid #c9a96a; border-bottom:1px solid #c9a96a;
   box-shadow:0 0 60px 20px rgba(0,0,0,.6); color:#f6f1e6; animation:libPeekIn .16s ease both; }
 .lib-peek[hidden] { display:none; }
+/* Favourite and remove, in the band's corner (his pick A, 2026-10-11). */
+.lib-peek-acts { position:absolute; top:14px; right:16px; display:flex; gap:8px; }
+.lib-peek-acts button { width:34px; height:34px; padding:0; border-radius:50%; border:1px solid rgba(201,169,106,.5); background:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; color:#c9a96a; font:16px/1 system-ui, sans-serif; transition:background .12s, color .12s, border-color .12s; }
+.lib-peek-acts button:hover { border-color:#c9a96a; background:rgba(201,169,106,.12); }
+.lib-peek-acts button.on { background:#c9a96a; color:#0b0f18; border-color:#c9a96a; }
+.lib-peek-acts button svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
 @keyframes libPeekIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
 .lib-peek-cv { flex:none; width:130px; aspect-ratio:2/3; border-radius:5px; background:#1b2232 center/cover no-repeat; box-shadow:0 10px 28px rgba(0,0,0,.7); }
 .lib-peek-cv:not([style]) { display:none; }
@@ -20176,40 +20183,76 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
 // card's own title markup; a short grace on leaving so crossing the gap between two
 // covers does not blink it off and on.
 (function wireLibPeek() {
-  let peek = null, cur = null, leaveT = 0;
+  let peek = null, cur = null, leaveT = 0, switchT = 0;
   const host = () => document.getElementById('roomInterests');
   const hide = () => {
+    clearTimeout(switchT);
     if (peek) peek.hidden = true;
     if (cur) cur.classList.remove('is-peeked');
     const h = host(); if (h) h.classList.remove('is-peek');
     cur = null;
   };
-  document.addEventListener('mouseover', (ev) => {
-    const card = ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card');
-    if (!card) return;
-    clearTimeout(leaveT);
-    if (card === cur) return;
+  const paintActs = () => {
+    if (!peek || !cur) return;
+    const star = peek.querySelector('[data-peek-fav]'), on = cur.classList.contains('is-fav');
+    if (star) { star.classList.toggle('on', on); star.textContent = on ? '★' : '☆'; star.title = on ? 'Unfavourite' : 'Favourite'; }
+  };
+  const show = (card) => {
     const h = host(), grid = card.closest('.shelf-grid'), name = card.querySelector('.shelf-name');
     if (!h || !grid || !name || h.querySelector('.lib-over')) { hide(); return; }
-    if (!peek) { peek = document.createElement('div'); peek.className = 'lib-peek'; document.body.appendChild(peek); }
+    if (!peek) {
+      peek = document.createElement('div'); peek.className = 'lib-peek'; document.body.appendChild(peek);
+      // Over the band, it stays: that is how the mouse reaches its two buttons.
+      peek.addEventListener('mouseenter', () => { clearTimeout(leaveT); clearTimeout(switchT); });
+      peek.addEventListener('mouseleave', (ev) => {
+        const to = ev.relatedTarget && ev.relatedTarget.closest && ev.relatedTarget.closest('#roomInterests .shelf-card');
+        if (to) return;
+        clearTimeout(leaveT); leaveT = setTimeout(hide, 120);
+      });
+      peek.addEventListener('click', (ev) => {
+        const b = ev.target.closest && ev.target.closest('[data-peek-fav], [data-peek-drop]');
+        if (!b || !cur) return;
+        ev.stopPropagation();
+        const card = cur;
+        if (b.hasAttribute('data-peek-fav')) { const f = card.querySelector('[data-fav]'); if (f) { f.click(); paintActs(); } }
+        else { const d = card.querySelector('[data-drop]'); hide(); if (d) d.click(); }
+      });
+    }
     if (cur) cur.classList.remove('is-peeked');
     cur = card; card.classList.add('is-peeked'); h.classList.add('is-peek');
     // The cover as the card itself shows it — the drag address is empty for a cover
     // that is not https or arrives late, which left the band without its picture.
     const cvEl = card.querySelector('.shelf-cover');
     const art = cvEl ? getComputedStyle(cvEl).backgroundImage : 'none';
+    const shelf = (card.dataset.lib || '').startsWith('shelf:');
     peek.innerHTML = '<span class="lib-peek-cv"' + (art && art !== 'none' ? ' style="background-image:' + qEscAttr(art) + '"' : '') + '></span>'
-      + '<span class="lib-peek-tx">' + name.innerHTML + '</span>';
+      + '<span class="lib-peek-tx">' + name.innerHTML + '</span>'
+      + '<span class="lib-peek-acts"><button type="button" data-peek-fav aria-label="Favourite">☆</button>'
+      + '<button type="button" data-peek-drop title="' + (shelf ? 'Take it off the shelf' : 'Remove from the Library') + '" aria-label="Remove from the Library">'
+      + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></button></span>';
+    paintActs();
     const r = (h.closest('.room-cards') || h).getBoundingClientRect();
     Object.assign(peek.style, { left: r.left + 'px', width: r.width + 'px', top: Math.max(r.top + 60, innerHeight * .22) + 'px' });
     peek.hidden = false;
+  };
+  document.addEventListener('mouseover', (ev) => {
+    const card = ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card');
+    if (!card) return;
+    clearTimeout(leaveT);
+    if (card === cur) { clearTimeout(switchT); return; }
+    clearTimeout(switchT);
+    // Showing one already: a short beat before another takes its place, so the
+    // mouse can cross other covers on its way up to the band's buttons.
+    if (cur && peek && !peek.hidden) switchT = setTimeout(() => show(card), 160);
+    else show(card);
   }, true);
   document.addEventListener('mouseout', (ev) => {
     const from = ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card');
     if (!from) return;
-    const to = ev.relatedTarget && ev.relatedTarget.closest && ev.relatedTarget.closest('#roomInterests .shelf-card');
-    if (to === from) return;
-    clearTimeout(leaveT); leaveT = setTimeout(hide, 70);
+    const rel = ev.relatedTarget;
+    const to = rel && rel.closest && rel.closest('#roomInterests .shelf-card');
+    if (to === from || (rel && peek && peek.contains(rel))) return;
+    clearTimeout(leaveT); leaveT = setTimeout(hide, 160);
   }, true);
   document.addEventListener('click', (ev) => { if (ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card')) hide(); }, true);
 })();
