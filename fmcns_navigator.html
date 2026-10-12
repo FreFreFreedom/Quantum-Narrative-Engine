@@ -2544,6 +2544,15 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-edge .uicon .ic { width:15px; height:15px; }
 .room-edge .uicon[aria-expanded="true"], .room-edge .uicon[aria-pressed="true"] { color:var(--c-kept-echo, var(--c-accent)); }
 .room-edge .uicon:disabled { opacity:.3; cursor:default; }
+.room-cards-pullwrap { flex:0 0 0; width:0; position:relative; z-index:calc(var(--z-panel) + 2); }
+.room-cards-pull { position:absolute; right:0; top:50%; transform:translateY(-50%); width:16px; height:52px; padding:0;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  background:var(--c-bg); border:1px solid var(--c-border); border-right:0; border-radius:9px 0 0 9px;
+  color:var(--c-ink-4); transition:color var(--t-fast) var(--ease), width var(--t-fast) var(--ease); }
+.room-cards-pull:disabled { display:none; }
+.room-cards-pull:hover { color:var(--c-kept-echo, var(--c-accent)); width:20px; }
+.room-cards-pull svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; transition:transform var(--t-fast) var(--ease); }
+.room-cards-pull[aria-expanded="false"] svg { transform:rotate(180deg); }
 .room-threads.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-right-color:transparent; }
 .room-cards.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-left-color:transparent; }
 /* Peeked: hovering either toolbar button floats its panel over the conversation
@@ -6345,7 +6354,6 @@ button:active { transform: translateY(1px) scale(.99); }
       <div class="room-edge" id="roomEdge">
         <button type="button" class="uicon" id="roomThreadsBtn" title="Threads" aria-label="Show or hide the thread list" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
         <button type="button" class="uicon" id="roomFoldBtn" title="Fold the Room" aria-label="Fold or open the Room" aria-pressed="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6 2.5v11" stroke="currentColor" stroke-width="1.4"/></svg></button>
-        <button type="button" class="uicon" id="roomCardsBtn" title="Attached cards" aria-label="Show or hide the attached cards" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-cards"/></svg></button>
       </div>
       <div class="room-threads" id="roomThreads">
         <div class="side-resize side-resize--right" id="roomThreadsResize" title="Drag to resize"></div>
@@ -6380,6 +6388,9 @@ button:active { transform: translateY(1px) scale(.99); }
       <!-- An open side talk stands here, as a second main conversation, with the
            Library column beside it as the Room has (his ask, 2026-10-11). -->
       <div class="room-sidecol" id="roomSideCol"></div>
+      <!-- The Library's own tab, on its left edge: it travels with the column, so
+           the control is always next to what it opens (his ask, 2026-10-11). -->
+      <div class="room-cards-pullwrap"><button type="button" class="room-cards-pull" id="roomCardsBtn" title="Library" aria-label="Show or hide the Library" aria-expanded="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg></button></div>
       <div class="room-cards" id="roomCards">
         <div class="side-resize side-resize--left" id="roomCardsResize" title="Drag to resize"></div>
         <!-- One column, five things in it. They used to be five stacked sections,
@@ -15539,7 +15550,7 @@ function initRoom() {
     { panel: threads, btn: document.getElementById('roomThreadsBtn'),
       keptTitle: 'Hide the thread list', shutTitle: 'Threads', timer: null },
     { panel: cards, btn: document.getElementById('roomCardsBtn'),
-      keptTitle: 'Hide the attached cards', shutTitle: 'Attached cards', timer: null },
+      keptTitle: 'Hide the Library', shutTitle: 'Library', timer: null },
   ].filter(z => z.panel && z.btn);
   const zoneOf = (panel) => zones.find(z => z.panel === panel) || null;
   // "Kept open" is not the same question on the two layouts: wide, the panel is a
