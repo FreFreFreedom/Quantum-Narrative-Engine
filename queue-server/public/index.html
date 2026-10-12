@@ -4716,6 +4716,17 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
   .room-convo .se-input { order:-1; flex:1 0 100%; width:100%; }
   .room-convo .se-lanewrap { margin-left:auto; }
 }
+/* Layout A (his pick, 2026-10-12): what he writes sits a size below what he reads, so a
+   long line no longer climbs out of the top of the pill; past one line the words stay
+   beside the controls and the pill simply grows taller. Only a narrow box (the container
+   rule above) still gives the words a line of their own. */
+.room-convo .se-input { font-size:max(15px, min(calc(var(--room-size) * .72), 21px, 5.4cqi)); line-height:1.45; padding:6px 4px 5px; }
+.room-convo .se-draftbox { padding:8px 10px 8px 12px; }
+@container draft (min-width: 461px) {
+  .room-convo .se-compose.is-multi { flex-wrap:nowrap; }
+  .room-convo .se-compose.is-multi .se-input { order:0; flex:1 1 auto; width:auto; }
+  .room-convo .se-compose.is-multi .se-lanewrap { margin-left:0; }
+}
 .se-fold { display:none; }
 .room-convo .se-compose.is-tall .se-fold { display:flex; align-items:center; justify-content:center; position:absolute; z-index:2; top:0; right:2px;
   width:26px; height:26px; padding:0; border:0; border-radius:50%; background:none; cursor:pointer; color:var(--c-ink-4); }
