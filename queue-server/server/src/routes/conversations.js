@@ -68,6 +68,7 @@ export function conversationsRoutes() {
   // The browser extension sends the books open on Amazon as plain rows — title,
   // author, year — so nothing is read by a model. Doubles fold in saveSuggestedWorks.
   router.post('/interests', interestRoute((req, owner) => ({ saved: interests.saveSuggestedWorks(owner, (req.body || {}).works || []) })));
+  router.post('/interests/have', interestRoute((req, owner) => ({ have: interests.haveWorks(owner, (req.body || {}).works || []) })));
   router.get('/interests', interestRoute((req, owner) => ({ items: interests.listInterests(owner, req.query) })));
   router.get('/favs', interestRoute((req, owner) => ({ favs: interests.listFavs(owner), ...(req.query.works === '1' ? { works: interests.favWorks(owner) } : {}) })));
   router.post('/favs', interestRoute((req, owner) => interests.setFav(owner, req.body || {})));

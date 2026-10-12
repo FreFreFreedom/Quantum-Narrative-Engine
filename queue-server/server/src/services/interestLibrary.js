@@ -518,6 +518,20 @@ export function saveSuggestedWorks(owner, works = []) {
   if (out.some((w) => w.added && w.kind === 'book')) void tidyBooks();
   return out;
 }
+// Which of these rows the Library already holds, by the same spelling rules as
+// saving — the extension's "✓ Library" on an IMDb or Amazon list (2026-10-11).
+export function haveWorks(owner, works = []) {
+  if (!db || !owner) return [];
+  const all = db.prepare('SELECT kind,title FROM interest_works WHERE owner=?').all(owner);
+  let shelf = [];
+  try { shelf = db.prepare('SELECT title FROM shelf_books WHERE owner=?').all(owner); } catch (_) {}
+  return (Array.isArray(works) ? works : []).slice(0, 300).map(w => {
+    const title = String((w && w.title) || ''), book = w && w.kind === 'book';
+    if (!title) return false;
+    return all.some(h => (book ? h.kind === 'book' : h.kind !== 'book') && sameWork(h.title, title))
+      || (book && shelf.some(b => sameWork(b.title, title)));
+  });
+}
 export function listInterests(owner, { query = '', kind = '', limit = 100, offset = 0 } = {}) {
   if (!db || !owner) return [];
   const words = norm(clean(query, 300)).split(' ').filter(Boolean).slice(0, 12);
