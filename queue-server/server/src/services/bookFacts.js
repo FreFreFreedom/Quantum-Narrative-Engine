@@ -288,7 +288,11 @@ export function shopClean(title) {
   return t.replace(/\s{2,}/g, ' ').replace(/[\s:,;\u2013\u2014-]+$/, '').trim() || String(title || '');
 }
 // Degrees are not names: "Saul Kassin Ph.D" has the surname Kassin, not "phd".
-const noDegrees = (a) => String(a || '').replace(/,?\s*\b(?:ph\.?\s?d|m\.?d|j\.?d|esq|mba|psy\.?d|ed\.?d)\b\.?/ig, '').trim();
+// "not specified in text" or a publisher in the author's place is no author at all:
+// held as one, it made every candidate fail the author check and the cover stayed
+// blank ("The Hot House", "The New Makers of Modern Strategy", 2026-10-11).
+const NOT_A_PERSON = /^\s*\(?\s*(?:not\s+(?:specified|given|stated|known|mentioned|named|provided)|unknown|unspecified|various|anonymous|n\/?a|none|tbd|\?+)\b|\b(?:press|publish\w*|books|editions?|house|media|university|institute|council|staff|department|office|ministry|association|foundation)\s*$/i;
+const noDegrees = (a) => { const s = String(a || '').replace(/,?\s*\b(?:ph\.?\s?d|m\.?d|j\.?d|esq|mba|psy\.?d|ed\.?d)\b\.?/ig, '').trim(); return NOT_A_PERSON.test(s) ? '' : s; };
 
 export async function lookupBook(rawTitle, rawCreator, again = true) {
   const out = await lookupOnce(rawTitle, rawCreator);
@@ -767,6 +771,9 @@ export async function bookFactsFor(owner, items = []) {
   let fetched = 0, measured = 0;
   await eachLimited(items, 4, async (it) => {
     if (!it || !it.title) return;
+    // Filed under the real author or none, so a miss stored under "not specified"
+    // is not the answer the next time.
+    it = { ...it, creator: noDegrees(it.creator) };
     const key = keyOf(it.title, it.creator);
     let row = rowOf(it.title, it.creator);
     // A row with neither cover nor blurb — or one an older matcher answered — is
