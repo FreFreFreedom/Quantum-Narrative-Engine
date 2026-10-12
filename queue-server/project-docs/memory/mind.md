@@ -33,6 +33,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 ## What he likes and dislikes
 
 - He loves poetic, lyrical writing that is evocative and beautiful. — He found the selected passage about the wound-work of the judge beautiful and poetic, showing that he deeply appreciates writing that is lyrical and evocative in its depth.
+- Prefers raw, lived memoirs of personal transformation over sociological analysis. — He explicitly rejects sociological data, policy debates, and courtroom statistics in favor of the visceral alchemy of turning blinding rage and powerlessness into unbreakable discipline and constructive power, wanting to experience the training firsthand through the author.
 - Loves immersive, book-length institutional ethnographies and deep narrative explorations of systemic mechanics. — Requested a 1300-word essay on David Simon's 'Homicide' and extensive, 1200-word narrative cartographies of books and films rather than brief summaries or structural cartography sections.
 - Prefers book discussions without structural cartography sections. — He explicitly requested that the platform drop the standard 'How They Fit Into Your Cartography' breakdown when comparing books, keeping the focus entirely on the texts and ideas themselves.
 - He loves it when an answer shows how the exact same structural pattern mirrors across scales simultaneously. — During the taxonomy of walls, Antoine traces patterns like the Obstacle Wall or Repulsion Wall across multiple levels at once—from human behavior and interpersonal dynamics to institutional politics and cultural scales, seeing them as a repeating fractal.
@@ -68,6 +69,9 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## The project
 
+- Exploring Chad Marks's 'Blood on the Razor Wire' as an account of federal prison survival. — Examining how an individual survives the slow, bureaucratic, grinding violence of a forty-year federal sentence for a non-violent drug offense.
+- Exploring George Jackson's 'Blood in My Eye' as a high-voltage training manual. — Studying it alongside 'Soledad Brother' and 'Monster' as a transmission from maximum-security confinement on forging internal sovereignty.
+- Exploring Sanyika Shakur's 'Monster' as a street-to-prison training manual. — Examining it as part of the core library on transforming blinding street rage and powerlessness into unbreakable discipline.
 - Exploring Nicholas J. Wheeler's 'The Tiger Cage' as a memoir of eighteen years in Thai prison. — Nicholas J. Wheeler's account explores the harrowing realities of long-term incarceration within foreign penal systems, examining the erosion of external reality and the demands of endurance.
 - Exploring Warren Fellows's 'The Damage Done' as a raw account of extreme carceral survival in a Thai prison. — Warren Fellows's memoir of twelve years in Bangkok's Bang Kwang prison ('the Bangkok Hilton') provides an unsparing look at physical degradation, leg irons, and the absolute brutal baseline of transnational penal systems.
 - Exploring Albert Woodfox's 'Solitary' as a masterclass in monumental endurance and interior sovereignty inside solitary confinement. — Albert Woodfox's memoir documents over four decades in a 6x9 box in Angola prison. It serves as a core text on how political education, brotherhood, and extreme mental discipline allow an individual to preserve their soul against the total state's attempt to crush them.
