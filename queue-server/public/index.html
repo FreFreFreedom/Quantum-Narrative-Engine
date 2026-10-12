@@ -20244,7 +20244,7 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
     // Opens only once the mouse rests on a cover: sweeping across the shelf on the
     // way to another one opens nothing, and leaves the open band where it is.
     pend = card;
-    switchT = setTimeout(() => { pend = null; show(card); }, 380);
+    switchT = setTimeout(() => { pend = null; show(card); }, 850);
   }, true);
   document.addEventListener('mouseout', (ev) => {
     const from = ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card');
