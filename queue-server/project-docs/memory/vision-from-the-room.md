@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## A parental ontology is the foundational, pre-conscious operating system installed by parents that defines threats, rules of relation, and reality itself before a child can evaluate it.
+
+Before a child can read or reason, reality is mediated entirely through the somatic and behavioral nervous systems of the parents, serving as a survival heuristic masquerading as baseline reality.
+
 ## Terrence Malick's The Tree of Life maps intimate family friction directly onto cosmic evolution.
 
 The film serves as a cosmic textbook for the platform's paradigm, framing the struggle between a 1950s Texas family as a self-similar fractal of the forces that birthed stars, embodying the core dialectic between the Way of Nature and the Way of Grace.

@@ -68,6 +68,8 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## The project
 
+- Exploring Barbara W. Tuchman's 'The March of Folly' as an examination of ontological inelasticity and institutional pathology at the civilizational scale. — Tuchman explores how nations wooden-headedly pursue policies contrary to their self-interest, mapping systemic blindness at the scale of empires.
+- Exploring Carlo D'Este's 'Patton: A Genius for War' as a study of the operational frontline and the raw, violent executioner archetype in military power. — Patton represents the unadulterated Nature principle of the military machine, serving as a dialectical counterpart to George Marshall's cold institutional brain.
 - Exploring Terrence Malick's 'The Tree of Life' as a cinematic exploration of family friction, the dialectic of nature and grace, and parental forgiveness. — Analyzed as the ultimate cinematic mirror for crossing the chasm of parental resentment, bridging the father's harsh boundary-enforcing defense of the self with the mother's sanctuary of grace.
 - Exploring M. Nolan Gray's 'Arbitrary Lines' as a critique of zoning laws and spatial control. — Analyzing how bureaucratic zoning maps and land-use regulations lock class and racial segregation in place, serving as the ongoing machinery of urban division.
 - Exploring Richard Rothstein's 'The Color of Law' as an exposure of state-engineered residential segregation. — Examining how federal, state, and local governments deliberately and explicitly created segregation through redlining and public policy, predetermining containment before individuals ever enter physical cells.
