@@ -3721,9 +3721,52 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-find .lib-search { flex:1; min-width:0; }
 .lib-years { flex:none; display:flex; align-items:center; gap:4px; color:var(--c-ink-5); }
 .lib-years i { font-style:normal; }
+#roomInterests:has(.disc) .lib-years { display:none; }
 .lib-find .lib-year { width:46px; height:34px; border:0; background:transparent; padding:0 2px; outline:none; box-shadow:none; text-align:center;
   font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink); }
 .lib-bar { display:flex; justify-content:flex-end; margin:0 0 8px; }
+.disc-src { display:flex; flex-wrap:wrap; gap:6px; margin:-4px 0 14px; align-items:center; }
+.disc-src button { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:16px; border:0; cursor:pointer;
+  background:var(--c-surface-2, rgba(255,255,255,.05)); color:var(--c-ink-3); font:500 12px var(--font-ui); }
+.disc-src button.on { color:var(--c-ink); box-shadow:inset 0 0 0 1px var(--c-kept-echo, var(--c-accent)); }
+.disc-src button b { font-weight:600; font-size:11px; color:var(--c-ink-4); }
+.disc-src i { font-style:normal; }
+.disc-src .disc-lib { color:var(--c-kept-echo, var(--c-accent)); font-size:10px; }
+.disc-src .disc-imdb { background:#f5c518; color:#000; font:900 9px Arial, sans-serif; padding:1px 4px; border-radius:2px; }
+.disc-src .disc-amz { background:#232f3e; color:#ff9900; font:700 9px Arial, sans-serif; padding:1px 4px; border-radius:2px; }
+.disc-src .disc-ftog { margin-left:auto; }
+.disc-src .disc-ftog svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; }
+.disc-src .disc-ftog b { background:var(--c-kept-echo, var(--c-accent)); color:#111; border-radius:8px; padding:0 5px; }
+.disc { display:block; }
+.disc.with-filters { display:grid; grid-template-columns:150px minmax(0,1fr); gap:16px; }
+.disc-filters h6 { margin:14px 0 6px; font:600 10px var(--font-ui); letter-spacing:.12em; text-transform:uppercase; color:var(--c-ink-5); }
+.disc-filters h6:first-child { margin-top:2px; }
+.disc-ck { display:flex; align-items:center; gap:7px; font:12.5px var(--font-ui); color:var(--c-ink-2); padding:2px 0; cursor:pointer; }
+.disc-ck input { accent-color:var(--c-kept-echo, var(--c-accent)); margin:0; }
+.disc-filters select, .disc-years input { width:100%; height:28px; border:1px solid var(--c-border-2); border-radius:6px; background:transparent; color:var(--c-ink);
+  font:12px var(--font-ui); padding:0 6px; }
+.disc-filters select option { background:var(--c-surface); color:var(--c-ink); }
+.disc-years { display:flex; align-items:center; gap:4px; color:var(--c-ink-5); }
+.disc-years i { font-style:normal; }
+.disc-years input { width:0; flex:1; text-align:center; }
+.disc-chips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+.disc-chips button { border:1px solid var(--c-kept-echo, var(--c-accent)); background:transparent; color:var(--c-ink-2); border-radius:12px; padding:3px 10px; font:11.5px var(--font-ui); cursor:pointer; }
+.disc-row { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--c-border-2); align-items:flex-start; }
+.disc-cov { flex:none; width:52px; aspect-ratio:2/3; border-radius:5px; background:var(--c-surface-2, #222) center/cover no-repeat; box-shadow:0 3px 10px rgba(0,0,0,.35); }
+.disc-cov.is-book { border-radius:2px 5px 5px 2px; }
+.disc-x { flex:1; min-width:0; }
+.disc-t { font:600 15px/1.25 var(--font-read, Georgia, serif); color:var(--c-ink); text-decoration:none; }
+.disc-t:hover { color:var(--c-kept-echo, var(--c-accent)); }
+.disc-mt { font:12px var(--font-ui); color:var(--c-ink-4); margin:3px 0 4px; }
+.disc-mt small { font-size:11px; }
+.disc-star { color:#f5c518; }
+.disc-x p { margin:0; font:13px/1.45 var(--font-read, Georgia, serif); color:var(--c-ink-3); }
+.disc-add { flex:none; border:0; border-radius:14px; padding:5px 11px; cursor:pointer; white-space:nowrap; font:600 11.5px var(--font-ui);
+  background:var(--c-surface-2, rgba(255,255,255,.07)); color:var(--c-ink-2); }
+.disc-add:hover { box-shadow:inset 0 0 0 1px var(--c-kept-echo, var(--c-accent)); }
+.disc-add.in { background:rgba(60,122,74,.22); color:#8fd19e; cursor:default; box-shadow:none; }
+.disc-none { color:var(--c-ink-4); font:13px var(--font-ui); padding:12px 0; }
+
 /* On hover the cover dims and the whole title stands in its middle: the title, its
    subtitle, a short gold rule, the author (his pick "F", 2026-10-09). */
 .shelf-name { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
@@ -20070,6 +20113,185 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
   document.addEventListener('click', (ev) => { if (ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card')) hide(); }, true);
 })();
 
+// ---------- Search beyond the Library (his picks S2d, F2, C3, 2026-10-11) ----------
+// Under the Library's search, three tabs: the Library itself, IMDb (films and
+// series) and Amazon (books). The two outside tabs ask the server, which finds
+// works by title or by subject and checks each against a real catalogue. A filter
+// column like those sites' sits on the left, folded by the Filters button or F.
+let libSource = 'library', discFiltersOpen = true, discFilters = { screen: {}, books: {} };
+try {
+  libSource = localStorage.getItem('qne-lib-source') || 'library';
+  discFiltersOpen = localStorage.getItem('qne-disc-filters-open') !== '0';
+  discFilters = Object.assign({ screen: {}, books: {} }, JSON.parse(localStorage.getItem('qne-disc-filters') || '{}'));
+} catch (_) {}
+if (!['library', 'screen', 'books'].includes(libSource)) libSource = 'library';
+const discResults = {}; let discTimer = 0, discReq = 0;
+const discSave = () => { try { localStorage.setItem('qne-lib-source', libSource); localStorage.setItem('qne-disc-filters-open', discFiltersOpen ? '1' : '0'); localStorage.setItem('qne-disc-filters', JSON.stringify(discFilters)); } catch (_) {} };
+const DISC_GENRES = [[28, 'Action'], [12, 'Adventure'], [16, 'Animation'], [35, 'Comedy'], [80, 'Crime'], [99, 'Documentary'], [18, 'Drama'], [36, 'History'], [27, 'Horror'], [9648, 'Mystery'], [10749, 'Romance'], [878, 'Sci-fi'], [53, 'Thriller'], [10752, 'War'], [37, 'Western']];
+const DISC_COUNTRIES = [['', 'Any'], ['US', 'United States'], ['FR', 'France'], ['GB', 'United Kingdom'], ['IT', 'Italy'], ['DE', 'Germany'], ['ES', 'Spain'], ['JP', 'Japan'], ['KR', 'South Korea'], ['CA', 'Canada'], ['IN', 'India'], ['MX', 'Mexico'], ['BR', 'Brazil'], ['RU', 'Russia'], ['SE', 'Sweden']];
+const DISC_LANGS = [['', 'Any'], ['en', 'English'], ['fr', 'French'], ['es', 'Spanish'], ['it', 'Italian'], ['de', 'German'], ['ja', 'Japanese'], ['ko', 'Korean'], ['pt', 'Portuguese'], ['ru', 'Russian']];
+const DISC_STREAM = [['', 'Any'], ['netflix', 'Netflix'], ['prime', 'Prime Video'], ['disney', 'Disney+'], ['crave', 'Crave'], ['apple', 'Apple TV+']];
+const DISC_CATS = [['', 'Any'], ['Fiction', 'Fiction'], ['History', 'History'], ['Biography', 'Biography & memoir'], ['Philosophy', 'Philosophy'], ['Psychology', 'Psychology'], ['Political', 'Politics'], ['Social', 'Society'], ['Religion', 'Religion'], ['Science', 'Science'], ['Crime', 'True crime'], ['Military', 'Military']];
+function discF() { return discFilters[libSource] || (discFilters[libSource] = {}); }
+function discActive(f) {
+  const out = [];
+  if (libSource === 'screen') {
+    if (f.type) out.push(['type', f.type === 'film' ? 'Films' : 'Series']);
+    (f.genres || []).forEach((g) => { const n = DISC_GENRES.find((x) => x[0] === g); if (n) out.push(['genre:' + g, n[1]]); });
+    if (f.minRating) out.push(['minRating', '★ ' + f.minRating + '+']);
+    if (f.country) out.push(['country', (DISC_COUNTRIES.find((x) => x[0] === f.country) || [, f.country])[1]]);
+    if (f.maxRuntime) out.push(['maxRuntime', 'Under ' + Math.round(f.maxRuntime / 60 * 10) / 10 + 'h']);
+    if (f.streaming) out.push(['streaming', (DISC_STREAM.find((x) => x[0] === f.streaming) || [, f.streaming])[1]]);
+  } else {
+    if (f.category) out.push(['category', (DISC_CATS.find((x) => x[0] === f.category) || [, f.category])[1]]);
+    if (f.minPages || f.maxPages) out.push(['pages', f.maxPages ? 'Under ' + f.maxPages + ' p' : 'Over ' + f.minPages + ' p']);
+    if (f.minRating) out.push(['minRating', '★ ' + f.minRating + '+']);
+  }
+  if (f.from || f.to) out.push(['years', (f.from || '…') + '–' + (f.to || '…')]);
+  if (f.language) out.push(['language', (DISC_LANGS.find((x) => x[0] === f.language) || [, f.language])[1]]);
+  if (f.hideLibrary) out.push(['hideLibrary', 'Not in my Library']);
+  return out;
+}
+function discDrop(f, key) {
+  if (key.startsWith('genre:')) f.genres = (f.genres || []).filter((g) => g !== Number(key.slice(6)));
+  else if (key === 'years') { delete f.from; delete f.to; }
+  else if (key === 'pages') { delete f.minPages; delete f.maxPages; }
+  else delete f[key];
+}
+function discSourceRow() {
+  const n = (s) => { const r = discResults[s + '|' + libNorm(interestLibraryQuery) + '|' + JSON.stringify(discFilters[s] || {})]; return r ? '<b>' + r.length + '</b>' : ''; };
+  const act = libSource === 'library' ? 0 : discActive(discF()).length;
+  return '<div class="disc-src" role="tablist">'
+    + '<button type="button" data-disc-src="library" class="' + (libSource === 'library' ? 'on' : '') + '"><i class="disc-lib">◆</i>Library</button>'
+    + '<button type="button" data-disc-src="screen" class="' + (libSource === 'screen' ? 'on' : '') + '"><i class="disc-imdb">IMDb</i>Films &amp; series ' + n('screen') + '</button>'
+    + '<button type="button" data-disc-src="books" class="' + (libSource === 'books' ? 'on' : '') + '"><i class="disc-amz">amazon</i>Books ' + n('books') + '</button>'
+    + (libSource === 'library' ? '' : '<button type="button" class="disc-ftog' + (discFiltersOpen ? ' on' : '') + '" data-disc-ftog title="Filters (F)">'
+      + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M4.5 8h7M7 12h2"/></svg>Filters' + (act ? ' <b>' + act + '</b>' : '') + '</button>')
+    + '</div>';
+}
+function discSel(key, opts, val) {
+  return '<select data-disc-f="' + key + '">' + opts.map(([v, l]) => '<option value="' + qEscAttr(v) + '"' + (String(v) === String(val || '') ? ' selected' : '') + '>' + qEsc(l) + '</option>').join('') + '</select>';
+}
+function discFiltersHtml() {
+  const f = discF();
+  const years = '<h6>Year</h6><div class="disc-years"><input data-disc-f="from" inputmode="numeric" maxlength="4" placeholder="From" value="' + qEscAttr(f.from || '') + '"><i>–</i><input data-disc-f="to" inputmode="numeric" maxlength="4" placeholder="To" value="' + qEscAttr(f.to || '') + '"></div>';
+  const hide = '<label class="disc-ck"><input type="checkbox" data-disc-f="hideLibrary"' + (f.hideLibrary ? ' checked' : '') + '>Hide my Library</label>';
+  if (libSource === 'screen') {
+    return '<h6>Type</h6>' + [['', 'All'], ['film', 'Films'], ['series', 'Series']].map(([v, l]) =>
+        '<label class="disc-ck"><input type="radio" name="disc-type" data-disc-f="type" value="' + v + '"' + ((f.type || '') === v ? ' checked' : '') + '>' + l + '</label>').join('')
+      + '<h6>Genre</h6>' + DISC_GENRES.map(([g, l]) => '<label class="disc-ck"><input type="checkbox" data-disc-genre="' + g + '"' + ((f.genres || []).includes(g) ? ' checked' : '') + '>' + l + '</label>').join('')
+      + years
+      + '<h6>IMDb rating</h6>' + discSel('minRating', [['', 'Any'], ['6', '6+'], ['7', '7+'], ['7.5', '7.5+'], ['8', '8+']], f.minRating)
+      + '<h6>Country</h6>' + discSel('country', DISC_COUNTRIES, f.country)
+      + '<h6>Language</h6>' + discSel('language', DISC_LANGS, f.language)
+      + '<h6>Runtime</h6>' + discSel('maxRuntime', [['', 'Any'], ['90', 'Under 1h30'], ['120', 'Under 2h'], ['150', 'Under 2h30']], f.maxRuntime)
+      + '<h6>Streaming in Canada</h6>' + discSel('streaming', DISC_STREAM, f.streaming)
+      + '<h6>Library</h6>' + hide;
+  }
+  return '<h6>Category</h6>' + discSel('category', DISC_CATS, f.category)
+    + years
+    + '<h6>Language</h6>' + discSel('language', DISC_LANGS, f.language)
+    + '<h6>Pages</h6>' + discSel('pages', [['', 'Any'], ['max:200', 'Under 200'], ['max:400', 'Under 400'], ['min:400', 'Over 400']], f.maxPages ? 'max:' + f.maxPages : f.minPages ? 'min:' + f.minPages : '')
+    + '<h6>Rating</h6>' + discSel('minRating', [['', 'Any'], ['4', '★ 4 & up'], ['4.5', '★ 4.5 & up']], f.minRating)
+    + '<h6>Library</h6>' + hide;
+}
+function discChipsHtml() {
+  const a = discActive(discF());
+  return a.length ? '<div class="disc-chips">' + a.map(([k, l]) => '<button type="button" data-disc-chip="' + qEscAttr(k) + '">' + qEsc(l) + ' ✕</button>').join('') + '</div>' : '';
+}
+function discOut(it) {
+  if (it.kind === 'book') return 'https://www.amazon.com/s?i=stripbooks&k=' + encodeURIComponent([it.title, (it.creator || '').split(',')[0]].filter(Boolean).join(' '));
+  return it.imdbId ? 'https://www.imdb.com/title/' + it.imdbId + '/' : 'https://www.imdb.com/find/?q=' + encodeURIComponent(it.title + ' ' + (it.year || ''));
+}
+const discVotes = (n) => !n ? '' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(n);
+function discRowHtml(it, i) {
+  const meta = [];
+  if (it.kind === 'book') { if (it.creator) meta.push(qEsc(it.creator)); if (it.year) meta.push(qEsc(it.year)); if (it.pages) meta.push(it.pages + ' p'); }
+  else { if (it.year) meta.push(qEsc(it.year)); meta.push(it.kind === 'series' ? 'Series' : 'Film'); }
+  if (it.rating) meta.push('<span class="disc-star">★</span> ' + (Math.round(it.rating * 10) / 10).toFixed(1) + (it.votes ? ' <small>(' + discVotes(it.votes) + ')</small>' : ''));
+  const bg = /^https:\/\//.test(it.cover || '') ? ' style="background-image:url(&quot;' + qEscAttr(it.cover) + '&quot;)"' : '';
+  return '<div class="disc-row"><a class="disc-cov' + (it.kind === 'book' ? ' is-book' : '') + '"' + bg + ' href="' + qEscAttr(discOut(it)) + '" target="_blank" rel="noopener noreferrer" aria-label="Open"></a>'
+    + '<div class="disc-x"><a class="disc-t" href="' + qEscAttr(discOut(it)) + '" target="_blank" rel="noopener noreferrer">' + qEsc(it.title) + '</a>'
+    + '<div class="disc-mt">' + meta.join(' · ') + '</div>'
+    + (it.about ? '<p>' + qEsc(it.about) + '</p>' : '') + '</div>'
+    + '<button type="button" class="disc-add' + (it.inLibrary ? ' in' : '') + '" data-disc-add="' + i + '">' + (it.inLibrary ? '✓ Library' : '+ Library') + '</button></div>';
+}
+function discLoad(host) {
+  const list = host.querySelector('.disc-list'); if (!list) return;
+  const q = interestLibraryQuery.trim(), src = libSource, f = discF();
+  const key = src + '|' + libNorm(q) + '|' + JSON.stringify(f);
+  const paint = (items) => {
+    if (!list.isConnected) return;
+    list.innerHTML = items.length ? items.map(discRowHtml).join('') : '<p class="disc-none">Nothing found.</p>';
+    list.querySelectorAll('[data-disc-add]').forEach((b) => { b.onclick = () => {
+      const it = items[Number(b.dataset.discAdd)];
+      if (!it || it.inLibrary || b.disabled) return;
+      b.disabled = true; b.textContent = '…';
+      apiWrite('/api/convos/interests', 'POST', { works: [{ kind: it.kind, title: it.title, creator: it.creator || '', year: it.year || '' }] })
+        .then(() => { it.inLibrary = true; b.classList.add('in'); b.textContent = '✓ Library'; libData = null; })
+        .catch(() => { b.textContent = '+ Library'; })
+        .then(() => { b.disabled = false; });
+    }; });
+    const tabB = host.querySelector('[data-disc-src="' + src + '"]');
+    if (tabB) { const old = tabB.querySelector('b'); if (old) old.remove(); tabB.insertAdjacentHTML('beforeend', ' <b>' + items.length + '</b>'); }
+  };
+  if (!q && src === 'books') { list.innerHTML = '<p class="disc-none">A title, an author or a subject.</p>'; return; }
+  if (discResults[key]) return paint(discResults[key]);
+  list.innerHTML = waitHtml('searching', 'Searching');
+  const req = ++discReq;
+  api('/api/convos/discover?source=' + src + '&q=' + encodeURIComponent(q) + '&filters=' + encodeURIComponent(JSON.stringify(f)))
+    .then((o) => { discResults[key] = (o && o.items) || []; if (req === discReq) paint(discResults[key]); })
+    .catch(() => { if (req === discReq && list.isConnected) list.innerHTML = '<p class="disc-none">The search did not answer. Try again.</p>'; });
+}
+function renderDiscover(host, top, wireTop) {
+  host.dataset.libView = '';
+  host.innerHTML = top + '<div class="disc' + (discFiltersOpen ? ' with-filters' : '') + '">'
+    + (discFiltersOpen ? '<aside class="disc-filters">' + discFiltersHtml() + '</aside>' : '')
+    + '<div class="disc-main">' + (discFiltersOpen ? '' : discChipsHtml()) + '<div class="disc-list"></div></div></div>';
+  wireTop();
+  const search = host.querySelector('.lib-search');
+  if (search) {
+    search.value = interestLibraryQuery;
+    search.placeholder = libSource === 'books' ? 'Title, author or subject' : 'Title or subject';
+    const go = () => { clearTimeout(discTimer); try { localStorage.setItem('qne-interest-query', interestLibraryQuery); } catch (_) {} discLoad(host); };
+    search.oninput = () => { interestLibraryQuery = search.value; clearTimeout(discTimer); discTimer = setTimeout(go, 700); };
+    search.onkeydown = (ev) => { if (ev.key === 'Enter') go(); if (ev.key === 'Escape') { search.value = ''; interestLibraryQuery = ''; libFinding = false; libSource = 'library'; discSave(); renderInterestLibrary(); } };
+    if (libRefocus === 'search') { search.focus(); const n = search.value.length; try { search.setSelectionRange(n, n); } catch (_) {} }
+    libRefocus = '';
+  }
+  const again = () => { discSave(); libRefocus = ''; renderInterestLibrary(); };
+  const f = discF();
+  host.querySelectorAll('[data-disc-f]').forEach((el) => {
+    const k = el.dataset.discF;
+    const set = () => {
+      if (k === 'from' || k === 'to') { el.value = el.value.replace(/\D/g, '').slice(0, 4); if (el.value && el.value.length < 4) return; if (el.value) f[k] = Number(el.value); else delete f[k]; }
+      else if (k === 'hideLibrary') { if (el.checked) f.hideLibrary = true; else delete f.hideLibrary; }
+      else if (k === 'type') { if (el.value) f.type = el.value; else delete f.type; }
+      else if (k === 'pages') { delete f.minPages; delete f.maxPages; const [m, v] = el.value.split(':'); if (v) f[m === 'max' ? 'maxPages' : 'minPages'] = Number(v); }
+      else if (k === 'country' || k === 'language' || k === 'streaming' || k === 'category') { if (el.value) f[k] = el.value; else delete f[k]; }
+      else { if (el.value) f[k] = Number(el.value); else delete f[k]; }
+      again();
+    };
+    el.addEventListener(el.tagName === 'INPUT' && (el.type === 'text' || !el.type || el.inputMode) && el.type !== 'checkbox' && el.type !== 'radio' ? 'change' : 'change', set);
+  });
+  host.querySelectorAll('[data-disc-genre]').forEach((el) => { el.onchange = () => {
+    const g = Number(el.dataset.discGenre); f.genres = (f.genres || []).filter((x) => x !== g); if (el.checked) f.genres.push(g); if (!f.genres.length) delete f.genres; again();
+  }; });
+  host.querySelectorAll('[data-disc-chip]').forEach((b) => { b.onclick = () => { discDrop(f, b.dataset.discChip); again(); }; });
+  discLoad(host);
+}
+if (!window.__discKeys) {
+  window.__discKeys = true;
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'f' && ev.key !== 'F') return;
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    const t = ev.target; if (t && (t.closest && t.closest('input, textarea, select, [contenteditable="true"]'))) return;
+    const host = document.getElementById('roomInterests');
+    if (!host || !host.offsetParent || !host.querySelector('.disc')) return;
+    ev.preventDefault(); discFiltersOpen = !discFiltersOpen; discSave(); renderInterestLibrary();
+  });
+}
+
 async function renderInterestLibrary(opts) {
   const host = document.getElementById('roomInterests'); if (!host) return;
   const request = ++interestLibraryRequest;
@@ -20112,8 +20334,11 @@ async function renderInterestLibrary(opts) {
     + '</div>'
     + (finding && !libSuggesting ? '<div class="lib-find"><input class="lib-search" type="search" aria-label="Search library" placeholder="Title, author or topic">'
       + '<span class="lib-years"><input class="lib-year" data-lib-year="from" type="text" inputmode="numeric" maxlength="4" aria-label="From year" placeholder="From">'
-      + '<i>–</i><input class="lib-year" data-lib-year="to" type="text" inputmode="numeric" maxlength="4" aria-label="To year" placeholder="To"></span></div>' : '');
+      + '<i>–</i><input class="lib-year" data-lib-year="to" type="text" inputmode="numeric" maxlength="4" aria-label="To year" placeholder="To"></span></div>' + discSourceRow() : '');
   const wireTop = () => {
+    host.querySelectorAll('[data-disc-src]').forEach((b) => { b.onclick = () => { libSource = b.dataset.discSrc; discSave(); libRefocus = 'search'; renderInterestLibrary(); }; });
+    const ft = host.querySelector('[data-disc-ftog]');
+    if (ft) ft.onclick = () => { discFiltersOpen = !discFiltersOpen; discSave(); renderInterestLibrary(); };
     host.querySelectorAll('[data-lib-tab]').forEach((b) => { b.onclick = () => {
       interestLibraryKind = b.dataset.libTab; interestLibraryOffset = 0; libSuggesting = false; libKindOpen = false;
       try { localStorage.setItem('qne-interest-kind', interestLibraryKind); } catch (_) {}
@@ -20145,6 +20370,7 @@ async function renderInterestLibrary(opts) {
     if (suggestKind === 'analogies') renderRoomAnalogies(); else openRoomRecommendations(suggestKind);
     return;
   }
+  if (finding && libSource !== 'library') return renderDiscover(host, top, wireTop);
 
   const cols = 5 - shelfSize();
   host.innerHTML = top
