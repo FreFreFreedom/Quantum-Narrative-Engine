@@ -32865,7 +32865,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       quoteOfferTimer=setTimeout(function(){
         if(!log.isConnected)return;
         var sel = window.getSelection && window.getSelection();
-        if(gesture) snapSelectionToWords(sel);
+        // Always whole words, however the selection was made (his ask, 2026-10-11).
+        snapSelectionToWords(sel);
         var text = sel ? selText(sel).trim() : '';
         killQuotePop();
         // Only a real passage of an answer: a stray click, or a word grabbed from
