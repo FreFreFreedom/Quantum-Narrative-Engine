@@ -20183,7 +20183,7 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
 // card's own title markup; a short grace on leaving so crossing the gap between two
 // covers does not blink it off and on.
 (function wireLibPeek() {
-  let peek = null, cur = null, leaveT = 0, switchT = 0;
+  let peek = null, cur = null, leaveT = 0, switchT = 0, proxy = false;
   const host = () => document.getElementById('roomInterests');
   const hide = () => {
     clearTimeout(switchT);
@@ -20214,7 +20214,7 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
         if (!b || !cur) return;
         ev.stopPropagation();
         const card = cur;
-        if (b.hasAttribute('data-peek-fav')) { const f = card.querySelector('[data-fav]'); if (f) { f.click(); paintActs(); } }
+        if (b.hasAttribute('data-peek-fav')) { const f = card.querySelector('[data-fav]'); if (f) { proxy = true; try { f.click(); } finally { proxy = false; } paintActs(); } }
         else { const d = card.querySelector('[data-drop]'); hide(); if (d) d.click(); }
       });
     }
@@ -20254,7 +20254,7 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
     if (to === from || (rel && peek && peek.contains(rel))) return;
     clearTimeout(leaveT); leaveT = setTimeout(hide, 160);
   }, true);
-  document.addEventListener('click', (ev) => { if (ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card')) hide(); }, true);
+  document.addEventListener('click', (ev) => { if (!proxy && ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card')) hide(); }, true);
 })();
 
 // ---------- Search beyond the Library (his picks S2d, F2, C3, 2026-10-11) ----------
