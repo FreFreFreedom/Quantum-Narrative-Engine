@@ -4196,6 +4196,10 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   color:var(--c-ink-5); opacity:0; }
 .room-side-item:hover .room-side-drop, .room-side-drop:focus-visible { opacity:1; }
 .room-side-drop:hover { color:var(--c-danger, var(--c-ink)); }
+.umenu-item.has-drop { display:flex; align-items:center; gap:8px; }
+.umenu-item .umenu-drop { margin-left:auto; padding:2px 6px; border-radius:6px; opacity:0; color:var(--c-ink-4); font-size:11px; line-height:1; }
+.umenu-item:hover .umenu-drop { opacity:.8; }
+.umenu-item .umenu-drop:hover { opacity:1; color:var(--c-danger, #e06c6c); background:var(--c-hover-wash, rgba(255,255,255,.06)); }
 .room-side-open { border-top:1px solid var(--c-border); padding-top:8px; }
 /* The board (plan "room-mood-board"): a flowing wall, a kept shelf, and the full
    board opened big. Kept small in the pane on purpose — the full arrangement
@@ -17695,7 +17699,8 @@ function openRoomSideMenu(anchor) {
   if (tree.length) {
     items.push({ head: 'Asides' });
     tree.forEach(({ side: s, depth }) => items.push({ label: roomSideName(s), indent: depth,
-      checked: s.id === roomSideOpenId, on: () => roomSideOpen(s.id) }));
+      checked: s.id === roomSideOpenId, on: () => roomSideOpen(s.id),
+      dropTitle: 'Delete this side talk', drop: () => roomSideDelete(s) }));
     items.push({ sep: true });
   }
   items.push({ label: 'New aside', icon: 'plus', title: 'Beside the main thread', on: () => roomSideCreate({ mode: 'empty' }) });
@@ -17714,12 +17719,7 @@ function openRoomSideMenu(anchor) {
       } },
       { label: 'Reading', icon: 'layers', title: 'Font, text size and reading width', hover: (menuItem) => openRoomTypeMenu(menuItem, true, 'right'), on: () => openRoomTypeMenu(anchor) },
       { sep: true },
-      { label: 'Delete', icon: 'trash', danger: true, on: async () => {
-        if (!confirm('Throw this aside away?')) return;
-        try { await apiWrite('/api/convos/' + encodeURIComponent(open.id), 'DELETE'); } catch (e) {}
-        roomSideOpenId = null;
-        loadRoomSides();
-      } });
+      { label: 'Delete', icon: 'trash', danger: true, on: () => roomSideDelete(open) });
   }
   roomSideMenuOpen = true;
   roomSideSyncTab(open);
@@ -17727,6 +17727,16 @@ function openRoomSideMenu(anchor) {
   if (!shut) { roomSideMenuOpen = false; roomSideSyncTab(open); }
 }
 
+// One way to throw a side talk away, from the menu's ✕ or its Delete row. The
+// asides inside it go with it, so the question says how many.
+async function roomSideDelete(s) {
+  if (!s) return;
+  const inside = roomSides.filter(x => roomSidePathOf(x.id).some(p => p.id === s.id) && x.id !== s.id).length;
+  if (!confirm('Delete “' + roomSideName(s) + '”' + (inside ? ' and the ' + inside + ' side talk' + (inside > 1 ? 's' : '') + ' inside it' : '') + '?')) return;
+  try { await apiWrite('/api/convos/' + encodeURIComponent(s.id), 'DELETE'); } catch (e) {}
+  if (roomSideOpenId === s.id || roomSidePathOf(roomSideOpenId || '').some(p => p.id === s.id)) roomSideOpenId = null;
+  loadRoomSides();
+}
 async function loadRoomSides() {
   const want = roomSel;
   if (!want) { roomSides = []; roomSideOpenId = null; renderRoomSide(); return; }
@@ -22799,7 +22809,17 @@ function openMenu(anchor, items, opts) {
       b.addEventListener('mouseleave', () => { if (roomTypeMenu) scheduleRoomTypePeekClose(); });
     }
     if (it.disabled) b.disabled = true;
-    b.onclick = (ev) => { ev.stopPropagation(); closeMenu(); if (it.on) it.on(); };
+    // A row can carry its own ✕ at the end (the side talks, his ask 2026-10-11).
+    if (it.drop) {
+      const x = document.createElement('span'); x.className = 'umenu-drop'; x.setAttribute('role', 'button');
+      x.title = it.dropTitle || 'Delete'; x.setAttribute('aria-label', x.title); x.textContent = '✕';
+      b.appendChild(x); b.classList.add('has-drop');
+    }
+    b.onclick = (ev) => {
+      ev.stopPropagation(); closeMenu();
+      if (it.drop && ev.target.closest && ev.target.closest('.umenu-drop')) { it.drop(); return; }
+      if (it.on) it.on();
+    };
     el.appendChild(b);
   }
   el.onmousedown = (ev) => ev.stopPropagation();
