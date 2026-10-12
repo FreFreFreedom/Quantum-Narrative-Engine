@@ -22,6 +22,7 @@ import { completeDraft, sharpenDraft, recordTaste, recordTail, helperStats } fro
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import * as interests from '../services/interestLibrary.js';
+import { discover } from '../services/discover.js';
 import { lookupWord, glossaryFor, askAboutWord, keepWordTalk } from '../services/wordLookup.js';
 
 // The lanes the manual model picker (plan "chat-model-picker") may point a
@@ -68,6 +69,15 @@ export function conversationsRoutes() {
   // The browser extension sends the books open on Amazon as plain rows — title,
   // author, year — so nothing is read by a model. Doubles fold in saveSuggestedWorks.
   router.post('/interests', interestRoute((req, owner) => ({ saved: interests.saveSuggestedWorks(owner, (req.body || {}).works || []) })));
+  // Films, series and books beyond the Library, by title or by subject (his picks
+  // S2d, F2, C3, 2026-10-11). Filters ride as one JSON object.
+  router.get('/discover', asyncHandler(async (req, res) => {
+    const owner = req.user?.sub || req.user?.id;
+    if (!owner) return res.status(401).json({ error: 'Sign in first.' });
+    let filters = {};
+    try { filters = JSON.parse(String(req.query.filters || '{}')) || {}; } catch (_) {}
+    res.json(await discover(owner, { source: req.query.source === 'books' ? 'books' : 'screen', q: req.query.q || '', filters }));
+  }));
   router.post('/interests/have', interestRoute((req, owner) => ({ have: interests.haveWorks(owner, (req.body || {}).works || []) })));
   router.get('/interests', interestRoute((req, owner) => ({ items: interests.listInterests(owner, req.query) })));
   router.get('/favs', interestRoute((req, owner) => ({ favs: interests.listFavs(owner), ...(req.query.works === '1' ? { works: interests.favWorks(owner) } : {}) })));
