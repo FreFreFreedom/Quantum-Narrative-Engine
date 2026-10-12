@@ -2854,6 +2854,18 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-card .bk-head.is-pop .bk-cover { width:170px; max-width:none; height:auto; aspect-ratio:2/3; border-radius:7px; box-shadow:0 8px 24px rgba(0,0,0,.5); }
 .se-card .bk-head.is-pop .bk-out { position:absolute; top:0; right:0; margin:0; }
 .se-card .bk-head.is-pop .bk-id { width:100%; display:flex; flex-direction:column; align-items:center; }
+.se-card.is-k5 { width:min(780px, calc(100vw - 16px)); padding:0; overflow:hidden; display:flex; }
+.se-card.is-k5 .k5 { display:flex; flex:1; min-width:0; max-height:min(720px, calc(100vh - 16px)); }
+.se-card.is-k5 .k5-cover { flex:0 0 250px; width:250px; height:auto; min-height:380px; border-radius:0; box-shadow:none; aspect-ratio:auto; background-position:center top; }
+.se-card.is-k5 .k5-body { flex:1; min-width:0; overflow:auto; padding:22px 28px 24px; }
+.se-card.is-k5 .se-card-band { margin:-22px -28px 16px; padding:10px 28px; font-size:12px; }
+.se-card.is-k5 .bk-head.is-k5 { flex-direction:row; align-items:flex-start; text-align:left; gap:12px; }
+.se-card.is-k5 .bk-head.is-k5 .bk-id { align-items:flex-start; }
+.se-card.is-k5 .bk-head.is-k5 .bk-out { position:static; margin-left:auto; flex:none; }
+.se-card.is-k5 .lib-stats { margin:14px 0 2px; }
+.se-card.is-k5 .lib-stats > div { padding:7px 4px; }
+.se-card.is-k5 .lib-stats b { font-size:18px; }
+@media (max-width:640px) { .se-card.is-k5 .k5 { flex-direction:column; } .se-card.is-k5 .k5-cover { flex-basis:auto; width:auto; min-height:220px; } }
 .se-card-sub { font-family:var(--font-read, Georgia, serif); font-style:italic; font-size:17px; line-height:1.35; color:var(--c-ink-2); margin-top:4px; }
 .se-card-band { margin:-28px -32px 20px; padding:12px 32px; background:color-mix(in srgb, var(--c-accent) 11%, transparent);
   font-size:14px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-accent); }
@@ -35408,9 +35420,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           return '<li class="' + (x.l ? 'sub' : (/^(part|pt\.|book|section|volume)\b/i.test(x.t) ? 'part' : '')) + '"><span>' + qEsc(x.t) + '</span>' + (x.p ? '<em>' + qEsc(x.p) + '</em>' : '') + '</li>';
         }).join('') + '</ol><small class="se-card-src">' + qEsc(cc.source) + '</small>' : '';
       var bg = /^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '';
-      return '<div class="lib-pop-bg"' + bg + '></div>'
+      // His pick K5 (2026-10-11): the cover fills the card's left edge and the rest
+      // stands beside it, so the reading starts without a scroll.
+      return '<div class="k5"><span class="bk-cover k5-cover"' + bg + '></span><div class="k5-body">'
         + (f.fiction ? '<div class="se-card-band">' + qEsc(f.fiction) + (f.genre ? ' · ' + qEsc(f.genre) : '') + '</div>' : '')
-        + '<div class="bk-head is-pop"><span class="bk-cover"' + bg + '></span>'
+        + '<div class="bk-head is-pop is-k5">'
         + '<div class="bk-id"><b class="se-card-title">' + qEsc(fullHead) + '</b>'
         + (fullSub ? '<div class="se-card-sub">' + qEsc(fullSub) + '</div>' : '')
         + (who ? '<div class="se-card-meta">' + qEsc(who) + '</div>' : '')
@@ -35418,7 +35432,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         + bookOutMenu(bookLinks(bw, ff)) + '</div>'
         + libStatStrip(f.stars, f.starCount, Number(f.pages) || 0, f.year || d.coverYear || '')
         + bookTabs(about, toc)
-        + seCardScreen(f.screen, d);
+        + seCardScreen(f.screen, d) + '</div></div>';
     }
     var html = '<button type="button" class="se-card-x" data-card-close aria-label="Close">✕</button>'
       + '<b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
@@ -35479,7 +35493,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     seCard2For = d.coverArt;
     document.body.appendChild(seCard2);
     if (seCard) seCard.querySelectorAll('.se-card-film').forEach(function(b){ b.classList.toggle('on', b === btn); });
-    var paint = function(card){ if (!seCard2 || seCard2For !== d.coverArt) return; seCard2.innerHTML = seCardHtml(d, card); seCard2Place(); };
+    var paint = function(card){ if (!seCard2 || seCard2For !== d.coverArt) return; seCard2.innerHTML = seCardHtml(d, card); seCard2.classList.toggle('is-k5', d.coverKind === 'book'); seCard2Place(); };
     paint(null);
     if (btn.dataset.convo) {
       api('/api/convos/' + encodeURIComponent(btn.dataset.convo) + '/work-card?kind=' + encodeURIComponent(d.coverKind) + '&title=' + encodeURIComponent(d.coverTitle)
@@ -35500,7 +35514,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     seCard.dataset.convo = btn.dataset.convo || ((btn.closest('[data-convo]') || {dataset:{}}).dataset.convo || '');
     seCardFor = d.coverArt; seCardAnchor = btn;
     document.body.appendChild(seCard);
-    var paint = function(card){ if (!seCard || seCardFor !== d.coverArt) return; seCard.innerHTML = seCardHtml(d, card); seCardPlace(btn); };
+    var paint = function(card){ if (!seCard || seCardFor !== d.coverArt) return; seCard.innerHTML = seCardHtml(d, card); seCard.classList.toggle('is-k5', d.coverKind === 'book'); seCardPlace(btn); };
     paint(null);
     // Books and films alike get the line written for this conversation; a book
     // also gets its contents, fetched alongside and painted whichever lands first.
