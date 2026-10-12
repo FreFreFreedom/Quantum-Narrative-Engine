@@ -3765,6 +3765,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   background:var(--c-surface-2, rgba(255,255,255,.07)); color:var(--c-ink-2); }
 .disc-add:hover { box-shadow:inset 0 0 0 1px var(--c-kept-echo, var(--c-accent)); }
 .disc-add.in { background:rgba(60,122,74,.22); color:#8fd19e; cursor:default; box-shadow:none; }
+.disc-more { margin:0 0 6px; color:var(--c-ink-4); font:12px var(--font-ui); }
 .disc-none { color:var(--c-ink-4); font:13px var(--font-ui); padding:12px 0; }
 
 /* On hover the cover dims and the whole title stands in its middle: the title, its
@@ -20237,11 +20238,18 @@ function discLoad(host) {
   };
   if (!q && src === 'books') { list.innerHTML = '<p class="disc-none">A title, an author or a subject.</p>'; return; }
   if (discResults[key]) return paint(discResults[key]);
+  // The catalogues answer in a second or two; the AI's own picks follow and the
+  // better list takes the place of the first, with a quiet line meanwhile.
   list.innerHTML = waitHtml('searching', 'Searching');
-  const req = ++discReq;
-  api('/api/convos/discover?source=' + src + '&q=' + encodeURIComponent(q) + '&filters=' + encodeURIComponent(JSON.stringify(f)))
-    .then((o) => { discResults[key] = (o && o.items) || []; if (req === discReq) paint(discResults[key]); })
-    .catch(() => { if (req === discReq && list.isConnected) list.innerHTML = '<p class="disc-none">The search did not answer. Try again.</p>'; });
+  const req = ++discReq, url = '/api/convos/discover?source=' + src + '&q=' + encodeURIComponent(q) + '&filters=' + encodeURIComponent(JSON.stringify(f));
+  let full = false;
+  api(url + '&fast=1').then((o) => {
+    if (full || req !== discReq || !list.isConnected) return;
+    paint((o && o.items) || []);
+    if (q) list.insertAdjacentHTML('afterbegin', '<p class="disc-more">' + waitHtml('searching', 'Looking further', 'span') + '</p>');
+  }).catch(() => {});
+  api(url).then((o) => { full = true; discResults[key] = (o && o.items) || []; if (req === discReq) paint(discResults[key]); })
+    .catch(() => { full = true; if (req === discReq && list.isConnected && !list.querySelector('.disc-row')) list.innerHTML = '<p class="disc-none">The search did not answer. Try again.</p>'; else list.querySelector('.disc-more')?.remove(); });
 }
 function renderLibDiscover(host, top, wireTop) {
   host.dataset.libView = '';
