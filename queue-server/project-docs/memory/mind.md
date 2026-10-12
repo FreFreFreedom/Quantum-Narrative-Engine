@@ -33,6 +33,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 ## What he likes and dislikes
 
 - He loves poetic, lyrical writing that is evocative and beautiful. — He found the selected passage about the wound-work of the judge beautiful and poetic, showing that he deeply appreciates writing that is lyrical and evocative in its depth.
+- Loves immersive, book-length institutional ethnographies and deep narrative explorations of systemic mechanics. — Requested a 1300-word essay on David Simon's 'Homicide' and extensive, 1200-word narrative cartographies of books and films rather than brief summaries or structural cartography sections.
 - Prefers book discussions without structural cartography sections. — He explicitly requested that the platform drop the standard 'How They Fit Into Your Cartography' breakdown when comparing books, keeping the focus entirely on the texts and ideas themselves.
 - He loves it when an answer shows how the exact same structural pattern mirrors across scales simultaneously. — During the taxonomy of walls, Antoine traces patterns like the Obstacle Wall or Repulsion Wall across multiple levels at once—from human behavior and interpersonal dynamics to institutional politics and cultural scales, seeing them as a repeating fractal.
 - He loves it when descriptions achieve high precision and poetic weight through extreme brevity. — In the conversation exploring Teal Swan's psychological walls, Antoine pivots from poetic exploration to methodical categorization. He appreciates when complex psychological and energetic concepts are captured with both tight conciseness and evocative, poetic depth.
@@ -67,6 +68,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## The project
 
+- Exploring Terrence Malick's 'The Tree of Life' as a cinematic exploration of family friction, the dialectic of nature and grace, and parental forgiveness. — Analyzed as the ultimate cinematic mirror for crossing the chasm of parental resentment, bridging the father's harsh boundary-enforcing defense of the self with the mother's sanctuary of grace.
 - Exploring M. Nolan Gray's 'Arbitrary Lines' as a critique of zoning laws and spatial control. — Analyzing how bureaucratic zoning maps and land-use regulations lock class and racial segregation in place, serving as the ongoing machinery of urban division.
 - Exploring Richard Rothstein's 'The Color of Law' as an exposure of state-engineered residential segregation. — Examining how federal, state, and local governments deliberately and explicitly created segregation through redlining and public policy, predetermining containment before individuals ever enter physical cells.
 - Exploring Audrey Petty's 'High Rise Stories' as oral history from inside demolished public housing towers. — Gathering first-person accounts of community life, poverty, and displacement from former residents of Chicago's vertical public housing.
