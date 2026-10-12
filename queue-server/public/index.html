@@ -35706,17 +35706,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if (c) seLastChat = c.id;
     }, true);
   });
-  // ⌥↑ / ⌥↓ (and ⌘↑ / ⌘↓): from answer to answer — the top of the one above, again for the one
+  // ⌥↑ / ⌥↓: from answer to answer — the top of the one above, again for the one
   // before it; down to the next, and past the last one to the end.
   document.addEventListener('keydown', function(ev){
     if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp') return;
     var toEnd = ev.key === 'ArrowDown' && ev.shiftKey && !ev.altKey && (ev.metaKey || ev.ctrlKey);
     var step = ev.altKey && !ev.shiftKey && !ev.metaKey && !ev.ctrlKey;
-    // ⌘↑ / ⌘↓ step the same way: the browser's own ⌘↑ flew to the very first
-    // prompt of the chat, not the top of the answer (his complaint, 2026-10-11).
-    // Left alone while he is typing, where ⌘↑ moves the caret.
-    var ed = ev.target && ev.target.closest && ev.target.closest('textarea, input, [contenteditable="true"]');
-    if (ev.metaKey && !ev.shiftKey && !ev.altKey && !ev.ctrlKey && !(ed && (ed.value || ed.textContent || '').trim())) step = true;
     if (!toEnd && !step) return;
     var shown = function(id){ var h = document.getElementById(id), l = h && h.querySelector('.se-log'); return l && l.offsetParent ? l : null; };
     var log = (seLastChat && shown(seLastChat)) || shown('roomConvo') || shown('roomSideEmbed');
