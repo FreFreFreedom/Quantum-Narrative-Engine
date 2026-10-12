@@ -4072,6 +4072,9 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   font-size:12px; color:#e9e2cf; opacity:.85; }
 .se-quote-pop.se-quote-pop > button + button { border-left:1px solid rgba(217,184,119,.4); }
 .se-quote-pop.se-quote-pop > button:hover { opacity:1; background:rgba(217,184,119,.12); }
+/* A word picked inside a card has no action row to give the box its width, so it
+   shrank to the word and the meaning ran one word per line (his screenshot, 2026-10-11). */
+.se-quote-pop.se-card-define { width:min(480px, calc(100vw - 12px)); }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
 .se-define .w { font-family:'Cinzel', var(--font-read); font-size:16px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
 .se-define .head + .here { position:relative; padding-top:16px; }
