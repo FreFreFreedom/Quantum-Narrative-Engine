@@ -20183,7 +20183,7 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
 // card's own title markup; a short grace on leaving so crossing the gap between two
 // covers does not blink it off and on.
 (function wireLibPeek() {
-  let peek = null, cur = null, leaveT = 0, switchT = 0, proxy = false;
+  let peek = null, cur = null, pend = null, leaveT = 0, switchT = 0, proxy = false;
   const host = () => document.getElementById('roomInterests');
   const hide = () => {
     clearTimeout(switchT);
@@ -20241,17 +20241,19 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
     clearTimeout(leaveT);
     if (card === cur) { clearTimeout(switchT); return; }
     clearTimeout(switchT);
-    // Showing one already: a short beat before another takes its place, so the
-    // mouse can cross other covers on its way up to the band's buttons.
-    if (cur && peek && !peek.hidden) switchT = setTimeout(() => show(card), 160);
-    else show(card);
+    // Opens only once the mouse rests on a cover: sweeping across the shelf on the
+    // way to another one opens nothing, and leaves the open band where it is.
+    pend = card;
+    switchT = setTimeout(() => { pend = null; show(card); }, 380);
   }, true);
   document.addEventListener('mouseout', (ev) => {
     const from = ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card');
     if (!from) return;
     const rel = ev.relatedTarget;
     const to = rel && rel.closest && rel.closest('#roomInterests .shelf-card');
-    if (to === from || (rel && peek && peek.contains(rel))) return;
+    if (to === from) return;
+    if (from === pend) { clearTimeout(switchT); pend = null; }
+    if (rel && peek && peek.contains(rel)) return;
     clearTimeout(leaveT); leaveT = setTimeout(hide, 160);
   }, true);
   document.addEventListener('click', (ev) => { if (!proxy && ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card')) hide(); }, true);
