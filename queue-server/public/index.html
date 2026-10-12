@@ -1622,14 +1622,21 @@ body::after {
 .ws-room.room-folded > .room-main > .room-toolbar,
 .ws-room.room-folded > .room-main > .room-convo {
   left:34px; right:auto; width:var(--room-peek-w, min(460px, 44cqw));
-  opacity:0; pointer-events:none; transition:opacity var(--t-med) var(--ease); transition-delay:1.4s; }
+  opacity:0; visibility:hidden; transition:opacity var(--t-med) var(--ease), visibility 0s linear var(--t-med); }
 .ws-room.room-folded > .room-main > .room-convo { position:absolute; top:0; bottom:0; z-index:var(--z-panel);
   background:var(--c-bg); box-shadow:var(--sh-md); border-right:1px solid var(--c-border); border-radius:0 14px 14px 0; }
-.ws-room.room-folded > .room-main:hover > .room-toolbar,
-.ws-room.room-folded > .room-main:hover > .room-convo { opacity:1; pointer-events:auto; transition-delay:1.4s; }
-/* Once it is over, leaving puts it away at once rather than after the same wait. */
+#wsRoom.room-folded > .room-main > .room-toolbar { left:34px; right:auto; }
+/* Only the rib asks for the peek, and only after the wait. Hidden means not there
+   at all: an invisible bar over the rib swallowed the clicks meant for the ›
+   (his report, 2026-10-11). Once it is out, being over it keeps it out. */
+.ws-room.room-folded > .room-main > .room-fold-rib:hover ~ .room-toolbar,
+.ws-room.room-folded > .room-main > .room-fold-rib:hover ~ .room-convo {
+  opacity:1; visibility:visible; transition:opacity var(--t-med) var(--ease) 1.4s, visibility 0s linear 1.4s; }
 .ws-room.room-folded > .room-main > .room-toolbar:hover,
-.ws-room.room-folded > .room-main > .room-convo:hover { transition-delay:0s; }
+.ws-room.room-folded > .room-main > .room-convo:hover,
+.ws-room.room-folded > .room-main:has(> .room-toolbar:hover, > .room-convo:hover) > .room-toolbar,
+.ws-room.room-folded > .room-main:has(> .room-toolbar:hover, > .room-convo:hover) > .room-convo {
+  opacity:1; visibility:visible; transition:opacity var(--t-med) var(--ease), visibility 0s; }
 /* The width the Room gives up goes to the asides — otherwise folding buys nothing
    and only leaves a gap. */
 .ws-room.room-folded .room-cards.side-layout:not(.collapsed) { width:auto; flex:1; max-width:none; }
@@ -2534,7 +2541,8 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-threads-hide:hover, .room-threads-show:hover { color:var(--c-ink); background:var(--c-hover-wash, rgba(255,255,255,.06)); }
 .room-threads-hide svg, .room-threads-show svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 .ws-room.room-folded .room-threads:not(.collapsed) .room-threads-hide { display:inline-flex; margin-left:auto; }
-.ws-room.room-folded:has(.room-threads.collapsed) .room-threads-show { display:inline-flex; position:absolute; left:2px; top:10px; z-index:3; }
+.ws-room.room-folded:has(.room-threads.collapsed) .room-threads-show { display:inline-flex; position:absolute; left:3px; top:8px; z-index:3; }
+.ws-room.room-folded:has(.room-threads.collapsed) .room-fold-rib { padding-top:44px; }
 .room-threads.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-right-color:transparent; }
 .room-cards.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-left-color:transparent; }
 /* Peeked: hovering either toolbar button floats its panel over the conversation
