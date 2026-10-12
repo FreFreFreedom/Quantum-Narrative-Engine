@@ -20243,7 +20243,7 @@ function discLoad(host) {
     .then((o) => { discResults[key] = (o && o.items) || []; if (req === discReq) paint(discResults[key]); })
     .catch(() => { if (req === discReq && list.isConnected) list.innerHTML = '<p class="disc-none">The search did not answer. Try again.</p>'; });
 }
-function renderDiscover(host, top, wireTop) {
+function renderLibDiscover(host, top, wireTop) {
   host.dataset.libView = '';
   host.innerHTML = top + '<div class="disc' + (discFiltersOpen ? ' with-filters' : '') + '">'
     + (discFiltersOpen ? '<aside class="disc-filters">' + discFiltersHtml() + '</aside>' : '')
@@ -20370,7 +20370,7 @@ async function renderInterestLibrary(opts) {
     if (suggestKind === 'analogies') renderRoomAnalogies(); else openRoomRecommendations(suggestKind);
     return;
   }
-  if (finding && libSource !== 'library') return renderDiscover(host, top, wireTop);
+  if (finding && libSource !== 'library') return renderLibDiscover(host, top, wireTop);
 
   const cols = 5 - shelfSize();
   host.innerHTML = top
