@@ -2558,6 +2558,12 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-cards-pull { position:absolute; right:0; top:0; bottom:0; width:10px; padding:0; margin:0; border:0; background:none; cursor:pointer; }
 .room-cards-pull::before { content:''; position:absolute; right:3px; top:50%; width:3px; height:44px; transform:translateY(-50%); border-radius:2px;
   background:var(--c-ink-5); opacity:.35; transition:opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease), height var(--t-med) var(--ease); }
+.room-cards-pull:disabled { display:none; }
+.room-cards-close { margin-left:auto; flex:none; width:26px; height:26px; padding:0; border:0; border-radius:7px; background:none; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; color:var(--c-ink-4); }
+.room-cards-close:hover { color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
+.room-cards-close svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.room-cards.collapsed.peek .room-cards-close { display:none; }
 .room-cards-pull:hover::before { background:var(--c-kept-echo, var(--c-accent)); opacity:.9; }
 .room-cards-pull[aria-expanded="false"]::before { right:0; top:0; height:100%; transform:none; border-radius:0;
   background:linear-gradient(var(--c-kept-echo, var(--c-accent)), color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 25%, transparent)); opacity:.6; }
@@ -2853,6 +2859,13 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-cover:hover .se-fav, .se-fav:focus-visible, .se-fav.on { opacity:1; }
 .se-fav.on { color:#d4a24c; }
 @media (hover:none) { .se-fav { opacity:.85; } }
+.se-add { position:absolute; top:-8px; right:-8px; z-index:3; width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; font:600 16px/1 system-ui, sans-serif; font-style:normal; cursor:pointer;
+  color:var(--c-kept-echo, #c9a45c); background:var(--c-bg, #151b27); border:1px solid var(--c-kept-echo, #c9a45c); box-shadow:0 2px 6px rgba(0,0,0,.45);
+  transition:transform .12s, background .12s, color .12s; }
+.se-add:hover { transform:scale(1.1); }
+.se-add.on { background:var(--c-kept-echo, #c9a45c); color:var(--c-bg, #151b27); cursor:default; font-size:13px; }
+.se-add.on:hover { transform:none; }
 .se-cover.is-left { float:left; clear:both; margin-right:24px; }
 .se-cover-row { float:right; clear:both; width:min(260px, 46%); margin:6px 0 12px 24px; display:flex; flex-wrap:wrap; gap:10px; }
 .se-cover-row > .se-cover, .se-cover-row > .qne-wrap > .se-cover { float:none; clear:none; width:calc(50% - 5px); margin:0; }
@@ -6415,6 +6428,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
           <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
+          <button type="button" class="room-cards-close" id="roomCardsClose" title="Close the Library" aria-label="Close the Library"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3.5L8.5 8 4 12.5M8.5 3.5L13 8l-4.5 4.5"/></svg></button>
         </div>
         <div class="room-pane room-attached is-active" id="roomAttached">
           <div class="room-pane-acts">
@@ -15563,6 +15577,8 @@ function initRoom() {
       keptTitle: 'Hide the Library', shutTitle: 'Library', timer: null },
   ].filter(z => z.panel && z.btn);
   const zoneOf = (panel) => zones.find(z => z.panel === panel) || null;
+  const cardsClose = document.getElementById('roomCardsClose');
+  if (cardsClose) cardsClose.onclick = (e) => { e.stopPropagation(); const z = zoneOf(cards); if (z && zoneIsKept(z)) z.btn.click(); };
   // "Kept open" is not the same question on the two layouts: wide, the panel is a
   // column that is open unless collapsed; narrow, it is an overlay that is shut
   // unless slid in.
@@ -35365,7 +35381,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       btn.dataset.convo = convoId || '';
       btn.innerHTML = '<span data-cover-art="' + qEscAttr(key) + '" data-cover-kind="' + qEscAttr(w.kind || 'book') + '" data-cover-title="' + qEscAttr(w.title) + '" data-cover-creator="' + qEscAttr(w.creator || '') + '" data-cover-year="' + qEscAttr(w.year || '') + '" data-cover-episode="' + qEscAttr(w.episode || '') + '"'
         + (/^https:\/\//.test(art) ? ' style="background-image:url(&quot;' + qEscAttr(art) + '&quot;)"' : '') + '>' + (art ? '' : qEsc(libShortTitle(w.title))) + '</span>'
-        + seFavMark(w);
+        + seFavMark(w) + seAddMark(w);
       if(pl.bi >= blocks.length){ var last = blocks[blocks.length - 1]; last.parentNode.insertBefore(btn, last.nextSibling); return; }
       // Two or more covers for one paragraph sit side by side in one small float,
       // never stacked into a column taller than the text beside it.
@@ -35455,6 +35471,40 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return '<i class="se-fav' + (on ? ' on' : '') + '" role="button" tabindex="0" aria-label="Favourite" aria-pressed="' + on + '" title="' + (on ? 'Unfavourite' : 'Favourite') + '"'
       + ' data-kind="' + qEscAttr(w.kind || 'book') + '" data-title="' + qEscAttr(w.title) + '" data-creator="' + qEscAttr(w.creator || '') + '" data-year="' + qEscAttr(w.year || '') + '">' + (on ? '\u2605' : '\u2606') + '</i>';
   }
+  // A + on the corner of each cover adds that work to the Library; nothing an
+  // answer recommends goes in on its own any more (his pick A, 2026-10-11). Which
+  // covers are already in is asked in one batch, a beat after they are drawn.
+  function seAddMark(w){
+    setTimeout(seAddCheck, 60);
+    return '<i class="se-add" role="button" tabindex="0" aria-label="Add to the Library" title="Add to the Library"'
+      + ' data-kind="' + qEscAttr(w.kind || 'book') + '" data-title="' + qEscAttr(w.title) + '" data-creator="' + qEscAttr(w.creator || '') + '" data-year="' + qEscAttr(w.year || '') + '" data-episode="' + qEscAttr(w.episode || '') + '">+</i>';
+  }
+  function seAddOn(el){ el.classList.add('on'); el.textContent = '\u2713'; el.title = 'In the Library'; el.setAttribute('aria-label', 'In the Library'); }
+  var seAddTimer = 0;
+  function seAddCheck(){
+    clearTimeout(seAddTimer);
+    seAddTimer = setTimeout(function(){
+      var els = Array.prototype.slice.call(document.querySelectorAll('.se-add:not([data-checked])'));
+      if (!els.length) return;
+      els.forEach(function(el){ el.dataset.checked = '1'; });
+      apiWrite('/api/convos/interests/have', 'POST', { works: els.map(function(el){ return { kind: el.dataset.kind, title: el.dataset.title }; }) })
+        .then(function(o){ (o.have || []).forEach(function(h, i){ if (h && els[i]) seAddOn(els[i]); }); })
+        .catch(function(){ els.forEach(function(el){ delete el.dataset.checked; }); });
+    }, 120);
+  }
+  window.addEventListener('click', function(ev){
+    var el = ev.target.closest && ev.target.closest('.se-add'); if (!el) return;
+    ev.preventDefault(); ev.stopPropagation();
+    if (el.dataset.busy || el.classList.contains('on')) return; el.dataset.busy = '1';
+    var w = { kind: el.dataset.kind, title: el.dataset.title, creator: el.dataset.creator, year: el.dataset.year };
+    if (el.dataset.episode) w.episode = el.dataset.episode;
+    apiWrite('/api/convos/interests', 'POST', { works: [w] }).then(function(o){
+      var s = (o.saved || [])[0]; if (!s) throw new Error('not saved');
+      document.querySelectorAll('.se-add').forEach(function(x){ if (x.dataset.kind === el.dataset.kind && x.dataset.title === el.dataset.title) seAddOn(x); });
+      window.dispatchEvent(new Event('library:updated'));
+    }).catch(function(){ el.textContent = '!'; setTimeout(function(){ if (!el.classList.contains('on')) el.textContent = '+'; }, 2000); })
+      .finally(function(){ delete el.dataset.busy; });
+  }, true);
   window.addEventListener('click', function(ev){
     var el = ev.target.closest && ev.target.closest('.se-fav'); if (!el) return;
     ev.preventDefault(); ev.stopPropagation();

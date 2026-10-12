@@ -489,7 +489,9 @@ export function resolveInterestEntry(owner, id, input) {
 // The same work under two spellings: "The New Jim Crow: Mass Incarceration in
 // the Age of Colorblindness" and "New Jim Crow" are one book.
 // (workKey and sameWork live in sameWork.js, shared with the shelf and the wall.)
-export function saveSuggestedWorks(owner, works = []) {
+// save:false reads the same matches and saves nothing: what an answer recommends
+// waits for his + on the cover since 2026-10-11 (his ask, reversing 2026-09-23).
+export function saveSuggestedWorks(owner, works = [], { save = true } = {}) {
   if (!db || !owner) return [];
   const out = [];
   for (const raw of (Array.isArray(works) ? works : []).slice(0, 12)) {
@@ -508,6 +510,7 @@ export function saveSuggestedWorks(owner, works = []) {
       try { shelf = db.prepare('SELECT id,title,author FROM shelf_books WHERE owner=?').all(owner).find(b => sameWork(b.title, c.title)); } catch (_) {}
       if (shelf) { out.push({ ...c, creator: shelf.author || c.creator, id: shelf.id, shelf: true, added: false }); continue; }
     }
+    if (!save) { out.push({ ...c, added: false }); continue; }
     const saved = saveWork(owner, c, true);
     if (!saved) continue;
     // kept=1 so undoing a screenshot import never sweeps these away with it.

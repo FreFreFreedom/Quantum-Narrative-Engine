@@ -2430,7 +2430,9 @@ async function worksFromAnswer(userId, text) {
   const once = clean.filter((w) => { const k = (w?.kind || '') + '|' + String(w?.title || '').trim().toLowerCase() + '|' + String(w?.episode || '').trim().toLowerCase(); return !seen.has(k) && seen.add(k); });
   clean.length = 0; clean.push(...once);
   if (!clean.length) return [];
-  const saved = saveSuggestedWorks(userId || 'antoine', clean);
+  // Read, not saved: a recommended work joins the Library only from the + on its
+  // cover (his ask, 2026-10-11).
+  const saved = saveSuggestedWorks(userId || 'antoine', clean, { save: false });
   if (!saved.length) return [];
   if (saved.some(w => w.added)) broadcastAll('recommendations:updated', {});
   // Where each cover hangs: the words of the answer that speak of the work. An
