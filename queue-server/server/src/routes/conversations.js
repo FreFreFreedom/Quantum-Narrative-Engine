@@ -76,7 +76,7 @@ export function conversationsRoutes() {
     if (!owner) return res.status(401).json({ error: 'Sign in first.' });
     let filters = {};
     try { filters = JSON.parse(String(req.query.filters || '{}')) || {}; } catch (_) {}
-    res.json(await discover(owner, { source: req.query.source === 'books' ? 'books' : 'screen', q: req.query.q || '', filters }));
+    res.json(await discover(owner, { source: req.query.source === 'books' ? 'books' : 'screen', q: req.query.q || '', filters, fast: req.query.fast === '1' }));
   }));
   router.post('/interests/have', interestRoute((req, owner) => ({ have: interests.haveWorks(owner, (req.body || {}).works || []) })));
   router.get('/interests', interestRoute((req, owner) => ({ items: interests.listInterests(owner, req.query) })));

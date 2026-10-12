@@ -50,17 +50,20 @@ async function eachLimited(items, n, fn) {
 }
 
 // Names the model knows on the subject. Nothing it says is shown as it is.
+let lastAiError = '';
 async function modelNames(q, what) {
   try {
     const r = await generateText({
-      feature: 'quick', maxTokens: 900, label: 'discover:' + what, timeoutMs: 25_000, maxAttempts: 1,
+      feature: 'summary', maxTokens: 1200, label: 'discover:' + what, timeoutMs: 40_000, maxAttempts: 2,
+      claudeLastResort: true, helperWaitMs: 45_000,
       prompt: (what === 'books'
         ? 'List up to 12 real, published books that are about, or centrally deal with: "' + q + '". Best known and most relevant first; fiction and non-fiction both. If it is the title of a book, put that book first. Reply with JSON only: {"works":[{"title":"","author":"","year":""}]}'
         : 'List up to 12 real films or TV series that are about, or centrally deal with: "' + q + '". Best known and most relevant first. If it is the title of a film or series, put that one first. Reply with JSON only: {"works":[{"title":"","year":"","kind":"film"|"series"}]}'),
     });
+    if (r && r.error) lastAiError = String(r.message || r.error).slice(0, 200);
     const list = firstJson(r && r.text)?.works;
     return Array.isArray(list) ? list.filter((w) => w && w.title).slice(0, 12) : [];
-  } catch { return []; }
+  } catch (err) { lastAiError = String(err && err.message || err).slice(0, 200); return []; }
 }
 
 // ---------- films and series ----------
@@ -94,7 +97,9 @@ async function searchScreen(q, f) {
   const kinds = f.type ? [f.type] : ['film', 'series'];
   const path = (k) => (k === 'film' ? 'movie' : 'tv');
   const discoverParams = (k, keywords) => {
-    const p = { sort_by: 'vote_count.desc', 'vote_count.gte': 50, page: 1 };
+    // On a subject the best-loved come first, not the biggest: "prison escape"
+    // opens on Le Trou and A Man Escaped, not on every action film with a jailbreak.
+    const p = keywords ? { sort_by: 'vote_average.desc', 'vote_count.gte': 300, page: 1 } : { sort_by: 'vote_count.desc', 'vote_count.gte': 50, page: 1 };
     if (keywords) p.with_keywords = keywords;
     const d = k === 'film' ? 'primary_release_date' : 'first_air_date';
     if (f.from) p[d + '.gte'] = f.from + '-01-01';
@@ -108,7 +113,7 @@ async function searchScreen(q, f) {
     return p;
   };
   const [named, kw, titles] = await Promise.all([
-    q ? modelNames(q, 'screen') : Promise.resolve([]),
+    q && f.ai ? modelNames(q, 'screen') : Promise.resolve([]),
     q ? tmdbFetch('/search/keyword', { query: q }) : Promise.resolve(null),
     q ? tmdbFetch('/search/multi', { query: q }) : Promise.resolve(null),
   ]);
@@ -189,7 +194,7 @@ async function searchBooks(q, f) {
   const G = 'https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=20' + (key ? '&key=' + encodeURIComponent(key) : '') + (f.language ? '&langRestrict=' + encodeURIComponent(f.language) : '') + '&q=';
   const cat = f.category ? '+subject:' + encodeURIComponent('"' + f.category + '"') : '';
   const [named, bySubject, plain] = await Promise.all([
-    q ? modelNames(q, 'books') : Promise.resolve([]),
+    q && f.ai ? modelNames(q, 'books') : Promise.resolve([]),
     getJson(G + 'subject:' + encodeURIComponent('"' + q + '"') + cat),
     getJson(G + encodeURIComponent(q) + cat),
   ]);
@@ -237,20 +242,24 @@ function filtersOf(raw = {}) {
     category: s(raw.category, 40), minPages: n(raw.minPages), maxPages: n(raw.maxPages), hideLibrary: !!raw.hideLibrary,
   };
 }
-export async function discover(owner, { source = 'screen', q = '', filters = {} } = {}) {
+// fast: the catalogues alone, in a second or two; the page then asks again with
+// the model's names and swaps the better list in.
+export async function discover(owner, { source = 'screen', q = '', filters = {}, fast = false } = {}) {
   const query = clean(q, 160);
   const f = filtersOf(filters);
   if (!query && source === 'books') return { items: [] };
-  const key = JSON.stringify([source, query.toLowerCase(), f]);
+  const key = JSON.stringify([source, query.toLowerCase(), f, !!fast]);
   const hit = cache.get(key);
   let items = hit && Date.now() - hit.at < 6 * 3600_000 ? hit.items : null;
   if (!items) {
-    items = source === 'books' ? await searchBooks(query, f) : await searchScreen(query, f);
-    cache.set(key, { at: Date.now(), items });
+    lastAiError = '';
+    const g = { ...f, ai: !fast };
+    items = source === 'books' ? await searchBooks(query, g) : await searchScreen(query, g);
+    if (fast || !lastAiError) cache.set(key, { at: Date.now(), items });
     if (cache.size > 300) cache.delete(cache.keys().next().value);
   }
   const have = haveWorks(owner, items);
   let out = items.map((it, i) => ({ ...it, inLibrary: !!have[i] }));
   if (f.hideLibrary) out = out.filter((it) => !it.inLibrary);
-  return { items: out };
+  return { items: out, ...(lastAiError && !fast ? { aiError: lastAiError } : {}) };
 }
