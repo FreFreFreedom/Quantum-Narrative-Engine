@@ -179,6 +179,14 @@ function bookItem(v) {
     about: shortAbout(i.description), categories: i.categories || [],
   };
 }
+function olItem(d) {
+  if (!d || !d.title) return null;
+  const st = starsFor(d.title);
+  return { kind: 'book', title: clean(d.title, 300), sub: clean(d.subtitle, 200), creator: (d.author_name || []).slice(0, 2).join(', '),
+    year: String(d.first_publish_year || ''), pages: Number(d.number_of_pages_median) || 0, lang: ((d.language || [])[0] || '').slice(0, 2),
+    rating: st ? st.stars : Number(d.ratings_average || 0), votes: st ? st.count : Number(d.ratings_count || 0), ratingFrom: st ? 'amazon' : (d.ratings_average ? 'openlibrary' : ''),
+    cover: d.cover_i ? 'https://covers.openlibrary.org/b/id/' + d.cover_i + '-M.jpg' : '', about: '', categories: d.subject || [] };
+}
 function bookFits(it, f) {
   if (f.from && (!it.year || Number(it.year) < f.from)) return false;
   if (f.to && (!it.year || Number(it.year) > f.to)) return false;
@@ -201,20 +209,19 @@ async function searchBooks(q, f) {
   const found = await eachLimited(named, 6, async (w) => {
     const r = await getJson(G.replace('maxResults=20', 'maxResults=3') + 'intitle:' + encodeURIComponent('"' + w.title + '"') + (w.author ? '+inauthor:' + encodeURIComponent(String(w.author).split(/[ ,]/).pop()) : ''));
     const hit = ((r && r.items) || []).find((v) => v.volumeInfo && norm(v.volumeInfo.title).startsWith(norm(w.title).split(' ').slice(0, 2).join(' ')));
-    return hit ? bookItem(hit) : null;
+    if (hit) return bookItem(hit);
+    // Google's daily quota gone: the same book checked in Open Library instead.
+    const ol = await getJson('https://openlibrary.org/search.json?limit=3&fields=title,subtitle,author_name,first_publish_year,cover_i,ratings_average,ratings_count,number_of_pages_median,subject,language&title='
+      + encodeURIComponent(w.title) + (w.author ? '&author=' + encodeURIComponent(String(w.author).split(',')[0]) : ''));
+    const d = ((ol && ol.docs) || []).find((x) => norm(x.title).startsWith(norm(w.title).split(' ').slice(0, 2).join(' ')));
+    return d ? olItem(d) : null;
   });
   let fromCat = [...((bySubject && bySubject.items) || []), ...((plain && plain.items) || [])].map(bookItem);
   // Google's daily quota runs out; Open Library answers the same search then.
   if (fromCat.filter(Boolean).length < 6) {
     const ol = await getJson('https://openlibrary.org/search.json?limit=25&fields=title,subtitle,author_name,first_publish_year,cover_i,ratings_average,ratings_count,number_of_pages_median,subject,language&q='
       + encodeURIComponent(q + (f.category ? ' subject:' + f.category : '')));
-    fromCat = fromCat.concat(((ol && ol.docs) || []).map((d) => {
-      const st = starsFor(d.title);
-      return d.title ? { kind: 'book', title: clean(d.title, 300), sub: clean(d.subtitle, 200), creator: (d.author_name || []).slice(0, 2).join(', '),
-        year: String(d.first_publish_year || ''), pages: Number(d.number_of_pages_median) || 0, lang: ((d.language || [])[0] || '').slice(0, 2),
-        rating: st ? st.stars : Number(d.ratings_average || 0), votes: st ? st.count : Number(d.ratings_count || 0), ratingFrom: st ? 'amazon' : (d.ratings_average ? 'openlibrary' : ''),
-        cover: d.cover_i ? 'https://covers.openlibrary.org/b/id/' + d.cover_i + '-M.jpg' : '', about: '', categories: d.subject || [] } : null;
-    }));
+    fromCat = fromCat.concat(((ol && ol.docs) || []).map(olItem));
   }
   const seen = new Set(), list = [];
   for (const it of [...found, ...fromCat]) {

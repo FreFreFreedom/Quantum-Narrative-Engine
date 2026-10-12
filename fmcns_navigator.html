@@ -4131,6 +4131,10 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 /* A word picked inside a card has no action row to give the box its width, so it
    shrank to the word and the meaning ran one word per line (his screenshot, 2026-10-11). */
 .se-quote-pop.se-card-define { width:min(480px, calc(100vw - 12px)); }
+.se-quote-pop.is-child { box-shadow:0 30px 80px rgba(0,0,0,.75), 0 0 0 1px rgba(217,184,119,.6); }
+.se-quote-pop.se-quote-pop.se-quote-pop > .se-pop-x { margin:0; opacity:1; position:absolute; top:-11px; right:-11px; z-index:2; width:24px; height:24px; padding:0; border-radius:50%; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; background:#0e1320; color:#d9b877; border:1px solid rgba(217,184,119,.6); font:12px/1 system-ui; }
+.se-quote-pop.se-quote-pop.se-quote-pop > .se-pop-x:hover { background:#1a2236; }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
 .se-define .w { font-family:'Cinzel', var(--font-read); font-size:16px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
 .se-define .head + .here { position:relative; padding-top:16px; }
@@ -32440,9 +32444,20 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     } catch(_) {}
     return s;
   }
+  // A word picked inside a meaning opens a second box over the first, which stays
+  // (his ask, 2026-10-11); the second has its own ✕ and closing it hands the first
+  // back. Clicking away closes both.
+  var quoteParent = null;
   function killQuotePop(){
     if(quotePop && quotePop.parentNode) quotePop.parentNode.removeChild(quotePop);
     quotePop = null;
+    if(quoteParent && quoteParent.parentNode) quoteParent.parentNode.removeChild(quoteParent);
+    quoteParent = null;
+  }
+  function closeChildPop(){
+    if(quotePop && quotePop.parentNode) quotePop.parentNode.removeChild(quotePop);
+    quotePop = quoteParent; quoteParent = null;
+    if(quotePop){ quotePop.classList.remove('is-parent'); quotePop.dataset.born = String(Date.now()); }
   }
   // The answer a node sits in, or nothing if it is in your own message or outside
   // the transcript altogether.
@@ -32913,6 +32928,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // which is worse than never appearing. Capture phase, so stopPropagation inside
   // the bar cannot save it either; the containment check is the only fix.
   document.addEventListener('mousedown', function(ev){
+    if(quoteParent && quoteParent.contains(ev.target)) return;
     if(!quotePop || !quotePop.contains(ev.target)){clearTimeout(quoteOfferTimer);killQuotePop();}
   }, true);
   window.addEventListener('scroll', function(){ placeQuotePop(); if(inkRange) inkFollow(); }, true);
@@ -32922,7 +32938,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(quotePop && (quotePop.contains(document.activeElement) || quotePop.classList.contains('is-chatting')))return;
     var sel=window.getSelection();
     // Selecting inside the bar itself (the meaning, to copy it) keeps the bar.
-    var inPop=sel && sel.anchorNode && quotePop && quotePop.contains(sel.anchorNode);
+    var inPop=sel && sel.anchorNode && ((quotePop && quotePop.contains(sel.anchorNode)) || (quoteParent && quoteParent.contains(sel.anchorNode)));
     if(inPop)return;
     if(!sel || !selText(sel).trim()){
       if(quotePop && quotePop.dataset.born && Date.now() - Number(quotePop.dataset.born) < 1000) return;
@@ -32953,9 +32969,22 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(!one && !(nWords >= 2 && nWords <= 150 && /[A-Za-z]/.test(passage))) return;
       // Read before the old bar goes: a word picked inside a meaning replaces it.
       var convo = card.dataset.convo || '', sentence = sentenceAround(range, passage), r0 = range.getBoundingClientRect();
-      killQuotePop();
+      var nested = card.classList.contains('se-quote-pop');
+      if(nested){
+        // The box the word sits in stays; any older one, and any earlier second
+        // box, goes.
+        if(card === quoteParent){ if(quotePop && quotePop.parentNode) quotePop.parentNode.removeChild(quotePop); }
+        else { if(quoteParent && quoteParent.parentNode) quoteParent.parentNode.removeChild(quoteParent); quoteParent = card; }
+        card.classList.add('is-parent');
+        quotePop = null;
+      } else killQuotePop();
       quotePop = document.createElement('div');
-      quotePop.className = 'se-quote-pop se-card-define';
+      quotePop.className = 'se-quote-pop se-card-define' + (nested ? ' is-child' : '');
+      if(nested){
+        var x = document.createElement('button'); x.type = 'button'; x.className = 'se-pop-x'; x.setAttribute('aria-label', 'Close this meaning'); x.textContent = '✕';
+        x.onclick = function(ev){ ev.stopPropagation(); closeChildPop(); };
+        quotePop.appendChild(x);
+      }
       quotePop.dataset.passage = passage;
       if(card.classList.contains('se-quote-pop')) quotePop._at = r0;
       // Removing the old meaning took the selection inside it with it; the empty
