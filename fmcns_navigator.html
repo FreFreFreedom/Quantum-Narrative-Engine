@@ -2529,6 +2529,12 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 /* Collapsed on a wide window: the inline column shrinks to nothing so the
    conversation takes the room. The panel only ever holds a thin gap now, and
    the toolbar "Threads"/"Attached" buttons remain to bring it back. */
+.room-threads-hide, .room-threads-show { display:none; align-items:center; justify-content:center; width:28px; height:28px; padding:0; border:0; border-radius:8px;
+  background:none; color:var(--c-ink-4); cursor:pointer; flex:none; }
+.room-threads-hide:hover, .room-threads-show:hover { color:var(--c-ink); background:var(--c-hover-wash, rgba(255,255,255,.06)); }
+.room-threads-hide svg, .room-threads-show svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.ws-room.room-folded .room-threads:not(.collapsed) .room-threads-hide { display:inline-flex; margin-left:auto; }
+.ws-room.room-folded:has(.room-threads.collapsed) .room-threads-show { display:inline-flex; position:absolute; left:2px; top:10px; z-index:3; }
 .room-threads.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-right-color:transparent; }
 .room-cards.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-left-color:transparent; }
 /* Peeked: hovering either toolbar button floats its panel over the conversation
@@ -6331,6 +6337,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" class="ubtn ubtn--pill is-primary room-newbtn" id="roomNewBtn">＋ New chat</button>
           <button type="button" class="room-importbtn" id="roomImportBtn" title="Import a conversation (PDF or text)" aria-label="Import a conversation"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v7M5 7l3 3 3-3M3 10.5v2.5h10v-2.5"/></svg></button>
           <input type="file" id="roomImportFile" accept=".pdf,.txt,.md,.markdown,text/plain,application/pdf" hidden>
+          <button type="button" class="room-threads-hide" id="roomThreadsHide" title="Hide the thread list" aria-label="Hide the thread list"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg></button>
         </div>
         <div class="room-search">
           <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-search"/></svg>
@@ -6344,6 +6351,7 @@ button:active { transform: translateY(1px) scale(.99); }
              peek, 2026-10-07). Hovering it slides the whole conversation back over
              the pane to read; clicking it opens the Room for good. -->
         <button type="button" class="room-fold-rib" id="roomFoldRib" aria-label="Open the Room again"><span id="roomFoldName"></span></button>
+        <button type="button" class="room-threads-show" id="roomThreadsShow" title="Show the thread list" aria-label="Show the thread list"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"/></svg></button>
         <div class="tv-toolbar room-toolbar">
           <button type="button" class="uicon" id="roomThreadsBtn" title="Threads" aria-label="Show or hide the thread list" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
           <button type="button" class="room-titlebtn" id="roomTitleBtn" aria-haspopup="menu" title="Everything about this conversation">
@@ -17602,6 +17610,12 @@ let roomFoldSuppressed = false;
 function applyRoomFold() {
   const ws = document.getElementById('wsRoom');
   if (!ws) return;
+  // Folded, the Room's toolbar is gone and with it the thread list's button, so the
+  // list carries its own ‹ and a › brings it back (his report, 2026-10-11).
+  ['roomThreadsHide', 'roomThreadsShow'].forEach((id) => {
+    const b = document.getElementById(id);
+    if (b && !b.dataset.wired) { b.dataset.wired = '1'; b.onclick = () => { const t = document.getElementById('roomThreadsBtn'); if (t) t.click(); }; }
+  });
   const side = document.getElementById('roomSide');
   // Only while the column holding the aside is actually on screen: folded beside a
   // shut column, a refresh landed on a blank page (2026-10-08).
