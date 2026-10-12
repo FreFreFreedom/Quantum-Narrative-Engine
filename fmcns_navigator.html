@@ -32180,6 +32180,20 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // take. After that the ink simply follows the hand, with nothing to wait for.
     paintInk(r, !inkLayer);
   }
+  // What a selection says. A book or film title in an answer can be dragged to the
+  // Library, and the browser leaves a draggable's text out of the selection's own
+  // string, so "3. Master of the Senate" read as "3." and found no meaning (his
+  // report, 2026-10-11). The range's contents keep every word.
+  function selText(sel){
+    if(!sel || !sel.rangeCount) return '';
+    var s = String(sel), r = sel.getRangeAt(0);
+    try {
+      var root = r.commonAncestorContainer; root = root.nodeType === 1 ? root : root.parentElement;
+      var hasWork = root && ((root.closest && root.closest('.se-work')) || (root.querySelector && root.querySelector('.se-work')));
+      if(hasWork && !r.collapsed){ var t = r.cloneContents().textContent; if(t.trim().length > s.trim().length) return t; }
+    } catch(_) {}
+    return s;
+  }
   function killQuotePop(){
     if(quotePop && quotePop.parentNode) quotePop.parentNode.removeChild(quotePop);
     quotePop = null;
@@ -32479,7 +32493,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var sel = window.getSelection && window.getSelection();
     // A word picked inside a meaning took its selection away with the old box; the
     // new box stands where that word was instead of closing (his report, 2026-10-11).
-    var r = sel && sel.rangeCount && String(sel).trim() ? sel.getRangeAt(0).getBoundingClientRect() : quotePop._at;
+    var r = sel && sel.rangeCount && selText(sel).trim() ? sel.getRangeAt(0).getBoundingClientRect() : quotePop._at;
     if(!r || (!r.width && !r.height)) return killQuotePop();
     quotePop.style.left = Math.max(6, Math.min(window.innerWidth - quotePop.offsetWidth - 6, r.left)) + 'px';
     var h = quotePop.offsetHeight || 30;
@@ -32501,7 +32515,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(!log.isConnected)return;
         var sel = window.getSelection && window.getSelection();
         if(gesture) snapSelectionToWords(sel);
-        var text = sel ? String(sel).trim() : '';
+        var text = sel ? selText(sel).trim() : '';
         killQuotePop();
         // Only a real passage of an answer: a stray click, or a word grabbed from
         // your own message, is not something to quote back at the model.
@@ -32547,7 +32561,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             ev.stopPropagation();
             // Never apply a stale menu's captured passage to a newer highlight.
             var current=window.getSelection();
-            if(current && String(current).trim() && String(current).trim().replace(/\s+/g,' ').slice(0,100000)!==passage){offer(0);return;}
+            if(current && selText(current).trim() && selText(current).trim().replace(/\s+/g,' ').slice(0,100000)!==passage){offer(0);return;}
             var at = b.getBoundingClientRect();
             killQuotePop();
             if(sel.removeAllRanges) sel.removeAllRanges();
@@ -32664,11 +32678,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // Selecting inside the bar itself (the meaning, to copy it) keeps the bar.
     var inPop=sel && sel.anchorNode && quotePop && quotePop.contains(sel.anchorNode);
     if(inPop)return;
-    if(!sel || !String(sel).trim()){
+    if(!sel || !selText(sel).trim()){
       if(quotePop && quotePop.dataset.born && Date.now() - Number(quotePop.dataset.born) < 1000) return;
       clearTimeout(quoteOfferTimer);if(!(quotePop && (quotePop.classList.contains('se-kept-pop') || quotePop.classList.contains('se-like-pop'))))killQuotePop();return;}
     if(mouseDragging)return;
-    if(quotePop && quotePop.dataset && quotePop.dataset.passage === String(sel).trim().replace(/\s+/g,' ').slice(0,100000))return;
+    if(quotePop && quotePop.dataset && quotePop.dataset.passage === selText(sel).trim().replace(/\s+/g,' ').slice(0,100000))return;
     var node=sel.anchorNode, el=node && (node.nodeType===1?node:node.parentElement);
     var log=el && el.closest && el.closest('.se-log');
     if(log && log.quoteOffer)log.quoteOffer(80);
@@ -32684,7 +32698,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var sel = window.getSelection && window.getSelection();
       if(!sel || !sel.rangeCount) return;
       snapSelectionToWords(sel);
-      var passage = String(sel).trim().replace(/\s+/g, ' ');
+      var passage = selText(sel).trim().replace(/\s+/g, ' ');
       var range = sel.getRangeAt(0);
       if(passage.length < 2 || !card.contains(range.startContainer) || !card.contains(range.endContainer)) return;
       if(quotePop && quotePop !== card && quotePop.dataset.passage === passage) return;
@@ -32715,7 +32729,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   document.addEventListener('mouseup', function(ev){
     setTimeout(function(){
       var sel = window.getSelection && window.getSelection();
-      if(!sel || !sel.rangeCount || !String(sel).trim()) return;
+      if(!sel || !sel.rangeCount || !selText(sel).trim()) return;
       var n = sel.anchorNode, el = n && (n.nodeType === 1 ? n : n.parentElement);
       if(!el || !el.closest) return;
       var host = el.closest('.se-card') || (el.closest('.se-define .here, .se-define-chat .it') && el.closest('.se-quote-pop'));
