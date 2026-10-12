@@ -32477,8 +32477,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(quotePop.classList.contains('se-kept-pop')) return killQuotePop();
     if(quotePop.classList.contains('se-like-pop')) return;
     var sel = window.getSelection && window.getSelection();
-    if(!sel || !sel.rangeCount || !String(sel).trim()) return killQuotePop();
-    var r = sel.getRangeAt(0).getBoundingClientRect();
+    // A word picked inside a meaning took its selection away with the old box; the
+    // new box stands where that word was instead of closing (his report, 2026-10-11).
+    var r = sel && sel.rangeCount && String(sel).trim() ? sel.getRangeAt(0).getBoundingClientRect() : quotePop._at;
     if(!r || (!r.width && !r.height)) return killQuotePop();
     quotePop.style.left = Math.max(6, Math.min(window.innerWidth - quotePop.offsetWidth - 6, r.left)) + 'px';
     var h = quotePop.offsetHeight || 30;
@@ -32696,6 +32697,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       quotePop = document.createElement('div');
       quotePop.className = 'se-quote-pop se-card-define';
       quotePop.dataset.passage = passage;
+      if(card.classList.contains('se-quote-pop')) quotePop._at = r0;
       // Removing the old meaning took the selection inside it with it; the empty
       // selection that follows must not tear down this new one.
       quotePop.dataset.born = String(Date.now());
