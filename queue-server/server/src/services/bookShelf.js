@@ -25,7 +25,7 @@ import { wholeSentences, looksCut, PROSE_TOKENS, NOTE_WORDS, tooShort, writeAbou
 import { uniqueTitle } from './knowledgeDocs.js';
 import { generateText } from './ai/text.js';
 import { mindBlock } from './mind.js';
-import { sameWork, sameMaker } from './sameWork.js';
+import { sameWork, sameMaker, workKey, unbracket } from './sameWork.js';
 
 let db = null;
 export function bindBookShelf(database) {
@@ -58,6 +58,53 @@ export function bindBookShelf(database) {
   try { db.exec('ALTER TABLE shelf_books ADD COLUMN blurb TEXT'); } catch (err) { /* already there */ }
   try { db.exec('ALTER TABLE shelf_books ADD COLUMN relevance TEXT'); } catch (err) { /* already there */ }
   try { db.exec('ALTER TABLE shelf_books ADD COLUMN about TEXT'); } catch (err) { /* already there */ }
+  // Books already on the shelf take the Library's own name too, once per boot.
+  try { for (const r of db.prepare('SELECT id, owner, title, author FROM shelf_books').all()) adoptLibraryName(r); } catch (err) { /* the shelf stands as it is */ }
+}
+
+// A PDF's own name is often the download's: "Monster The Autobiography of an L.A.
+// Gang Member (Sanyika Shakur) (z-library.sk, 1lib.sk, z-lib.sk)". The site in
+// brackets is noise; a bracket holding a person's name is the author.
+const SITE_NOTE = /\(([^()]*\b(z-?lib|1lib|libgen|anna'?s|library|\.(sk|org|com|net|is))\b[^()]*|\s*)\)/ig;
+function fileTitle(title, author) {
+  let t = String(title || '').replace(/\.(pdf|epub|txt)$/i, '').replace(SITE_NOTE, ' ').replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+  let who = String(author || '').trim();
+  const named = t.match(/\(([\p{L}.' -]{4,60})\)\s*$/u);
+  if (named && !/\d/.test(named[1]) && named[1].trim().split(/\s+/).length <= 4) {
+    if (!who) who = named[1].trim();
+    t = t.slice(0, named.index).trim();
+  }
+  return { title: t || String(title || '').trim(), author: who };
+}
+
+// The Library entry this book already is, if any — so a whole PDF and the cover
+// he saved earlier are one book, under one name. Same main title, or one title
+// that is the other plus its subtitle without the colon ("Monster The
+// Autobiography of…" is "Monster: The Autobiography of…"). A one-word title only
+// reaches that far when both sides name the same author.
+function libraryTwin(owner, title, author) {
+  let works = [];
+  try { works = db.prepare("SELECT id, title, creator FROM interest_works WHERE owner=? AND kind='book'").all(owner); } catch (err) { return null; }
+  const full = norm(unbracket(title)).replace(/^(the|a|an|le|la|les|l) /, '');
+  return works.find((w) => sameWork(w.title, title) && sameMaker(w.creator, author))
+    || works.find((w) => {
+      const k = workKey(w.title), wFull = norm(unbracket(w.title)).replace(/^(the|a|an|le|la|les|l) /, '');
+      const mine = workKey(title);
+      const prefix = (k && (full === k || full.startsWith(k + ' '))) || (mine && (wFull === mine || wFull.startsWith(mine + ' ')));
+      if (!prefix || !sameMaker(w.creator, author)) return false;
+      const short = Math.min(k.split(' ').length, mine.split(' ').length) < 2;
+      return !short || (norm(w.creator) && norm(author));
+    }) || null;
+}
+
+function adoptLibraryName(row) {
+  const clean = fileTitle(row.title, row.author);
+  const twin = libraryTwin(row.owner, clean.title, clean.author);
+  const title = (twin ? twin.title : clean.title).slice(0, 200);
+  const author = String((twin && twin.creator) || clean.author || '').slice(0, 200);
+  if (title !== row.title || author !== (row.author || '')) db.prepare('UPDATE shelf_books SET title=?, author=? WHERE id=?').run(title, author, row.id);
+  if (twin) db.prepare('UPDATE interest_works SET kept=1 WHERE id=?').run(twin.id);
+  return { title, author };
 }
 
 export const BOOK_PREFIX = 'Book: ';
@@ -137,7 +184,10 @@ export function addBook(owner, { title, author = '', year = '', filename = '', t
   }
   const body = shared ? '' : String(text || '').trim();
   if (!shared && !body) return { error: 'text_required', message: 'A book needs its extracted text.' };
-  const name = String(title || filename.replace(/\.[^/.]+$/, '') || shared || '').trim().replace(/\s+/g, ' ').slice(0, 200);
+  const asked = fileTitle(String(title || filename || shared || ''), author);
+  const twin = libraryTwin(owner, asked.title, asked.author);
+  const name = (twin ? twin.title : asked.title).replace(/\s+/g, ' ').slice(0, 200);
+  author = (twin && twin.creator) || asked.author;
   if (!name) return { error: 'title_required', message: 'A book needs a title.' };
   if (!shared && db.prepare(`SELECT 1 FROM shelf_books WHERE owner=? AND sha=? AND sha<>''`).get(owner, String(sha || ''))) {
     return { error: 'already_here', message: 'That book is already on the shelf.' };
@@ -190,6 +240,9 @@ export function updateBook(owner, id, { title, author, year, cover } = {}) {
     year: String(year ?? row.year).trim().slice(0, 20),
     cover: /^https:\/\//.test(String(cover ?? row.cover_url ?? '')) ? String(cover ?? row.cover_url) : null,
   };
+  // The catalogue's name never pulls the book away from the Library entry it is.
+  const twin = libraryTwin(owner, next.title, next.author) || libraryTwin(owner, row.title, row.author);
+  if (twin) { next.title = twin.title.slice(0, 200); next.author = (twin.creator || next.author).slice(0, 200); }
   db.prepare('UPDATE shelf_books SET title=?, author=?, year=?, cover_url=? WHERE id=? AND owner=?')
     .run(next.title, next.author, next.year, next.cover, id, owner);
   return { id, title: next.title, author: next.author, year: next.year, cover_url: next.cover };
