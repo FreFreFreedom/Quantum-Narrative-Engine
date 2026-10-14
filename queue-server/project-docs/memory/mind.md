@@ -69,6 +69,9 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## The project
 
+- Exploring Howard Hunt's 'The Spy Who Knew Too Much' as a record of Cold War case officer operations and secret interventions. — Captures the mindset of the old-school case officer orchestrating global chess matches, recruiting foreign officials, and running agents across Europe and Latin America.
+- Exploring Sandra Grimes and Jeanne Vertefeuille's 'Circle of Treason' as an account of hunting moles and managing high-stakes human assets inside the KGB. — Focuses on the counterintelligence perspective, tracking the nerve-wracking reality of handling top-level human assets and the agonizing consequences of compromise.
+- Exploring Robert Wallace and H. Keith Melton's 'Spycraft' as an inside look at how case officers partnered with technical services to manage human assets. — Provides the institutional and operational perspective of the case officer (the classical spy) who recruits, equips, and runs human assets inside hostile territory.
 - Exploring Tim Weiner's 'Legacy of Ashes' as an institutional history tracking the architects and directors of CIA covert campaigns. — Focuses on the upper echelons of intelligence architecture, mapping how architectural hubris, bad intelligence, and paranoid overreach shaped global history.
 - Exploring Anthony Summers's 'Official and Confidential' as an examination of J. Edgar Hoover as the bureaucratic architect of domestic covert control. — Hoover weaponized surveillance, secret files, and psychological warfare to outlast presidents and build an intelligence state within a state.
 - Exploring Stephen Kinzer's 'The Brothers' as a study of the architects of Cold War intelligence and covert interventionism. — Focuses on John Foster Dulles and Allen Dulles running the grand strategy from the top, designing campaigns that overthrew foreign governments and established the template for the CIA as an invisible empire.
