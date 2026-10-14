@@ -174,33 +174,42 @@ export async function lookupOnScreen({ show = '', term = '', line = '' } = {}) {
 // over the last lines of dialogue, kept for those lines, and every term it finds is
 // written into the lookup cache too, so clicking it later costs nothing.
 const GLOSSARY_PROMPT = `Below are the last lines of dialogue from a series someone is watching. He follows the
-story perfectly well. What he does not know is the vocabulary — the trade's own language:
-procedure names, drug names, equipment, abbreviations, codes, slang used inside that
-profession. Assume he knows none of it.
+story perfectly well. What he does not know is the vocabulary only the people on screen
+share. Read the show's world first and look for ITS language: a hospital's procedures,
+drugs and codes; a police unit's or a court's terms; a street crew's slang and code words
+for drugs, money, guns, police and selling (a word like "package", "re-up", "burner",
+"hopper", "five-oh"); a dialect, a trade, a military rank. An ordinary English word
+used in a special sense counts. Assume he knows none of it.
 
 Take the ONE or TWO hardest terms in the lines. Keep each one in the words it was
-actually said in, and say straight after it what it means FOR THIS PATIENT, IN THIS
-SCENE — not a dictionary meaning. "rhonchi means his lungs are rattling, so they are
-full of something" is right; "rhonchi are coarse breath sounds" is not. Join them with a semicolon into ONE line of 15 words or fewer. Count them; if
+actually said in, and say straight after it what it means FOR THESE PEOPLE, IN THIS
+SCENE — not a dictionary meaning. "re-up means he is buying a new supply of drugs to sell"
+is right; "re-up means to renew" is not. Join them with a semicolon into ONE line of 15 words or fewer. Count them; if
 two will not fit, take one. A bare list of the terms with no meaning is useless — never do that. Never replace
 a term with a plain phrase and leave it at that either: he needs to know what the word
 he heard means here. Do not narrate the action: he follows the story. No headings, no markdown,
 no quotation marks, no numbering. Plain words — English is his second language.
-If the lines hold no trade word at all, say in a few words what is happening.
+If the lines hold no such word at all, say in a few words what is happening.
 
 Then list every hard term in the lines, at most 4, in the order they are spoken. For
-each, give what it means FOR THIS PATIENT, IN THIS SCENE, in 12 words or fewer — not a
+each, give what it means FOR THESE PEOPLE, IN THIS SCENE, in 12 words or fewer — not a
 dictionary meaning. Do not begin with the term itself. For an acronym, also give what
 its letters stand for.
+"text" is always the meaning, never the line it was said in. "expansion" is only for an
+acronym's letters — leave it empty for any other word.
 Answer with JSON only, no markdown fence:
 {"gist":"…","terms":[{"term":"…","expansion":"…","text":"…"}]}
 An empty term list is a fine answer.`;
+
+// Bumped when the prompts change, so a reading made under the old ones is made again
+// rather than served from the cache (2026-10-14: the first prompts only knew hospitals).
+const READING_VERSION = 'v2';
 
 export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
   const text = String(lines || '').replace(/\s+/g, ' ').trim().slice(0, 1600);
   if (text.split(/\s+/).length < 6) return { ok: true, terms: [], gist: '' };
   const showKey = String(show || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 120);
-  const hash = createHash('sha1').update(showKey + '|' + text.toLowerCase()).digest('hex').slice(0, 20);
+  const hash = createHash('sha1').update(READING_VERSION + '|' + showKey + '|' + text.toLowerCase()).digest('hex').slice(0, 20);
 
   if (db) {
     const hit = db.prepare('SELECT json FROM show_glossaries WHERE show=? AND lines_hash=?').get(showKey, hash);
@@ -252,14 +261,18 @@ async function quickTextLong(prompt) {
 // extension only ever shows a term once it has actually been said, so knowing the
 // whole episode never spoils any of it.
 const EPISODE_PROMPT = `Below is part of the subtitles of one episode. Find the words and phrases an ordinary
-viewer would NOT understand — the trade's own language: procedure names, drug names,
-equipment, abbreviations, codes, slang used inside that profession. Ignore ordinary
-English, names of people and places, and anything a viewer plainly understands.
+viewer would NOT understand — the language only the people on screen share. Read the
+show's world first and look for ITS language: a hospital's procedures, drugs and codes; a
+police unit's or a court's terms; a street crew's slang and code words for drugs, money,
+guns, police and selling; a dialect, a trade, a military rank. An ordinary English word
+used in a special sense counts. Ignore plain English, names of people and places, and
+anything a viewer plainly understands.
 For each, write what it means here — what the people on screen are doing or referring to
 when they say it. Plain words, English is the reader's second language, no jargon
 explained with more jargon. ONE sentence of about 14 words, never more than 18. Do not
 begin with the term itself. When it is an acronym, also give what its letters stand for
-as "expansion".
+as "expansion" — leave it empty for any other word. "text" is always the meaning, never
+the line it was said in.
 Answer with JSON only, no markdown fence: {"terms":[{"term":"…","expansion":"…","text":"…"}]}
 An empty list is a fine answer.`;
 
@@ -272,7 +285,8 @@ function chunkTranscript(text) {
 }
 
 export async function episodeGlossary({ key = '', show = '', transcript = '' } = {}) {
-  const episodeKey = String(key || '').trim().slice(0, 200);
+  const raw = String(key || '').trim().slice(0, 190);
+  const episodeKey = raw && READING_VERSION + '|' + raw;
   if (!episodeKey) return { error: 'key_required' };
   if (db) {
     const hit = db.prepare('SELECT json FROM show_episodes WHERE episode_key=?').get(episodeKey);
