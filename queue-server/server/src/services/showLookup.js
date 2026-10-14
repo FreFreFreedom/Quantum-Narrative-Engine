@@ -179,7 +179,11 @@ share. Read the show's world first and look for ITS language: a hospital's proce
 drugs and codes; a police unit's or a court's terms; a street crew's slang and code words
 for drugs, money, guns, police and selling (a word like "package", "re-up", "burner",
 "hopper", "five-oh"); a dialect, a trade, a military rank. An ordinary English word
-used in a special sense counts. Assume he knows none of it.
+used in a special sense counts. So does a whole EXPRESSION — slang phrases and idioms
+whose words are plain but whose meaning is not ("it come out your end", "the game is the
+game", "on the corner", "catch a charge"). Keep an expression whole, as it was said; never
+cut it down to one of its words. When a hard word sits inside an expression ("catching
+bodies", "you come at the king"), the expression is the term, not the word. Assume he knows none of it.
 
 Take the ONE or TWO hardest terms in the lines. Keep each one in the words it was
 actually said in, and say straight after it what it means FOR THESE PEOPLE, IN THIS
@@ -191,7 +195,7 @@ he heard means here. Do not narrate the action: he follows the story. No heading
 no quotation marks, no numbering. Plain words — English is his second language.
 If the lines hold no such word at all, say in a few words what is happening.
 
-Then list every hard term in the lines, at most 4, in the order they are spoken. For
+Then list every hard term or expression in the lines, at most 4, in the order they are spoken. For
 each, give what it means FOR THESE PEOPLE, IN THIS SCENE, in 12 words or fewer — not a
 dictionary meaning. Do not begin with the term itself. For an acronym, also give what
 its letters stand for.
@@ -203,7 +207,7 @@ An empty term list is a fine answer.`;
 
 // Bumped when the prompts change, so a reading made under the old ones is made again
 // rather than served from the cache (2026-10-14: the first prompts only knew hospitals).
-const READING_VERSION = 'v2';
+const READING_VERSION = 'v3';
 
 export async function glossaryOnScreen({ show = '', lines = '' } = {}) {
   const text = String(lines || '').replace(/\s+/g, ' ').trim().slice(0, 1600);
@@ -265,7 +269,9 @@ viewer would NOT understand — the language only the people on screen share. Re
 show's world first and look for ITS language: a hospital's procedures, drugs and codes; a
 police unit's or a court's terms; a street crew's slang and code words for drugs, money,
 guns, police and selling; a dialect, a trade, a military rank. An ordinary English word
-used in a special sense counts. Ignore plain English, names of people and places, and
+used in a special sense counts. So does a whole EXPRESSION — slang phrases and idioms
+whose words are plain but whose meaning is not; keep it whole, as it was said, never cut
+down to one of its words. Ignore plain English, names of people and places, and
 anything a viewer plainly understands.
 For each, write what it means here — what the people on screen are doing or referring to
 when they say it. Plain words, English is the reader's second language, no jargon
