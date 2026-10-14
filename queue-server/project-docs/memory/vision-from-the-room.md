@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The clandestine intelligence apparatus scales up the structural algorithm of gangs and cartels to the geopolitical level.
+
+Just as street gangs require a brutal initiation and armored ego, the intelligence services demand absolute surrender of identity and absorption into a secretive brotherhood operating outside normal moral laws.
+
 ## Subcultures, gangs, and radical movements act as dark emotional mirrors that reflect and contain the unintegrated rage and terror of abandoned children.
 
 When families or civic containers are numb or terrified of intense emotion, a child's rage and terror become disowned. Seeking an emotional container to process and digest this energy, the child finds a dark mirror in street gangs, extremist groups, or subcultures like black metal. This reconciles the powerlessness/trauma perspective with the emotional-mirroring perspective: the violent ego shell and the paranoid belief system are twin architectures built to house and protect the terrified child within.

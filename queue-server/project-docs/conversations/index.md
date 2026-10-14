@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Conspiracy Obsession in Film and Television — conversations/conspiracy-obsession-in-film-and-television-565a6e84.md
+- Outlaw Biker and Spy Architectures Revealed — conversations/outlaw-biker-and-spy-architectures-revealed-565a6e84.md
 - Military Leadership Bibliography for Scaling Statecraft — conversations/military-leadership-bibliography-for-scaling-statecraft-a969a91c.md
 - Mapping Psychological Walls Across Cultures and Media — conversations/mapping-psychological-walls-across-cultures-and-media-30b86c18.md
 - State Experiments in Constitutional Decision‑Making — conversations/state-experiments-in-constitutional-decision-making-cf34af05.md
