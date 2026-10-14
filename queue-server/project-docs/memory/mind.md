@@ -69,6 +69,9 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## The project
 
+- Exploring films and series mapping the descent into totalizing conspiracy and paranoia. — Curating and exploring narratives like The Parallax View, Pi, Utopia, and Take Shelter as psychological maps where isolation, unacknowledged trauma, and invisible enemies collide to fracture reality.
+- Exploring Dennis Hopper's 'Easy Rider', or similar outcast narratives, as explorations of the outsider container. — Investigating how outsider subcultures and groups function as alternative communal structures when conventional societal containers collapse.
+- Exploring John Singleton's 'Snowfall' as a sociological ethnography of the macro-micro pipeline. — Snowfall maps the exact structural pipeline where macro-level geopolitical forces (CIA covert ops, proxy wars) metabolize inside micro-level urban neighborhoods, treating the crack epidemic not as individual moral failure but as a systemic extraction mechanism.
 - Exploring Chad Marks's 'Blood on the Razor Wire' as an account of federal prison survival. — Examining how an individual survives the slow, bureaucratic, grinding violence of a forty-year federal sentence for a non-violent drug offense.
 - Exploring George Jackson's 'Blood in My Eye' as a high-voltage training manual. — Studying it alongside 'Soledad Brother' and 'Monster' as a transmission from maximum-security confinement on forging internal sovereignty.
 - Exploring Sanyika Shakur's 'Monster' as a street-to-prison training manual. — Examining it as part of the core library on transforming blinding street rage and powerlessness into unbreakable discipline.
