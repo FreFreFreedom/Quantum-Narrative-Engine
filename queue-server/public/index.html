@@ -31566,8 +31566,27 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Copy gives the words, not the drawing's data.
   function seStripTimelines(text){ return String(text || '').replace(/\n?```(?:timeline|json)?\s*\n\s*\{\s*"kind"[\s\S]*?(?:```|$)\n?/g, '\n').replace(/\n{3,}/g, '\n\n').trim(); }
 
+  // Some models write a symbol as math code — "$\rightarrow$" — and the page has no
+  // math renderer, so the code itself was printed. Turn it into the symbol it names.
+  // Only a $…$ made of nothing but such codes is touched; "$5 and $10" is money.
+  var SE_SYM = { rightarrow:'→', to:'→', longrightarrow:'⟶', Rightarrow:'⇒', implies:'⇒', Longrightarrow:'⟹', leftarrow:'←', gets:'←', Leftarrow:'⇐',
+    leftrightarrow:'↔', Leftrightarrow:'⇔', iff:'⇔', mapsto:'↦', uparrow:'↑', downarrow:'↓', nearrow:'↗', searrow:'↘', rightleftharpoons:'⇌', circlearrowright:'↻',
+    times:'×', cdot:'·', div:'÷', pm:'±', approx:'≈', sim:'∼', neq:'≠', ne:'≠', leq:'≤', le:'≤', geq:'≥', ge:'≥', equiv:'≡', propto:'∝', infty:'∞',
+    in:'∈', notin:'∉', subset:'⊂', subseteq:'⊆', cup:'∪', cap:'∩', emptyset:'∅', forall:'∀', exists:'∃', neg:'¬', land:'∧', lor:'∨', therefore:'∴', because:'∵',
+    sum:'∑', prod:'∏', int:'∫', partial:'∂', nabla:'∇', sqrt:'√', circ:'∘', bullet:'•', ldots:'…', dots:'…', cdots:'⋯', degree:'°', star:'⋆', oplus:'⊕', otimes:'⊗',
+    alpha:'α', beta:'β', gamma:'γ', delta:'δ', Delta:'Δ', epsilon:'ε', theta:'θ', lambda:'λ', mu:'μ', pi:'π', sigma:'σ', Sigma:'Σ', tau:'τ', phi:'φ', Phi:'Φ', psi:'ψ', Psi:'Ψ', omega:'ω', Omega:'Ω' };
+  function seUnlatex(t){
+    var sym = function(code){ return code.replace(/\\([A-Za-z]+)(\s*)/g, function(all, name, ws){ return SE_SYM[name] ? SE_SYM[name] + ws : all; }); };
+    var pure = function(body){ var out = sym(body).trim(); return /\\|[{}^_]/.test(out) ? null : out; };
+    t = t.replace(/\$\$?\s*((?:\\[A-Za-z]+\s*|[\s0-9+\-=<>.,()|])+?)\s*\$\$?/g, function(all, body){ var v = /\\/.test(body) && pure(body); return v || all; });
+    t = t.replace(/\\\(\s*((?:\\[A-Za-z]+\s*|[\s0-9+\-=<>.,()|])+?)\s*\\\)/g, function(all, body){ var v = pure(body); return v || all; });
+    // A bare arrow code left in prose, outside any $…$.
+    return t.replace(/\\(rightarrow|Rightarrow|leftarrow|Leftarrow|leftrightarrow|longrightarrow|implies|mapsto)\b/g, function(all, name){ return SE_SYM[name]; });
+  }
+
   function fmtBody(text, asMarkdown, cacheKey){
     var raw = String(text == null ? '' : text);
+    raw = seUnlatex(raw);
     if (asMarkdown && typeof marked !== 'undefined' && marked.parse) {
       if (cacheKey) {
         var hit = mdCache.get(cacheKey);
