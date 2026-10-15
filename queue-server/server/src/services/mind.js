@@ -1010,7 +1010,9 @@ export async function teachTurn({ passage = '', turns = [] } = {}) {
   for (let attempt = 0; attempt < 3; attempt++) {
     // Not the cheap summary model: it flattened a layered ask into one line (2026-09-30).
     // Gemini, always — his pick (2026-10-01), same as the conversation records.
-    const res = await geminiText({ maxTokens: 3000, timeoutMs: 120_000, label: 'mind:teach', prompt: teachPrompt({ passage: p, turns: t, avoid }) });
+    // A Teach reply is short and comes back in seconds; a hung Flash once held the
+    // box spinning for minutes (2026-10-15), so give up fast and let Flash-Lite answer.
+    const res = await geminiText({ maxTokens: 3000, timeoutMs: 30_000, label: 'mind:teach', prompt: teachPrompt({ passage: p, turns: t, avoid }) });
     if (!String(res?.text || '').trim()) return { error: res?.error || 'no_answer' };
     const out = parseTeach(res.text);
     if (!out) continue;

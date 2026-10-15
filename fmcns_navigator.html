@@ -34040,13 +34040,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       apiWrite('/api/mind/teach', 'POST', { passage: passage, turns: st.turns.map(function(t){ return { role: t.role === 'ai' ? 'ai' : 'user', text: t.text }; }) })
         .then(function(out){
           st.busy = false;
-          if(!out || out.error){ st.turns.push({ role: 'ai', text: '…' }); paint(); return; }
+          if(!out || out.error){ st.turns.push({ role: 'ai', text: 'No answer this time \u2014 send it again.' }); paint(); return; }
           var say = out.question ? (out.reply ? out.reply + ' ' : '') : (out.reply || '');
           if(say) st.turns.push({ role: 'ai', text: say.trim() });
           st.items = (out.items || []).filter(function(it){ return (st.dropped || []).indexOf(String(it.text).toLowerCase()) < 0; }); st.question = out.question || null;
           paint(); inp.focus();
         })
-        .catch(function(){ st.busy = false; st.turns.push({ role: 'ai', text: '…' }); paint(); });
+        .catch(function(){ st.busy = false; st.turns.push({ role: 'ai', text: 'No answer this time \u2014 send it again.' }); paint(); });
     };
     inp.onkeydown = function(ev){ if(ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); send(inp.value); } };
     inp.oninput = function(){ inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 160) + 'px'; };
