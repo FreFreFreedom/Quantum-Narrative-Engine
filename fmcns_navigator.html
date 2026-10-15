@@ -2546,11 +2546,11 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-edge .uicon:disabled { opacity:.3; cursor:default; }
 /* Minimize the main conversation when a side talk is open beside it: it folds to
    its gold strip and the side talk takes the centre (his ask, 2026-10-11). */
-.room-minbtn { position:absolute; left:10px; top:12px; z-index:2; width:26px; height:26px; padding:0; border:0; border-radius:7px;
-  display:flex; align-items:center; justify-content:center; background:none; color:var(--c-ink-4); cursor:pointer; }
+.room-minbtn { position:absolute; left:10px; top:10px; z-index:2; width:30px; height:30px; padding:0; border:1px solid color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 45%, transparent); border-radius:8px;
+  display:flex; align-items:center; justify-content:center; background:none; color:var(--c-kept-echo, var(--c-accent)); cursor:pointer; }
 .room-minbtn[hidden] { display:none; }
 .room-minbtn:hover { color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
-.room-minbtn svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
+.room-minbtn svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 .room-cards-pullwrap { flex:0 0 0; width:0; position:relative; z-index:calc(var(--z-panel) + 2); }
 /* The Library's edge (his pick B, 2026-10-11). Shut, it is a gold line down the
    right side of the screen: the mouse arriving there slides the Library in, a
@@ -6426,7 +6426,7 @@ button:active { transform: translateY(1px) scale(.99); }
              the pane to read; clicking it opens the Room for good. -->
         <button type="button" class="room-fold-rib" id="roomFoldRib" aria-label="Open the Room again"><span id="roomFoldName"></span></button>
         <div class="tv-toolbar room-toolbar">
-          <button type="button" class="room-minbtn" id="roomMinBtn" title="Minimize this conversation" aria-label="Minimize this conversation" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9"/></svg></button>
+          <button type="button" class="room-minbtn" id="roomMinBtn" title="Fold this conversation away — the side talk takes the screen" aria-label="Fold this conversation away" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2"/><path d="M6 2.5v11M11 6l-2 2 2 2"/></svg></button>
           <button type="button" class="room-titlebtn" id="roomTitleBtn" aria-haspopup="menu" title="Everything about this conversation">
             <span class="arch-title" id="roomTitle"></span>
             <span class="room-titlechev" aria-hidden="true">▾</span>
