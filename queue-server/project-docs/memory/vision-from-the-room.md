@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Deterrence is the fundamental physics of boundaries across all scales, establishing perimeters and signalling costs.
+
+Deterrence is not merely a military strategy; it is the evolutionary algorithm by which any system—whether a terrified child, a street gang, an intelligence agency, or a sovereign nation—establishes its perimeter and attempts to signal to potential aggressors that the cost of crossing will exceed their capacity to pay. When the signal fails, war ensues; when it is unevenly applied, it breeds impunity.
+
 ## The industrial-commercial complex of legal firearms manufacturing directly feeds domestic micro-nations and transnational cartels.
 
 Domestic crime is not an isolated cultural pathology; it is integrated into the broader American capitalist apparatus where the same logistical pipelines supply foreign interventions and local street wars alike.
