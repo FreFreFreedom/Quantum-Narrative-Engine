@@ -1710,6 +1710,7 @@ export async function generateTextStream({
         id: c.id || `call_${round}_${i}`,
         type: 'function',
         function: { name: c.name, arguments: JSON.stringify(c.input || {}) },
+        ...(c.extra_content ? { extra_content: c.extra_content } : {}),
       })),
     });
     for (const [i, c] of calls.entries()) {

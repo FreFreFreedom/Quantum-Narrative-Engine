@@ -318,7 +318,7 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
       if (!acc.name) continue;
       let input = {};
       try { input = JSON.parse(acc.args || '{}'); } catch { input = {}; }
-      pending.push({ type: 'tool_use', tool: { id: acc.id, name: acc.name, input }, sessionId });
+      pending.push({ type: 'tool_use', tool: { id: acc.id, name: acc.name, input, ...(acc.extra_content ? { extra_content: acc.extra_content } : {}) }, sessionId });
     }
     toolAcc.clear();
   }
@@ -360,6 +360,9 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
         if (tc.id) acc.id = tc.id;
         if (tc.function?.name) acc.name += tc.function.name;
         if (tc.function?.arguments) acc.args += tc.function.arguments;
+        // Gemini's thought_signature must go back with the call on the next round,
+        // or Google refuses it (400) — the same rule as the non-streamed path.
+        if (tc.extra_content) acc.extra_content = tc.extra_content;
       }
     }
     if (delta.content) {

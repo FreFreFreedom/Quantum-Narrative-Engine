@@ -3282,6 +3282,17 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-side-titletext { min-width:0; text-align:center; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
   font:500 clamp(12px, 3.1cqw, 16px)/1.35 'Cinzel', var(--font-read); letter-spacing:clamp(.05em, .45cqw, .12em); text-transform:uppercase;
   color:var(--c-kept-echo, var(--c-accent)); overflow-wrap:anywhere; }
+.room-side-headrow { position:relative; flex:none; display:flex; align-items:flex-start; gap:2px; }
+.room-side-headrow > .room-side-title { flex:1; min-width:0; }
+.room-side-pin, .room-side-wide { flex:none; width:26px; height:26px; margin-top:2px; padding:0; border:0; border-radius:7px; background:none; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; color:var(--c-ink-4); }
+.room-side-pin:hover, .room-side-wide:hover { color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
+.room-side-pin svg, .room-side-wide svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+/* The lock shows only while the panel floats; kept or centred, it is already in place. */
+.room-side-pin { visibility:hidden; }
+.room-cards.collapsed.peek .room-side-pin { visibility:visible; color:var(--c-kept-echo, var(--c-accent)); }
+.room-side-wide .i-narrow, #wsRoom.room-folded .room-side-wide .i-wide { display:none; }
+#wsRoom.room-folded .room-side-wide .i-narrow { display:block; }
 .room-side-title .room-titlecopy { margin-left:0; }
 .room-side-title:hover .room-titlecopy { opacity:.7; }
 .room-side-title .room-titlecopy:hover { opacity:1; }
@@ -15672,8 +15683,14 @@ function initRoom() {
   // up for good and the mouse leaving did nothing at all.
   const peekHeldByTyping = (z) => {
     const a = document.activeElement;
-    return !!a && z.panel.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName || '');
+    return !!a && z.panel.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName || '');
   };
+  // A model list (a native select) opens outside the panel's box, so the panel
+  // used to shut the moment he reached into it. Held while it is open; let go of
+  // once a choice is made, so it does not hold the panel up for good.
+  zones.forEach((z) => z.panel.addEventListener('change', (ev) => {
+    if (ev.target && ev.target.tagName === 'SELECT') setTimeout(() => ev.target.blur(), 0);
+  }));
   // Where the pointer actually is, rather than where the last event said it went.
   // `mouseleave` fires on the way to a child in some layouts, and a menu opened from
   // inside the panel sits outside it in the DOM — the hit test answers both.
@@ -17978,10 +17995,16 @@ function renderRoomSide() {
     head = '<input class="room-side-rename searchbox" maxlength="120" aria-label="Name this aside">';
   } else if (open) {
     const name = roomSideName(open);
-    head = '<button type="button" class="room-side-title" aria-haspopup="menu" title="' + qEscAttr(name) + '">'
+    // Lock the floating panel in place, and give the side talk the whole screen
+    // (his ask, 2026-10-14): both sit on the talk's own name row.
+    head = '<div class="room-side-headrow">'
+      + '<button type="button" class="room-side-pin" title="Keep this panel open" aria-label="Keep this panel open"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></button>'
+      + '<button type="button" class="room-side-title" aria-haspopup="menu" title="' + qEscAttr(name) + '">'
       + '<span class="room-side-titletext">' + qEsc(name) + '</span>'
       + '<span class="room-titlecopy" role="button" title="Copy the title" aria-label="Copy the title">⧉</span>'
-      + '</button>';
+      + '</button>'
+      + '<button type="button" class="room-side-wide" title="Whole screen for this side talk" aria-label="Whole screen for this side talk"><svg class="i-wide" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5L9 7M2.5 13.5L7 9"/></svg><svg class="i-narrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M13 7H9V3M3 9h4v4M9 7l4.5-4.5M7 9l-4.5 4.5"/></svg></button>'
+      + '</div>';
   }
   if (!open) {
     // Indented by depth, so an aside of an aside sits under the one it came out of.
@@ -18020,6 +18043,21 @@ function renderRoomSide() {
   if (reuse) host.querySelector('#roomSideEmbed').replaceWith(previous);
   if (typeof applyRoomFold === 'function') applyRoomFold();
 
+  const pinBtn = host.querySelector('.room-side-pin');
+  if (pinBtn) pinBtn.onclick = (ev) => {
+    ev.stopPropagation();
+    const cardsEl = document.getElementById('roomCards');
+    const pull = document.getElementById('roomCardsBtn');
+    if (cardsEl && pull && cardsEl.classList.contains('peek')) pull.click();
+  };
+  const wideBtn = host.querySelector('.room-side-wide');
+  if (wideBtn) wideBtn.onclick = (ev) => {
+    ev.stopPropagation();
+    const ws = document.getElementById('wsRoom');
+    if (ws && ws.classList.contains('room-folded')) { roomUnfold(); return; }
+    roomFoldSuppressed = false;
+    applyRoomFold();
+  };
   const titleBtn = host.querySelector('.room-side-title');
   if (titleBtn) titleBtn.onclick = (ev) => {
     ev.stopPropagation();
