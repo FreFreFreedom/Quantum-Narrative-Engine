@@ -19961,8 +19961,9 @@ document.addEventListener('dragstart', (ev) => {
 // A cover or a title in an answer drags the same way (his ask, 2026-10-09). It has
 // no Library id, so it travels as what it is and the server finds it by title.
 document.addEventListener('dragstart', (ev) => {
-  const btn = ev.target && ev.target.closest && ev.target.closest('.se-cover, .se-work, .se-card-film');
-  const d = btn && btn.querySelector('[data-cover-title]');
+  // The big cover of an open book card drags too (his ask, 2026-10-15).
+  const btn = ev.target && ev.target.closest && ev.target.closest('.se-cover, .se-work, .se-card-film, .k5-cover[data-cover-title]');
+  const d = btn && (btn.matches('[data-cover-title]') ? btn : btn.querySelector('[data-cover-title]'));
   if (!d || !ev.dataTransfer) return;
   const w = d.dataset, art = (d.style.backgroundImage.match(/url\("?(https:[^")]+)/) || [])[1] || '';
   const label = libDragText({ title: w.coverTitle, creator: w.coverCreator, raw: { kind: w.coverKind, year: w.coverYear, episode: w.coverEpisode } });
@@ -35948,7 +35949,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var bg = /^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '';
       // His pick K5 (2026-10-11): the cover fills the card's left edge and the rest
       // stands beside it, so the reading starts without a scroll.
-      return '<div class="k5"><span class="bk-cover k5-cover"' + bg + '></span><div class="k5-body">'
+      return '<div class="k5"><span class="bk-cover k5-cover" draggable="true" data-cover-kind="' + qEscAttr(kind) + '" data-cover-title="' + qEscAttr(d.coverTitle || '') + '" data-cover-creator="' + qEscAttr(who) + '" data-cover-year="' + qEscAttr(f.year || d.coverYear || '') + '" data-cover-episode=""' + bg + '></span><div class="k5-body">'
         + (f.fiction ? '<div class="se-card-band">' + qEsc(f.fiction) + (f.genre ? ' · ' + qEsc(f.genre) : '') + '</div>' : '')
         + '<div class="bk-head is-pop is-k5">'
         + '<div class="bk-id"><b class="se-card-title">' + qEsc(fullHead) + '</b>'
@@ -36143,7 +36144,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           return (f.works && f.works.length && f.screen && f.screen.length ? '<h6>' + row[1] + '</h6>' : '') + '<div class="se-card-screen">' + list.map(function(x){
             var it = { kind: x.kind || 'film', title: x.title, creator: row[0] === 'works' ? who : '', year: x.year || '' };
             var ky = roomMediaArtKey(it), a = roomMediaArtCache.get(ky) || '';
-            return '<button type="button" class="se-cover se-screen" title="' + qEscAttr(x.title + (x.note ? ' — ' + x.note : '')) + '" data-convo="' + qEscAttr(d.convo || '') + '">'
+            return '<button type="button" class="se-cover se-screen" draggable="true" title="' + qEscAttr(x.title + (x.note ? ' — ' + x.note : '')) + '" data-convo="' + qEscAttr(d.convo || '') + '">'
               + '<span data-cover-art="' + qEscAttr(ky) + '" data-cover-kind="' + qEscAttr(it.kind) + '" data-cover-title="' + qEscAttr(x.title) + '" data-cover-creator="' + qEscAttr(it.creator) + '" data-cover-year="' + qEscAttr(it.year) + '"'
               + (/^https:\/\//.test(a) ? ' style="background-image:url(&quot;' + qEscAttr(a) + '&quot;)"' : '') + '>' + (a ? '' : qEsc(libShortTitle(x.title))) + '</span>'
               + '<span class="se-screen-name">' + qEsc(x.title) + (x.year ? ' <i>' + qEsc(x.year) + '</i>' : '') + '</span></button>';
