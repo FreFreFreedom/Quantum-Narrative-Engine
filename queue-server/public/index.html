@@ -2565,9 +2565,9 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-cards-close svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 .room-cards.collapsed.peek .room-cards-close { display:none; }
 /* Floating, the Library gets a lock in place of the close (his ask, 2026-10-14). */
-.room-cards-pin { display:none; margin-left:auto; flex:none; width:26px; height:26px; padding:0; border:0; border-radius:7px; background:none; cursor:pointer;
+.room-tabs .room-cards-pin { display:none; margin-left:auto; flex:none; width:26px; height:26px; padding:0; border:0; border-radius:7px; background:none; cursor:pointer;
   align-items:center; justify-content:center; color:var(--c-kept-echo, var(--c-accent)); }
-.room-cards.collapsed.peek .room-cards-pin { display:inline-flex; }
+.room-cards.collapsed.peek .room-tabs .room-cards-pin { display:inline-flex; }
 .room-cards-pin:hover { background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
 .room-cards-pin svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
 .room-cards-pull:hover::before { background:var(--c-kept-echo, var(--c-accent)); opacity:.9; }
