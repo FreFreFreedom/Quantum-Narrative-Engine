@@ -1,7 +1,7 @@
 // Mounted at /api/screen — the dictionary for whatever he is watching, called by
 // the Edge extension over the same token login the QNE extension already uses.
 import { Router } from 'express';
-import { lookupOnScreen, glossaryOnScreen, episodeGlossary } from '../services/showLookup.js';
+import { lookupOnScreen, glossaryOnScreen, episodeGlossary, askOnScreen } from '../services/showLookup.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function showLookupRoutes() {
@@ -16,6 +16,14 @@ export function showLookupRoutes() {
       reading: req.body?.reading === true,
     });
     if (out.error) return res.status(out.error === 'not_a_word' ? 400 : 500).json(out);
+    res.json(out);
+  }));
+
+  // { term, show, line, meaning, question, turns, reading } — the card's "Ask…".
+  router.post('/ask', asyncHandler(async (req, res) => {
+    const b = req.body || {};
+    const out = await askOnScreen({ term: b.term, show: b.show, line: b.line, meaning: b.meaning, question: b.question, turns: b.turns || [], reading: b.reading === true });
+    if (out.error) return res.status(out.error === 'empty' ? 400 : 500).json(out);
     res.json(out);
   }));
 

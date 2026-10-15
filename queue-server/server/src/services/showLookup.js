@@ -354,3 +354,26 @@ export async function episodeGlossary({ key = '', show = '', transcript = '' } =
   }
   return { ok: true, terms };
 }
+
+// A question about a meaning, asked in its card — the Room's "Ask…", for a page, a PDF
+// or a show (2026-10-15). Nothing is kept: the card holds the little thread.
+export async function askOnScreen({ term = '', show = '', line = '', meaning = '', question = '', turns = [], reading = false } = {}) {
+  term = String(term).trim().slice(0, 600); question = String(question).trim().slice(0, 1000);
+  if (!term || !question) return { error: 'empty' };
+  const earlier = (Array.isArray(turns) ? turns : []).slice(-6)
+    .map((t) => 'HE ASKED: ' + String(t?.q || '').slice(0, 600) + '\nANSWER: ' + String(t?.a || '').slice(0, 800)).join('\n');
+  const prompt = `He is ${reading ? 'reading' : 'watching'}${show ? ` "${String(show).slice(0, 200)}"` : ''} and selected "${term}".`
+    + (line ? `\n=== ${reading ? 'THE TEXT AROUND IT' : 'THE DIALOGUE JUST NOW'} ===\n${String(line).slice(0, 1500)}` : '')
+    + (meaning ? `\nWhat it was said to mean: ${String(meaning).slice(0, 1500)}` : '')
+    + (earlier ? `\n\n=== WHAT HE ASKED ABOUT IT SO FAR ===\n${earlier}` : '')
+    + `\n\n=== HIS QUESTION ===\n${question}\n\nAnswer in two to four short sentences. Plain simple English, his second language.
+Facts must be right: a record, a date, a number you are not certain of is never guessed — say "I'm not sure" for that part.
+Plain text, no bold, no preamble.`;
+  let out = null;
+  if (!router.isExhausted('google-ai-studio', 'gemini-flash-lite-latest')) {
+    out = await generateTextDirect({ prompt, provider: 'google-ai-studio', model: 'gemini-flash-lite-latest', maxTokens: 900, label: 'screen:ask', timeoutMs: 20_000 }).catch(() => null);
+  }
+  if (!out || !out.text) out = await generateText({ prompt, feature: 'quick', label: 'screen:ask', maxTokens: 900, timeoutMs: 45_000 }).catch(() => null);
+  const answer = String(out?.text || '').trim();
+  return answer ? { answer } : { error: 'generation_failed' };
+}
