@@ -7,12 +7,13 @@ import { asyncHandler } from '../lib/asyncHandler.js';
 export function showLookupRoutes() {
   const router = Router();
 
-  // { show, term, line }
+  // { show, term, line, reading } — reading: a page or a PDF rather than a paused show
   router.post('/lookup', asyncHandler(async (req, res) => {
     const out = await lookupOnScreen({
       show: req.body?.show || '',
       term: req.body?.term || '',
       line: req.body?.line || '',
+      reading: req.body?.reading === true,
     });
     if (out.error) return res.status(out.error === 'not_a_word' ? 400 : 500).json(out);
     res.json(out);

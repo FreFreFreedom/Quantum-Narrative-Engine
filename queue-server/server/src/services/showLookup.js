@@ -95,11 +95,24 @@ that thing is or does and why it matters here.
 ${COMMON}
 Answer with JSON only, no markdown fence: {"expansion":"…","text":"…"}`;
 
-function context({ show, line }) {
+function context({ show, line, reading = false }) {
   const s = String(show || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   const l = String(line || '').replace(/\s+/g, ' ').trim().slice(0, 1200);
-  return (s ? `\n\n=== WHAT HE IS WATCHING ===\n${s}` : '')
-    + (l ? `\n\n=== THE DIALOGUE JUST NOW ===\n${l}` : '');
+  return (s ? `\n\n=== WHAT HE IS ${reading ? 'READING' : 'WATCHING'} ===\n${s}` : '')
+    + (l ? `\n\n=== ${reading ? 'THE TEXT AROUND IT' : 'THE DIALOGUE JUST NOW'} ===\n${l}` : '');
+}
+
+// The same dictionary away from the player (2026-10-15): any web page, a PDF, any
+// Mac app. The prompts were written for a paused show, so for reading they are
+// turned to a page — what it means in THIS text, not on screen — and nothing else changes.
+function forReading(prompt) {
+  return prompt
+    .replace(/You explain the jargon of what someone is watching, while it is paused\./, 'You explain the jargon of what someone is reading.')
+    .replace(/He heard this by ear while watching, so it may be spelled wrong or run two words together:\nanswer the thing he actually heard rather than correcting him\. /, '')
+    .replace(/from the dialogue/g, 'from the text')
+    .replace(/in THIS show and (in )?what is being said\s+right\s+now — what the people on screen are doing or referring to when they say it/g, 'in THIS text — what the writer is doing or referring to with it')
+    .replace(/in THIS show/g, 'in THIS text')
+    .replace(/why it matters here/g, 'why it matters in this text');
 }
 
 const GIST_WORDS = 15;
@@ -131,21 +144,22 @@ function cacheKey(show, term) {
     String(term || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 200)];
 }
 
-export async function lookupOnScreen({ show = '', term = '', line = '' } = {}) {
+export async function lookupOnScreen({ show = '', term = '', line = '', reading = false } = {}) {
   const raw = String(term || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   if (!raw) return { error: 'not_a_word' };
   if (!/[A-Za-z]/.test(raw)) return { error: 'not_a_word' };
   const words = raw.split(' ').filter(Boolean).length;
   const acronym = words === 1 && isAcronym(raw);
-  const [showKey, termKey] = cacheKey(show, raw);
+  const [showKey, termKey] = cacheKey((reading ? 'read: ' : '') + show, raw);
 
   if (db) {
     const hit = db.prepare('SELECT text, expansion FROM show_lookups WHERE show=? AND term=?').get(showKey, termKey);
     if (hit && hit.text) return { ok: true, text: hit.text, expansion: hit.expansion || undefined, cached: true };
   }
 
-  const prompt = (acronym ? ACRONYM_PROMPT : words === 1 ? WORD_PROMPT : PHRASE_PROMPT)
-    + `\n\n=== WHAT HE ASKED ABOUT ===\n${raw}` + context({ show, line });
+  const base = acronym ? ACRONYM_PROMPT : words === 1 ? WORD_PROMPT : PHRASE_PROMPT;
+  const prompt = (reading ? forReading(base) : base)
+    + `\n\n=== WHAT HE ASKED ABOUT ===\n${raw}` + context({ show, line, reading });
   const out = await quickText(prompt);
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
 
