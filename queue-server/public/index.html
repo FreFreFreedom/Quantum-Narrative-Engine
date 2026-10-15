@@ -2564,6 +2564,12 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-cards-close:hover { color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
 .room-cards-close svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 .room-cards.collapsed.peek .room-cards-close { display:none; }
+/* Floating, the Library gets a lock in place of the close (his ask, 2026-10-14). */
+.room-cards-pin { display:none; margin-left:auto; flex:none; width:26px; height:26px; padding:0; border:0; border-radius:7px; background:none; cursor:pointer;
+  align-items:center; justify-content:center; color:var(--c-kept-echo, var(--c-accent)); }
+.room-cards.collapsed.peek .room-cards-pin { display:inline-flex; }
+.room-cards-pin:hover { background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
+.room-cards-pin svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
 .room-cards-pull:hover::before { background:var(--c-kept-echo, var(--c-accent)); opacity:.9; }
 .room-cards-pull[aria-expanded="false"]::before { right:0; top:0; height:100%; transform:none; border-radius:0;
   background:linear-gradient(var(--c-kept-echo, var(--c-accent)), color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 25%, transparent)); opacity:.6; }
@@ -6457,6 +6463,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
           <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
+          <button type="button" class="room-cards-pin" id="roomCardsPin" title="Keep the Library open" aria-label="Keep the Library open"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></button>
           <button type="button" class="room-cards-close" id="roomCardsClose" title="Close the Library" aria-label="Close the Library"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3.5L8.5 8 4 12.5M8.5 3.5L13 8l-4.5 4.5"/></svg></button>
         </div>
         <div class="room-pane room-attached is-active" id="roomAttached">
@@ -15607,6 +15614,8 @@ function initRoom() {
   ].filter(z => z.panel && z.btn);
   const zoneOf = (panel) => zones.find(z => z.panel === panel) || null;
   const cardsClose = document.getElementById('roomCardsClose');
+  const cardsPin = document.getElementById('roomCardsPin');
+  if (cardsPin) cardsPin.onclick = (e) => { e.stopPropagation(); const z = zoneOf(cards); if (z && !zoneIsKept(z)) toggleZone(z); };
   if (cardsClose) cardsClose.onclick = (e) => { e.stopPropagation(); const z = zoneOf(cards); if (z && zoneIsKept(z)) z.btn.click(); };
   // "Kept open" is not the same question on the two layouts: wide, the panel is a
   // column that is open unless collapsed; narrow, it is an overlay that is shut
