@@ -2552,12 +2552,14 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-minbtn:hover { color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
 .room-minbtn svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 .room-cards-pullwrap { flex:0 0 0; width:0; position:relative; z-index:calc(var(--z-panel) + 2); }
-/* The Library's edge (his pick B, 2026-10-11). Shut, it is a gold line down the
-   right side of the screen: the mouse arriving there slides the Library in, a
-   click keeps it. Open, the same edge on its left border shuts it. */
-.room-cards-pull { position:absolute; right:0; top:0; bottom:0; width:10px; padding:0; margin:0; border:0; background:none; cursor:pointer; }
-.room-cards-pull::before { content:''; position:absolute; right:3px; top:50%; width:3px; height:44px; transform:translateY(-50%); border-radius:2px;
-  background:var(--c-ink-5); opacity:.35; transition:opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease), height var(--t-med) var(--ease); }
+/* The Library's button (his pick C, 2026-10-15): a book at the top right of the
+   conversation, sitting on the Library's left edge so it travels with the column.
+   Click only — the old gold edge opened on hover and kept opening by accident. */
+.room-cards-pull { position:absolute; right:10px; top:12px; width:30px; height:30px; padding:0; margin:0; border:0; border-radius:8px; background:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; color:var(--c-ink-4); transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
+.room-cards-pull svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.room-cards-pull:hover { color:var(--c-kept-echo, var(--c-accent)); background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
+.room-cards-pull[aria-expanded="true"] { color:var(--c-kept-echo, var(--c-accent)); }
 .room-cards-pull:disabled { display:none; }
 .room-cards-close { margin-left:auto; flex:none; width:26px; height:26px; padding:0; border:0; border-radius:7px; background:none; cursor:pointer;
   display:inline-flex; align-items:center; justify-content:center; color:var(--c-ink-4); }
@@ -2570,11 +2572,6 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-cards.collapsed.peek .room-tabs .room-cards-pin { display:inline-flex; }
 .room-cards-pin:hover { background:color-mix(in srgb, var(--c-ink) 6%, transparent); }
 .room-cards-pin svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
-.room-cards-pull:hover::before { background:var(--c-kept-echo, var(--c-accent)); opacity:.9; }
-.room-cards-pull[aria-expanded="false"]::before { right:0; top:0; height:100%; transform:none; border-radius:0;
-  background:linear-gradient(var(--c-kept-echo, var(--c-accent)), color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 25%, transparent)); opacity:.6; }
-.room-cards-pull[aria-expanded="false"]:hover::before { opacity:1; }
-.ws-room:has(.room-cards.peek) .room-cards-pull::before { opacity:0; }
 .room-threads.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-right-color:transparent; }
 .room-cards.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-left-color:transparent; }
 /* Peeked: hovering either toolbar button floats its panel over the conversation
@@ -6448,7 +6445,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <div class="room-sidecol" id="roomSideCol"></div>
       <!-- The Library's own tab, on its left edge: it travels with the column, so
            the control is always next to what it opens (his ask, 2026-10-11). -->
-      <div class="room-cards-pullwrap"><button type="button" class="room-cards-pull" id="roomCardsBtn" title="Library" aria-label="Show or hide the Library" aria-expanded="true"></button></div>
+      <div class="room-cards-pullwrap"><button type="button" class="room-cards-pull" id="roomCardsBtn" title="Library" aria-label="Show or hide the Library" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5C5.5 4.3 8.8 4.3 12 6c3.2-1.7 6.5-1.7 9-.5V19c-2.5-1.2-5.8-1.2-9 .5-3.2-1.7-6.5-1.7-9-.5z"/><path d="M12 6v13.5"/></svg></button></div>
       <div class="room-cards" id="roomCards">
         <div class="side-resize side-resize--left" id="roomCardsResize" title="Drag to resize"></div>
         <!-- One column, five things in it. They used to be five stacked sections,
@@ -15767,10 +15764,14 @@ function initRoom() {
       // (e.detail === 0) keeps its place, as it does on the rail.
       if (e.detail) z.btn.blur();
     };
-    z.btn.addEventListener('mouseenter', () => peekZone(z));
-    z.btn.addEventListener('mouseleave', () => unpeekSoon(z));
-    z.btn.addEventListener('focus', () => peekZone(z));
-    z.btn.addEventListener('blur', () => unpeekSoon(z));
+    // The Library opens on a click only: a hover on its button kept opening it
+    // by accident (his ask, 2026-10-15).
+    if (z.panel !== cards) {
+      z.btn.addEventListener('mouseenter', () => peekZone(z));
+      z.btn.addEventListener('mouseleave', () => unpeekSoon(z));
+      z.btn.addEventListener('focus', () => peekZone(z));
+      z.btn.addEventListener('blur', () => unpeekSoon(z));
+    }
     // Reaching from the button into the panel must not close it on the way.
     z.panel.addEventListener('mouseenter', () => stopPeekTimer(z));
     z.panel.addEventListener('mouseleave', () => unpeekSoon(z));
