@@ -11,6 +11,18 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The industrial-commercial complex of legal firearms manufacturing directly feeds domestic micro-nations and transnational cartels.
+
+Domestic crime is not an isolated cultural pathology; it is integrated into the broader American capitalist apparatus where the same logistical pipelines supply foreign interventions and local street wars alike.
+
+## Inner-city violence is sustained by an institutional vacuum characterized by localized zones of impunity where the state fails to protect human life.
+
+As Jill Leovy diagnoses in Ghettoside, when the state suspends its basic function of protecting life and investigating murder within marginalized populations, communities are left to fend for themselves, causing local gangs to emerge as de facto sovereigns.
+
+## The structural algorithm of street gangs is identical to that of state military forces and child soldier units.
+
+When examined without cultural bias or sensationalism, street gangs operate under the exact same psychological conditioning, hyper-vigilance, tribal initiation, and desensitization to violence as elite infantry units or state-sponsored child soldiers.
+
 ## Structure functions as a tool for liberation rather than a constraint.
 
 - The concept that structure can act as a tool for liberation instead of a prison
