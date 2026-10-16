@@ -47,4 +47,5 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: The trap mistaken for home — side talk of Comparative politics across structural scales — notes/the-trap-mistaken-for-home-side-talk-of-comparative-politics-across-structural-s.md
 - Note: Trauma and the Conspiratorial Mindset — notes/trauma-and-the-conspiratorial-mindset.md
 - Note: over 1,000 hours of riding shotgun in patrol cars. — side talk of American Justice: Institutional Power and Systemic Failure — notes/over-1-000-hours-of-riding-shotgun-in-patrol-cars-side-talk-of-american-justice-.md
+- Note: the radicalized militias and extremist factions that ulti… — side talk of Street gangs and insurgencies: parallel demonization — notes/the-radicalized-militias-and-extremist-factions-that-ulti-side-talk-of-street-ga.md
 - Note: the vertical axis of military leadership — side talk of Military Leadership Bibliography for Scaling Statecraft — notes/the-vertical-axis-of-military-leadership-side-talk-of-military-leadership-biblio.md
