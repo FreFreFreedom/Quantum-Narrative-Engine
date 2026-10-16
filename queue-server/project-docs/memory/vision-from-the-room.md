@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The sovereign state demonizes insurgencies, cartels, and gangs as alien monsters to absolve itself of complicity in generating the conditions that birthed them.
+
+The mechanism of demonization is the state's primary defense against its own structural violence. By framing localized or international resistance as inherent evil rather than an emergent organ of survival in an institutional vacuum, the state hides its role in creating the vacuum.
+
 ## Deterrence is the fundamental physics of boundaries across all scales, establishing perimeters and signalling costs.
 
 Deterrence is not merely a military strategy; it is the evolutionary algorithm by which any system—whether a terrified child, a street gang, an intelligence agency, or a sovereign nation—establishes its perimeter and attempts to signal to potential aggressors that the cost of crossing will exceed their capacity to pay. When the signal fails, war ensues; when it is unevenly applied, it breeds impunity.
