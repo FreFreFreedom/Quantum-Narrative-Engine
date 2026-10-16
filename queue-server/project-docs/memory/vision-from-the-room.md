@@ -11,6 +11,13 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The feedback loop where intervention creates the violent opposition it attempts to suppress recurs fractally across scales, from geopolitical conflicts to street gangs and cartels.
+
+A single self-reinforcing pattern operates across vastly different magnitudes:
+- Macro level: Large-scale interventions and institutional breakdown create the conditions, grievances, and vacuums that cultivate violent extremist movements, which the intervening forces then fight.
+- Meso and local levels: The same structural loop reproduces in domestic security and enforcement, where aggressive crackdowns inadvertently organize, harden, and sustain street gangs and organized drug syndicates.
+- The core observation is that the dynamic is scale-invariant: external coercive force repeatedly generates and fuels the very non-state violence it aims to extinguish.
+
 ## The sovereign state demonizes insurgencies, cartels, and gangs as alien monsters to absolve itself of complicity in generating the conditions that birthed them.
 
 The mechanism of demonization is the state's primary defense against its own structural violence. By framing localized or international resistance as inherent evil rather than an emergent organ of survival in an institutional vacuum, the state hides its role in creating the vacuum.
