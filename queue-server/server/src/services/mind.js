@@ -1002,6 +1002,30 @@ function parseTeach(text) {
   return { reply: String(o.reply || '').trim().slice(0, 300), items, question: q && q.options.length >= 2 ? q : null };
 }
 
+// Asked directly, one try each: the shared text call retries Flash through its
+// busy answers (503, 429 — often, at night) until the timeout, and a Teach turn
+// took half a minute (2026-10-18). Flash with its thinking capped first, then
+// Flash-Lite at once, both short.
+async function teachAsk(prompt) {
+  const key = process.env.GOOGLE_AI_STUDIO_API_KEY;
+  if (!key) return geminiText({ maxTokens: 3000, timeoutMs: 30_000, label: 'mind:teach', prompt });
+  let error = 'no_answer';
+  for (const [model, thinking] of [['gemini-flash-latest', { thinkingBudget: 512 }], ['gemini-flash-lite-latest', null]]) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+        method: 'POST', signal: AbortSignal.timeout(15_000), headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 3000, ...(thinking ? { thinkingConfig: thinking } : {}) } }),
+      });
+      const d = await r.json();
+      const text = (d.candidates?.[0]?.content?.parts || []).filter((x) => !x.thought).map((x) => x.text || '').join('');
+      if (text.trim()) return { text };
+      error = `${model}:${r.status}`;
+    } catch (e) { error = `${model}:${e.name}`; }
+  }
+  console.warn('[mind:teach]', error);
+  return { text: '', error };
+}
+
 export async function teachTurn({ passage = '', turns = [] } = {}) {
   const p = String(passage || '').replace(/\s+/g, ' ').trim().slice(0, 3000);
   const t = (Array.isArray(turns) ? turns : []).slice(-12).filter((x) => x && String(x.text || '').trim());
@@ -1012,7 +1036,7 @@ export async function teachTurn({ passage = '', turns = [] } = {}) {
     // Gemini, always — his pick (2026-10-01), same as the conversation records.
     // A Teach reply is short and comes back in seconds; a hung Flash once held the
     // box spinning for minutes (2026-10-15), so give up fast and let Flash-Lite answer.
-    const res = await geminiText({ maxTokens: 3000, timeoutMs: 30_000, label: 'mind:teach', prompt: teachPrompt({ passage: p, turns: t, avoid }) });
+    const res = await teachAsk(teachPrompt({ passage: p, turns: t, avoid }));
     if (!String(res?.text || '').trim()) return { error: res?.error || 'no_answer' };
     const out = parseTeach(res.text);
     if (!out) continue;
