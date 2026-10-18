@@ -76,9 +76,9 @@ export function bindBookFacts(database) {
     }
     // Stars searched by ISBN on the first evening (2026-10-17), some from a minor
     // edition: dropped once so the title search reads them again.
-    if (!db.prepare("SELECT 1 FROM book_facts_marks WHERE name='stars-by-title'").get()) {
+    if (!db.prepare("SELECT 1 FROM book_facts_marks WHERE name='stars-by-title-2'").get()) {
       db.exec("DELETE FROM book_stars WHERE updated_at >= '2026-10-18 02:30:00'");
-      db.exec("INSERT INTO book_facts_marks (name) VALUES ('stars-by-title')");
+      db.exec("INSERT INTO book_facts_marks (name) VALUES ('stars-by-title-2')");
     }
   } catch (err) { /* next boot */ }
 }
@@ -117,7 +117,8 @@ export async function amazonStarsFor(title, creator = '', isbn = '') {
   if (!got && isbn) got = await fetchAmazonStars({ title: shopClean(title), creator, isbn });
   if (got?.blocked) {
     const why = got.status || got.error || 'robot check';
-    got = await runAmazonStarsProbe({ title: shopClean(title), creator, isbn }).catch(() => null);
+    got = await runAmazonStarsProbe({ title: shopClean(title), creator }).catch(() => null);
+    if (!got && isbn) got = await runAmazonStarsProbe({ title: shopClean(title), creator, isbn }).catch(() => null);
     if (!got) { console.warn(`[amazon-stars] refused for "${title}" (${why}), and the Mac did not answer`); starsMissedAt.set(k, Date.now() - 23 * 3600000); return null; }
   }
   if (!got) return null;
