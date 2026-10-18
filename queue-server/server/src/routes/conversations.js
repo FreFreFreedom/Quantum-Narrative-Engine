@@ -186,9 +186,10 @@ export function conversationsRoutes() {
     const facts = it.kind === 'book'
       ? (await bookFacts.bookFactsFor(owner, [it])).x || {}
       : (await screen.screenFactsFor(owner, [it])).x || {};
-    const [note, genre] = await Promise.all([
+    const [note, genre, amz] = await Promise.all([
       workNote(req.params.id, { ...it, year: facts.year || it.year, overview: facts.overview || '' }, { refresh: req.query.refresh === '1' }),
       it.kind === 'book' ? bookGenre(it).catch(() => null) : null,
+      it.kind === 'book' ? bookFacts.amazonStarsFor(facts.fullTitle || it.title, it.creator, facts.isbn).catch(() => null) : null,
     ]);
     // What the book became on screen: only what the film catalogue really knows,
     // so a title the model half-remembers never shows up as a blank poster.
@@ -199,7 +200,7 @@ export function conversationsRoutes() {
       onScreen = genre.screen.map((x, i) => ({ ...x, year: sf['s' + i]?.year || x.year, poster: sf['s' + i]?.poster || '' }))
         .filter((x, i) => sf['s' + i]?.poster);
     }
-    const st = it.kind === 'book' ? bookFacts.starsFor(facts.fullTitle || it.title) || bookFacts.starsFor(it.title) : null;
+    const st = it.kind === 'book' ? bookFacts.starsFor(facts.fullTitle || it.title) || bookFacts.starsFor(it.title) || amz : null;
     res.json({ ...facts, ...(st ? { stars: st.stars, starCount: st.count } : {}), note: note.text, author: it.kind === 'book' ? it.creator : '', fiction: genre?.fiction || '', genre: genre?.genre || '', screen: onScreen });
   }));
 
@@ -240,8 +241,12 @@ export function conversationsRoutes() {
     const refresh = req.query.refresh === '1';
     if (item.kind === 'book') {
       const facts = await bookFacts.bookFactsFor(owner, [item]);
-      const out = await bookFacts.bookRelevance(owner, item, { refresh });
-      return res.json({ ...(facts[item.id] || {}), ...out });
+      const f = facts[item.id] || {};
+      const [out, amz] = await Promise.all([
+        bookFacts.bookRelevance(owner, item, { refresh }),
+        f.stars ? null : bookFacts.amazonStarsFor(f.fullTitle || item.title, item.creator || '', f.isbn).catch(() => null),
+      ]);
+      return res.json({ ...f, ...(amz ? { stars: amz.stars, starCount: amz.count } : {}), ...out });
     }
     const facts = await screen.screenFactsFor(owner, [item]);
     const out = await screen.screenRelevance(owner, item, { refresh });
@@ -274,12 +279,12 @@ export function conversationsRoutes() {
 
   // One book's own panel: length, when it arrived, the passages kept from it,
   // how many conversations have named it.
-  router.get('/books/:id', (req, res) => {
+  router.get('/books/:id', asyncHandler(async (req, res) => {
     const out = shelf.bookDetail(req.user?.id || 'antoine', req.params.id);
     if (out.error) return res.status(statusFor(out.error)).json(out);
-    const st = bookFacts.starsFor(out.title);
+    const st = bookFacts.starsFor(out.title) || await bookFacts.amazonStarsFor(out.title, out.author || '').catch(() => null);
     res.json(st ? { ...out, stars: st.stars, starCount: st.count } : out);
-  });
+  }));
 
   // The two summaries — the publisher's, and what the book is doing here. The
   // second is one cheap model call, written once and then stored; ?refresh=1

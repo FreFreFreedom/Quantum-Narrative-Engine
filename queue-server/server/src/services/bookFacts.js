@@ -18,6 +18,7 @@ import { generateText } from './ai/text.js';
 import jpeg from 'jpeg-js';
 import { mindBlock } from './mind.js';
 import { catalogueIsbns } from './bookContents.js';
+import { fetchAmazonStars } from './amazonStars.js';
 
 let db = null;
 export function bindBookFacts(database) {
@@ -90,6 +91,25 @@ export function starsFor(title) {
   if (!db || !title) return null;
   try { const r = db.prepare('SELECT stars, count FROM book_stars WHERE key=?').get(starKey(title)); return r ? { stars: r.stars, count: r.count } : null; }
   catch (err) { return null; }
+}
+
+// A book whose page he never sent: its stars read off Amazon's search, once, and
+// kept like his own. A book Amazon has no rating for is asked again only after a
+// day; a refusal (Amazon's robot check) is logged so a silent card can be explained.
+const starsMissedAt = new Map();
+export async function amazonStarsFor(title, creator = '', isbn = '') {
+  if (!db || !title) return null;
+  const have = starsFor(title);
+  if (have) return have;
+  const k = starKey(title);
+  if (Date.now() - (starsMissedAt.get(k) || 0) < 24 * 3600000) return null;
+  starsMissedAt.set(k, Date.now());
+  let got = await fetchAmazonStars({ title: shopClean(title), creator, isbn });
+  if (!got && isbn) got = await fetchAmazonStars({ title: shopClean(title), creator });
+  if (got?.blocked) { console.warn(`[amazon-stars] refused for "${title}" (${got.status || got.error || 'robot check'})`); starsMissedAt.set(k, Date.now() - 23 * 3600000); return null; }
+  if (!got) return null;
+  saveStars(title, got.stars, got.count);
+  return { stars: got.stars, count: got.count };
 }
 
 // Bump this whenever the matching changes and old answers should be re-asked.
