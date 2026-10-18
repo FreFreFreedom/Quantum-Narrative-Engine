@@ -35518,7 +35518,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // never stacked into a column taller than the text beside it.
       if(perBlock[pl.bi] > 1){
         if(rowOf[pl.bi]){ rowOf[pl.bi].appendChild(btn); return; }
-        var row = document.createElement('div'); row.className = 'se-cover-row';
+        // A span, not a div: the answer is re-parsed from its HTML, and a div inside a
+        // <p> closes the paragraph there, leaving its words outside any block, so the
+        // chapter + read the whole paragraph as one gap and drew its line mid-text.
+        var row = document.createElement('span'); row.className = 'se-cover-row';
         row.appendChild(btn); rowOf[pl.bi] = row;
         btn = row; pl.at = 0;
       }
