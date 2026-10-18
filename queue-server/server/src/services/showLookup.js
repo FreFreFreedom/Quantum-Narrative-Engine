@@ -126,7 +126,11 @@ function forReading(prompt) {
     .replace(/from the dialogue/g, 'from the text')
     .replace(/in THIS show and (in )?what is being said\s+right\s+now — what the people on screen are doing or referring to when they say it/g, 'in THIS text — what the writer is doing or referring to with it')
     .replace(/in THIS show/g, 'in THIS text')
-    .replace(/why it matters here/g, 'why it matters in this text');
+    .replace(/why it matters here/g, 'why it matters in this text')
+    // Shorter on a page (his ask, 2026-10-18, reading Monster): a glance, not a gloss.
+    .replace(/about 16 words — never more than 22 —/g, 'about 10 words — never more than 14 —')
+    .replace(/at most 40 words in all/g, 'at most 25 words in all')
+    .replace(/Do not begin with the term itself,/, 'Do not begin with the term itself, nor with "It refers to" or "It means",');
 }
 
 const GIST_WORDS = 15;
@@ -166,7 +170,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const acronym = words === 1 && isAcronym(raw);
   // Reading: the passage is part of the key, so a word met in two senses is read twice,
   // and a word with no passage is never kept (those readings were guesses).
-  const [showKey, termKey] = cacheKey((reading ? 'read2: ' : '') + show, raw);
+  const [showKey, termKey] = cacheKey((reading ? 'read3: ' : '') + show, raw);
   const lineKey = reading ? createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10) : '';
   const keepIt = !reading || String(line || '').trim();
 
