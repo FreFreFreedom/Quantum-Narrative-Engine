@@ -17741,8 +17741,11 @@ setInterval(function () {
   const room = document.getElementById('wsRoom');
   if (room && room.offsetParent !== null && roomSel) {
     const tab = document.querySelector('#roomTabs [data-room-primary="side"]');
-    // Showing = centred (the Room folded to a rib) or open in its own tab.
-    const shown = room.classList.contains('room-folded') || (tab && tab.classList.contains('active'));
+    // Showing = actually on screen: a selected tab inside a collapsed column is 0px
+    // wide, and still counting it named the tab after an aside he could not see.
+    const pane = document.getElementById('roomSide');
+    const shown = !!pane && pane.getBoundingClientRect().width > 40
+      && (room.classList.contains('room-folded') || (tab && tab.classList.contains('active')));
     const side = roomSideOpenId && shown ? roomSideOf(roomSideOpenId) : null;
     const th = roomThreads.find((x) => x.id === roomSel);
     t = (side && roomSideName(side)) || (th && th.title) || t;
