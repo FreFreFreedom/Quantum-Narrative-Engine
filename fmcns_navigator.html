@@ -33769,9 +33769,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       fl.style.width = br.width + 'px';
       fl.style.top = (g.y - wr.top) + 'px';
     }
+    // The writing box hangs over the bottom of the log: a gap behind it is not on
+    // screen, so neither the pointer there nor a line drawn there may count.
+    function floor(lr){
+      var b = lr.bottom;
+      wrap.querySelectorAll('.se-draftbox, .se-compose').forEach(function(el){
+        var r = el.getBoundingClientRect();
+        if(r.height && r.top < b && r.bottom > lr.top) b = r.top;
+      });
+      return b;
+    }
     function find(x, y){
-      var lr = log.getBoundingClientRect();
-      if(y < lr.top || y > lr.bottom) return null;
+      var lr = log.getBoundingClientRect(), lb = floor(lr);
+      if(y < lr.top || y > lb) return null;
       var best = null;
       log.querySelectorAll('.se-turn:not(.you):not(.plan)[data-msg-id]').forEach(function(turn){
         if(best) return;
@@ -33791,6 +33801,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var gy = (above + top) / 2;
           var held = i === 0 ? turn.previousElementSibling : blocks[i].previousElementSibling;
           if(held && held.classList && held.classList.contains('se-chap')) continue;
+          if(gy < lr.top + 6 || gy > lb - 10) continue;
           if(Math.abs(y - gy) <= Math.max(9, (top - above) / 2 + 2)){
             best = { turn: turn, body: body, block: blocks[i], y: gy, id: turn.getAttribute('data-msg-id') };
             return;
@@ -33801,6 +33812,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }
     log.addEventListener('mousemove', function(ev){
       if(editing) return;
+      if(ev.target.closest && ev.target.closest('.se-draftbox, .se-compose')){ fl.hidden = true; cur = null; return; }
       var x = ev.clientX, y = ev.clientY;
       clearTimeout(raf);
       raf = setTimeout(function(){
