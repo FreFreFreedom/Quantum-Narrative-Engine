@@ -1067,7 +1067,10 @@ function plainFailure(text, timeoutMs) {
 // the caller's own 120s deadline means a lost job simply expires either way.
 const HELPER_CLAIM_STALE_MS = 90_000;
 
-export function claimHelperJob() {
+// A runner started before a model-free kind existed would answer it as a Claude
+// call, so such a kind is handed only to a runner that names it when it claims.
+const OPT_IN_KINDS = ['amazon_stars'];
+export function claimHelperJob({ kinds = [] } = {}) {
   if (!db) return null;
   if (Date.now() - _lastHelperPrune > 10 * 60_000) pruneHelperJobs();
   const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
@@ -1085,7 +1088,8 @@ export function claimHelperJob() {
              ELSE ?
            END
   `).run(HELPER_CLAIM_STALE_MS, staleCutoff);
-  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind, engine, timeout_ms, effort FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
+  const skip = OPT_IN_KINDS.filter((k) => !(Array.isArray(kinds) && kinds.includes(k)));
+  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind, engine, timeout_ms, effort FROM helper_jobs WHERE status='queued'${skip.length ? ` AND kind NOT IN (${skip.map(() => '?').join(',')})` : ''} ORDER BY created_at LIMIT 1`).get(...skip);
   if (!job) return null;
   db.prepare(`UPDATE helper_jobs SET status='running', claimed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(job.id);
   return job;
@@ -1125,7 +1129,7 @@ const RUNNER_ATTACH_GRACE_MS = 16_000;
 
 // Helper kinds the Mac answers with local git/grep and no model at all. Anything
 // not in here is a Claude call, which is the default.
-const MODEL_FREE_KINDS = new Set(['repo_probe', 'witness']);
+const MODEL_FREE_KINDS = new Set(['repo_probe', 'witness', 'amazon_stars']);
 
 // Park a request for the local runner and wait for its answer. Returns
 // { text } on success, { error, message } otherwise. Never throws.
@@ -1240,6 +1244,22 @@ export async function runWitnessProbe({ request, waitMs = 30_000, label = 'witne
   });
   if (!r?.text) return null;
   try { return JSON.parse(r.text); } catch { return null; }
+}
+
+// A book's Amazon stars read from the Mac, whose home connection Amazon answers
+// when it turns the Railway container away (services/amazonStars.js). Null when
+// no runner is attached, the runner predates this kind, or nothing came back.
+export async function runAmazonStarsProbe({ title, creator = '', isbn = '', waitMs = 15_000 }) {
+  const r = await runHelperJob({
+    prompt: JSON.stringify({ title, creator, isbn }),
+    feature: 'amazon-stars',
+    maxTokens: 1,
+    label: 'amazon-stars',
+    waitMs,
+    kind: 'amazon_stars',
+  });
+  if (!r?.text) return null;
+  try { const o = JSON.parse(r.text); return o && o.stars > 0 ? o : null; } catch { return null; }
 }
 
 // Low-level: call a specific provider/model directly (for the judge/summary which

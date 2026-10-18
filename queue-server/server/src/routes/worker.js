@@ -89,7 +89,7 @@ export function workerRoutes() {
   router.post('/worker/helper/claim', (req, res) => {
     if (!isLocalExecution()) return res.status(409).json({ error: 'server_execution_mode' });
     noteRunnerPoll();
-    const job = claimHelperJob();
+    const job = claimHelperJob({ kinds: req.body?.kinds });
     if (!job) return res.json({ none: true });
     res.json({ job });
   });

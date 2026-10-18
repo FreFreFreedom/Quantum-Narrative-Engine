@@ -14,7 +14,7 @@
 // its anonymous quota runs out). A Google Books API key would make the second one
 // dependable — that needs an account, so it stays optional: BOOKS_API_KEY.
 
-import { generateText } from './ai/text.js';
+import { generateText, runAmazonStarsProbe } from './ai/text.js';
 import jpeg from 'jpeg-js';
 import { mindBlock } from './mind.js';
 import { catalogueIsbns } from './bookContents.js';
@@ -106,7 +106,11 @@ export async function amazonStarsFor(title, creator = '', isbn = '') {
   starsMissedAt.set(k, Date.now());
   let got = await fetchAmazonStars({ title: shopClean(title), creator, isbn });
   if (!got && isbn) got = await fetchAmazonStars({ title: shopClean(title), creator });
-  if (got?.blocked) { console.warn(`[amazon-stars] refused for "${title}" (${got.status || got.error || 'robot check'})`); starsMissedAt.set(k, Date.now() - 23 * 3600000); return null; }
+  if (got?.blocked) {
+    const why = got.status || got.error || 'robot check';
+    got = await runAmazonStarsProbe({ title: shopClean(title), creator, isbn }).catch(() => null);
+    if (!got) { console.warn(`[amazon-stars] refused for "${title}" (${why}), and the Mac did not answer`); starsMissedAt.set(k, Date.now() - 23 * 3600000); return null; }
+  }
   if (!got) return null;
   saveStars(title, got.stars, got.count);
   return { stars: got.stars, count: got.count };

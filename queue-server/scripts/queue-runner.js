@@ -44,6 +44,7 @@ import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChec
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
 import { runIdeaLanding as ideaLandingPass, buildDiff as buildIdeaDiff } from '../server/src/services/ideaLanded.js';
 import { answerRepoWitnesses } from '../server/src/services/witnessCheck.js';
+import { fetchAmazonStars } from '../server/src/services/amazonStars.js';
 import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk, commitFilesToTrunk } from './git-ship.js';
 import { noteFiles, NOTES_REPO_PATH } from '../server/src/services/noteMirror.js';
 import { mindFiles, MEMORY_REPO_PATH } from '../server/src/services/mindMirror.js';
@@ -742,7 +743,7 @@ function answerWitnessJob(job) {
 
 async function runHelperJobs() {
   let r;
-  try { r = await api('/worker/helper/claim', {}); } catch { return; }
+  try { r = await api('/worker/helper/claim', { kinds: ['amazon_stars'] }); } catch { return; }
   if (!r.ok) return;
   const body = await r.json().catch(() => ({ none: true }));
   if (body.none || !body.job) return;
@@ -769,6 +770,19 @@ async function runHelperJobs() {
       await api(`/worker/helper/${job.id}/result`, out ? { text: out } : { error: err || 'witness check failed' });
     } catch { /* the caller's own deadline covers this — and reads it as "not checked" */ }
     console.log(`  witness ${job.label || job.feature} ${out ? 'checked against the checkout (no model)' : `failed — ${err}`}`);
+    return;
+  }
+
+  // A book's Amazon stars, fetched from this Mac when Amazon turns Railway away.
+  // No model at all.
+  if (job.kind === 'amazon_stars') {
+    let out = null, err = null;
+    try {
+      const got = await fetchAmazonStars(JSON.parse(job.prompt || '{}'));
+      if (got && got.stars > 0) out = JSON.stringify(got); else err = got?.blocked ? 'amazon refused this Mac too' : 'no rating found';
+    } catch (e) { err = e.message; }
+    try { await api(`/worker/helper/${job.id}/result`, out ? { text: out } : { error: err }); } catch { /* the caller's own deadline covers this */ }
+    console.log(`  amazon stars ${out || `— ${err}`}`);
     return;
   }
 
