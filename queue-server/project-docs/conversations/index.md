@@ -4,12 +4,12 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
+- Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
 - Biopolitics and the George Marshall Archetype — conversations/biopolitics-and-the-george-marshall-archetype-a969a91c.md
 - American healthcare books: diagnosis and future — conversations/american-healthcare-books-diagnosis-and-future-8c4c0f76.md
 - Street gangs and insurgencies: parallel demonization — conversations/street-gangs-and-insurgencies-parallel-demonization-565a6e84.md
 - Mapping Psychological Walls Across Cultures and Media — conversations/mapping-psychological-walls-across-cultures-and-media-30b86c18.md
 - State Experiments in Constitutional Decision‑Making — conversations/state-experiments-in-constitutional-decision-making-cf34af05.md
-- Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
 - Kinetic workout media selection — conversations/kinetic-workout-media-selection-a7051bc8.md
 - Cook County Court as Fractal Injustice Anatomy — conversations/cook-county-court-as-fractal-injustice-anatomy-05863085.md
 - Repeated Single-Word Requests Trigger Model Rate Limit Errors — conversations/repeated-single-word-requests-trigger-model-rate-limit-errors-e973067e.md

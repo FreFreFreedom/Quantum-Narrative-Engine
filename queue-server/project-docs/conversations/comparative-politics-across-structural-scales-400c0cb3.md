@@ -1,6 +1,6 @@
 # Comparative politics across structural scales
 
-Thread 400c0cb3-1a68-429b-b651-1ed3a6b65dff · 35 turns · last said 2026-09-16T22:59:49.123Z
+Thread 400c0cb3-1a68-429b-b651-1ed3a6b65dff · 36 turns · last said 2026-10-18T22:56:26.163Z
 
 ## you
 
@@ -1055,3 +1055,16 @@ By showing that feedback before the treaty is signed, the instrument allows the 
 What makes this approach different from every peacebuilding framework is that it never tries to "fix" a conflict by suppressing it or papering it over with goodwill. Conflict is the entity’s own nervous system screaming that an old balance can no longer hold. 
 
 The purpose of a fractal resolution system is not to force two enemies into an artificial harmony that will shatter the moment the peacekeepers leave. It is to make the entire circuit visible to itself—from the prime minister's pen down to the teenager's locked fists—so the whole body can finally metabolize the pain that has been circulating as fate, and choose what to build in its place.
+
+## you
+
+recap this whole conversation in 200 words (concise bullet points)
+
+## the room
+
+* **Civic Ethnology vs. Ethnography:** Ethology studies civic institutions as living, adaptive organisms with immune grammars; ethnography provides the ground-level observational record.
+* **The Street as Emergent Organ (*Ghettoside*, *South Central*):** Gangs and street codes are not inherent pathologies, but surrogate immune systems self-assembling to metabolize survival where institutional care is absent.
+* **The Six-Step Trauma Loop:** Historical wound → frozen anger → ritualized violence → institutionalized codes → new wounds/orphans → systemic collapse. Fractally repeats across South Central, Chicago, Paris banlieues, dysfunctional families, corporate bodies, and the individual psyche.
+* **Cross-Scale Story Architectures:** *Snowfall* executes vertical descent (geopolitics → street trade → shattered family psyche); *Top Boy* maps horizontal circulation across an autonomous ecosystem. A true fractal engine maps both alongside recursive feedback.
+* **Limits of Current Systems:** Existing platforms (COMPAS, NetLogo, V-Dem, Stratfor, UN mediation) remain trapped in single scales, flat metrics, risk predictions, or text analysis, blind to interiority and cross-scale resonance.
+* **The Unbuilt Engine (Politics & Conflict):** Diagnoses policies as frozen postures hiding collective vulnerability. It tracks how high-level treaties fracture kitchen tables to trigger populist blowback, resolving conflict by metabolizing intergenerational grief rather than enforcing fragile compromises.
