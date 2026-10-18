@@ -1005,20 +1005,24 @@ function parseTeach(text) {
 // Asked directly, one try each: the shared text call retries Flash through its
 // busy answers (503, 429 — often, at night) until the timeout, and a Teach turn
 // took half a minute (2026-10-18). Flash with its thinking capped first, then
-// Flash-Lite at once, both short.
+// Flash-Lite at once, both short. Flash out of quota (429) is skipped for ten
+// minutes rather than asked again on every turn.
+let teachFlashRestUntil = 0;
 async function teachAsk(prompt) {
   const key = process.env.GOOGLE_AI_STUDIO_API_KEY;
   if (!key) return geminiText({ maxTokens: 3000, timeoutMs: 30_000, label: 'mind:teach', prompt });
   let error = 'no_answer';
   for (const [model, thinking] of [['gemini-flash-latest', { thinkingBudget: 512 }], ['gemini-flash-lite-latest', null]]) {
+    if (thinking && Date.now() < teachFlashRestUntil) continue;
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-        method: 'POST', signal: AbortSignal.timeout(15_000), headers: { 'Content-Type': 'application/json' },
+        method: 'POST', signal: AbortSignal.timeout(thinking ? 9_000 : 15_000), headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 3000, ...(thinking ? { thinkingConfig: thinking } : {}) } }),
       });
       const d = await r.json();
       const text = (d.candidates?.[0]?.content?.parts || []).filter((x) => !x.thought).map((x) => x.text || '').join('');
       if (text.trim()) return { text };
+      if (thinking && r.status === 429) teachFlashRestUntil = Date.now() + 10 * 60_000;
       error = `${model}:${r.status}`;
     } catch (e) { error = `${model}:${e.name}`; }
   }
@@ -1031,7 +1035,7 @@ export async function teachTurn({ passage = '', turns = [] } = {}) {
   const t = (Array.isArray(turns) ? turns : []).slice(-12).filter((x) => x && String(x.text || '').trim());
   if (!t.length) return { error: 'empty' };
   let avoid = [];
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     // Not the cheap summary model: it flattened a layered ask into one line (2026-09-30).
     // Gemini, always — his pick (2026-10-01), same as the conversation records.
     // A Teach reply is short and comes back in seconds; a hung Flash once held the
@@ -1044,7 +1048,8 @@ export async function teachTurn({ passage = '', turns = [] } = {}) {
     const his = ` ${t.filter((x) => x.role !== 'ai').map((x) => String(x.text).toLowerCase()).join(' ')} `;
     const leaks = (p ? tasteLeaks(out.items.filter((i) => i.kind !== 'subject').map((i) => `${i.text} ${i.detail || ''}`).join(' '), [p]) : [])
       .filter((l) => !his.includes(l.replace(/"/g, '')));
-    if (leaks.length && attempt < 2) { avoid = leaks.slice(0, 12); continue; }
+    // One second try at most: each try is a wait he sits through.
+    if (leaks.length && attempt < 1) { avoid = leaks.slice(0, 12); continue; }
     return { ok: true, ...out };
   }
   return { error: 'unreadable' };
