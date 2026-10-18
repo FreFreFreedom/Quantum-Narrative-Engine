@@ -44,7 +44,9 @@ export async function fetchAmazonStars({ title, creator = '', isbn = '' }, timeo
   try {
     const r = await fetch(url, { signal: ctrl.signal, headers: { 'User-Agent': UA, 'Accept-Language': 'en-US,en;q=0.9', Accept: 'text/html' } });
     const html = await r.text();
-    if (r.status !== 200 || (!html.includes('s-search-result') && /captcha|api-services-support@amazon/i.test(html))) return { blocked: true, status: r.status };
+    // A page with no results at all is a refusal in another shape (Railway gets a
+    // bare 200 some of the time): a real book search always lists something.
+    if (r.status !== 200 || !html.includes('s-search-result')) return { blocked: true, status: r.status };
     const byIsbn = !/[a-z]/i.test(decodeURIComponent(url.split('k=')[1] || ''));
     return parseAmazonSearch(html, title, byIsbn);
   } catch (err) {
