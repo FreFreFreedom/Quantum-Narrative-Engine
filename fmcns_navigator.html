@@ -35912,8 +35912,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
 
   // ---------- The card a cover opens ----------
-  var seCard = null, seCardFor = null, seCardAnchor = null, seCardPinned = false, seInCard = false;
-  function seCardClose(){ seCard2Close(); seCardPinned = false; seInCard = false; if (seCard) { seCard.remove(); seCard = null; seCardFor = null; seCardAnchor = null; } }
+  var seCard = null, seCardFor = null, seCardAnchor = null;
+  function seCardClose(){ seCard2Close(); if (seCard) { seCard.remove(); seCard = null; seCardFor = null; seCardAnchor = null; } }
   function seCardPlace(anchor){
     if (!seCard || !anchor.isConnected) return;
     var r = anchor.getBoundingClientRect(), w = seCard.offsetWidth, h = seCard.offsetHeight;
@@ -36290,58 +36290,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var fb = ev.target.closest && ev.target.closest('.se-face');
     if (fb) { ev.preventDefault(); sePersonOpen(fb); return; }
     var btn = ev.target.closest && ev.target.closest('.se-cover, .se-work');
-    if (btn) {
-      ev.preventDefault();
-      clearTimeout(seHoverT);
-      // A card the hover opened: the click keeps it, rather than shutting it.
-      if (seCard && !seCardPinned && seCardFor === seArtOf(btn)) { seCardPinned = true; return; }
-      seCardOpen(btn); if (seCard) seCardPinned = true; return;
-    }
+    if (btn) { ev.preventDefault(); seCardOpen(btn); return; }
     if (ev.target.closest('.se-quote-pop')) return;
     var fm = ev.target.closest && ev.target.closest('.se-card-film');
     if (fm) { ev.preventDefault(); seCardBeside(fm); return; }
     if (seCard2 && seCard2.contains(ev.target)) { if (ev.target.closest('[data-card-close]')) seCard2Close(); return; }
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
-    else if (seCard) seCardPinned = true;   // used inside: it stays
   });
-  // Resting on a title or a cover opens its card (his ask, 2026-10-18), and it stays
-  // while the mouse travels to it: off both the name and the card, it shuts after a
-  // short grace, so the way across other words does not lose it. A click, or any
-  // click inside the card, keeps it until a click outside or Escape. Where the mouse
-  // is comes from mouseover alone — never :hover, which a card opening under the
-  // mouse leaves stale.
-  function seArtOf(btn){ var sp = btn && btn.querySelector('[data-cover-art]'); return sp ? sp.dataset.coverArt : null; }
-  var seHoverT = 0, seLeaveT = 0, seHoverBtn = null;
-  function seLeaveSoon(){
-    clearTimeout(seLeaveT);
-    if (!seCard || seCardPinned) return;
-    seLeaveT = setTimeout(function(){
-      if (seCard && !seCardPinned && !seInCard && seHoverBtn !== seCardAnchor) seCardClose();
-    }, 400);
-  }
-  document.addEventListener('mouseover', function(ev){
-    var t = ev.target;
-    if (!t || !t.closest) return;
-    if (t.closest('.se-card')) { seInCard = true; seHoverBtn = null; clearTimeout(seLeaveT); clearTimeout(seHoverT); return; }
-    seInCard = false;
-    var btn = t.closest('.se-cover, .se-work');
-    seHoverBtn = btn;
-    if (!btn) { clearTimeout(seHoverT); seLeaveSoon(); return; }
-    if (seCard && seCardFor === seArtOf(btn)) { clearTimeout(seLeaveT); return; }
-    seLeaveSoon();
-    if (seCard && seCardPinned) return;
-    clearTimeout(seHoverT);
-    seHoverT = setTimeout(function(){
-      if (seHoverBtn !== btn || !btn.isConnected || (seCard && seCardPinned)) return;
-      if (seCard && seCardFor === seArtOf(btn)) return;
-      seCardOpen(btn);
-    }, 450);
-  });
-  // Out of the window altogether.
-  document.addEventListener('mouseout', function(ev){
-    if (ev.relatedTarget) return;
-    seHoverBtn = null; seInCard = false; clearTimeout(seHoverT); seLeaveSoon();
-  });
+  // A card opens on a click only, never on resting the mouse (his ask, 2026-10-18).
   document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') seCardClose(); });
   // ⌘⇧↓ (Ctrl+Shift+↓ off a Mac): to the end of the chat he was last in — the
   // side talk or the main thread, whichever his hand touched last (2026-09-30).
