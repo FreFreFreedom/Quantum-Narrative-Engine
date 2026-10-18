@@ -74,6 +74,12 @@ export function bindBookFacts(database) {
       db.exec("UPDATE book_facts SET full_title=NULL");
       db.exec("INSERT INTO book_facts_marks (name) VALUES ('pages-middle')");
     }
+    // Stars searched by ISBN on the first evening (2026-10-17), some from a minor
+    // edition: dropped once so the title search reads them again.
+    if (!db.prepare("SELECT 1 FROM book_facts_marks WHERE name='stars-by-title'").get()) {
+      db.exec("DELETE FROM book_stars WHERE updated_at >= '2026-10-18 02:30:00'");
+      db.exec("INSERT INTO book_facts_marks (name) VALUES ('stars-by-title')");
+    }
   } catch (err) { /* next boot */ }
 }
 
@@ -104,8 +110,11 @@ export async function amazonStarsFor(title, creator = '', isbn = '') {
   const k = starKey(title);
   if (Date.now() - (starsMissedAt.get(k) || 0) < 24 * 3600000) return null;
   starsMissedAt.set(k, Date.now());
-  let got = await fetchAmazonStars({ title: shopClean(title), creator, isbn });
-  if (!got && isbn) got = await fetchAmazonStars({ title: shopClean(title), creator });
+  // By title and author first: Amazon puts the edition most people rated on top,
+  // while an ISBN can be a minor printing (Kitchen Confidential: 4.1 from 1,024
+  // ratings by ISBN, 4.8 from 8,790 by title).
+  let got = await fetchAmazonStars({ title: shopClean(title), creator });
+  if (!got && isbn) got = await fetchAmazonStars({ title: shopClean(title), creator, isbn });
   if (got?.blocked) {
     const why = got.status || got.error || 'robot check';
     got = await runAmazonStarsProbe({ title: shopClean(title), creator, isbn }).catch(() => null);
