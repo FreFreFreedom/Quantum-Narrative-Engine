@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Real-world biopolitics in American healthcare literature — conversations/real-world-biopolitics-in-american-healthcare-literature-8c4c0f76.md
+- American healthcare books: diagnosis and future — conversations/american-healthcare-books-diagnosis-and-future-8c4c0f76.md
 - Military Leadership Bibliography for Scaling Statecraft — conversations/military-leadership-bibliography-for-scaling-statecraft-a969a91c.md
 - Street gangs and insurgencies: parallel demonization — conversations/street-gangs-and-insurgencies-parallel-demonization-565a6e84.md
 - Mapping Psychological Walls Across Cultures and Media — conversations/mapping-psychological-walls-across-cultures-and-media-30b86c18.md
