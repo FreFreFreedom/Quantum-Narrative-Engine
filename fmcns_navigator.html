@@ -35904,8 +35904,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
 
   // ---------- The card a cover opens ----------
-  var seCard = null, seCardFor = null, seCardAnchor = null, seCardPinned = false;
-  function seCardClose(){ seCard2Close(); seCardPinned = false; if (seCard) { seCard.remove(); seCard = null; seCardFor = null; seCardAnchor = null; } }
+  var seCard = null, seCardFor = null, seCardAnchor = null;
+  function seCardClose(){ seCard2Close(); if (seCard) { seCard.remove(); seCard = null; seCardFor = null; seCardAnchor = null; } }
   function seCardPlace(anchor){
     if (!seCard || !anchor.isConnected) return;
     var r = anchor.getBoundingClientRect(), w = seCard.offsetWidth, h = seCard.offsetHeight;
@@ -35914,11 +35914,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // window has no room below), never across the words to its left.
     if (anchor.classList.contains('se-person') || anchor.classList.contains('se-work')) {
       var pl = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, vw - w - 8));
-      var pt = r.bottom + 4 + h <= vh - 8 ? r.bottom + 4 : Math.max(8, r.top - 4 - h);
+      var pt = r.bottom + 10 + h <= vh - 8 ? r.bottom + 10 : Math.max(8, r.top - 10 - h);
       seCard.style.left = pl + 'px'; seCard.style.top = pt + 'px';
       return;
     }
-    var left = r.left - w - 6 >= 8 ? r.left - w - 6 : Math.min(r.right + 6, vw - w - 8);
+    var left = r.left - w - 14 >= 8 ? r.left - w - 14 : Math.min(r.right + 14, vw - w - 8);
     if (vw < 560) left = Math.max(8, (vw - w) / 2);
     left = Math.max(8, Math.min(left, vw - w - 8));   // never past either edge of the window
     var top = Math.max(8, Math.min(r.top, vh - h - 8));
@@ -36272,50 +36272,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var fb = ev.target.closest && ev.target.closest('.se-face');
     if (fb) { ev.preventDefault(); sePersonOpen(fb); return; }
     var btn = ev.target.closest && ev.target.closest('.se-cover, .se-work');
-    if (btn) {
-      ev.preventDefault();
-      // A card the hover opened: the click keeps it, rather than shutting it.
-      if (seCard && !seCardPinned && seCardFor === seArtOf(btn)) { seCardPinned = true; return; }
-      seCardOpen(btn); if (seCard) seCardPinned = true; return;
-    }
+    if (btn) { ev.preventDefault(); seCardOpen(btn); return; }
     if (ev.target.closest('.se-quote-pop')) return;
     var fm = ev.target.closest && ev.target.closest('.se-card-film');
     if (fm) { ev.preventDefault(); seCardBeside(fm); return; }
     if (seCard2 && seCard2.contains(ev.target)) { if (ev.target.closest('[data-card-close]')) seCard2Close(); return; }
     if (seCard && (ev.target.closest('[data-card-close]') || !seCard.contains(ev.target))) seCardClose();
-    else if (seCard) seCardPinned = true;   // used inside: it stays
-  });
-  // Resting on a title or a cover opens its card (his ask, 2026-10-18), and it stays
-  // while the mouse travels to it: leaving both the name and the card shuts it after
-  // a short grace, so the way across other words does not lose it. A click, or any
-  // click inside the card, keeps it until a click outside or Escape.
-  function seArtOf(btn){ var s = btn && btn.querySelector('[data-cover-art]'); return s ? s.dataset.coverArt : null; }
-  var seHoverT = 0, seLeaveT = 0;
-  function seOverCard(){ return (seCard && seCard.matches(':hover')) || (seCard2 && seCard2.matches(':hover')) || (seCardAnchor && seCardAnchor.isConnected && seCardAnchor.matches(':hover')); }
-  document.addEventListener('mouseover', function(ev){
-    var t = ev.target;
-    if (!t || !t.closest) return;
-    if (t.closest('.se-card')) { clearTimeout(seLeaveT); return; }
-    var btn = t.closest('.se-cover, .se-work');
-    if (!btn) return;
-    clearTimeout(seLeaveT);
-    if (seCard && seCardFor === seArtOf(btn)) return;
-    if (seCard && seCardPinned) return;
-    clearTimeout(seHoverT);
-    seHoverT = setTimeout(function(){
-      if (!btn.isConnected || !btn.matches(':hover') || (seCard && seCardPinned)) return;
-      seCardOpen(btn);
-    }, 450);
-  });
-  document.addEventListener('mouseout', function(ev){
-    var t = ev.target;
-    if (!t || !t.closest || !t.closest('.se-cover, .se-work, .se-card')) return;
-    var to = ev.relatedTarget;
-    if (to && to.closest && (to.closest('.se-card') || (seCardAnchor && seCardAnchor.contains(to)))) return;
-    if (t.closest('.se-cover, .se-work')) clearTimeout(seHoverT);
-    if (!seCard || seCardPinned) return;
-    clearTimeout(seLeaveT);
-    seLeaveT = setTimeout(function(){ if (seCard && !seCardPinned && !seOverCard()) seCardClose(); }, 400);
   });
   document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') seCardClose(); });
   // ⌘⇧↓ (Ctrl+Shift+↓ off a Mac): to the end of the chat he was last in — the
