@@ -3705,8 +3705,6 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .shelf-cover[data-title]:not([style*="background-image"]) { font-size:0; align-items:center; justify-content:center; padding:10px 8px; text-align:center;
   background:linear-gradient(165deg, var(--c-surface-2), var(--c-surface)); box-shadow:inset 3px 0 0 var(--c-border-2); }
 .shelf-cover[data-title]:not([style*="background-image"])::after { content:attr(data-title); font:600 13px/1.25 Georgia, "Times New Roman", serif; color:var(--c-ink-2); overflow-wrap:anywhere; }
-.rsb-card:not([style*="background-image"]) { align-items:center; justify-content:center; text-align:center; background:linear-gradient(165deg, var(--c-surface-2, #2f3847), var(--c-surface, #2a3443)); }
-.rsb-card:not([style*="background-image"]) > i { font:600 9.5px/1.2 Georgia, serif; color:var(--c-ink-2, #cfdcd7); }
 .shelf-card b { display:block; margin-top:5px; font-size:var(--fs-xs); font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
 .shelf-card small { display:block; color:var(--c-ink-4); font-size:var(--fs-2xs); }
 .shelf-open { display:block; position:relative; width:100%; padding:0; border:0; background:none; cursor:pointer; }
@@ -3753,22 +3751,6 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    kind menu it opens drops just under it, wherever the wall is scrolled to (his ask,
    2026-10-08: no scrolling back up to reach it). */
 #roomCards > #roomTabs { position:sticky; top:-14px; z-index:7; margin-top:-14px; padding-top:14px; background:inherit; }
-.room-tabs .room-split { flex:none; margin-left:auto; width:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; opacity:.55; }
-.room-tabs .room-split svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.3; }
-.room-tabs .room-split:hover, .room-tabs .room-split[aria-pressed="true"] { opacity:1; color:var(--c-accent); }
-#wsRoom.has-shelf { padding-bottom:var(--room-shelf-h, 104px); }
-.room-shelfbar { position:absolute; left:0; right:0; bottom:0; height:var(--room-shelf-h, 104px); display:flex; align-items:center; gap:10px; padding:10px 14px; box-sizing:border-box; border-top:1px solid var(--c-border); background:color-mix(in srgb, var(--c-bg) 90%, var(--c-ink)); z-index:5; }
-.room-shelfbar[hidden] { display:none; }
-/* The bar's top edge is a grip: drag it to set how tall the shelf is (his ask, 2026-10-09). */
-.rsb-grip { position:absolute; left:0; right:0; top:-4px; height:8px; cursor:ns-resize; z-index:1; }
-.rsb-grip:hover, .rsb-grip.is-on { background:linear-gradient(transparent 3px, var(--c-accent) 3px, var(--c-accent) 5px, transparent 5px); opacity:.6; }
-.rsb-find { flex:none; width:110px; padding:5px 8px; font:inherit; font-size:12px; color:var(--c-ink); background:var(--c-surface, transparent); border:1px solid var(--c-border); border-radius:8px; align-self:center; }
-.rsb-row { flex:1; min-width:0; height:100%; display:flex; gap:8px; align-items:flex-end; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; }
-.rsb-card { flex:none; height:calc(var(--room-shelf-h, 104px) - 22px); width:calc((var(--room-shelf-h, 104px) - 22px) * .68); border-radius:4px; cursor:grab; background:var(--c-surface-2, #2f3847) center/cover no-repeat; box-shadow:0 2px 6px rgba(0,0,0,.35); transition:transform .15s ease; display:flex; align-items:flex-end; overflow:hidden; }
-.rsb-card:hover { transform:translateY(-4px); }
-.rsb-card.is-lit { animation:fmcnsFade .35s ease both; }
-.rsb-card > i { font-style:normal; font-size:9px; line-height:1.15; padding:4px; color:var(--c-ink-3, #afb0b0); }
-.rsb-card[style*="background-image"] > i { display:none; }
 #roomInterests .shelf-cover.is-lit { animation:fmcnsFade .35s ease both; }
 #roomInterests .lib-top { position:sticky; top:calc(var(--room-tabs-h, 40px) - 14px); z-index:6; }
 .lib-top:empty { display:none; }
@@ -6466,7 +6448,6 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-tabs" id="roomTabs" role="tablist">
           <button type="button" data-room-primary="library" role="tab">Library</button>
           <button type="button" data-room-primary="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
-          <button type="button" class="room-split" data-room-split title="Library shelf along the bottom" aria-label="Library shelf along the bottom" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M2.5 10.5h11M5 12v-1M7.5 12v-1M10 12v-1"/></svg></button>
           <button type="button" data-room-pane="attached" role="tab">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
@@ -6516,11 +6497,6 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-pane room-ideas" id="roomSide">
           <div id="roomSideHost"></div>
         </div>
-      </div>
-      <div class="room-shelfbar" id="roomShelfBar" hidden>
-        <div class="rsb-grip" id="roomShelfGrip" title="Drag to resize"></div>
-        <input class="rsb-find" id="roomShelfFind" type="search" placeholder="Find" aria-label="Find in the Library" autocomplete="off">
-        <div class="rsb-row" id="roomShelfRow"></div>
       </div>
     </div>
   </div>
@@ -15840,18 +15816,10 @@ function initRoom() {
   if (strip) {
     let pane = 'attached';
     try { const saved = localStorage.getItem(ROOM_PANE_KEY); if (saved && ROOM_PANES[saved]) pane = ['papers', 'apps', 'analogies'].includes(saved) ? 'interests' : saved; } catch (e) {}
-    // The Library as a shelf of covers along the bottom of the Room, under the chat
-    // and the side talks alike, so any cover can be dragged into either (his pick B,
-    // 2026-10-08). The Library tab is unchanged.
-    // Shut each time the app opens (his ask, 2026-10-08): opened only when wanted.
-    let split = false;
     const together = () => false;
     const apply = () => {
       const both = false;
       document.getElementById('roomCards').classList.toggle('side-layout', pane === 'side');
-      const sb = strip.querySelector('[data-room-split]');
-      if (sb) sb.setAttribute('aria-pressed', String(split));
-      roomShelfShow(split);
       applyRoomCardsWidth();
       Object.entries(ROOM_PANES).forEach(([k, id]) => {
         const el = document.getElementById(id);
@@ -15884,11 +15852,6 @@ function initRoom() {
       if (typeof applyRoomFold === 'function') applyRoomFold();
     };
     strip.onclick = (ev) => {
-      if (ev.target.closest('[data-room-split]')) {
-        split = !split;
-        apply();
-        return;
-      }
       const primary = ev.target.closest('[data-room-primary]');
       if (primary) {
         const key = primary.getAttribute('data-room-primary');
@@ -19962,7 +19925,7 @@ document.addEventListener('dragstart', (ev) => {
   // The big cover of an open book drags as that book's card (his ask, 2026-10-11).
   const pop = ev.target && ev.target.closest && ev.target.closest('.lib-pop-cv');
   const card = pop ? document.querySelector('.shelf-card.is-open[data-drag]')
-    : ev.target && ev.target.closest && ev.target.closest('.shelf-card[data-drag], .rsb-card[data-drag]');
+    : ev.target && ev.target.closest && ev.target.closest('.shelf-card[data-drag]');
   if (!card || !ev.dataTransfer) return;
   const [type, id] = String(card.dataset.lib || '').split(/:(.+)/);
   const el = card.querySelector('.shelf-cover') || card;
@@ -19989,7 +19952,7 @@ document.addEventListener('dragstart', (ev) => {
 const libIsWorkDrag = (ev) => Array.from((ev.dataTransfer && ev.dataTransfer.types) || []).includes('application/x-qne-work');
 function libDropHost(ev) {
   const t = ev.target && ev.target.closest ? ev.target : null;
-  if (!t || t.closest('#roomInterests, #roomShelfBar')) return null;
+  if (!t || t.closest('#roomInterests')) return null;
   if (t.closest('#roomSide')) return document.getElementById('roomSideEmbed');
   if (t.closest('#roomConvo')) return document.getElementById('roomConvo');
   return null;
@@ -20014,83 +19977,6 @@ function libDropHost(ev) {
   }, true);
   document.addEventListener('dragend', () => light(null), true);
 })();
-let roomShelfReq = 0, roomShelfTimer = 0;
-function roomShelfShow(on) {
-  const bar = document.getElementById('roomShelfBar'), ws = document.getElementById('wsRoom');
-  if (!bar || !ws) return;
-  bar.hidden = !on; ws.classList.toggle('has-shelf', !!on);
-  if (!on) return;
-  const find = document.getElementById('roomShelfFind');
-  if (find && !find.dataset.wired) {
-    find.dataset.wired = '1';
-    find.oninput = () => { clearTimeout(roomShelfTimer); roomShelfTimer = setTimeout(roomShelfFill, 300); };
-  }
-  roomShelfGrip(bar, ws);
-  if (!bar.dataset.filled) roomShelfFill();
-}
-function roomShelfGrip(bar, ws) {
-  const KEY = 'fmcns_room_shelf_h', clamp = (h) => Math.max(70, Math.min(Math.round(window.innerHeight * 0.6), Math.round(h)));
-  const set = (h) => ws.style.setProperty('--room-shelf-h', clamp(h) + 'px');
-  try { const h = Number(localStorage.getItem(KEY)); if (h) set(h); } catch (_) {}
-  const grip = document.getElementById('roomShelfGrip');
-  if (!grip || grip.dataset.wired) return;
-  grip.dataset.wired = '1';
-  grip.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    grip.setPointerCapture(e.pointerId); grip.classList.add('is-on');
-    const y0 = e.clientY, h0 = bar.getBoundingClientRect().height;
-    const move = (ev) => set(h0 + (y0 - ev.clientY));
-    const up = () => {
-      grip.classList.remove('is-on');
-      grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); grip.removeEventListener('pointercancel', up);
-      try { localStorage.setItem(KEY, String(Math.round(bar.getBoundingClientRect().height))); } catch (_) {}
-    };
-    grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', up);
-  });
-  grip.addEventListener('dblclick', () => { ws.style.removeProperty('--room-shelf-h'); try { localStorage.removeItem(KEY); } catch (_) {} });
-}
-async function roomShelfFill() {
-  const row = document.getElementById('roomShelfRow'), bar = document.getElementById('roomShelfBar');
-  if (!row) return;
-  const req = ++roomShelfReq;
-  const q = (document.getElementById('roomShelfFind') || {}).value || '';
-  let out, shelf;
-  try {
-    [out, shelf] = await Promise.all([
-      api('/api/recommendations/library?limit=2000&offset=0&query=' + encodeURIComponent(q)),
-      api('/api/convos/books').catch(() => ({ books: [] })),
-    ]);
-  } catch (_) { return; }
-  if (req !== roomShelfReq) return;
-  bar.dataset.filled = '1';
-  const books = (shelf.books || []).filter((b) => !q || (Array.isArray(out.shelfHits) ? out.shelfHits.includes(b.id) : libNorm(b.title).includes(libNorm(q))));
-  const onShelf = new Set(books.map((b) => libWorkKey(b.title)));
-  const items = books.map((b) => ({ type: 'shelf', id: b.id, title: b.title, creator: b.author, cover: b.cover_url || '', raw: b, added: libAddedMs(b.created_at) }))
-    .concat((out.items || []).filter((w) => w.type === 'media' && !(w.kind === 'book' && onShelf.has(libWorkKey(w.title))))
-      .map((w) => ({ type: 'media', id: w.id, title: w.title, creator: w.creator || '', cover: String(w.artwork || ''), raw: w, added: Number(w.added) || 0 })))
-    .sort((a, b) => (b.added || 0) - (a.added || 0));
-  row.innerHTML = items.map((it) => {
-    const src = (it.type === 'media' && libScreen[it.id] && libScreen[it.id].poster) || it.cover || '';
-    return '<div class="rsb-card" draggable="true" data-lib="' + qEscAttr(it.type + ':' + it.id) + '" data-drag="' + qEscAttr(libDragText(it)) + '" title="' + qEscAttr(libShortTitle(it.title)) + '"'
-      + (/^https:\/\//.test(src) ? ' data-drag-cover="' + qEscAttr(src) + '" style="background-image:url(&quot;' + qEscAttr(src) + '&quot;)"' : '') + '><i>' + qEsc(libShortTitle(it.title)) + '</i></div>';
-  }).join('');
-  row.scrollLeft = 0;
-  // Posters the page does not have yet, asked for forty at a time and lit in place.
-  const need = items.filter((it) => it.type === 'media' && !libScreen[it.id] && !/^https:/.test(it.cover));
-  for (let i = 0; i < need.length; i += 40) {
-    const batch = need.slice(i, i + 40);
-    api('/api/convos/screen?ids=' + batch.map((w) => encodeURIComponent(w.id)).join(',')).then((r) => {
-      if (!r || !r.facts) return;
-      for (const w of batch) {
-        libScreen[w.id] = { ...(libScreen[w.id] || {}), ...(r.facts[w.id] || {}) };
-        const p = libScreen[w.id].poster;
-        if (req !== roomShelfReq || !/^https:\/\//.test(p || '')) continue;
-        const el = row.querySelector('[data-lib="media:' + (window.CSS && CSS.escape ? CSS.escape(w.id) : w.id) + '"]');
-        if (el && !el.style.backgroundImage) { el.dataset.dragCover = p; libLight(el, p); }
-      }
-    }).catch(() => {});
-  }
-}
 function libCard(it) {
   const open = libOpen && libOpen.type === it.type && libOpen.id === it.id;
   // Something that just came in from a drop arrives with a glow, once.
