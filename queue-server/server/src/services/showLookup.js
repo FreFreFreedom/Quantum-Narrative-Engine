@@ -95,11 +95,25 @@ that thing is or does and why it matters here.
 ${COMMON}
 Answer with JSON only, no markdown fence: {"expansion":"…","text":"…"}`;
 
+// The sense is the one the surrounding words demand (2026-10-18: "PCP" beside
+// "alcohol" in a gang memoir came back as a PDF viewer's toolbar, read off the
+// window title). The title only says where he is; the app showing it is never
+// the subject.
+const SENSE = `Pick the ONE sense the surrounding words demand — check your answer against them:
+it must make sense if put back into that sentence. The title above only names what he is
+reading or watching (it may be an app or window name, a file name, a browser tab): use it
+to know the book, show or subject, but the app, browser, PDF viewer or file is NEVER what
+the word refers to. With no text around it, give the sense a reader of that work would meet.
+Words are often slang or jargon — street, gang, prison, drug, police, court, military, trade,
+regional or period talk. When the speaker's world and the sentence point there, give THAT
+sense, as the people in that world use it, not the everyday dictionary one.`;
+
 function context({ show, line, reading = false }) {
   const s = String(show || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   const l = String(line || '').replace(/\s+/g, ' ').trim().slice(0, 1200);
   return (s ? `\n\n=== WHAT HE IS ${reading ? 'READING' : 'WATCHING'} ===\n${s}` : '')
-    + (l ? `\n\n=== ${reading ? 'THE TEXT AROUND IT' : 'THE DIALOGUE JUST NOW'} ===\n${l}` : '');
+    + (l ? `\n\n=== ${reading ? 'THE TEXT AROUND IT' : 'THE DIALOGUE JUST NOW'} ===\n${l}` : '')
+    + `\n\n${SENSE}`;
 }
 
 // The same dictionary away from the player (2026-10-15): any web page, a PDF, any
@@ -150,10 +164,14 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   if (!/[A-Za-z]/.test(raw)) return { error: 'not_a_word' };
   const words = raw.split(' ').filter(Boolean).length;
   const acronym = words === 1 && isAcronym(raw);
-  const [showKey, termKey] = cacheKey((reading ? 'read: ' : '') + show, raw);
+  // Reading: the passage is part of the key, so a word met in two senses is read twice,
+  // and a word with no passage is never kept (those readings were guesses).
+  const [showKey, termKey] = cacheKey((reading ? 'read2: ' : '') + show, raw);
+  const lineKey = reading ? createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10) : '';
+  const keepIt = !reading || String(line || '').trim();
 
   if (db) {
-    const hit = db.prepare('SELECT text, expansion FROM show_lookups WHERE show=? AND term=?').get(showKey, termKey);
+    const hit = keepIt && db.prepare('SELECT text, expansion FROM show_lookups WHERE show=? AND term=?').get(showKey, termKey + (lineKey ? ' #' + lineKey : ''));
     if (hit && hit.text) return { ok: true, text: hit.text, expansion: hit.expansion || undefined, cached: true };
   }
 
@@ -176,8 +194,8 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   }
   if (text.split(/\s+/).length < 5) return { error: 'too_short' };
 
-  if (db) db.prepare('INSERT OR REPLACE INTO show_lookups (show, term, line, text, expansion) VALUES (?,?,?,?,?)')
-    .run(showKey, termKey, String(line || '').slice(0, 1200), text, expansion);
+  if (db && keepIt) db.prepare('INSERT OR REPLACE INTO show_lookups (show, term, line, text, expansion) VALUES (?,?,?,?,?)')
+    .run(showKey, termKey + (lineKey ? ' #' + lineKey : ''), String(line || '').slice(0, 1200), text, expansion);
   return { ok: true, text, expansion: expansion || undefined };
 }
 
