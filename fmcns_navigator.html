@@ -3787,6 +3787,10 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-find .lib-search::placeholder, .lib-find .lib-year::placeholder { color:var(--c-ink-5); }
 .lib-find { display:flex; align-items:center; gap:10px; }
 .lib-find .lib-search { flex:1; min-width:0; }
+.lib-find { position:relative; }
+.lib-find.is-reading::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:1px; pointer-events:none;
+  background:linear-gradient(90deg, transparent, var(--c-kept-echo, var(--c-accent)), transparent) no-repeat; background-size:35% 100%; animation:libReading 1.6s ease-in-out infinite; }
+@keyframes libReading { from { background-position:-60% 0; } to { background-position:160% 0; } }
 .lib-years { flex:none; display:flex; align-items:center; gap:4px; color:var(--c-ink-5); }
 .lib-years i { font-style:normal; }
 #roomInterests:has(.disc) .lib-years { display:none; }
@@ -19634,6 +19638,7 @@ function libLightWall(grid, items) {
     }
   }
 }
+let libReadingKey = '';
 function libKey() { return interestLibraryQuery + '|' + interestLibraryKind + '|' + libYearFrom + '-' + libYearTo + '|' + interestLibraryOffset; }
 // The pane scrolls, not the window: hold its position across a repaint.
 function libScroller(el) {
@@ -20552,7 +20557,7 @@ async function renderInterestLibrary(opts) {
       + '<button type="button" role="menuitem" class="' + (finding ? 'on' : '') + '" data-lib-find><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg> ' + (finding ? 'Clear search' : 'Search') + '</button>'
       + '</div></div>' : '')
     + '</div>'
-    + (finding && !libSuggesting ? '<div class="lib-find"><input class="lib-search" type="search" aria-label="Search library" placeholder="Title, author or topic">'
+    + (finding && !libSuggesting ? '<div class="lib-find' + (libReadingKey && libReadingKey === libKey() ? ' is-reading' : '') + '"><input class="lib-search" type="search" aria-label="Search library" placeholder="Title, author or topic">'
       + '<span class="lib-years"><input class="lib-year" data-lib-year="from" type="text" inputmode="numeric" maxlength="4" aria-label="From year" placeholder="From">'
       + '<i>–</i><input class="lib-year" data-lib-year="to" type="text" inputmode="numeric" maxlength="4" aria-label="To year" placeholder="To"></span></div>' + discSourceRow() : '');
   const wireTop = () => {
@@ -20655,10 +20660,13 @@ async function renderInterestLibrary(opts) {
       // librarian would hand him for those words, best first.
       if (libNorm(interestLibraryQuery).length >= 3) {
         const k = libKey();
+        libReadingKey = k;
+        const shown = host.querySelector('.lib-find'); if (shown) shown.classList.add('is-reading');
+        const done = () => { if (libReadingKey !== k) return; libReadingKey = ''; document.querySelectorAll('.lib-find.is-reading').forEach((el) => el.classList.remove('is-reading')); };
         api('/api/recommendations/library?meaning=1&limit=' + libLimit() + '&offset=0&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)
           + '&from=' + encodeURIComponent(libYearFrom) + '&to=' + encodeURIComponent(libYearTo))
-          .then((o) => { if (!o || !o.order || !libData || libData.key !== k || libKey() !== k) return; libData.out = o; renderInterestLibrary({ quiet: true }); })
-          .catch(() => {});
+          .then((o) => { done(); if (!o || !o.order || !libData || libData.key !== k || libKey() !== k) return; libData.out = o; renderInterestLibrary({ quiet: true }); })
+          .catch(done);
       }
     }
     if (request !== interestLibraryRequest) return;
