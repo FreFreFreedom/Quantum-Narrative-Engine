@@ -23,6 +23,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Fractal reasoning across civic and justice narratives — notes/fractal-reasoning-across-civic-and-justice-narratives.md
 - Note: Fractal reasoning across civic and justice narratives (fork) — notes/fractal-reasoning-across-civic-and-justice-narratives-fork.md
 - Note: Gilmore tracing economic crisis into prison — side talk of Comparative politics across structural scales — notes/gilmore-tracing-economic-crisis-into-prison-side-talk-of-comparative-politics-ac.md
+- Note: Hospitals as living systems under terminal pressure — notes/hospitals-as-living-systems-under-terminal-pressure.md
 - Note: Immersive, ethnographic, tense, and grounded in over 1,00… — side talk of American Justice: Institutional Power and Systemic Failure — notes/immersive-ethnographic-tense-and-grounded-in-over-1-00-side-talk-of-american-jus.md
 - Note: Kinetic workout media selection — notes/kinetic-workout-media-selection.md
 - Note: Legal Realism in Better Call Saul — side talk of State Experiments in Constitutional Decision‑Making — notes/legal-realism-in-better-call-saul-side-talk-of-state-experiments-in-constitution.md

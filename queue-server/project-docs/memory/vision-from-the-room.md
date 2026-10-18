@@ -11,6 +11,14 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Speculative sci-fi acts as a stress-test for biopolitics, treating biology and genetic markup as infrastructure for corporate and state control.
+
+From the genetic caste system in 'Gattaca' to the cybernetic commodification of flesh in cyberpunk classics, sci-fi magnifies real-world institutional control, showing how states and corporations pre-write biological destinies and lock physiological survival behind economic paywalls.
+
+## The hospital functions as a compressed macro-organism of the state, mirroring the biopolitical pressures, exhaustion, and triage ethics of civilization.
+
+In fictional works like 'The Pitt' and 'Late Shift' as well as documentary accounts like Brian Alexander's 'The Hospital', the medical ward acts as the raw nervous system of the body politic, where patient influxes mirror systemic failure and the administration of bodies reflects state and corporate control over life and death.
+
 ## The feedback loop where intervention creates the violent opposition it attempts to suppress recurs fractally across scales, from geopolitical conflicts to street gangs and cartels.
 
 A single self-reinforcing pattern operates across vastly different magnitudes:
