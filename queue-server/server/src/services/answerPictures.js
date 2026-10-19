@@ -13,7 +13,7 @@ import { generateText } from './ai/text.js';
 
 let db = null;
 // Bumped when the reading changes, so answers read before it are read once more.
-export const PICTURES_V = 1;
+export const PICTURES_V = 2;
 const MAX_PICK = 4, MAX_KEEP = 3;
 const KINDS = new Set(['place', 'art', 'event', 'object', 'nature', 'map', 'science', 'building', 'other']);
 const UA = 'QNE/1.0 (personal research tool; https://quantum-narrative-engine-production.up.railway.app)';
@@ -52,12 +52,23 @@ function fits(src, w, h, kind) {
 // The page's own lead picture: for a painting, the painting; for a town, the town.
 async function fromWikipedia(subject, kind) {
   const j = await getJson('https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&redirects=1'
-    + '&prop=pageimages|pageprops|description&piprop=thumbnail|original&pithumbsize=960&titles=' + encodeURIComponent(subject));
+    + '&prop=pageimages|pageprops|description&piprop=thumbnail|original|name&pithumbsize=960&titles=' + encodeURIComponent(subject));
   const p = j?.query?.pages?.[0];
   if (!p || p.missing || p.pageprops?.disambiguation !== undefined) return null;
   const t = p.thumbnail, o = p.original;
   if (!t?.source || !fits(o?.source || t.source, o?.width || t.width, o?.height || t.height, kind)) return null;
-  return { url: t.source, w: t.width, h: t.height, page: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(p.title.replace(/ /g, '_')), from: 'Wikipedia' };
+  const about = p.pageimage ? await describeFile('File:' + p.pageimage) : '';
+  return { url: t.source, w: t.width, h: t.height, page: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(p.title.replace(/ /g, '_')), from: 'Wikipedia',
+    about: ((p.pageimage || '').replace(/_/g, ' ') + ' — ' + about).slice(0, 300) };
+}
+
+// What a file says it shows: its own name and its description on Commons.
+const strip = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+async function describeFile(title) {
+  const j = await getJson('https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2&prop=imageinfo'
+    + '&iiprop=extmetadata&iiextmetadatafilter=ImageDescription|ObjectName&titles=' + encodeURIComponent(title));
+  const m = j?.query?.pages?.[0]?.imageinfo?.[0]?.extmetadata || {};
+  return strip(m.ImageDescription?.value || m.ObjectName?.value).slice(0, 240);
 }
 
 // Commons, when the page has no picture of its own or no page fits: the file
@@ -65,20 +76,52 @@ async function fromWikipedia(subject, kind) {
 async function fromCommons(query, kind) {
   const j = await getJson('https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2'
     + '&generator=search&gsrnamespace=6&gsrlimit=10&gsrsearch=' + encodeURIComponent(query)
-    + '&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=960');
+    + '&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiextmetadatafilter=ImageDescription|ObjectName&iiurlwidth=960');
   const pages = (j?.query?.pages || []).slice().sort((a, b) => (a.index || 0) - (b.index || 0));
+  const out = [];
   for (const p of pages) {
     const ii = p.imageinfo?.[0];
     if (!ii || !/^image\/(jpeg|png|webp|svg\+xml)$/.test(ii.mime || '')) continue;
     if (!fits(ii.url, ii.width, ii.height, kind)) continue;
     const url = ii.thumburl || ii.url;
-    return { url, w: ii.thumbwidth || ii.width, h: ii.thumbheight || ii.height, page: ii.descriptionurl || '', from: 'Wikimedia Commons' };
+    const m = ii.extmetadata || {};
+    out.push({ url, w: ii.thumbwidth || ii.width, h: ii.thumbheight || ii.height, page: ii.descriptionurl || '', from: 'Wikimedia Commons',
+      about: (String(p.title || '').replace(/^File:/, '') + ' — ' + strip(m.ImageDescription?.value || m.ObjectName?.value)).slice(0, 300) });
+    if (out.length >= 3) break;
   }
-  return null;
+  return out;
 }
 
+// Every picture that might show it: the article's lead picture first, then Commons.
+export async function findPictures(subject, query, kind) {
+  const [lead, more] = await Promise.all([fromWikipedia(subject, kind), fromCommons(query || subject, kind)]);
+  return [lead, ...more].filter(Boolean);
+}
 export async function findPicture(subject, query, kind) {
-  return (await fromWikipedia(subject, kind)) || (await fromCommons(query || subject, kind));
+  return (await findPictures(subject, query, kind))[0] || null;
+}
+
+// A page's lead picture is often of the wrong thing (2026-10-19: the island's beach under
+// a caption about the battle fought on it). One cheap call reads what each candidate file
+// says it shows and keeps the one that shows what the caption says — or none.
+async function chooseMatches(picks) {
+  const L = 'ABCDEFGH';
+  const lines = picks.map((p, i) => 'PICTURE ' + (i + 1) + ' — should show: ' + p.caption + '\n'
+    + p.cands.map((c, k) => '  ' + L[k] + ') ' + (c.about || '(no description)')).join('\n')).join('\n\n');
+  const r = await generateText({
+    feature: 'summary', maxTokens: 500, label: 'room:pictures-check', timeoutMs: 30_000, maxAttempts: 2, helperWaitMs: 45_000,
+    prompt: 'For each picture below, a few image files are offered, each with its file name and its own description. '
+      + 'For each picture, say in a few words what it should show, then pick the letter of the file that shows that: any photograph taken at that very event, or of that very thing, is enough — it need not show the exact action named. '
+      + 'A file that shows only the same place, or only something sharing the name, is not a match. If no file shows it, the letter is "none".\n'
+      + 'Reply with JSON only: {"picks":[{"picture":1,"needs":"…","letter":"B"}, …]}, one entry per picture.\n\n' + lines,
+  });
+  const got = firstJson(r?.text)?.picks;
+  if (r?.error || !Array.isArray(got)) throw new Error(String(r?.error || 'unreadable check'));
+  return picks.map((p, i) => {
+    const e = got.find((g) => Number(g?.picture) === i + 1) || got[i];
+    const k = L.indexOf(String(e?.letter || '').trim().toUpperCase().slice(0, 1));
+    return k >= 0 && String(e?.letter).trim().length === 1 ? p.cands[k] || null : null;
+  });
 }
 
 // The few places in an answer where a picture says what the words cannot, each
@@ -93,7 +136,7 @@ export async function answerPictures(answer) {
     prompt: 'Below is an answer someone is reading. Choose the few moments where seeing a real picture would change what the words mean to them — where the text describes or leans on something that has a look: a painting or artwork it discusses, the place where something happened, a building, a historical photograph an event is remembered by, an object, an animal or a natural phenomenon, a map that makes a spread or a border visible, a scientific image.\n'
       + 'Most answers deserve none or one. Choose at most ' + MAX_PICK + ', fewer is better. Never a picture that only decorates.\n'
       + 'Never pick a person (faces are handled elsewhere) and never a book, film or series (covers are handled elsewhere). Never an abstract idea with no look of its own — unless the answer itself points to one famous image that embodies it (a named painting, a known photograph).\n'
-      + 'For each: "anchor" — 3 to 8 words copied letter for letter from the answer, at the place where the picture belongs; "subject" — the exact English Wikipedia article title whose lead picture shows it; "query" — 2 to 5 words to search Wikimedia Commons for the same picture if the article has none; "caption" — 3 to 9 plain words saying what the picture shows; "kind" — place|building|art|event|object|nature|map|science|other; "weight" — 3 when the answer cannot really be pictured without it, 2 when it helps, 1 when it is only nice.\n'
+      + 'For each: "anchor" — 3 to 8 words copied letter for letter from the answer, at the place where the picture belongs; "subject" — the exact English Wikipedia article title about the very thing the caption shows (an event has its own article, apart from the place it happened in); "query" — 2 to 5 words to search Wikimedia Commons for the same picture if the article has none; "caption" — 3 to 9 plain words saying what the picture shows; "kind" — place|building|art|event|object|nature|map|science|other; "weight" — 3 when the answer cannot really be pictured without it, 2 when it helps, 1 when it is only nice.\n'
       + 'Reply with JSON only: {"pictures":[{"anchor":"","subject":"","query":"","caption":"","kind":"","weight":2}]}, or {"pictures":[]}.\n\n'
       + '=== ANSWER ===\n' + text.slice(0, 12000),
   });
@@ -111,10 +154,15 @@ export async function answerPictures(answer) {
     picks.push({ anchor, subject, query: plain(p?.query || subject).slice(0, 100), caption: plain(p?.caption).slice(0, 90),
       kind, weight: Math.max(1, Math.min(3, Number(p?.weight) || 2)) });
   }
-  const found = await Promise.all(picks.map(async (p) => {
-    const img = await findPicture(p.subject, p.query, p.kind);
-    return img ? { anchor: p.anchor, caption: p.caption || p.subject, subject: p.subject, kind: p.kind, weight: p.weight, ...img } : null;
-  }));
+  for (const p of picks) p.caption = p.caption || p.subject;
+  await Promise.all(picks.map(async (p) => { p.cands = await findPictures(p.subject, p.query, p.kind); }));
+  const open = picks.filter((p) => p.cands.length);
+  const chosen = open.length ? await chooseMatches(open) : [];
+  const found = open.map((p, i) => {
+    const img = chosen[i]; if (!img) return null;
+    const { about, ...pic } = img;
+    return { anchor: p.anchor, caption: p.caption, subject: p.subject, kind: p.kind, weight: p.weight, ...pic };
+  });
   const seen = new Set(), out = [];
   for (const f of found) {
     if (!f || seen.has(f.url)) continue;
@@ -134,7 +182,7 @@ export async function scanPictures(convoId, { limit = 6 } = {}) {
   const rows = db.prepare(`SELECT id, text, meta FROM convo_messages WHERE convo_id=? AND role='assistant' AND kind='chat' ORDER BY created_at DESC, rowid DESC`).all(convoId);
   const unread = rows.filter((r) => {
     let meta = {}; try { meta = r.meta ? JSON.parse(r.meta) || {} : {}; } catch { meta = {}; }
-    return !meta.failed && (!Array.isArray(meta.pictures) || (Number(meta.picturesV) || 0) < PICTURES_V)
+    return !meta.failed && (!Array.isArray(meta.pictures) || (meta.pictures.length && (Number(meta.picturesV) || 0) < PICTURES_V))
       && !scanning.has(r.id) && (failures.get(r.id) || 0) < 2 && String(r.text || '').trim();
   });
   const todo = unread.slice(0, limit);
