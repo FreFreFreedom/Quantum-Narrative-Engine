@@ -219,7 +219,7 @@ function bookOf(show) {
 }
 function correctionFor(show, raw) {
   if (!db) return '';
-  const row = db.prepare("SELECT fixed FROM lookup_reports WHERE book=? AND lower(term)=? AND fixed<>'' ORDER BY id DESC LIMIT 1")
+  const row = db.prepare("SELECT fixed FROM lookup_reports WHERE book=? AND lower(term)=? AND fixed<>'' AND (line<>'' OR note<>'') ORDER BY id DESC LIMIT 1")
     .get(bookOf(show), String(raw).toLowerCase());
   return row ? row.fixed : '';
 }
@@ -497,6 +497,9 @@ export async function reportLookup({ show = '', term = '', line = '', wrong = ''
   const [showKey, termKey] = cacheKey('read6: ' + show, raw);
   const lineKey = createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10);
   if (db) db.prepare('DELETE FROM show_lookups WHERE show=? AND term=?').run(showKey, termKey + ' #' + lineKey);
+  // With no sentence and nothing said, a second reading is only another guess (2026-10-19:
+  // "P.C." went from personal computer to police constable); the report waits for a fix.
+  if (!String(line || '').trim() && !String(note || '').trim()) return { ok: true, id, text: '' };
   const words = raw.split(' ').filter(Boolean).length;
   const base = words === 1 ? WORD_PROMPT : PHRASE_PROMPT;
   const prompt = lookupPrompt({ base, raw, show, line, reading: true, opening, worldFirst: true })
