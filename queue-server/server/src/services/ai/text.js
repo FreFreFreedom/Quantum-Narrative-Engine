@@ -23,17 +23,21 @@ export function bindAiTextDb(database) { db = database; pruneHelperJobs(); }
 // stopped accepting writes ("database or disk is full", 2026-09-23). Deleted in
 // small batches with a checkpoint between, so the cleanup itself fits in the
 // little room a full disk leaves. Runs at boot and at most every 10 minutes.
-const HELPER_KEEP_MS = 24 * 3600_000;
+// An hour, not a day (2026-10-19: the disk filled again at 185MB of jobs all under a
+// day old); a caller reads its answer within minutes or has already given up.
+const HELPER_KEEP_MS = 3600_000;
 let _lastHelperPrune = 0;
 export function pruneHelperJobs() {
   if (!db) return;
   _lastHelperPrune = Date.now();
   const cutoff = new Date(Date.now() - HELPER_KEEP_MS).toISOString();
   try {
-    const del = db.prepare(`DELETE FROM helper_jobs WHERE id IN (SELECT id FROM helper_jobs WHERE status IN ('done','failed') AND created_at < ? LIMIT 100)`);
+    // A job still queued after a day has no caller left waiting for it.
+    const del = db.prepare(`DELETE FROM helper_jobs WHERE id IN (SELECT id FROM helper_jobs WHERE (status IN ('done','failed') AND created_at < ?) OR created_at < ? LIMIT 100)`);
+    const stale = new Date(Date.now() - 24 * 3600_000).toISOString();
     let removed = 0;
     for (;;) {
-      const n = Number(del.run(cutoff).changes || 0);
+      const n = Number(del.run(cutoff, stale).changes || 0);
       removed += n;
       try { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); } catch {}
       if (n < 100) break;

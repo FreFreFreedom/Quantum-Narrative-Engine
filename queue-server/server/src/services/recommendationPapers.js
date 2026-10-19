@@ -1,6 +1,23 @@
 // Public scholarly metadata only. Publication titles/URLs never come from the model.
 let db;
-export function bindRecommendationPapers(database) { db = database; }
+export function bindRecommendationPapers(database) { db = database; pruneSearchCache(); setInterval(pruneSearchCache, 6 * 3600_000).unref(); }
+// A cached search is only ever used for a day, so an older one is dead weight: it
+// had grown to 98MB and helped fill the disk (2026-10-19). Small batches, so the
+// cleanup fits in what a full disk leaves.
+function pruneSearchCache() {
+  try {
+    const del = db.prepare('DELETE FROM recommendation_search_cache WHERE key IN (SELECT key FROM recommendation_search_cache WHERE fetched_at < ? LIMIT 200)');
+    const cutoff = Date.now() - 86400000;
+    let removed = 0;
+    for (;;) {
+      const n = Number(del.run(cutoff).changes || 0);
+      removed += n;
+      try { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); } catch {}
+      if (n < 200) break;
+    }
+    if (removed) console.log(`[papers] pruned ${removed} old searches`);
+  } catch (e) { console.error('[papers] prune failed:', e.message); }
+}
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 let lastRequest = 0;
 const blockedUntil = new Map();
