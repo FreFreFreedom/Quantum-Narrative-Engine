@@ -33215,7 +33215,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!wordDrag) return;
     // A click is not a drag: until the hand has really moved, leave the selection
     // alone, or clicking into an answer would grab the word under the cursor.
-    if(Math.abs(ev.clientX - wordDrag.x) + Math.abs(ev.clientY - wordDrag.y) < 5) return;
+    if(Math.abs(ev.clientX - wordDrag.x) + Math.abs(ev.clientY - wordDrag.y) < 3) return;
     var focus = caretWordFrom(ev.clientX, ev.clientY);
     if(!focus || !wordDrag.log.contains(focus.node)) return;
     var sel = window.getSelection && window.getSelection();
@@ -33239,11 +33239,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     document.removeEventListener('mousemove', wordDragMove, true);
     document.removeEventListener('mouseup', wordDragEnd, true);
   }
+  // Everywhere in the Room, not only in answers (his ask, 2026-10-19: "just whole words,
+  // no individual letters", lit the moment the drag begins). The browser's own drag is
+  // stopped at the press, since it moved the selection letter by letter after each
+  // snap; the selection is then drawn here alone, word to word. A double-click is left
+  // to the browser, which already takes a whole word.
   function wordDragStart(log, ev){
-    if(ev.button !== 0 || ev.detail > 1) return;      // double-click is already a word
-    if(ev.target.closest && ev.target.closest('a,button,input,textarea,.se-quote-pop')) return;
+    if(wordDrag || ev.button !== 0 || ev.detail > 1 || ev.shiftKey) return;
+    var t = ev.target;
+    if(!t || !t.closest || t.closest('a,button,input,textarea,select,label,[contenteditable],[contenteditable] *,[draggable="true"],.se-quote-pop')) return;
+    try{ if(getComputedStyle(t).userSelect === 'none') return; }catch(_){}
     var w = caretWordFrom(ev.clientX, ev.clientY);
-    if(!w || !log.contains(w.node)) return;
+    if(!w || w.start === w.end || !log.contains(w.node) || !t.contains(w.node)) return;
+    ev.preventDefault();
+    var sel0 = window.getSelection && window.getSelection();
+    if(sel0) sel0.removeAllRanges();
     wordDrag = { log: log, anchor: w, x: ev.clientX, y: ev.clientY };
     document.addEventListener('mousemove', wordDragMove, true);
     document.addEventListener('mouseup', wordDragEnd, true);
@@ -33392,7 +33402,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       }, settleMs);
     };
     log.quoteOffer=offer;
-    log.addEventListener('mousedown', function(ev){ wordDragStart(log, ev); });
+    // (The word drag itself is wired once for the whole Room, below.)
     log.addEventListener('mouseup', function(){ offer(0, true); });
     log.addEventListener('keyup', function(){ offer(0); });
     // Passive: the gesture is the browser's own text selection and must not be
@@ -33435,6 +33445,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!quotePop || !quotePop.contains(ev.target)){clearTimeout(quoteOfferTimer);killQuotePop();}
   }, true);
   window.addEventListener('scroll', function(){ placeQuotePop(); if(inkRange) inkFollow(); }, true);
+  document.addEventListener('mousedown', function(ev){ wordDragStart(document.body, ev); });
   // Clicking away clears the selection; the offer goes with it.
   document.addEventListener('selectionchange', function(){
     inkFollow();
