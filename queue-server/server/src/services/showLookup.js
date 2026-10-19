@@ -106,12 +106,16 @@ One or two short sentences, at most 40 words in all, and nothing after them.
 Do not begin by repeating the phrase.`;
 
 const ACRONYM_PROMPT = `You explain the jargon of what someone is watching, while it is paused. He gives an
-ACRONYM from the dialogue. Give what its letters stand for in THIS show (pick the one
-sense that fits), then ONE sentence of about 16 words — never more than 22 — saying what
+ACRONYM from the dialogue. Give what its letters stand for in THIS show: think of the
+expansions that fit this show's era, place and world, pick the one the scene supports
+(never a modern or technical one just because it is the best known), then ONE sentence of about 16 words — never more than 22 — saying what
 that thing is or does and why it matters here.
 ${COMMON}
 Answer with JSON only, no markdown fence: {"expansion":"…","text":"…"}`;
 
+// 2026-10-19: with no sentence beside it, a set of initials was read two different ways on
+// two runs and a rare word was given an invented picture. Sense is now anchored to the
+// book's era and place, and an undecided case falls back to the plain general meaning.
 // The sense is the one the surrounding words demand (2026-10-18: "PCP" beside
 // "alcohol" in a gang memoir came back as a PDF viewer's toolbar, read off the
 // window title). The title only says where he is; the app showing it is never
@@ -123,7 +127,17 @@ to know the book, show or subject, but the app, browser, PDF viewer or file is N
 the word refers to. With no text around it, give the sense a reader of that work would meet.
 Words are often slang or jargon — street, gang, prison, drug, police, court, military, trade,
 regional or period talk. When the speaker's world and the sentence point there, give THAT
-sense, as the people in that world use it, not the everyday dictionary one.`;
+sense, as the people in that world use it, not the everyday dictionary one.
+Before choosing, settle the world from everything above — the title, the first pages, the
+text around it: the era, the place, the kind of book. Then take the sense that belongs to
+that world, and drop any sense from another time or another field (the newest or most
+common sense of a word is not the default; a book's own age and place come first). Several
+readings can still fit a short term or a set of initials: weigh the ones that fit this
+world, pick the one the scene supports, and do not just take the first that comes to mind.
+If the surrounding words and the book still do not settle it, give the plainest general
+meaning of the term and stop there — a specific sense you cannot support, or an image or
+detail not in the text, is worse than a general one. This holds with no text around the
+word: then only the title and the first pages decide, and the answer stays general.`;
 
 function context({ show, line, reading = false, opening = '' }) {
   const s = String(show || '').replace(/\s+/g, ' ').trim().slice(0, 200);
@@ -199,6 +213,10 @@ dictionary would print for this use, as in the Room's dictionary (2026-10-19: "s
 came back as "the noisy prison cell became very quiet", a retelling of the scene, wrong and
 odd to read). Never retell the scene, never describe the characters or what they do: say what
 the word itself means, in the length asked above.
+Decide the book's era, place and genre in "world" first, from the title, the first pages and
+the text around the word, and reject any sense that belongs to a different time or field.
+When the world does not settle between senses, write the plainest general meaning; never add
+a slang term or a picture the text does not give.
 Two opposite mistakes: the bare dictionary sense when the world gives the word a special
 meaning, and an invented slang meaning when the plain one already fits the scene. Put your
 meaning back into the sentence and its neighbours — does it fit what is actually happening
@@ -232,7 +250,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const acronym = words === 1 && isAcronym(raw);
   // Reading: the passage is part of the key, so a word met in two senses is read twice,
   // and a word with no passage is never kept (those readings were guesses).
-  const [showKey, termKey] = cacheKey((reading ? 'read6: ' : '') + show, raw);
+  const [showKey, termKey] = cacheKey((reading ? 'read7: ' : '') + show, raw);
   const lineKey = reading ? createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10) : '';
   const keepIt = !reading || String(line || '').trim();
 
@@ -540,7 +558,7 @@ export async function reportLookup({ show = '', term = '', line = '', wrong = ''
   const book = bookOf(show);
   const id = db ? db.prepare('INSERT INTO lookup_reports (book, term, line, wrong, note) VALUES (?,?,?,?,?)')
     .run(book, raw, String(line || '').slice(0, 1200), String(wrong || '').slice(0, 600), String(note || '').slice(0, 600)).lastInsertRowid : null;
-  const [showKey, termKey] = cacheKey('read6: ' + show, raw);
+  const [showKey, termKey] = cacheKey('read7: ' + show, raw);
   const lineKey = createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10);
   if (db) db.prepare('DELETE FROM show_lookups WHERE show=? AND term=?').run(showKey, termKey + ' #' + lineKey);
   // With no sentence and nothing said, a second reading is only another guess (2026-10-19:
@@ -581,7 +599,7 @@ const REPORT_BRIEF = `Fix the QNE dictionary's page readings from the meanings A
 
 Where: queue-server/server/src/services/showLookup.js — lookupPrompt(), WORD_PROMPT /
 PHRASE_PROMPT / ACRONYM_PROMPT, forReading(), WORLD_FIRST, SENSE, context(). A page lookup
-is reading:true with worldFirst; the cache key prefix is 'read6: ' in lookupOnScreen().
+is reading:true with worldFirst; the cache key prefix is 'read7: ' in lookupOnScreen().
 
 Do:
 1. Read the reports below. Find what they have in common — the KIND of mistake (wrong
@@ -589,7 +607,7 @@ Do:
 2. Change the prompts or the context so that kind of mistake stops, for every word. Never
    put these words or these meanings into a prompt: models copy examples. Encode the
    understanding, not the instance. A dated comment above the change may name one case.
-3. Bump the cache prefix (read6 → read7, in both lookupOnScreen and reportLookup) so old
+3. Bump the cache prefix (the current prefix → the next, in both lookupOnScreen and reportLookup) so old
    readings are redone.
 4. node --check the file. Commit and ship as usual.
 If a report is not a mistake in the reading at all (a bad selection, missing text around
