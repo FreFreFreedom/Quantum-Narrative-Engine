@@ -1254,3 +1254,11 @@ Messages that leave the Room's 16-message window are written down in plain lines
   hook and `~/.claude/CLAUDE.md`, harvested memory, random subjects, shelf/library dumps, tool
   descriptions) — see AGENTS.md "Where the rules kept hiding". New "Blank" group in the
   picker: Gemini / GPT-4.1 with only the conversation, as real turns.
+
+## Wrong dictionary meanings he reported (2026-10-19)
+The dictionary card (Mac PDFs, any page) has **Not right**: the meaning is re-read at once by
+the subscription model, cached, and the fix is used for that word in that book from then on.
+Every report waits in `lookup_reports`: read them with `GET /api/screen/reports` (login as in
+CLAUDE.md), look for the pattern behind them, fix the prompts in `services/showLookup.js`
+(bump the `read6:` cache prefix), then `POST /api/screen/reports/handled {ids:[…]}`.
+When he says "check the reports" or "the dictionary is wrong again", start there.
