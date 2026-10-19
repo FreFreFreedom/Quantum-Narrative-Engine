@@ -108,10 +108,12 @@ Words are often slang or jargon — street, gang, prison, drug, police, court, m
 regional or period talk. When the speaker's world and the sentence point there, give THAT
 sense, as the people in that world use it, not the everyday dictionary one.`;
 
-function context({ show, line, reading = false }) {
+function context({ show, line, reading = false, opening = '' }) {
   const s = String(show || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   const l = String(line || '').replace(/\s+/g, ' ').trim().slice(0, 1200);
+  const o = String(opening || '').replace(/\s+/g, ' ').trim().slice(0, 700);
   return (s ? `\n\n=== WHAT HE IS ${reading ? 'READING' : 'WATCHING'} ===\n${s}` : '')
+    + (o ? `\n\n=== THE FIRST PAGES OF THE BOOK (to know which book it is) ===\n${o}` : '')
     + (l ? `\n\n=== ${reading ? 'THE TEXT AROUND IT' : 'THE DIALOGUE JUST NOW'} ===\n${l}` : '')
     + `\n\n${SENSE}`;
 }
@@ -162,7 +164,22 @@ function cacheKey(show, term) {
     String(term || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 200)];
 }
 
-export async function lookupOnScreen({ show = '', term = '', line = '', reading = false } = {}) {
+// On a page the fast models kept giving the dictionary sense even with the
+// writer's world in plain sight (2026-10-18: "campaigning" in Monster, an L.A. gang
+// memoir, beside "shotgun slung over my shoulder", came back as winning votes, three
+// times out of three). Naming the world first, in its own field, before the meaning,
+// is what makes them use it: the meaning is then written from inside that world.
+const WORLD_FIRST = `
+Answer with JSON only, no markdown fence: {"world":"…","text":"…"}.
+"world": first, in under 15 words, who is writing and the world they speak from — the book
+or author if you can tell, the place, the time, the milieu (a soldier's war memoir, a 1980s
+street gang, a Victorian novel, a biology paper).
+"text": then the meaning, as someone FROM that world means it, in the length asked above.
+The everyday dictionary sense is the usual mistake: an ordinary word in a special world very
+often means something else there. Before answering, put your meaning back into the
+sentence — would THIS writer, in THIS world, mean exactly that? If not, find what they do mean.`;
+
+export async function lookupOnScreen({ show = '', term = '', line = '', reading = false, opening = '' } = {}) {
   const raw = String(term || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   if (!raw) return { error: 'not_a_word' };
   if (!/[A-Za-z]/.test(raw)) return { error: 'not_a_word' };
@@ -170,7 +187,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const acronym = words === 1 && isAcronym(raw);
   // Reading: the passage is part of the key, so a word met in two senses is read twice,
   // and a word with no passage is never kept (those readings were guesses).
-  const [showKey, termKey] = cacheKey((reading ? 'read3: ' : '') + show, raw);
+  const [showKey, termKey] = cacheKey((reading ? 'read4: ' : '') + show, raw);
   const lineKey = reading ? createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10) : '';
   const keepIt = !reading || String(line || '').trim();
 
@@ -180,8 +197,9 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   }
 
   const base = acronym ? ACRONYM_PROMPT : words === 1 ? WORD_PROMPT : PHRASE_PROMPT;
-  const prompt = (reading ? forReading(base) : base)
-    + `\n\n=== WHAT HE ASKED ABOUT ===\n${raw}` + context({ show, line, reading });
+  const worldFirst = reading && !acronym;
+  const prompt = (reading ? forReading(base) : base) + (worldFirst ? WORLD_FIRST : '')
+    + `\n\n=== WHAT HE ASKED ABOUT ===\n${raw}` + context({ show, line, reading, opening });
   const out = await quickText(prompt);
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
 
@@ -194,7 +212,12 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
     text = firstSentence(parsed?.text);
     if (!expansion) return { error: 'unreadable' };
   } else {
-    text = words === 1 ? firstSentence(out.text) : firstSentences(out.text, 2);
+    let said = out.text;
+    if (worldFirst) {
+      try { said = String(JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, ''))?.text || ''); }
+      catch { said = out.text.replace(/^[\s\S]*"text"\s*:\s*"/, '').replace(/"\s*}?\s*$/, ''); }
+    }
+    text = words === 1 ? firstSentence(said) : firstSentences(said, 2);
   }
   if (text.split(/\s+/).length < 5) return { error: 'too_short' };
 

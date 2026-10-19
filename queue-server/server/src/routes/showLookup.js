@@ -13,6 +13,7 @@ export function showLookupRoutes() {
       show: req.body?.show || '',
       term: req.body?.term || '',
       line: req.body?.line || '',
+      opening: req.body?.opening || '',
       reading: req.body?.reading === true,
     });
     if (out.error) return res.status(out.error === 'not_a_word' ? 400 : 500).json(out);
