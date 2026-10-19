@@ -13,10 +13,26 @@ import { isMeteredProvider, getModelCatalog, getProviderCatalog } from './catalo
 import { isSpendFree } from '../providers/index.js';
 import { openAiStudioEnabled, openAiStudioBlockReason } from '../billingGuard.js';
 import { capStateSync, recordSpend } from '../openaiSpend.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { DB_PATH } from '../../db/schema.js';
 import { randomUUID } from 'node:crypto';
 
 let db = null;
-export function bindAiTextDb(database) { db = database; pruneHelperJobs(); }
+export function bindAiTextDb(database) { db = database; roomToDelete(); pruneHelperJobs(); }
+
+// A full disk refuses even a DELETE, which needs a little room to write (2026-10-19:
+// the cleanup below failed "database or disk is full"). So when almost nothing is
+// left, the IMDb ratings file goes first: it fetches itself again when next needed.
+function roomToDelete() {
+  try {
+    const dir = path.dirname(DB_PATH);
+    const st = fs.statfsSync(dir);
+    if (st.bavail * st.bsize > 20e6) return;
+    fs.rmSync(path.join(dir, 'imdb-ratings.tsv.gz'), { force: true });
+    console.log('[disk] nearly full: removed the IMDb ratings file to make room');
+  } catch (e) { console.error('[disk] could not make room:', e.message); }
+}
 
 // Finished helper jobs are never read again, but each one keeps its whole prompt
 // and answer. Left alone they grew to 270MB of a 500MB volume and the database
