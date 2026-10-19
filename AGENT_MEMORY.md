@@ -1261,4 +1261,5 @@ the subscription model, cached, and the fix is used for that word in that book f
 Every report waits in `lookup_reports`: read them with `GET /api/screen/reports` (login as in
 CLAUDE.md), look for the pattern behind them, fix the prompts in `services/showLookup.js`
 (bump the `read6:` cache prefix), then `POST /api/screen/reports/handled {ids:[…]}`.
-When he says "check the reports" or "the dictionary is wrong again", start there.
+Automatic since 2026-10-19: every 30 min the server (`sweepReports`) files waiting reports as one
+queued task (three waiting, or one older than six hours) with a self-contained brief; nobody asks.
