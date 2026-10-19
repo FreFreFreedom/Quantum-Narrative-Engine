@@ -66,7 +66,7 @@ async function raceLanes(prompt, { maxTokens, label, claudeLastResort = false, f
 
 // A word he clicked or typed: worth the slow lane if the fast ones are spent.
 async function quickText(prompt) {
-  return raceLanes(prompt, { maxTokens: 400, label: 'screen:define', claudeLastResort: true, fallbackMs: 20_000 });
+  return raceLanes(prompt, { maxTokens: 800, label: 'screen:define', claudeLastResort: true, fallbackMs: 20_000 });
 }
 
 const COMMON = `English is his second language — plain words, no jargon explained with more jargon.
@@ -179,6 +179,11 @@ The everyday dictionary sense is the usual mistake: an ordinary word in a specia
 often means something else there. Before answering, put your meaning back into the
 sentence — would THIS writer, in THIS world, mean exactly that? If not, find what they do mean.`;
 
+export function lookupPrompt({ base = WORD_PROMPT, raw, show, line, reading, opening, worldFirst }) {
+  return (reading ? forReading(base) : base) + (worldFirst ? WORLD_FIRST : '')
+    + `\n\n=== WHAT HE ASKED ABOUT ===\n${raw}` + context({ show, line, reading, opening });
+}
+
 export async function lookupOnScreen({ show = '', term = '', line = '', reading = false, opening = '' } = {}) {
   const raw = String(term || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   if (!raw) return { error: 'not_a_word' };
@@ -198,8 +203,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
 
   const base = acronym ? ACRONYM_PROMPT : words === 1 ? WORD_PROMPT : PHRASE_PROMPT;
   const worldFirst = reading && !acronym;
-  const prompt = (reading ? forReading(base) : base) + (worldFirst ? WORLD_FIRST : '')
-    + `\n\n=== WHAT HE ASKED ABOUT ===\n${raw}` + context({ show, line, reading, opening });
+  const prompt = lookupPrompt({ base, raw, show, line, reading, opening, worldFirst });
   const out = await quickText(prompt);
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
 
