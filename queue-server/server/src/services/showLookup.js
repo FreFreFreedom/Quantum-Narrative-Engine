@@ -426,3 +426,21 @@ Plain text, no bold, no preamble.`;
   const answer = String(out?.text || '').trim();
   return answer ? { answer } : { error: 'generation_failed' };
 }
+
+// A chapter he places in a PDF by hand (the Room's chapter rail beside Edge's PDF
+// viewer, 2026-10-18): the page's opening words name it, as a gap chapter in the
+// Room is named by the words after the gap. A few words, Title Case, never a sentence.
+export async function nameChapter({ text = '', book = '' } = {}) {
+  const passage = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 1800);
+  if (passage.length < 40) return { error: 'too_short' };
+  const prompt = `Below is the page of a book where a reader starts a new chapter of his own${book ? ` (the book: ${String(book).slice(0, 160)})` : ''}.
+Name what this stretch is about in 2 to 5 words, the way a good table of contents would: concrete, in the book's own world, Title Case.
+Reply with the name only — no quotation marks, no full stop, no "Chapter".
+
+=== THE PAGE ===
+${passage}`;
+  const out = await raceLanes(prompt, { maxTokens: 300, label: 'pdf:chapter-name', claudeLastResort: true, fallbackMs: 20_000 });
+  const name = String(out?.text || '').split('\n').map((l) => l.trim()).filter(Boolean).pop() || '';
+  const clean = name.replace(/^["'“”‘’*#\s]+|["'“”‘’*.\s]+$/g, '').replace(/^chapter\s*[:\-–]?\s*/i, '').slice(0, 60);
+  return clean.split(/\s+/).length >= 1 && clean.length >= 3 ? { ok: true, name: clean } : { error: 'unreadable' };
+}
