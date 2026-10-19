@@ -521,6 +521,13 @@ copied from the Room's CSS in `fmcns_navigator.html`, not re-invented. Example: 
 card's Chapter / Keep / Teach is the Room's `.se-quote-pop` bar (Cinzel capitals, gold
 `ic-bookmark`/`ic-seed`/`ic-target` symbols, thin dividers, along the foot). When the
 Room's look changes, the copies change with it.
+Broken once already by a chapter drawn on a PDF page as a gold diamond and italic name,
+when the Room draws a chapter as `.se-chap` (thin gold lines either side, the name in
+Cinzel capitals, wide-spaced) — he had to ask twice. So: **before drawing anything
+outside the app, grep the Room for its version and copy those exact values; invent only
+what the Room has no version of, and then in the Room's fonts and tokens.** The Mac side
+has Cinzel installed (`~/Library/Fonts/Cinzel-QNE.ttf`, from the extension's woff2) for
+exactly this.
 
 **A place you can go is a link (2026-10-08).** He right-clicks to open things in a new
 tab, which the browser only offers on a real `<a href>`. Every rail destination and every
