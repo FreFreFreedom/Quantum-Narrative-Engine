@@ -486,6 +486,52 @@ ${passage}`;
   return clean.split(/\s+/).length >= 1 && clean.length >= 3 ? { ok: true, name: clean } : { error: 'unreadable' };
 }
 
+// Who is this, in the story so far (his ask, 2026-10-19): a name double-clicked in a
+// PDF opens a card with who the person is and the few moments that made them, read
+// only from the pages up to where he is — never a page ahead. The Mac sends the
+// passages where the name appears, each with its page; the answer is kept per name
+// and per last page it was seen on, so it is only read again when the story moved.
+export async function characterOnPage({ book = '', name = '', upto = 0, mentions = [], opening = '' } = {}) {
+  const who = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  const list = (Array.isArray(mentions) ? mentions : []).slice(0, 30)
+    .map((m) => ({ page: Math.max(0, Math.floor(+m.page || 0)), text: String(m.text || '').replace(/\s+/g, ' ').trim().slice(0, 600) }))
+    .filter((m) => m.page && m.text && m.page <= (+upto || Infinity));
+  if (!who || !list.length) return { person: false };
+  const last = list[list.length - 1].page;
+  const key = 'char1: ' + bookOf(book);
+  const term = who.toLowerCase() + ' #' + last;
+  const hit = db && db.prepare('SELECT text FROM show_lookups WHERE show=? AND term=?').get(key, term);
+  if (hit) { try { return { ...JSON.parse(hit.text), cached: true }; } catch {} }
+  const prompt = `A reader is in the middle of a book${book ? ` (${String(book).slice(0, 160)})` : ''} and double-clicked the name "${who}". Tell him who this is in the story SO FAR.
+
+Below are the passages where the name appears, each with its page, up to page ${upto || last}. You know only these pages: say nothing that happens later, even if you know the book — that would spoil it for him.${opening ? `\n\nThe book opens like this, for who the narrator is:\n${String(opening).slice(0, 800)}` : ''}
+
+Reply with JSON only:
+{"person": true or false — false if "${who}" is not a person or a named animal in this story (a place, a group, a word),
+ "who": one sentence, at most 18 words: who they are to the story and to the narrator, in the book's own world,
+ "moments": 2 to 5 moments that made this person, oldest first, each {"page": the page number as given, "text": at most 9 words, what they did or what happened to them}. The last one is the most recent.}
+
+=== PASSAGES ===
+${list.map((m) => `[page ${m.page}] ${m.text}`).join('\n\n')}`;
+  const out = await generateText({ prompt, feature: 'quick', label: 'pdf:character', maxTokens: 900, timeoutMs: 45_000 });
+  if (out.error || !out.text) return { error: 'no_answer' };
+  let d = null;
+  try { d = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { return { error: 'unreadable' }; }
+  if (!d || d.person === false) return { person: false };
+  const pages = new Set(list.map((m) => m.page));
+  const res = {
+    person: true,
+    who: firstSentence(String(d.who || '')),
+    moments: (Array.isArray(d.moments) ? d.moments : [])
+      .map((m) => ({ page: Math.floor(+m.page || 0), text: String(m.text || '').trim().replace(/\.$/, '').slice(0, 90) }))
+      .filter((m) => m.text && pages.has(m.page)).sort((a, b) => a.page - b.page).slice(-5),
+    upto: +upto || last,
+  };
+  if (!res.who) return { error: 'unreadable' };
+  if (db) db.prepare('INSERT OR REPLACE INTO show_lookups (show, term, line, text, expansion) VALUES (?,?,?,?,?)').run(key, term, '', JSON.stringify(res), '');
+  return res;
+}
+
 // "Not right" on the card: the reading is dropped from the cache, kept as a report, and
 // read again by the subscription's model with the wrong answer and his words in view.
 export async function reportLookup({ show = '', term = '', line = '', wrong = '', note = '', opening = '' } = {}) {

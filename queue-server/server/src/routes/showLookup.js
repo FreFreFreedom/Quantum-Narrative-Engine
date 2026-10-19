@@ -1,7 +1,7 @@
 // Mounted at /api/screen — the dictionary for whatever he is watching, called by
 // the Edge extension over the same token login the QNE extension already uses.
 import { Router } from 'express';
-import { lookupOnScreen, glossaryOnScreen, episodeGlossary, askOnScreen, nameChapter, reportLookup, listReports, markReportsHandled, sweepReports } from '../services/showLookup.js';
+import { lookupOnScreen, glossaryOnScreen, episodeGlossary, askOnScreen, nameChapter, characterOnPage, reportLookup, listReports, markReportsHandled, sweepReports } from '../services/showLookup.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function showLookupRoutes() {
@@ -57,6 +57,14 @@ export function showLookupRoutes() {
   router.post('/chapter-name', asyncHandler(async (req, res) => {
     const out = await nameChapter({ text: req.body?.text || '', book: req.body?.book || '' });
     if (out.error) return res.status(out.error === 'too_short' ? 400 : 500).json(out);
+    res.json(out);
+  }));
+
+  // { book, name, upto, mentions:[{page,text}], opening } — who a name is, up to his page.
+  router.post('/character', asyncHandler(async (req, res) => {
+    const b = req.body || {};
+    const out = await characterOnPage({ book: b.book || '', name: b.name || '', upto: b.upto || 0, mentions: b.mentions || [], opening: b.opening || '' });
+    if (out.error) return res.status(500).json(out);
     res.json(out);
   }));
 
