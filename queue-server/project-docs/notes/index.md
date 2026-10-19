@@ -12,6 +12,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Cook County Court as Fractal Injustice Anatomy — notes/cook-county-court-as-fractal-injustice-anatomy.md
 - Note: Cross-Domain Analogical Reasoning — notes/cross-domain-analogical-reasoning.md
 - Note: Cross‑Domain Analogy Recommendation for Fractal Legal Engine — notes/cross-domain-analogy-recommendation-for-fractal-legal-engine.md
+- Note: Damiana's relevance as somatic catalyst — notes/damiana-s-relevance-as-somatic-catalyst.md
 - Note: Essential Functions and Ontological Mapping Terminology — side talk of Palantir's Role in Modern Societal Infrastructure — notes/essential-functions-and-ontological-mapping-terminology-side-talk-of-palantir-s-.md
 - Note: Films depicting the unhealed-wound violence cycle — side talk of Comparative politics across structural scales — notes/films-depicting-the-unhealed-wound-violence-cycle-side-talk-of-comparative-polit.md
 - Note: Fractal Civic Structures as a Cross‑Scale Analytical Engine — notes/fractal-civic-structures-as-a-cross-scale-analytical-engine.md
