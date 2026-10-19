@@ -46,11 +46,12 @@ const FAST_LANES = [
 // its whole timeout before the second is even tried, and he sits in front of a paused
 // episode waiting. Asked all at once, the answer arrives as fast as the quickest of
 // them — three free calls instead of one, which costs nothing but a little quota.
-async function raceLanes(prompt, { maxTokens, label, claudeLastResort = false, fallbackMs = 20_000 }) {
+async function raceLanes(prompt, { maxTokens, label, claudeLastResort = false, fallbackMs = 20_000, prefer = '' }) {
   // One lane at a time, each given a few seconds. Racing two answered no faster in
   // practice — the first lane almost always wins — and spent twice the free quota,
   // which is the thing that runs out and makes everything slow later.
-  const live = FAST_LANES.filter((l) => !router.isExhausted(l.provider, l.model));
+  const live = FAST_LANES.filter((l) => !router.isExhausted(l.provider, l.model))
+    .sort((a, b) => (b.provider === prefer) - (a.provider === prefer));
   for (const l of live) {
     const out = await generateTextDirect({
       prompt, provider: l.provider, model: l.model, maxTokens, label, timeoutMs: Math.min(l.ms, 6000),
@@ -65,8 +66,12 @@ async function raceLanes(prompt, { maxTokens, label, claudeLastResort = false, f
 }
 
 // A word he clicked or typed: worth the slow lane if the fast ones are spent.
-async function quickText(prompt) {
-  return raceLanes(prompt, { maxTokens: 800, label: 'screen:define', claudeLastResort: true, fallbackMs: 20_000 });
+// A page is read by Gemini first (2026-10-19): with "campaigning, shotgun slung over my
+// shoulder" beside it, gpt-oss still answered "persuading voters", and "the unit
+// library" in a juvenile hall came back as a stash room; Gemini read the scene both
+// times, in under a second.
+async function quickText(prompt, reading = false) {
+  return raceLanes(prompt, { maxTokens: 800, label: 'screen:define', claudeLastResort: true, fallbackMs: 20_000, prefer: reading ? 'google-ai-studio' : '' });
 }
 
 const COMMON = `English is his second language — plain words, no jargon explained with more jargon.
@@ -171,13 +176,16 @@ function cacheKey(show, term) {
 // is what makes them use it: the meaning is then written from inside that world.
 const WORLD_FIRST = `
 Answer with JSON only, no markdown fence: {"world":"…","text":"…"}.
-"world": first, in under 15 words, who is writing and the world they speak from — the book
-or author if you can tell, the place, the time, the milieu (a soldier's war memoir, a 1980s
-street gang, a Victorian novel, a biology paper).
-"text": then the meaning, as someone FROM that world means it, in the length asked above.
-The everyday dictionary sense is the usual mistake: an ordinary word in a special world very
-often means something else there. Before answering, put your meaning back into the
-sentence — would THIS writer, in THIS world, mean exactly that? If not, find what they do mean.`;
+"world": first, in under 20 words, who is writing and the world they speak from — the book
+or author if you can tell, the milieu — and then WHERE THIS PASSAGE TAKES PLACE: the scene
+in the text around it, read from the details right beside the word (a shotgun on a shoulder,
+a cell, staff, a classroom). The scene decides more than the book does: a gang memoir has
+chapters in prison, at school, at home — and at war.
+"text": then the meaning, as someone in that scene means it, in the length asked above.
+Two opposite mistakes: the bare dictionary sense when the world gives the word a special
+meaning, and an invented slang meaning when the plain one already fits the scene. Put your
+meaning back into the sentence and its neighbours — does it fit what is actually happening
+there? If the plain sense fits, give it plainly, naming the place it belongs to.`;
 
 export function lookupPrompt({ base = WORD_PROMPT, raw, show, line, reading, opening, worldFirst }) {
   return (reading ? forReading(base) : base) + (worldFirst ? WORLD_FIRST : '')
@@ -192,7 +200,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const acronym = words === 1 && isAcronym(raw);
   // Reading: the passage is part of the key, so a word met in two senses is read twice,
   // and a word with no passage is never kept (those readings were guesses).
-  const [showKey, termKey] = cacheKey((reading ? 'read4: ' : '') + show, raw);
+  const [showKey, termKey] = cacheKey((reading ? 'read5: ' : '') + show, raw);
   const lineKey = reading ? createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10) : '';
   const keepIt = !reading || String(line || '').trim();
 
@@ -204,7 +212,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const base = acronym ? ACRONYM_PROMPT : words === 1 ? WORD_PROMPT : PHRASE_PROMPT;
   const worldFirst = reading && !acronym;
   const prompt = lookupPrompt({ base, raw, show, line, reading, opening, worldFirst });
-  const out = await quickText(prompt);
+  const out = await quickText(prompt, reading);
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
 
   let text = '';
