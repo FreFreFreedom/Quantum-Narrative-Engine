@@ -4009,6 +4009,81 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .lib-favonly { width:26px; height:26px; min-width:0; padding:0; border-radius:50%; border:1px solid var(--c-border-2); background:none;
   display:flex; align-items:center; justify-content:center; font-size:13px; line-height:1; color:var(--c-ink-4); cursor:pointer; }
 .lib-favonly.on { background:#c9a14a; border-color:#c9a14a; color:#141a26; }
+/* The Library full screen (his picks C1–C4, 2026-10-19): filters down the left, the
+   wall in the middle, the open card docked on the right. */
+.lib-fullbtn { order:9; width:26px; height:26px; min-width:0; padding:0; border-radius:50%; border:1px solid var(--c-border-2); background:none;
+  display:flex; align-items:center; justify-content:center; color:var(--c-ink-4); cursor:pointer; }
+.lib-fullbtn:hover { color:#d9b877; border-color:#d9b877; }
+.lib-fullbtn svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+.room-cards.is-full:has(#roomInterests.is-active) { position:fixed; inset:0; z-index:125; width:auto !important; min-width:0; margin:0; padding:0; border-radius:0; background:var(--c-bg); border-left:0; overflow-y:auto; }
+.room-cards.is-full:has(#roomInterests.is-active) > .room-tabs,
+.room-cards.is-full:has(#roomInterests.is-active) > .side-resize { display:none; }
+#roomInterests.is-full.is-active { display:grid; grid-template-columns:240px minmax(0,1fr); align-items:start; min-height:100%; }
+#roomInterests.is-full > * { grid-column:2; padding-left:32px; padding-right:32px; box-sizing:border-box; min-width:0; }
+#roomInterests.is-full.libx-open > :not(.libx-side):not(.lib-over) { margin-right:var(--libx-card, 400px); }
+#roomInterests.is-full > .libx-side { grid-column:1; grid-row:1 / span 20; position:sticky; top:0; height:100vh; overflow-y:auto;
+  padding:22px 16px 40px; border-right:1px solid var(--c-border); display:flex; flex-direction:column; gap:1px; }
+#roomInterests.is-full > .lib-over { padding:0; margin:0; }
+#roomInterests.is-full .lib-bar { position:sticky; top:0; z-index:5; background:var(--c-bg); padding:14px 0 10px; margin:0 0 6px; }
+.libx-side h6 { margin:18px 0 6px 8px; font:600 10.5px var(--font-ui); letter-spacing:.12em; text-transform:uppercase; color:var(--c-ink-5); }
+.libx-side .lib-find { margin:0 0 2px; }
+.libx-side .lib-years { padding:0 8px; }
+.libx-side .lib-year { width:58px; height:30px; border:0; border-bottom:1px solid var(--c-border-2); background:transparent; padding:0 2px; outline:none;
+  box-shadow:none; text-align:center; font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink); }
+.libx-side .lib-year:focus { border-color:#d9b877; }
+.libx-opt { display:flex; align-items:center; gap:9px; width:100%; min-width:0; padding:6px 8px; border:0; border-radius:7px; background:none;
+  color:var(--c-ink-3); font:13px var(--font-ui); text-align:left; cursor:pointer; }
+.libx-opt:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.libx-opt.on { color:#d9b877; }
+.libx-opt span { flex:1; min-width:0; }
+.libx-opt b { font-weight:500; font-size:12px; color:var(--c-ink-5); }
+.libx-sw { flex:none; position:relative; width:26px; height:15px; border-radius:8px; background:var(--c-border-2); transition:background .15s; }
+.libx-sw::after { content:''; position:absolute; left:2px; top:2px; width:11px; height:11px; border-radius:50%; background:var(--c-ink-4); transition:transform .15s, background .15s; }
+.libx-opt.on .libx-sw.is-lib { background:#d9b877; }
+.libx-opt.on .libx-sw.is-imdb { background:#f5c518; }
+.libx-opt.on .libx-sw.is-amz { background:#ff9900; }
+.libx-opt.on .libx-sw::after { transform:translateX(11px); background:#141a26; }
+.libx-gh { grid-column:1/-1; display:flex; align-items:baseline; gap:10px; margin:16px 0 2px; padding:0 0 7px; border:0; border-bottom:1px solid var(--c-border-2);
+  background:none; cursor:pointer; color:#d9b877; font:italic 500 19px 'Spectral', var(--font-read); text-align:left; }
+.libx-gh:first-child { margin-top:0; }
+.libx-gh b { font:500 12px var(--font-ui); color:var(--c-ink-5); }
+.libx-gh i { margin-left:auto; font-style:normal; font-size:11px; color:var(--c-ink-5); transition:transform .15s; }
+.libx-gh.is-shut i { transform:rotate(-90deg); }
+.room-cards.is-full .shelf-card:hover .shelf-name { opacity:1; }
+#roomInterests.libx-nolib #roomShelf .shelf-grid, #roomInterests.libx-nolib .shelf-working-host, #roomInterests.libx-nolib .interest-results { display:none; }
+.libx-out:empty { display:none; }
+.libx-grid { margin-top:22px; }
+#roomInterests.libx-nolib .libx-grid { margin-top:0; padding-top:0; border-top:0; }
+.libx-ext { position:relative; min-width:0; }
+.libx-ecov { display:block; position:relative; overflow:hidden; aspect-ratio:2/3; border-radius:5px; border:1px solid var(--c-border-2);
+  background:var(--c-surface-2) center/cover no-repeat; }
+.libx-ename { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:flex-end; gap:3px; padding:10px;
+  background:linear-gradient(transparent 35%, rgba(8,11,19,.92)); opacity:0; transition:opacity .18s; color:#f1ece0; }
+.libx-ecov:not([style]) .libx-ename, .libx-ext:hover .libx-ename { opacity:1; }
+.libx-ename b { font:italic 500 14px/1.2 'Spectral', var(--font-read); }
+.libx-ename small { font-size:11px; color:#c9b98f; }
+.libx-tag { position:absolute; left:6px; top:6px; font:normal 900 9px Arial, sans-serif; padding:1px 4px; border-radius:2px; }
+.libx-tag.is-imdb { background:#f5c518; color:#000; }
+.libx-tag.is-amz { background:#232f3e; color:#ff9900; font-weight:700; }
+.libx-add { position:absolute; right:6px; top:6px; width:26px; height:26px; min-width:0; padding:0; border-radius:50%; border:0; background:#d9b877;
+  color:#141a26; font:600 15px/1 system-ui, sans-serif; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.5); }
+.libx-add.in { background:rgba(20,26,38,.85); color:#d9b877; border:1px solid #d9b877; }
+.room-cards.is-full .lib-over-dim { display:none; }
+.room-cards.is-full .lib-over > .shelf-panel { left:0; right:0; top:0; bottom:0; max-height:none; border-radius:0; border:0;
+  border-left:1px solid rgba(217,184,119,.35); box-shadow:-20px 0 60px rgba(0,0,0,.5); }
+.libx-tint { position:absolute; left:0; top:0; right:0; z-index:-1; pointer-events:none; background:center/cover no-repeat;
+  filter:blur(50px) saturate(1.3); opacity:.4; transform:scale(1.15); }
+.libx-more h6 { margin:24px 0 8px; font:600 10.5px var(--font-ui); letter-spacing:.12em; text-transform:uppercase; color:var(--c-ink-5); }
+.libx-where { display:flex; flex-direction:column; gap:2px; }
+.libx-where a { display:flex; align-items:baseline; gap:8px; padding:6px 8px; border-radius:7px; color:var(--c-ink-2); text-decoration:none; font:14px var(--font-read); }
+.libx-where a::before { content:'◇'; color:#d9b877; font-size:11px; }
+.libx-where a:hover { background:rgba(255,255,255,.05); color:#d9b877; }
+.libx-where span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.libx-where b { font-weight:500; font-size:12px; color:var(--c-ink-5); }
+.libx-kin { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; }
+.libx-kin button { aspect-ratio:2/3; padding:0; min-width:0; border-radius:4px; border:1px solid var(--c-border-2); background:var(--c-surface-2) center/cover no-repeat;
+  cursor:pointer; transition:transform .12s, border-color .12s; }
+.libx-kin button:hover { transform:translateY(-2px); border-color:#d9b877; }
 /* On its way out — it leaves on the click, not on the server's answer. */
 .shelf-card.is-going, .interest-item.is-going { opacity:0; transform:scale(.94); pointer-events:none;
   transition:opacity .16s var(--ease), transform .16s var(--ease); }
@@ -20150,6 +20225,12 @@ function libSizeOver(host) {
   const over = host && host.querySelector('.lib-over'); if (!over) return;
   const pane = host.closest('.room-cards') || host;
   const r = pane.getBoundingClientRect();
+  // Full screen, the card stands docked down the right side, the wall left in view.
+  if (libFull && pane.classList.contains('is-full')) {
+    const w = libxCardW();
+    Object.assign(over.style, { left: (r.right - w) + 'px', top: r.top + 'px', width: w + 'px', height: r.height + 'px' });
+    return;
+  }
   const tabs = pane.querySelector('.room-tabs:not([hidden])');
   const top = Math.max(r.top, tabs ? tabs.getBoundingClientRect().bottom : r.top);
   Object.assign(over.style, { left: r.left + 'px', top: top + 'px', width: r.width + 'px', height: Math.max(120, r.bottom - top) + 'px' });
@@ -20175,7 +20256,8 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
   };
   const show = (card) => {
     const h = host(), grid = card.closest('.shelf-grid'), name = card.querySelector('.shelf-name');
-    if (!h || !grid || !name || h.querySelector('.lib-over')) { hide(); return; }
+    // Full screen, the name shows on the cover itself instead (his pick C1).
+    if (!h || !grid || !name || h.querySelector('.lib-over') || libFull) { hide(); return; }
     if (!peek) {
       peek = document.createElement('div'); peek.className = 'lib-peek'; document.body.appendChild(peek);
       // Over the band, it stays: that is how the mouse reaches its two buttons.
@@ -20421,6 +20503,256 @@ if (!window.__discKeys) {
   });
 }
 
+// ---------- The Library full screen (his picks C1, C2, C3, C4, 2026-10-19) ----------
+// The Library column opens over the whole screen: filters down the left, the wall in
+// the middle, the open card docked on the right instead of over the wall. Names show
+// on the cover itself on hover; the size slider sets how big the covers are. Library,
+// IMDb and Amazon are three switches, any mix; the outside ones answer a search with
+// covers that a gold ＋ adds. The wall can be grouped by author, decade or theme.
+let libFull = false, libxSrc = { library: true, screen: false, books: false }, libxGroup = '', libxOrder = 'added';
+let libxFolded = new Set(), libxFacets = null, libxFacetsAsk = null, libxWallNow = [];
+const libxWhere = new Map();
+try {
+  libFull = localStorage.getItem('qne-lib-full') === '1';
+  Object.assign(libxSrc, JSON.parse(localStorage.getItem('qne-libx-src') || '{}'));
+  libxGroup = localStorage.getItem('qne-libx-group') || '';
+  libxOrder = localStorage.getItem('qne-libx-order') || 'added';
+  libxFolded = new Set(JSON.parse(localStorage.getItem('qne-libx-folded') || '[]'));
+} catch (_) {}
+function libxSave() {
+  try {
+    localStorage.setItem('qne-lib-full', libFull ? '1' : '');
+    localStorage.setItem('qne-libx-src', JSON.stringify(libxSrc));
+    localStorage.setItem('qne-libx-group', libxGroup);
+    localStorage.setItem('qne-libx-order', libxOrder);
+    localStorage.setItem('qne-libx-folded', JSON.stringify([...libxFolded]));
+  } catch (_) {}
+}
+function libxApply() {
+  const cards = document.getElementById('roomCards'), host = document.getElementById('roomInterests');
+  if (cards) cards.classList.toggle('is-full', libFull);
+  if (host) { host.classList.toggle('is-full', libFull); host.style.setProperty('--libx-card', libxCardW() + 'px'); }
+}
+function libxSetFull(on) {
+  libFull = !!on; libxSave(); libxApply();
+  renderInterestLibrary({ quiet: true });
+}
+// Cover widths for the four slider steps, and how many fit across the wall.
+const LIBX_W = [0, 118, 150, 190, 240];
+function libxCols(size) {
+  const host = document.getElementById('roomInterests');
+  const side = host && host.querySelector('.libx-side');
+  const w = innerWidth - (side ? side.offsetWidth : 240) - (libOpen ? libxCardW() : 0) - 64;
+  return Math.max(2, Math.floor((w + 14) / ((LIBX_W[size] || 150) + 14)));
+}
+const libxCardW = () => Math.round(Math.min(460, Math.max(340, innerWidth * 0.3)));
+const libxKey = (it) => it.type + ':' + it.id;
+const libxYear = (it) => ((libxFacets || {})[libxKey(it)] || {}).year || Number(String((it.raw && it.raw.year) || '').match(/\d{4}/)?.[0]) || 0;
+function libxLoadFacets() {
+  if (libxFacets || libxFacetsAsk) return;
+  libxFacetsAsk = api('/api/recommendations/library-facets').then((o) => {
+    libxFacets = (o && o.facets) || {};
+    if (libFull) renderInterestLibrary({ quiet: true });
+  }).catch(() => { libxFacets = {}; }).finally(() => { libxFacetsAsk = null; });
+}
+window.addEventListener('library:updated', () => { libxFacets = null; });
+
+function libxSort(wall) {
+  if (libxOrder === 'year') wall.sort((a, b) => libxYear(b) - libxYear(a));
+  else if (libxOrder === 'az') wall.sort((a, b) => libWorkKey(a.title).localeCompare(libWorkKey(b.title)));
+}
+// The wall cut into groups. A group of one is not a group: those gather at the end.
+function libxGroups(wall) {
+  const F = libxFacets || {};
+  const by = new Map(), add = (k, it) => { if (!by.has(k)) by.set(k, []); by.get(k).push(it); };
+  if (libxGroup === 'decade') {
+    for (const it of wall) { const y = libxYear(it); add(y ? Math.floor(y / 10) * 10 + 's' : '', it); }
+    return [...by].sort((a, b) => (b[0] ? parseInt(b[0], 10) : -1) - (a[0] ? parseInt(a[0], 10) : -1))
+      .map(([k, items]) => ({ key: 'd:' + k, label: k || 'Year unknown', items }));
+  }
+  const pick = (it) => {
+    if (libxGroup === 'creator') return String(it.creator || '').split(/\s*(?:,|;|&| and )\s*/)[0].trim();
+    const ts = ((F[libxKey(it)] || {}).topics || []).slice(0, 8);
+    let best = '', n = 0;
+    for (const t of ts) { const c = libxTopicCount.get(t) || 0; if (c > n && c <= wall.length * 0.6) { best = t; n = c; } }
+    return best;
+  };
+  let libxTopicCount = new Map();
+  if (libxGroup === 'theme') for (const it of wall) for (const t of new Set(((F[libxKey(it)] || {}).topics || []).slice(0, 8))) libxTopicCount.set(t, (libxTopicCount.get(t) || 0) + 1);
+  const rest = [];
+  for (const it of wall) { const k = pick(it); if (k) add(k.toLowerCase(), it); else rest.push(it); }
+  const out = [];
+  for (const [k, items] of by) {
+    if (items.length < 2) { rest.push(...items); continue; }
+    const label = libxGroup === 'creator' ? pick(items[0]) : k.charAt(0).toUpperCase() + k.slice(1);
+    out.push({ key: (libxGroup === 'creator' ? 'c:' : 't:') + k, label, items });
+  }
+  out.sort((a, b) => b.items.length - a.items.length || a.label.localeCompare(b.label));
+  if (rest.length) out.push({ key: libxGroup + ':rest', label: 'Others', items: rest });
+  return out;
+}
+// The wall, group by group, each with a header across the whole row.
+function libxWallHtml(wall, cols) {
+  if (!libxGroup) return libWall(wall, cols);
+  let html = '', over = '';
+  for (const g of libxGroups(wall)) {
+    const shut = libxFolded.has(g.key);
+    html += '<button type="button" class="libx-gh' + (shut ? ' is-shut' : '') + '" data-libx-fold="' + qEscAttr(g.key) + '" aria-expanded="' + !shut + '">'
+      + '<span>' + qEsc(g.label) + '</span><b>' + g.items.length + '</b><i aria-hidden="true">▾</i></button>';
+    if (shut) continue;
+    html += libWall(g.items, cols);
+    if (libOverHtml) over = libOverHtml;
+  }
+  libOverHtml = over;
+  return html;
+}
+
+function libxSide() {
+  const opt = (attr, v, label, on, extra) => '<button type="button" class="libx-opt' + (on ? ' on' : '') + '" ' + attr + '="' + v + '"' + (extra || '') + '>' + label + '</button>';
+  const reading = libReadingKey && libReadingKey === libKey();
+  return '<aside class="libx-side">'
+    + '<div class="lib-find' + (reading ? ' is-reading' : '') + '"><input class="lib-search" type="search" aria-label="Search library" placeholder="Title, author or topic"></div>'
+    + '<h6>Kind</h6>' + LIB_KINDS.map(([k, l]) => opt('data-lib-tab', k, '<span>' + l + '</span><b data-lib-count="' + k + '">' + libCountFor(k) + '</b>', k === interestLibraryKind)).join('')
+    + '<h6>Years</h6><span class="lib-years"><input class="lib-year" data-lib-year="from" type="text" inputmode="numeric" maxlength="4" aria-label="From year" placeholder="From">'
+    + '<i>–</i><input class="lib-year" data-lib-year="to" type="text" inputmode="numeric" maxlength="4" aria-label="To year" placeholder="To"></span>'
+    + '<h6>Search in</h6>' + [['library', 'Library', 'is-lib'], ['screen', 'IMDb', 'is-imdb'], ['books', 'Amazon', 'is-amz']].map(([s, l, c]) =>
+      opt('data-libx-src', s, '<i class="libx-sw ' + c + '"></i><span>' + l + '</span><b data-libx-n="' + s + '"></b>', libxSrc[s], ' role="switch" aria-checked="' + !!libxSrc[s] + '"')).join('')
+    + '<h6>Group by</h6>' + [['', 'Nothing'], ['creator', 'Author'], ['decade', 'Decade'], ['theme', 'Theme']].map(([g, l]) => opt('data-libx-group', g, l, libxGroup === g)).join('')
+    + '<h6>Order</h6>' + [['added', 'Newest added'], ['year', 'Year'], ['az', 'A–Z']].map(([o, l]) => opt('data-libx-order', o, l, libxOrder === o)).join('')
+    + '</aside>';
+}
+function libxWire(host) {
+  host.querySelectorAll('[data-libx-src]').forEach((b) => { b.onclick = () => {
+    const s = b.dataset.libxSrc; libxSrc[s] = !libxSrc[s]; libxSave(); renderInterestLibrary({ quiet: true });
+  }; });
+  host.querySelectorAll('[data-libx-group]').forEach((b) => { b.onclick = () => { libxGroup = b.dataset.libxGroup; libxSave(); renderInterestLibrary({ quiet: true }); }; });
+  host.querySelectorAll('[data-libx-order]').forEach((b) => { b.onclick = () => { libxOrder = b.dataset.libxOrder; libxSave(); renderInterestLibrary({ quiet: true }); }; });
+  host.querySelectorAll('[data-libx-fold]').forEach((b) => { b.onclick = () => {
+    const k = b.dataset.libxFold; if (libxFolded.has(k)) libxFolded.delete(k); else libxFolded.add(k); libxSave(); renderInterestLibrary({ quiet: true });
+  }; });
+}
+
+// IMDb and Amazon beside the Library: the same search, as covers.
+const libxOutGot = {};
+function libxExtCard(src, it, i) {
+  const bg = /^https:\/\//.test(it.cover || '') ? ' style="background-image:url(&quot;' + qEscAttr(it.cover) + '&quot;)"' : '';
+  const meta = [it.kind === 'book' ? (it.creator || '').split(',')[0] : '', it.year || ''].filter(Boolean).join(' · ');
+  return '<div class="libx-ext"><a class="libx-ecov" href="' + qEscAttr(discOut(it)) + '" target="_blank" rel="noopener noreferrer"' + bg + '>'
+    + '<span class="libx-ename"><b>' + qEsc(it.title) + '</b>' + (meta ? '<small>' + qEsc(meta) + '</small>' : '') + '</span></a>'
+    + '<i class="libx-tag ' + (src === 'books' ? 'is-amz' : 'is-imdb') + '">' + (src === 'books' ? 'amazon' : 'IMDb') + '</i>'
+    + '<button type="button" class="libx-add' + (it.inLibrary ? ' in' : '') + '" data-libx-add="' + i + '" title="' + (it.inLibrary ? 'In the Library' : 'Add to the Library') + '">' + (it.inLibrary ? '✓' : '＋') + '</button></div>';
+}
+function libxLoadOut(host, cols) {
+  const box = host.querySelector('.libx-out'); if (!box) return;
+  const q = interestLibraryQuery.trim(), srcs = ['screen', 'books'].filter((s) => libxSrc[s]);
+  host.querySelectorAll('[data-libx-n]').forEach((b) => { b.textContent = ''; });
+  if (!q || !srcs.length) { box.innerHTML = ''; return; }
+  const f = {}; if (libYearFrom) f.from = Number(libYearFrom); if (libYearTo) f.to = Number(libYearTo);
+  const keyOf = (s) => s + '|' + libNorm(q) + '|' + JSON.stringify(f);
+  const paint = () => {
+    if (!box.isConnected) return;
+    const items = [];
+    srcs.forEach((s) => (libxOutGot[keyOf(s)] || []).forEach((it) => items.push([s, it])));
+    srcs.forEach((s) => { const n = host.querySelector('[data-libx-n="' + s + '"]'); if (n && libxOutGot[keyOf(s)]) n.textContent = libxOutGot[keyOf(s)].length; });
+    const waiting = srcs.some((s) => !libxOutGot[keyOf(s)]);
+    box.innerHTML = (items.length ? '<div class="shelf-grid libx-grid" style="--shelf-cols:' + cols + '">' + items.map(([s, it], i) => libxExtCard(s, it, i)).join('') + '</div>' : '')
+      + (waiting ? waitHtml('searching', 'Searching') : '');
+    box.querySelectorAll('[data-libx-add]').forEach((b) => { b.onclick = () => {
+      const it = items[Number(b.dataset.libxAdd)][1];
+      if (!it || it.inLibrary || b.disabled) return;
+      b.disabled = true; b.textContent = '…';
+      apiWrite('/api/convos/interests', 'POST', { works: [{ kind: it.kind, title: it.title, creator: it.creator || '', year: it.year || '' }] })
+        .then(() => { it.inLibrary = true; b.classList.add('in'); b.textContent = '✓'; libData = null; libxFacets = null; })
+        .catch(() => { b.textContent = '＋'; })
+        .then(() => { b.disabled = false; });
+    }; });
+  };
+  for (const s of srcs) {
+    const key = keyOf(s);
+    if (libxOutGot[key] || libxOutGot[key + '?']) continue;
+    libxOutGot[key + '?'] = 1;
+    const url = '/api/convos/discover?source=' + s + '&q=' + encodeURIComponent(q) + '&filters=' + encodeURIComponent(JSON.stringify(f));
+    let full = false;
+    api(url + '&fast=1').then((o) => { if (full) return; libxOutGot[key] = (o && o.items) || []; paint(); }).catch(() => {});
+    api(url).then((o) => { full = true; libxOutGot[key] = (o && o.items) || []; paint(); })
+      .catch(() => { full = true; if (!libxOutGot[key]) libxOutGot[key] = []; paint(); })
+      .finally(() => { delete libxOutGot[key + '?']; });
+  }
+  paint();
+}
+
+// The docked card, dressed: the cover's own colours behind it, the conversations it
+// came up in, and its close kin in the Library.
+function libxDress(host) {
+  const panel = host.querySelector('.lib-over > .shelf-panel'); if (!panel || !libOpen) return;
+  const key = libOpen.type + ':' + libOpen.id;
+  const it = libxWallNow.find((x) => libxKey(x) === key);
+  const cardEl = host.querySelector('.shelf-grid [data-lib="' + CSS.escape(key) + '"] .shelf-cover');
+  const art = cardEl ? getComputedStyle(cardEl).backgroundImage : 'none';
+  if (art && art !== 'none') {
+    const tint = document.createElement('div'); tint.className = 'libx-tint'; tint.style.backgroundImage = art;
+    panel.prepend(tint);
+    requestAnimationFrame(() => { tint.style.height = panel.scrollHeight + 'px'; });
+  }
+  if (!it) return;
+  const box = document.createElement('div'); box.className = 'libx-more';
+  panel.appendChild(box);
+  // Close kin: what shares the most topic words with it, the same author counting double.
+  const F = libxFacets || {}, mine = new Set((F[key] || {}).topics || []);
+  const who = String(it.creator || '').toLowerCase();
+  const kin = libxWallNow.filter((o) => libxKey(o) !== key).map((o) => {
+    let s = ((F[libxKey(o)] || {}).topics || []).filter((t) => mine.has(t)).length;
+    if (who && String(o.creator || '').toLowerCase() === who) s += 2;
+    return [s, o];
+  }).filter(([s, o]) => s >= 3 && host.querySelector('.shelf-grid [data-lib="' + CSS.escape(libxKey(o)) + '"]'))
+    .sort((a, b) => b[0] - a[0]).slice(0, 6).map(([, o]) => o);
+  const paint = () => {
+    if (!box.isConnected) return;
+    const where = libxWhere.get(key);
+    const list = Array.isArray(where) ? where : [];
+    box.innerHTML = (list.length ? '<h6>In the Room</h6><div class="libx-where">' + list.map((c, i) =>
+        '<a href="#room/' + encodeURIComponent(c.side && c.parent ? c.parent : c.id) + (c.side && c.parent ? '/side/' + encodeURIComponent(c.id) : '') + '" data-nav data-libx-go="' + i + '">'
+        + '<span>' + qEsc(c.title) + '</span>' + (c.n > 1 ? '<b>' + c.n + '</b>' : '') + '</a>').join('') + '</div>' : '')
+      + (kin.length ? '<h6>Close kin</h6><div class="libx-kin">' + kin.map((o) => {
+        const cv = host.querySelector('.shelf-grid [data-lib="' + CSS.escape(libxKey(o)) + '"] .shelf-cover');
+        const bg = cv ? getComputedStyle(cv).backgroundImage : 'none';
+        return '<button type="button" data-libx-kin="' + qEscAttr(libxKey(o)) + '" title="' + qEscAttr(o.title) + '"' + (bg && bg !== 'none' ? ' style="background-image:' + qEscAttr(bg) + '"' : '') + '></button>';
+      }).join('') + '</div>' : '');
+    box.querySelectorAll('[data-libx-go]').forEach((a) => { a.onclick = (ev) => {
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0) return;
+      const c = list[Number(a.dataset.libxGo)];
+      libFull = false; libxSave(); libxApply(); renderInterestLibrary({ quiet: true });
+      const main = c.side && c.parent ? c.parent : c.id;
+      if (main !== roomSel) roomSelect(main);
+      if (c.side && c.parent) setTimeout(() => openInsideRoom('side', c.id), 400);
+    }; });
+    box.querySelectorAll('[data-libx-kin]').forEach((b) => { b.onclick = () => {
+      const o = host.querySelector('.shelf-grid [data-lib="' + CSS.escape(b.dataset.libxKin) + '"] [data-open]');
+      if (o) { o.click(); o.closest('.shelf-card')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    }; });
+    const tint = panel.querySelector('.libx-tint'); if (tint) tint.style.height = panel.scrollHeight + 'px';
+  };
+  if (!libxWhere.has(key)) {
+    libxWhere.set(key, null);
+    api('/api/recommendations/library-where?title=' + encodeURIComponent(it.title) + '&creator=' + encodeURIComponent(it.creator || ''))
+      .then((o) => { libxWhere.set(key, (o && o.convos) || []); paint(); })
+      .catch(() => libxWhere.set(key, []));
+  }
+  paint();
+}
+if (!window.__libxKeys) {
+  window.__libxKeys = true;
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape' || !libFull) return;
+    const t = ev.target; if (t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]')) return;
+    const host = document.getElementById('roomInterests'); if (!host || !host.offsetParent) return;
+    if (libOpen) { libOpen = null; shelfOpen = ''; shelfDetail = null; shelfNotes = null; renderInterestLibrary({ quiet: true }); return; }
+    libxSetFull(false);
+  });
+  let rt = 0;
+  window.addEventListener('resize', () => { if (!libFull) return; clearTimeout(rt); rt = setTimeout(() => renderInterestLibrary({ quiet: true }), 200); });
+}
+
 async function renderInterestLibrary(opts) {
   const host = document.getElementById('roomInterests'); if (!host) return;
   const request = ++interestLibraryRequest;
@@ -20453,7 +20785,7 @@ async function renderInterestLibrary(opts) {
   // sit at the grid's foot.
   const kindLabel = (LIB_KINDS.find((k) => k[0] === interestLibraryKind) || LIB_KINDS[0])[1];
   libSyncTab();
-  const top = '<div class="lib-top">'
+  let top = '<div class="lib-top">'
     + (libKindOpen ? '<div class="lib-kindpop" role="menu">'
       + LIB_KINDS.map(([k, label]) => '<button type="button" role="menuitem" data-lib-tab="' + k + '" class="' + (k === interestLibraryKind && !libSuggesting ? 'on' : '') + '"><span>' + label + '</span><b data-lib-count="' + k + '">' + libCountFor(k) + '</b></button>').join('')
       + '<div class="lib-kindpop-foot">'
@@ -20464,7 +20796,10 @@ async function renderInterestLibrary(opts) {
     + (finding && !libSuggesting ? '<div class="lib-find' + (libReadingKey && libReadingKey === libKey() ? ' is-reading' : '') + '"><input class="lib-search" type="search" aria-label="Search library" placeholder="Title, author or topic">'
       + '<span class="lib-years"><input class="lib-year" data-lib-year="from" type="text" inputmode="numeric" maxlength="4" aria-label="From year" placeholder="From">'
       + '<i>–</i><input class="lib-year" data-lib-year="to" type="text" inputmode="numeric" maxlength="4" aria-label="To year" placeholder="To"></span></div>' + discSourceRow() : '');
+  if (libFull) { top = libxSide(); libxLoadFacets(); }
+  libxApply();
   const wireTop = () => {
+    if (libFull) libxWire(host);
     host.querySelectorAll('[data-disc-src]').forEach((b) => { b.onclick = () => { libSource = b.dataset.discSrc; discSave(); libRefocus = 'search'; renderInterestLibrary(); }; });
     const ft = host.querySelector('[data-disc-ftog]');
     if (ft) ft.onclick = () => { discFiltersOpen = !discFiltersOpen; discSave(); renderInterestLibrary(); };
@@ -20499,19 +20834,26 @@ async function renderInterestLibrary(opts) {
     if (suggestKind === 'analogies') renderRoomAnalogies(); else openRoomRecommendations(suggestKind);
     return;
   }
-  if (finding && libSource !== 'library') return renderLibDiscover(host, top, wireTop);
+  if (finding && libSource !== 'library' && !libFull) return renderLibDiscover(host, top, wireTop);
 
-  const cols = 5 - shelfSize();
+  const cols = libFull ? libxCols(shelfSize()) : 5 - shelfSize();
+  host.classList.toggle('libx-nolib', libFull && !libxSrc.library);
+  host.classList.toggle('libx-open', libFull && !!libOpen);
   host.innerHTML = top
-    + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><button type="button" class="lib-favonly' + (libFavOnly ? ' on' : '') + '" data-fav-only aria-pressed="' + libFavOnly + '" title="Only favourites">★</button><span class="shelf-size" title="Cover size">'
+    + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><button type="button" class="lib-fullbtn" data-lib-full title="' + (libFull ? 'Back to the column' : 'Full screen') + '" aria-label="' + (libFull ? 'Back to the column' : 'Full screen') + '">'
+    + (libFull ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 2.5v4h-4M9.5 13.5v-4h4M6.5 6.5 2 2M9.5 9.5 14 14"/></svg>' : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.5v-4h4M13.5 9.5v4h-4M2.5 2.5 7 7M13.5 13.5 9 9"/></svg>') + '</button><button type="button" class="lib-favonly' + (libFavOnly ? ' on' : '') + '" data-fav-only aria-pressed="' + libFavOnly + '" title="Only favourites">★</button><span class="shelf-size" title="Cover size">'
     + '<i class="shelf-ticks"><b></b><b></b><b></b><b></b></i><i class="shelf-fill"></i>'
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
     + '<div class="shelf-grid" style="--shelf-cols:' + cols + '"></div><div class="shelf-slot"></div></div>'
+    + (libFull ? '<div class="libx-out"></div>' : '')
     + '<div class="interest-results">' + (quiet || pre ? '' : waitHtml('searching', 'Loading')) + '</div>';
   host.dataset.libView = view;
   putBack();
   wireTop();
+  const fullBtn = host.querySelector('[data-lib-full]');
+  if (fullBtn) fullBtn.onclick = () => libxSetFull(!libFull);
+  if (libFull) libxLoadOut(host, cols);
   const favOnly = host.querySelector('[data-fav-only]');
   if (favOnly) favOnly.onclick = () => {
     libFavOnly = !libFavOnly;
@@ -20604,9 +20946,13 @@ async function renderInterestLibrary(opts) {
       if (request !== interestLibraryRequest) return;
     }
     if (libFavOnly) for (let i = wall.length - 1; i >= 0; i--) if (!libFavs.has(wall[i].type + ':' + wall[i].id)) wall.splice(i, 1);
+    if (libFull && !(Array.isArray(out.order) && interestLibraryQuery)) libxSort(wall);
+    if (libFull && !libxSrc.library) wall.length = 0;
+    libxWallNow = wall;
 
-    host.querySelector('.shelf-grid').innerHTML = wall.length ? libWall(wall, cols) : '';
+    host.querySelector('.shelf-grid').innerHTML = wall.length ? (libFull ? libxWallHtml(wall, cols) : libWall(wall, cols)) : '';
     libPlaceOver(host);
+    if (libFull) { libxWire(host); libxDress(host); }
     const results = host.querySelector('.interest-results');
     results.innerHTML = review.entries.map(e => '<div class="interest-item" data-review="' + qEscAttr(e.id) + '"><div>' + qEsc(e.observed || e.candidate.title || 'Unclear title') + '</div><small>Needs review · ' + qEsc(e.filename) + '</small><button data-edit>Review</button> <button data-dismiss>Dismiss</button></div>').join('')
       + rest.map(w => {
@@ -20965,7 +21311,9 @@ function libWireSizer(shelfHost) {
   if (!sizer) return;
   const paint = () => {
     shelfHost.querySelector('.shelf-fill').style.width = ((sizer.value - 1) / 3 * 100) + '%';
-    shelfHost.querySelector('.shelf-grid').style.setProperty('--shelf-cols', String(5 - Number(sizer.value)));
+    const n = String(libFull ? libxCols(Number(sizer.value)) : 5 - Number(sizer.value));
+    shelfHost.querySelector('.shelf-grid').style.setProperty('--shelf-cols', n);
+    document.querySelectorAll('#roomInterests .libx-grid').forEach((g) => g.style.setProperty('--shelf-cols', n));
   };
   paint();
   sizer.oninput = () => { paint(); try { localStorage.setItem('qne-shelf-size', sizer.value); } catch (e) {} };

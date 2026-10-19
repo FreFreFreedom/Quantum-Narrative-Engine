@@ -145,6 +145,40 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40,from=''
   if(stems.length){try{shelfHits=listBooks(owner).filter(b=>{const hay=norm([b.title,b.author,cachedBookFacts(b.title,b.author)?.overview,topicsFor('book',b.title,b.author)].join(' '));return rankOf.has('s:'+b.id)||stems.every(w=>hay.includes(w));}).map(b=>b.id);}catch(e){shelfHits=undefined;}}
   return {shelfHits,order:meaning||undefined,items:items.slice(start,start+cap).map(({text,yearN,...r})=>({...r,...(yearN&&!yearOf(r.year)?{year:String(yearN)}:{}),excerpt:r.type==='media'?undefined:text?.slice(0,r.kind==='passage'?2000:300)})),total:items.length,counts,bookTitles};
 }
+// What the full-screen Library groups and relates by (his pick C4, 2026-10-19): each
+// work's year — its own, else the catalogue's — and its topic words, all from what is
+// already cached. No model call, nothing fetched.
+export function libraryFacets(owner) {
+  ownerCheck(owner);
+  const split=(t)=>String(t||'').split(',').map((x)=>x.trim()).filter(Boolean);
+  const out={};
+  for(const r of db.prepare("SELECT id,kind,title,creator,year FROM interest_works WHERE owner=? AND kind IN ('book','film','series')").all(owner)){
+    let f=null;try{f=r.kind==='book'?cachedBookFacts(r.title,r.creator):cachedScreenFacts(owner,r.kind,r.title,r.year);}catch{f=null;}
+    out['media:'+r.id]={year:yearOf(r.year)||yearOf(f?.year)||0,topics:split(topicsFor(r.kind,r.title,r.creator))};
+  }
+  try{for(const b of listBooks(owner)){
+    let f=null;try{f=cachedBookFacts(b.title,b.author);}catch{f=null;}
+    out['shelf:'+b.id]={year:yearOf(b.year)||yearOf(f?.year)||0,topics:split(topicsFor('book',b.title,b.author))};
+  }}catch{}
+  return {facets:out};
+}
+// The conversations a work came up in, most mentions first (his pick C2). A one-word
+// title ("Monster") is too common alone, so it must meet its author's surname in
+// the same message.
+export function libraryWhere(owner,{title,creator}={}) {
+  ownerCheck(owner);
+  const like=(t)=>'%'+String(t).replace(/[\\%_]/g,(c)=>'\\'+c)+'%';
+  const main=String(title||'').replace(/\s*[([][^()[\]]*[)\]]/g,'').split(/\s*[:—–]\s*|\s+-\s+/)[0].trim();
+  if(main.length<4) return {convos:[]};
+  const sur=String(creator||'').split(/[,&;]| and /)[0].trim().split(/\s+/).pop()||'';
+  const lone=main.split(/\s+/).length<2;
+  if(lone&&sur.length<3) return {convos:[]};
+  const rows=db.prepare(`SELECT c.id,c.title,c.subject_type AS st,c.parent_convo_id AS parent,COUNT(*) AS n,MAX(m.created_at) AS at
+    FROM convo_messages m JOIN convos c ON c.id=m.convo_id
+    WHERE c.created_by=? AND c.deleted_at IS NULL AND m.text LIKE ? ESCAPE '\\'${lone?" AND m.text LIKE ? ESCAPE '\\'":''}
+    GROUP BY c.id ORDER BY n DESC, at DESC LIMIT 6`).all(owner,like(main),...(lone?[like(sur)]:[]));
+  return {convos:rows.map((r)=>({id:r.id,title:r.title||'Untitled',side:r.st==='side'?1:0,parent:r.parent||'',n:r.n}))};
+}
 // ─── Analogies found in conversation ────────────────────────────────────────
 // The mind harvest reads each Room conversation every few messages; when it meets a
 // real analogy — two things from different worlds or scales sharing one nameable

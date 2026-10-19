@@ -9,6 +9,8 @@ export function recommendationRoutes() {
   };
   const owner=req=>req.user?.sub || req.user?.id;
   router.get('/library', action(req=>req.query.meaning==='1'?library.searchByMeaning(owner(req),req.query):library.listReferences(owner(req),req.query)));
+  router.get('/library-facets', action(req=>library.libraryFacets(owner(req))));
+  router.get('/library-where', action(req=>library.libraryWhere(owner(req),req.query)));
   router.post('/media-focus', action(req=>recommendations.focusMedia(req.body?.scope)));
   router.post('/library/save', action(req=>library.saveReference(owner(req),req.body)));
   router.post('/library/attach', action(req=>library.referenceQuote(owner(req),req.body)));
