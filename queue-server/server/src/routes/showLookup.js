@@ -1,7 +1,7 @@
 // Mounted at /api/screen — the dictionary for whatever he is watching, called by
 // the Edge extension over the same token login the QNE extension already uses.
 import { Router } from 'express';
-import { lookupOnScreen, glossaryOnScreen, episodeGlossary, askOnScreen, nameChapter } from '../services/showLookup.js';
+import { lookupOnScreen, glossaryOnScreen, episodeGlossary, askOnScreen, nameChapter, reportLookup, listReports, markReportsHandled } from '../services/showLookup.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function showLookupRoutes() {
@@ -21,6 +21,16 @@ export function showLookupRoutes() {
   }));
 
   // { term, show, line, meaning, question, turns, reading } — the card's "Ask…".
+  // A meaning he marked wrong, read again; and the list a coding session works from.
+  router.post('/report', asyncHandler(async (req, res) => {
+    const b = req.body || {};
+    const out = await reportLookup({ show: b.show, term: b.term, line: b.line, wrong: b.wrong, note: b.note, opening: b.opening });
+    if (out.error) return res.status(400).json(out);
+    res.json(out);
+  }));
+  router.get('/reports', (req, res) => { res.json({ reports: listReports({ all: req.query.all === '1' }) }); });
+  router.post('/reports/handled', (req, res) => { res.json({ handled: markReportsHandled(req.body?.ids || []) }); });
+
   router.post('/ask', asyncHandler(async (req, res) => {
     const b = req.body || {};
     const out = await askOnScreen({ term: b.term, show: b.show, line: b.line, meaning: b.meaning, question: b.question, turns: b.turns || [], reading: b.reading === true });

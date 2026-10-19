@@ -28,6 +28,16 @@ export function bindShowLookup(database) {
     episode_key TEXT PRIMARY KEY, show TEXT NOT NULL DEFAULT '', json TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
+  // A meaning he marked wrong on the card (his ask, 2026-10-19): kept with what it said,
+  // what he said, and the reading that replaced it. A coding session reads these
+  // (GET /api/screen/reports) to fix the prompts; the same word in the same book is
+  // read with his correction in view from then on.
+  db.exec(`CREATE TABLE IF NOT EXISTS lookup_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, book TEXT NOT NULL DEFAULT '', term TEXT NOT NULL,
+    line TEXT NOT NULL DEFAULT '', wrong TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '',
+    fixed TEXT NOT NULL DEFAULT '', handled INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
   db.exec(`CREATE TABLE IF NOT EXISTS show_glossaries (
     show TEXT NOT NULL, lines_hash TEXT NOT NULL, json TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -131,6 +141,7 @@ function forReading(prompt) {
     .replace(/You explain the jargon of what someone is watching, while it is paused\./, 'You explain the jargon of what someone is reading.')
     .replace(/He heard this by ear while watching, so it may be spelled wrong or run two words together:\nanswer the thing he actually heard rather than correcting him\. /, '')
     .replace(/from the dialogue/g, 'from the text')
+    .replace(/Say what it means in THIS show and what is being said\s+right\s+now — what the people on screen are doing or referring to when they say it\./, 'Say what that word means as it is used in THIS sentence, with the shade it carries here that the plain word would miss.')
     .replace(/in THIS show and (in )?what is being said\s+right\s+now — what the people on screen are doing or referring to when they say it/g, 'in THIS text — what the writer is doing or referring to with it')
     .replace(/in THIS show/g, 'in THIS text')
     .replace(/why it matters here/g, 'why it matters in this text')
@@ -181,15 +192,34 @@ or author if you can tell, the milieu — and then WHERE THIS PASSAGE TAKES PLAC
 in the text around it, read from the details right beside the word (a shotgun on a shoulder,
 a cell, staff, a classroom). The scene decides more than the book does: a gang memoir has
 chapters in prison, at school, at home — and at war.
-"text": then the meaning, as someone in that scene means it, in the length asked above.
+"text": then what the WORD means, in the sense this scene gives it — the meaning a good
+dictionary would print for this use, as in the Room's dictionary (2026-10-19: "subdued him"
+came back as "the noisy prison cell became very quiet", a retelling of the scene, wrong and
+odd to read). Never retell the scene, never describe the characters or what they do: say what
+the word itself means, in the length asked above.
 Two opposite mistakes: the bare dictionary sense when the world gives the word a special
 meaning, and an invented slang meaning when the plain one already fits the scene. Put your
 meaning back into the sentence and its neighbours — does it fit what is actually happening
 there? If the plain sense fits, give it plainly, naming the place it belongs to.`;
 
-export function lookupPrompt({ base = WORD_PROMPT, raw, show, line, reading, opening, worldFirst }) {
+export function lookupPrompt({ base = WORD_PROMPT, raw, show, line, reading, opening, worldFirst, earlier = '' }) {
   return (reading ? forReading(base) : base) + (worldFirst ? WORLD_FIRST : '')
-    + `\n\n=== WHAT HE ASKED ABOUT ===\n${raw}` + context({ show, line, reading, opening });
+    + `\n\n=== WHAT HE ASKED ABOUT ===\n${raw}` + context({ show, line, reading, opening })
+    + (earlier ? `\n\n=== HOW THIS WORD READS IN THIS SAME BOOK (he corrected an earlier reading to this) ===\n${earlier}` : '');
+}
+
+// The book, out of a window title: "Microsoft Edge — Monster (Night, Palatino).pdf — Part
+// of group …" and the same tab a minute later must be one book.
+function bookOf(show) {
+  const t = String(show || '');
+  const pdf = t.match(/([^—/\\]+?\.pdf)/i);
+  return (pdf ? pdf[1] : t).replace(/\s+/g, ' ').trim().toLowerCase().slice(0, 160);
+}
+function correctionFor(show, raw) {
+  if (!db) return '';
+  const row = db.prepare("SELECT fixed FROM lookup_reports WHERE book=? AND lower(term)=? AND fixed<>'' ORDER BY id DESC LIMIT 1")
+    .get(bookOf(show), String(raw).toLowerCase());
+  return row ? row.fixed : '';
 }
 
 export async function lookupOnScreen({ show = '', term = '', line = '', reading = false, opening = '' } = {}) {
@@ -200,7 +230,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const acronym = words === 1 && isAcronym(raw);
   // Reading: the passage is part of the key, so a word met in two senses is read twice,
   // and a word with no passage is never kept (those readings were guesses).
-  const [showKey, termKey] = cacheKey((reading ? 'read5: ' : '') + show, raw);
+  const [showKey, termKey] = cacheKey((reading ? 'read6: ' : '') + show, raw);
   const lineKey = reading ? createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10) : '';
   const keepIt = !reading || String(line || '').trim();
 
@@ -211,7 +241,8 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
 
   const base = acronym ? ACRONYM_PROMPT : words === 1 ? WORD_PROMPT : PHRASE_PROMPT;
   const worldFirst = reading && !acronym;
-  const prompt = lookupPrompt({ base, raw, show, line, reading, opening, worldFirst });
+  const earlier = reading ? correctionFor(show, raw) : '';
+  const prompt = lookupPrompt({ base, raw, show, line, reading, opening, worldFirst, earlier });
   const out = await quickText(prompt, reading);
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
 
@@ -451,4 +482,43 @@ ${passage}`;
   const name = String(out?.text || '').split('\n').map((l) => l.trim()).filter(Boolean).pop() || '';
   const clean = name.replace(/^["'“”‘’*#\s]+|["'“”‘’*.\s]+$/g, '').replace(/^chapter\s*[:\-–]?\s*/i, '').slice(0, 60);
   return clean.split(/\s+/).length >= 1 && clean.length >= 3 ? { ok: true, name: clean } : { error: 'unreadable' };
+}
+
+// "Not right" on the card: the reading is dropped from the cache, kept as a report, and
+// read again by the subscription's model with the wrong answer and his words in view.
+export async function reportLookup({ show = '', term = '', line = '', wrong = '', note = '', opening = '' } = {}) {
+  const raw = String(term || '').replace(/\s+/g, ' ').trim().slice(0, 400);
+  if (!raw) return { error: 'empty' };
+  const book = bookOf(show);
+  const id = db ? db.prepare('INSERT INTO lookup_reports (book, term, line, wrong, note) VALUES (?,?,?,?,?)')
+    .run(book, raw, String(line || '').slice(0, 1200), String(wrong || '').slice(0, 600), String(note || '').slice(0, 600)).lastInsertRowid : null;
+  const [showKey, termKey] = cacheKey('read6: ' + show, raw);
+  const lineKey = createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10);
+  if (db) db.prepare('DELETE FROM show_lookups WHERE show=? AND term=?').run(showKey, termKey + ' #' + lineKey);
+  const words = raw.split(' ').filter(Boolean).length;
+  const base = words === 1 ? WORD_PROMPT : PHRASE_PROMPT;
+  const prompt = lookupPrompt({ base, raw, show, line, reading: true, opening, worldFirst: true })
+    + `\n\n=== A FIRST READING, WHICH HE SAYS IS WRONG ===\n${wrong}`
+    + (note ? `\n\n=== WHAT HE SAYS ABOUT IT ===\n${note}` : '')
+    + `\n\nRead the text around it again, slowly, and give the right meaning.`;
+  const out = await generateText({ prompt, feature: 'quick', label: 'screen:report', maxTokens: 800, timeoutMs: 40_000 });
+  if (out.error || !out.text) return { ok: true, id, text: '' };
+  let said = out.text;
+  try { said = String(JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, ''))?.text || said); } catch {}
+  const text = words === 1 ? firstSentence(said) : firstSentences(said, 2);
+  if (db && id) db.prepare('UPDATE lookup_reports SET fixed=? WHERE id=?').run(text, id);
+  if (db && text) db.prepare('INSERT OR REPLACE INTO show_lookups (show, term, line, text, expansion) VALUES (?,?,?,?,?)')
+    .run(showKey, termKey + ' #' + lineKey, String(line || '').slice(0, 1200), text, '');
+  return { ok: true, id, text };
+}
+
+export function listReports({ all = false } = {}) {
+  if (!db) return [];
+  return db.prepare(`SELECT * FROM lookup_reports ${all ? '' : 'WHERE handled=0'} ORDER BY id DESC LIMIT 100`).all();
+}
+export function markReportsHandled(ids = []) {
+  if (!db) return 0;
+  const st = db.prepare('UPDATE lookup_reports SET handled=1 WHERE id=?');
+  let n = 0; for (const i of ids) n += st.run(Number(i)).changes;
+  return n;
 }
