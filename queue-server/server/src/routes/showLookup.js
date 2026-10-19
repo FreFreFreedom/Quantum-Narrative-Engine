@@ -1,7 +1,7 @@
 // Mounted at /api/screen — the dictionary for whatever he is watching, called by
 // the Edge extension over the same token login the QNE extension already uses.
 import { Router } from 'express';
-import { lookupOnScreen, glossaryOnScreen, episodeGlossary, askOnScreen, nameChapter, reportLookup, listReports, markReportsHandled } from '../services/showLookup.js';
+import { lookupOnScreen, glossaryOnScreen, episodeGlossary, askOnScreen, nameChapter, reportLookup, listReports, markReportsHandled, sweepReports } from '../services/showLookup.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function showLookupRoutes() {
@@ -29,6 +29,7 @@ export function showLookupRoutes() {
     res.json(out);
   }));
   router.get('/reports', (req, res) => { res.json({ reports: listReports({ all: req.query.all === '1' }) }); });
+  router.post('/reports/sweep', asyncHandler(async (req, res) => { const t = await sweepReports({ now: req.body?.now === true }); res.json({ task: t ? { id: t.id, title: t.title } : null }); }));
   router.post('/reports/handled', (req, res) => { res.json({ handled: markReportsHandled(req.body?.ids || []) }); });
 
   router.post('/ask', asyncHandler(async (req, res) => {

@@ -38,6 +38,8 @@ export function bindShowLookup(database) {
     fixed TEXT NOT NULL DEFAULT '', handled INTEGER NOT NULL DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
+  try { db.exec('ALTER TABLE lookup_reports ADD COLUMN task_id TEXT'); } catch {}
+  if (!globalThis.__reportSweep) globalThis.__reportSweep = setInterval(() => { sweepReports().catch(() => {}); }, 30 * 60_000);
   db.exec(`CREATE TABLE IF NOT EXISTS show_glossaries (
     show TEXT NOT NULL, lines_hash TEXT NOT NULL, json TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -521,4 +523,44 @@ export function markReportsHandled(ids = []) {
   const st = db.prepare('UPDATE lookup_reports SET handled=1 WHERE id=?');
   let n = 0; for (const i of ids) n += st.run(Number(i)).changes;
   return n;
+}
+
+// Nobody has to ask (his ask, 2026-10-19: "make check the reports automatic"). Every half
+// hour: once three reports wait, or one has waited six hours, they go to the queue as one
+// task, which fixes the reading for the whole kind of mistake and ships like any other.
+const REPORT_BRIEF = `Fix the QNE dictionary's page readings from the meanings Antoine marked "Not right".
+
+Where: queue-server/server/src/services/showLookup.js — lookupPrompt(), WORD_PROMPT /
+PHRASE_PROMPT / ACRONYM_PROMPT, forReading(), WORLD_FIRST, SENSE, context(). A page lookup
+is reading:true with worldFirst; the cache key prefix is 'read6: ' in lookupOnScreen().
+
+Do:
+1. Read the reports below. Find what they have in common — the KIND of mistake (wrong
+   sense picked, scene retold instead of the word defined, slang invented, context ignored…).
+2. Change the prompts or the context so that kind of mistake stops, for every word. Never
+   put these words or these meanings into a prompt: models copy examples. Encode the
+   understanding, not the instance. A dated comment above the change may name one case.
+3. Bump the cache prefix (read6 → read7, in both lookupOnScreen and reportLookup) so old
+   readings are redone.
+4. node --check the file. Commit and ship as usual.
+If a report is not a mistake in the reading at all (a bad selection, missing text around
+the word), leave the prompts alone for it and say so in your summary.
+
+The reports (term — the passage — what the card said — what he said):
+`;
+export async function sweepReports({ now = false } = {}) {
+  if (!db) return null;
+  const waiting = db.prepare("SELECT * FROM lookup_reports WHERE handled=0 AND (task_id IS NULL OR task_id='') ORDER BY id").all();
+  if (!waiting.length) return null;
+  const oldest = Date.parse(String(waiting[0].created_at).replace(' ', 'T') + 'Z');
+  if (!now && waiting.length < 3 && Date.now() - oldest < 6 * 3600_000) return null;
+  const list = waiting.map((r) => `- ${r.term} (book: ${r.book})\n  passage: ${r.line.slice(0, 500)}\n  card said: ${r.wrong}\n  he said: ${r.note || '(nothing, only that it was wrong)'}${r.fixed ? `\n  re-read as: ${r.fixed}` : ''}`).join('\n');
+  const queue = await import('./promptQueue.js');
+  const task = await queue.createPrompt({
+    title: `Dictionary: ${waiting.length} meaning${waiting.length > 1 ? 's' : ''} marked wrong`,
+    prompt: REPORT_BRIEF + list, mode: 'implement', preset: 'standard', status: 'queued', created_by: 'antoine',
+  });
+  const st = db.prepare('UPDATE lookup_reports SET task_id=?, handled=1 WHERE id=?');
+  for (const r of waiting) st.run(String(task.id), r.id);
+  return task;
 }
