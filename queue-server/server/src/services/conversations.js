@@ -53,13 +53,14 @@ import { bindBookFacts } from './bookFacts.js';
 import { bindBookContents } from './bookContents.js';
 import { bindWorkNotes } from './workNotes.js';
 import { bindPersonNotes, namedPeople, PEOPLE_V } from './personNotes.js';
+import { answerPictures, bindAnswerPictures, PICTURES_V } from './answerPictures.js';
 import { bindConvoImages, saveConvoImages, dropMessageImages } from './convoImages.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
 
 let db = null;
-export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); bindBookFacts(database); bindBookContents(database); bindWorkNotes(database); bindPersonNotes(database); bindConvoImages(database); }
+export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); bindBookFacts(database); bindBookContents(database); bindWorkNotes(database); bindPersonNotes(database); bindAnswerPictures(database); bindConvoImages(database); }
 
 // Plans live in knowledge_docs under the `Plan: ` prefix (seeded by
 // bootstrapData.js#seedPlans from the project-docs/plans/ mirror). This returns
@@ -2674,10 +2675,10 @@ async function runBlankTurn(convoId, userId, convo, turn, { onToken, onStatus, s
   if (signal?.aborted) return { error: 'cancelled' };
   if (result.error) return saveFailedTurn(convoId, result, turn, pairMeta(opts));
   const laneTag = computeLaneTag(turn.intent, lane, result.via);
-  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false)]);
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn.intent, blank: true, ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }), ...pairMeta(opts) });
+  const [works, people, pictures] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false), answerPictures(result.text).catch(() => false)]);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn.intent, blank: true, ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }), ...(pictures === false ? {} : { pictures: pictures || [], picturesV: PICTURES_V }), ...pairMeta(opts) });
   if (opts.followUps !== false) afterTurn(convoId, userId, convo);
-  return { text: result.text, via: result.via, laneTag, intent: turn.intent, messageId: savedId, cost: spentUsd, works, people, ...(opts.pair ? { pair: opts.pair.id, side: opts.pair.side, kept: !!opts.pair.kept } : {}) };
+  return { text: result.text, via: result.via, laneTag, intent: turn.intent, messageId: savedId, cost: spentUsd, works, people, pictures, ...(opts.pair ? { pair: opts.pair.id, side: opts.pair.side, kept: !!opts.pair.kept } : {}) };
 }
 
 async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = null, signal = null, images = null, opts = {}) {
@@ -2774,10 +2775,10 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // anchor on screen until the conversation is reloaded, and Chapter — which needs
   // a message to point at — is hidden on exactly the answer he is reading.
   // The people it names are found alongside, so the marks cost no extra wait.
-  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false)]);
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }), ...pairMeta(opts) });
+  const [works, people, pictures] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false), answerPictures(result.text).catch(() => false)]);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }), ...(pictures === false ? {} : { pictures: pictures || [], picturesV: PICTURES_V }), ...pairMeta(opts) });
   if (opts.followUps !== false) afterTurn(convoId, userId, convo);
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, cost: spentUsd, works, people, ...(opts.pair ? { pair: opts.pair.id, side: opts.pair.side, kept: !!opts.pair.kept } : {}) };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, cost: spentUsd, works, people, pictures, ...(opts.pair ? { pair: opts.pair.id, side: opts.pair.side, kept: !!opts.pair.kept } : {}) };
 }
 
 // ─── Two models, one question (plan two-models-side-by-side) ────────────────
@@ -2813,6 +2814,7 @@ async function runPairTurn(convoId, userId, { turn, laneB, onToken, onStatus, si
     intent: turn?.intent,
     works: a?.works || null,
     people: a?.people ?? null,
+    pictures: a?.pictures ?? null,
   };
 }
 
@@ -2931,8 +2933,8 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   // anchor on screen until the conversation is reloaded, and Chapter — which needs
   // a message to point at — is hidden on exactly the answer he is reading.
   // The people it names are found alongside, so the marks cost no extra wait.
-  const [works, people] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false)]);
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }) });
+  const [works, people, pictures] = await Promise.all([suggestedWorks(convoId, userId, result.text), namedPeople(result.text).catch(() => false), answerPictures(result.text).catch(() => false)]);
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(works ? { works } : {}), ...(people === false ? {} : { people: people || [], peopleV: PEOPLE_V }), ...(pictures === false ? {} : { pictures: pictures || [], picturesV: PICTURES_V }) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   logConversation(convoId, CONVO_HISTORY_WINDOW);
@@ -2941,7 +2943,7 @@ async function runChatTurn(convoId, userId, turn, images = null) {
   recommendationChanged(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, works, people };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, works, people, pictures };
 }
 
 // Answer now — Antoine's explicit decision that Interview mode has enough

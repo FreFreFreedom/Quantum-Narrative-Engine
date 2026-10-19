@@ -11,6 +11,7 @@ import * as screen from '../services/screenFacts.js';
 import { bookContents } from '../services/bookContents.js';
 import { workNote, bookGenre } from '../services/workNotes.js';
 import { personCard, scanPeople, KINDS as PERSON_KINDS } from '../services/personNotes.js';
+import { scanPictures } from '../services/answerPictures.js';
 import { convoImage } from '../services/convoImages.js';
 import * as bookFacts from '../services/bookFacts.js';
 import * as analogies from '../services/roomAnalogies.js';
@@ -223,7 +224,13 @@ export function conversationsRoutes() {
       const w = await convos.scanWorks(req.params.id, { userId: req.user?.id || 'antoine' });
       works = w.found || {}; worksMore = !!w.more;
     } catch (err) { console.warn('[works-scan]', err?.message || err); }
-    res.json({ people: found || {}, works, more: !!more || worksMore });
+    // And the pictures that are neither a cover nor a face (services/answerPictures.js).
+    let pictures = {}, picturesMore = false;
+    try {
+      const p = await scanPictures(req.params.id);
+      pictures = p.found || {}; picturesMore = !!p.more;
+    } catch (err) { console.warn('[pictures-scan]', err?.message || err); }
+    res.json({ people: found || {}, works, pictures, more: !!more || worksMore || picturesMore });
   }));
 
   // A book's table of contents, from the catalogues in turn (services/bookContents.js).

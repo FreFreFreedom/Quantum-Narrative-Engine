@@ -2885,6 +2885,19 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-face > .se-face-name { display:block; width:auto; aspect-ratio:auto; background:none; box-shadow:none; transform:none !important;
   margin-top:6px; padding:0; font:var(--fs-xs)/1.3 var(--font-ui); color:var(--c-ink-4); text-align:center; }
 @media (max-width:520px) { .se-face { width:110px; } }
+/* A picture that is neither a cover nor a face, in its own shape. A float hangs in
+   the covers' column; the plate opens across the column between two paragraphs. */
+.se-pic { display:block; cursor:zoom-in; }
+.se-pic-img { display:block; width:100%; border-radius:4px; background:var(--c-hover-wash) center/cover no-repeat;
+  box-shadow:0 8px 20px rgba(0,0,0,.24); transition:transform .25s ease, box-shadow .25s ease; }
+.se-pic:hover .se-pic-img, .se-pic:focus-visible .se-pic-img { transform:translateY(-2px); box-shadow:0 12px 26px rgba(0,0,0,.32); }
+.se-pic-cap { display:block; margin-top:7px; font:italic var(--fs-xs)/1.35 var(--font-ui); color:var(--c-ink-4); }
+.se-pic.is-float { float:right; clear:both; width:min(170px, 30%); margin:6px 0 12px 24px; }
+.se-pic.is-float.is-wide { width:min(240px, 40%); }
+.se-pic.is-float .se-pic-cap { text-align:center; }
+.se-pic.is-plate { clear:both; margin:20px 0 22px; }
+.se-pic.is-plate .se-pic-img { max-height:340px; }
+@media (max-width:520px) { .se-pic.is-float { width:120px; margin-left:14px; } .se-pic.is-float.is-wide { width:160px; } .se-pic.is-plate .se-pic-img { max-height:220px; } }
 @media (max-width:520px) { .se-cover { width:130px; } .se-cover > span { width:130px; height:195px; } .se-cover.is-right { margin-left:14px; } .se-cover.is-left { margin-right:14px; } .se-cover-row { width:200px; margin-left:14px; } .se-cover-row > .se-cover, .se-cover-row > .se-cover > span, .se-cover-row > .qne-wrap > .se-cover, .se-cover-row > .qne-wrap > .se-cover > span { width:100%; height:auto; } .se-cover-row > .se-cover, .se-cover-row > .qne-wrap > .se-cover { width:calc(50% - 5px); } }
 .se-card { position:fixed; z-index:var(--z-popover); width:min(560px, calc(100vw - 16px)); max-height:min(720px, calc(100vh - 16px)); overflow:auto;
   background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.28);
@@ -30807,6 +30820,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         out.worksRead = (Number(meta.worksV) || 0) >= 2;
         // Read again when a kind was added since (v2 places, archetypes, institutions; v3 tighter).
         if (Array.isArray(meta.people)) { out.peopleRead = (Number(meta.peopleV) || 0) >= 7; if (meta.people.length) out.people = meta.people; }
+        if (Array.isArray(meta.pictures)) { out.picturesRead = (Number(meta.picturesV) || 0) >= 1; if (meta.pictures.length) out.pictures = meta.pictures; }
       }
       return out;
     });
@@ -30852,11 +30866,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // time, the marks appearing as each stretch comes back.
   function seScanPeople(e, repaint, again){
     if ((e.peopleScan && !again) || !e.convoId || !e.loaded) return;
-    if (!(e.msgs || []).some(function(m){ return m.role === 'assistant' && m.kind === 'chat' && m.id && m.text && (!m.peopleRead || !m.worksRead); })) { e.peopleScan = false; return; }
+    if (!(e.msgs || []).some(function(m){ return m.role === 'assistant' && m.kind === 'chat' && m.id && m.text && (!m.peopleRead || !m.worksRead || !m.picturesRead); })) { e.peopleScan = false; return; }
     e.peopleScan = true;
     apiWrite('/api/convos/' + encodeURIComponent(e.convoId) + '/people-scan', 'POST', {})
       .then(function(out){
-        var got = (out && out.people) || {}, gotW = (out && out.works) || {}, any = false;
+        var got = (out && out.people) || {}, gotW = (out && out.works) || {}, gotP = (out && out.pictures) || {}, any = false;
         (e.msgs || []).forEach(function(m){
           if (!m.id) return;
           if (got[m.id]) {
@@ -30867,9 +30881,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             m.worksRead = true;
             if (gotW[m.id].length) { m.works = gotW[m.id]; any = true; }
           }
+          if (gotP[m.id]) {
+            m.picturesRead = true;
+            if (gotP[m.id].length) { m.pictures = gotP[m.id]; any = true; }
+          }
         });
         if (any && repaint) repaint();
-        if (out && out.more && (Object.keys(got).length || Object.keys(gotW).length)) seScanPeople(e, repaint, true);
+        if (out && out.more && (Object.keys(got).length || Object.keys(gotW).length || Object.keys(gotP).length)) seScanPeople(e, repaint, true);
         else e.peopleScan = false;
       })
       .catch(function(){ e.peopleScan = false; });
@@ -30987,7 +31005,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             if(!r || (!r.text && !r.message)) return;
             e.msgs.push({ id: r.messageId || null, role: 'assistant', kind: 'chat',
               text: r.text || r.message || '', laneTag: r.laneTag || null, intent: r.intent || null,
-              cost: r.cost || 0, works: r.works || null, people: r.people || null, peopleRead: r.people !== false,
+              cost: r.cost || 0, works: r.works || null, people: r.people || null, peopleRead: r.people !== false, pictures: r.pictures || null, picturesRead: r.pictures !== false,
               pair: d.pair, side: side, kept: side === 'a' });
           });
           if(e.type === 'open' && onDone) onDone();
@@ -31000,7 +31018,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var arrivedWhole = !e.stream;
           // id carried straight from the save, so the answer he is reading can be
           // marked as a chapter right away instead of only after a reload.
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0, works: d.works || null, people: d.people || null, peopleRead: d.people !== false });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0, works: d.works || null, people: d.people || null, peopleRead: d.people !== false, pictures: d.pictures || null, picturesRead: d.pictures !== false });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           // /interview, /grill-me and "answer now" all report the mode they left the
           // conversation in, so the toggle and the composer reflect it at once — no
@@ -31086,7 +31104,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           e.note = d.message || 'Could not answer now — try again.';
         } else if(d.text){
           var arrivedWhole = !e.stream;
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, works: d.works || null, people: d.people || null, peopleRead: d.people !== false });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, works: d.works || null, people: d.people || null, peopleRead: d.people !== false, pictures: d.pictures || null, picturesRead: d.pictures !== false });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           e.clarify = d.mode || 'normal';
           if(e.type === 'open' && onDone) onDone();
@@ -33601,7 +33619,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // Each bullet is its own place: a chapter can fall between two of them.
       if(/^(UL|OL)$/.test(el.tagName)){ Array.prototype.forEach.call(el.children, function(li){ if(li.tagName === 'LI' && li.textContent.trim()) out.push(li); }); }
       else if(/^(P|H[1-6]|BLOCKQUOTE|PRE|TABLE)$/.test(el.tagName)){ if(el.textContent.trim()) out.push(el); }
-      else if(el.tagName === 'DIV' && !el.matches('.se-cover, .se-cover-row, .se-card, .se-chap')) out = out.concat(gapBlocks(el));
+      else if(el.tagName === 'DIV' && !el.matches('.se-cover, .se-cover-row, .se-pic, .se-card, .se-chap')) out = out.concat(gapBlocks(el));
     });
     return out;
   }
@@ -33805,7 +33823,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!want) return null;
     root.normalize();
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode: function(n){ return n.parentElement && n.parentElement.closest('.se-cover, .se-card') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+      acceptNode: function(n){ return n.parentElement && n.parentElement.closest('.se-cover, .se-pic, .se-card') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
     });
     // flat: the answer's text with runs of whitespace folded to one space;
     // map[i]: the text node and offset that flat[i] came from.
@@ -35233,7 +35251,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var box = document.createElement('div');
     box.innerHTML = renderedHtml || '';
     // A timeline's labels are a drawing, not words of the answer.
-    Array.prototype.forEach.call(box.querySelectorAll('svg'), function(n){ n.remove(); });
+    Array.prototype.forEach.call(box.querySelectorAll('svg, .se-pic'), function(n){ n.remove(); });
     var text = (box.textContent || '').trim();
     if(!text) return 0;
     if(typeof Intl !== 'undefined' && Intl.Segmenter){
@@ -35449,6 +35467,81 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     });
     return '<div class="se-covered">' + box.innerHTML + '</div>';
   }
+  // Pictures that are neither a cover nor a face — the painting the answer looks
+  // at, the prison it walks through, the map of a migration (his ask, 2026-10-18:
+  // "it can be almost anything", placed with more judgment). The server chose them
+  // and found each one already (services/answerPictures.js), with the words it
+  // belongs to and its real shape, so nothing here searches or guesses.
+  // Where each goes: the sentence its words are in. How: the one picture the answer
+  // cannot do without, when it is wide, opens out across the column under its
+  // paragraph like a plate in a book; the others hang in the right column with the
+  // covers, in their own shape, never squeezed into a book's. Never two floats on
+  // one paragraph or on two paragraphs in a row, never beside a few words only, and
+  // a picture with no good place is left out rather than hung somewhere wrong.
+  var SE_PIC_MAX = 3, SE_PIC_WORDS = 35;
+  function seHangPictures(html, pics){
+    var box = document.createElement('div'); box.innerHTML = html;
+    var root = box.querySelector('.se-covered') || box;
+    var blocks = Array.prototype.slice.call(root.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'))
+      .filter(function(b){ return !b.parentElement.closest('li, blockquote'); });
+    if(blocks.length < 2) return html;
+    var isHead = function(b){ return /^H[1-4]$/.test(b.tagName); };
+    var words = function(b){ return (b.textContent || '').trim().split(/\s+/).length; };
+    var texts = blocks.map(function(b){ return seCoverNorm(b.textContent); });
+    var held = {}, floats = 0;
+    Array.prototype.slice.call(root.querySelectorAll('.se-cover-row, .se-cover')).forEach(function(f){
+      if(f.parentElement && f.parentElement.closest('.se-cover-row')) return;
+      floats++;
+      var b = f.closest('p, li, h1, h2, h3, h4, blockquote');
+      if(b && blocks.indexOf(b) >= 0) held[blocks.indexOf(b)] = true;
+    });
+    var near = function(i){ return held[i] || held[i - 1] || held[i + 1]; };
+    var hung = 0, plate = false;
+    pics.slice().sort(function(a, b){ return (b.weight || 2) - (a.weight || 2); }).forEach(function(p){
+      if(hung >= SE_PIC_MAX || floats + hung >= SE_FLOAT_MAX + SE_FACE_MAX) return;
+      if(!/^https:\/\//.test(p.url || '')) return;
+      var anchor = seCoverNorm(String(p.anchor || '').replace(/[*_`]/g, '')).trim();
+      var bi = -1;
+      for(var i = 0; i < blocks.length && bi < 0; i++) if(anchor && texts[i].indexOf(anchor) >= 0) bi = i;
+      if(bi < 0) return;
+      // Named in a heading: it belongs to the words under it.
+      while(bi < blocks.length && isHead(blocks[bi])) bi++;
+      if(bi >= blocks.length) return;
+      var ratio = (Number(p.w) || 4) / (Number(p.h) || 3);
+      var wide = ratio >= 1.3;
+      // The plate: once per answer, for the picture the answer leans on most.
+      if(!plate && wide && (p.weight || 2) >= 3 && words(blocks[bi]) >= 25 && !held[bi + 1]){
+        plate = true;
+        var after = blocks[bi].closest('ul, ol') || blocks[bi];
+        if(after.parentNode){ after.parentNode.insertBefore(sePicEl(p, 'is-plate', ratio), after.nextSibling); held[bi] = held[bi + 1] = true; hung++; }
+        return;
+      }
+      // A float: on the paragraph that says it, else the next one in the same
+      // section with words enough beside it and no other picture close by.
+      var at = -1;
+      for(var j = bi; j < blocks.length && j <= bi + 3; j++){
+        if(j > bi && isHead(blocks[j])) break;
+        if(isHead(blocks[j]) || near(j) || words(blocks[j]) < SE_PIC_WORDS) continue;
+        at = j; break;
+      }
+      if(at < 0) return;
+      var el = sePicEl(p, 'is-float' + (wide ? ' is-wide' : ''), Math.max(0.7, Math.min(1.8, ratio)));
+      var k = at === bi ? texts[at].indexOf(anchor) : 0;
+      var start = 0, re = /[.!?…]["”’)]*\s+/g, m;
+      while((m = re.exec(texts[at])) && m.index + m[0].length <= k) start = m.index + m[0].length;
+      seInsertAt(blocks[at], start, el);
+      held[at] = true; hung++;
+    });
+    return hung ? box.innerHTML : html;
+  }
+  function sePicEl(p, cls, ratio){
+    var el = document.createElement('span');
+    el.className = 'se-pic ' + cls; el.setAttribute('role', 'button'); el.tabIndex = 0;
+    el.title = (p.caption || p.subject || '') + (p.from ? ' — ' + p.from : '');
+    el.innerHTML = '<span class="se-pic-img" style="background-image:url(&quot;' + qEscAttr(p.url) + '&quot;);aspect-ratio:' + ratio.toFixed(3) + '"></span>'
+      + (p.caption ? '<span class="se-pic-cap">' + qEsc(p.caption) + '</span>' : '');
+    return el;
+  }
   // The people an answer names, real or fictional, marked where each is first
   // named (his ask, 2026-09-28): the name itself becomes the button, like a cover
   // but inside the line. Headings, links and covers are passed over, so the mark
@@ -35465,7 +35558,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var forms = [String(p.full || ''), name].filter(function(f, i, a){ return f.length >= 2 && a.indexOf(f) === i; });
       var res = forms.map(function(f){ return new RegExp('(^|[^\\p{L}])(' + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![\\p{L}])', 'u'); });
       var walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, {
-        acceptNode: function(n){ return n.parentElement.closest('.se-cover, .se-person, .se-work, a, code, pre') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+        acceptNode: function(n){ return n.parentElement.closest('.se-cover, .se-pic, .se-person, .se-work, a, code, pre') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
       });
       var node, m;
       while((node = walker.nextNode())){
@@ -35579,7 +35672,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var forms = [title, libShortTitle(title)].filter(function(f, i, a){ return f && f.length >= 2 && a.indexOf(f) === i; });
       var res = forms.map(function(f){ return new RegExp('(^|[^\\p{L}\\p{N}])(' + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![\\p{L}\\p{N}])', 'ui'); });
       var walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, {
-        acceptNode: function(n){ return n.parentElement.closest('.se-cover, .se-person, .se-work, a, code, pre') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+        acceptNode: function(n){ return n.parentElement.closest('.se-cover, .se-pic, .se-person, .se-work, a, code, pre') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
       });
       // The first mention in the text, and the title again wherever it heads a part
       // of the answer — "1. Unfair: The New Science… by Adam Benforado" is where the
@@ -35676,9 +35769,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // the body itself, and headings must step round them the same way.
       if(box.classList.contains('se-body') && box.querySelector('.se-covered')) return;
       var heads = box.querySelectorAll('h1, h2, h3, h4, hr');
-      if(!heads.length || !box.querySelector('.se-cover')) return;
+      if(!heads.length || !box.querySelector('.se-cover, .se-pic.is-float')) return;
       heads.forEach(function(h){ h.classList.add('se-wrap-by'); });
-      var floats = Array.prototype.slice.call(box.querySelectorAll('.se-cover-row, .se-cover:not(.se-cover-row .se-cover)'));
+      var floats = Array.prototype.slice.call(box.querySelectorAll('.se-cover-row, .se-cover:not(.se-cover-row .se-cover), .se-pic.is-float'));
       heads.forEach(function(h){
         var top = h.getBoundingClientRect().top, low = -Infinity;
         floats.forEach(function(f){
@@ -35734,7 +35827,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if (blocks.length < 2) return;
       // Where a float already hangs, and how many there are.
       var taken = {}, floats = 0;
-      Array.prototype.slice.call(body.querySelectorAll('.se-cover-row, .se-cover')).forEach(function(f){
+      Array.prototype.slice.call(body.querySelectorAll('.se-cover-row, .se-cover, .se-pic')).forEach(function(f){
         if (f.parentElement && f.parentElement.closest('.se-cover-row')) return;
         floats++;
         var b = seBlockOf(f, blocks) || (f.nextElementSibling && blocks.indexOf(f.nextElementSibling) >= 0 ? f.nextElementSibling : null);
@@ -36178,6 +36271,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (ib) { ev.preventDefault(); ev.stopPropagation(); seImgOpen(ib); return; }
     var pb = ev.target.closest && ev.target.closest('.se-person');
     if (pb) { ev.preventDefault(); sePersonOpen(pb); return; }
+    var pic = ev.target.closest && ev.target.closest('.se-pic');
+    if (pic) { ev.preventDefault(); seCoverBig(pic.querySelector('.se-pic-img')); return; }
     var fb = ev.target.closest && ev.target.closest('.se-face');
     if (fb) { ev.preventDefault(); sePersonOpen(fb); return; }
     var btn = ev.target.closest && ev.target.closest('.se-cover, .se-work');
@@ -36407,6 +36502,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var renderedBody = plan ? qEsc(m.text) : fmtBody(you ? shown : seProseFromList(shown), !you, m.id || null);
       if(!you && !plan) renderedBody = srcStripHtml(renderedBody);
       if(!you && !plan && m.works && m.works.length) renderedBody = seHangCovers(renderedBody, m.works, e.convoId);
+      if(!you && !plan && m.pictures && m.pictures.length) renderedBody = seHangPictures(renderedBody, m.pictures);
       if(!you && !plan && m.works && m.works.length) renderedBody = seMarkWorks(renderedBody, m.works, e.convoId);
       if(!you && !plan && m.people && m.people.length) renderedBody = seMarkPeople(renderedBody, m.people, e.convoId);
       var showWordCount = !you && !plan && (e.type === 'open' || e.type === 'side');
