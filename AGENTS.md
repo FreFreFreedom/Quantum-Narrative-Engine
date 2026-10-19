@@ -513,6 +513,15 @@ Written after a UI pass Antoine asked for in his own words: "intelligent, elegan
 not taking too much space for nothing". These are the rules that pass produced, and
 they hold for every view, not only the ones it touched.
 
+**One design everywhere: the Room is the source (2026-10-19).** The app, the browser
+extension (`~/edge-extensions/amazon-author-youtube`) and the Mac side (Hammerspoon:
+dictionary card, PDF chapter rail) are one product. A control that exists in the Room is
+drawn outside it exactly as the Room draws it — same fonts, gold, icons, order, dividers —
+copied from the Room's CSS in `fmcns_navigator.html`, not re-invented. Example: the PDF
+card's Chapter / Keep / Teach is the Room's `.se-quote-pop` bar (Cinzel capitals, gold
+`ic-bookmark`/`ic-seed`/`ic-target` symbols, thin dividers, along the foot). When the
+Room's look changes, the copies change with it.
+
 **A place you can go is a link (2026-10-08).** He right-clicks to open things in a new
 tab, which the browser only offers on a real `<a href>`. Every rail destination and every
 Room conversation is `<a href="#place" data-nav>` (`#room/<id>`, `#content`, `#map`,
