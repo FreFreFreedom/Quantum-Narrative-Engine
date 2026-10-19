@@ -28,6 +28,14 @@ reads, so what you write here reaches the Room too. One memory, two halves.
 
 ## The vision: where it lives, and in what order to read it
 
+**2026-10-18 — Room answers carry pictures of anything, not only covers and faces.**
+`services/answerPictures.js`: one cheap call per answer picks 0–3 moments where seeing helps
+(a painting, a place, an event photo, a map), each with exact anchor words; the server finds
+the picture (Wikipedia lead image, else Commons, flags/logos refused) and stores it in
+`meta.pictures`. The Room's `seHangPictures` hangs them by their anchor: one wide plate under
+its paragraph for the must-see picture, the rest in the covers' column. Older answers are read
+by the existing `people-scan` call.
+
 **2026-10-03 — The browser extension is "QNE" and sends to the Library.**
 `~/edge-extensions/amazon-author-youtube/` (folder name kept so Edge keeps the same id;
 the manifest name is now QNE) does three things: the old YouTube pairing, **Amazon tabs
