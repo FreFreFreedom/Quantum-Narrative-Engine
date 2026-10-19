@@ -561,24 +561,10 @@ export async function reportLookup({ show = '', term = '', line = '', wrong = ''
   const [showKey, termKey] = cacheKey('read7: ' + show, raw);
   const lineKey = createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10);
   if (db) db.prepare('DELETE FROM show_lookups WHERE show=? AND term=?').run(showKey, termKey + ' #' + lineKey);
-  // With no sentence and nothing said, a second reading is only another guess (2026-10-19:
-  // "P.C." went from personal computer to police constable); the report waits for a fix.
-  if (!String(line || '').trim() && !String(note || '').trim()) return { ok: true, id, text: '' };
-  const words = raw.split(' ').filter(Boolean).length;
-  const base = words === 1 ? WORD_PROMPT : PHRASE_PROMPT;
-  const prompt = lookupPrompt({ base, raw, show, line, reading: true, opening, worldFirst: true })
-    + `\n\n=== A FIRST READING, WHICH HE SAYS IS WRONG ===\n${wrong}`
-    + (note ? `\n\n=== WHAT HE SAYS ABOUT IT ===\n${note}` : '')
-    + `\n\nRead the text around it again, slowly, and give the right meaning.`;
-  const out = await generateText({ prompt, feature: 'quick', label: 'screen:report', maxTokens: 800, timeoutMs: 40_000 });
-  if (out.error || !out.text) return { ok: true, id, text: '' };
-  let said = out.text;
-  try { said = String(JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, ''))?.text || said); } catch {}
-  const text = words === 1 ? firstSentence(said) : firstSentences(said, 2);
-  if (db && id) db.prepare('UPDATE lookup_reports SET fixed=? WHERE id=?').run(text, id);
-  if (db && text) db.prepare('INSERT OR REPLACE INTO show_lookups (show, term, line, text, expansion) VALUES (?,?,?,?,?)')
-    .run(showKey, termKey + ' #' + lineKey, String(line || '').slice(0, 1200), text, '');
-  return { ok: true, id, text };
+  // No second reading at all (his call, 2026-10-19: "i thought we removed the reading by
+  // another model"): it was one more guess, and it left the card stuck on "Reading it
+  // again…". The flag only saves; the queued fix teaches the reading for every word.
+  return { ok: true, id, text: '' };
 }
 
 export function listReports({ all = false } = {}) {
