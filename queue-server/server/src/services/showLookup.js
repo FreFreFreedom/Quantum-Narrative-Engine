@@ -166,7 +166,7 @@ function firstSentences(raw, n) {
 // series means the same thing two episodes later, and a second ask should be free.
 function cacheKey(show, term) {
   return [String(show || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 120),
-    String(term || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 200)];
+    String(term || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 400)];
 }
 
 // On a page the fast models kept giving the dictionary sense even with the
@@ -193,7 +193,7 @@ export function lookupPrompt({ base = WORD_PROMPT, raw, show, line, reading, ope
 }
 
 export async function lookupOnScreen({ show = '', term = '', line = '', reading = false, opening = '' } = {}) {
-  const raw = String(term || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  const raw = String(term || '').replace(/\s+/g, ' ').trim().slice(0, 400);
   if (!raw) return { error: 'not_a_word' };
   if (!/[A-Za-z]/.test(raw)) return { error: 'not_a_word' };
   const words = raw.split(' ').filter(Boolean).length;
