@@ -205,6 +205,15 @@ function cacheKey(show, term) {
 // 2026-10 report: a capitalised word in a sentence with no other verb was read as a
 // person's name, though the sentence only makes sense if the word is acting. The world
 // field pushed toward "who is this in the story"; the role in the sentence now comes first.
+// A bare number ("415, and 213") is almost never a quantity in a text like this: the fast
+// model called 415 an inmate number until told to think of codes first.
+const NUMBER_HINT = `
+
+=== THE TERM IS A NUMBER ===
+Say what this number STANDS FOR in this world, naming it exactly: a telephone area code and
+the region it covers (and the people from there), a penal or police code section and the
+offence, a street, a year, a unit. Sibling numbers in the same sentence are the strongest
+clue to the kind.`;
 const WORLD_FIRST = `
 Answer with JSON only, no markdown fence: {"world":"…","text":"…"}.
 Before anything else, find the word's ROLE in the sentence it sits in: subject, object,
@@ -261,7 +270,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const acronym = words === 1 && isAcronym(raw);
   // Reading: the passage is part of the key, so a word met in two senses is read twice,
   // and a word with no passage is never kept (those readings were guesses).
-  const [showKey, termKey] = cacheKey((reading ? 'read8: ' : '') + show, raw);
+  const [showKey, termKey] = cacheKey((reading ? (/^[\d\s.,/#-]+$/.test(raw) ? 'read8n: ' : 'read8: ') : '') + show, raw);
   const lineKey = reading ? createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10) : '';
   const keepIt = !reading || String(line || '').trim();
 
@@ -273,7 +282,8 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const base = acronym ? ACRONYM_PROMPT : words === 1 ? WORD_PROMPT : PHRASE_PROMPT;
   const worldFirst = reading && !acronym;
   const earlier = reading ? correctionFor(show, raw) : '';
-  const prompt = lookupPrompt({ base, raw, show, line, reading, opening, worldFirst, earlier });
+  const prompt = lookupPrompt({ base, raw, show, line, reading, opening, worldFirst, earlier })
+    + (/^[\d\s.,/#-]+$/.test(raw) ? NUMBER_HINT : '');
   const out = await quickText(prompt, reading);
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
 
