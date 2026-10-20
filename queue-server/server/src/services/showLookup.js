@@ -213,7 +213,8 @@ const NUMBER_HINT = `
 Say what this number STANDS FOR in this world, naming it exactly: a telephone area code and
 the region it covers (and the people from there), a penal or police code section and the
 offence, a street, a year, a unit. Sibling numbers in the same sentence are the strongest
-clue to the kind.`;
+clue to the kind. Give the number's REAL place from what you know of the code itself, never
+from where the book is set: a code often names people from somewhere else, an outside group.`;
 const WORLD_FIRST = `
 Answer with JSON only, no markdown fence: {"world":"…","text":"…"}.
 Before anything else, find the word's ROLE in the sentence it sits in: subject, object,
@@ -270,7 +271,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const acronym = words === 1 && isAcronym(raw);
   // Reading: the passage is part of the key, so a word met in two senses is read twice,
   // and a word with no passage is never kept (those readings were guesses).
-  const [showKey, termKey] = cacheKey((reading ? (/^[\d\s.,/#-]+$/.test(raw) ? 'read8n: ' : 'read8: ') : '') + show, raw);
+  const [showKey, termKey] = cacheKey((reading ? (/^[\d\s.,/#-]+$/.test(raw) ? 'read8n2: ' : 'read8: ') : '') + show, raw);
   const lineKey = reading ? createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10) : '';
   const keepIt = !reading || String(line || '').trim();
 
