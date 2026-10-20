@@ -256,7 +256,7 @@ function correctionFor(show, raw) {
 export async function lookupOnScreen({ show = '', term = '', line = '', reading = false, opening = '' } = {}) {
   const raw = String(term || '').replace(/\s+/g, ' ').trim().slice(0, 400);
   if (!raw) return { error: 'not_a_word' };
-  if (!/[A-Za-z]/.test(raw)) return { error: 'not_a_word' };
+  if (!/[A-Za-z0-9]/.test(raw)) return { error: 'not_a_word' };
   const words = raw.split(' ').filter(Boolean).length;
   const acronym = words === 1 && isAcronym(raw);
   // Reading: the passage is part of the key, so a word met in two senses is read twice,
