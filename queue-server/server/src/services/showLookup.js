@@ -201,8 +201,19 @@ function cacheKey(show, term) {
 // memoir, beside "shotgun slung over my shoulder", came back as winning votes, three
 // times out of three). Naming the world first, in its own field, before the meaning,
 // is what makes them use it: the meaning is then written from inside that world.
+//
+// 2026-10 report: a capitalised word in a sentence with no other verb was read as a
+// person's name, though the sentence only makes sense if the word is acting. The world
+// field pushed toward "who is this in the story"; the role in the sentence now comes first.
 const WORLD_FIRST = `
 Answer with JSON only, no markdown fence: {"world":"…","text":"…"}.
+Before anything else, find the word's ROLE in the sentence it sits in: subject, object,
+action or modifier. Is the sentence complete? A capital letter does not make a word a name.
+Text is often clipped, with a verb or a subject left out. When the sentence has no other
+main verb, or the word as a name or noun would leave it broken, the word is probably doing
+the action, so define what it means in that role. Take the sense that makes the sentence
+grammatical and sensible; never fall back on the commonest sense when the sentence
+structure contradicts it. Define the word in this sentence, not the scene around it.
 "world": first, in under 20 words, who is writing and the world they speak from — the book
 or author if you can tell, the milieu — and then WHERE THIS PASSAGE TAKES PLACE: the scene
 in the text around it, read from the details right beside the word (a shotgun on a shoulder,
@@ -250,7 +261,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const acronym = words === 1 && isAcronym(raw);
   // Reading: the passage is part of the key, so a word met in two senses is read twice,
   // and a word with no passage is never kept (those readings were guesses).
-  const [showKey, termKey] = cacheKey((reading ? 'read7: ' : '') + show, raw);
+  const [showKey, termKey] = cacheKey((reading ? 'read8: ' : '') + show, raw);
   const lineKey = reading ? createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10) : '';
   const keepIt = !reading || String(line || '').trim();
 
@@ -558,7 +569,7 @@ export async function reportLookup({ show = '', term = '', line = '', wrong = ''
   const book = bookOf(show);
   const id = db ? db.prepare('INSERT INTO lookup_reports (book, term, line, wrong, note) VALUES (?,?,?,?,?)')
     .run(book, raw, String(line || '').slice(0, 1200), String(wrong || '').slice(0, 600), String(note || '').slice(0, 600)).lastInsertRowid : null;
-  const [showKey, termKey] = cacheKey('read7: ' + show, raw);
+  const [showKey, termKey] = cacheKey('read8: ' + show, raw);
   const lineKey = createHash('sha1').update(String(line || '')).digest('hex').slice(0, 10);
   if (db) db.prepare('DELETE FROM show_lookups WHERE show=? AND term=?').run(showKey, termKey + ' #' + lineKey);
   // No second reading at all (his call, 2026-10-19: "i thought we removed the reading by
@@ -585,7 +596,7 @@ const REPORT_BRIEF = `Fix the QNE dictionary's page readings from the meanings A
 
 Where: queue-server/server/src/services/showLookup.js — lookupPrompt(), WORD_PROMPT /
 PHRASE_PROMPT / ACRONYM_PROMPT, forReading(), WORLD_FIRST, SENSE, context(). A page lookup
-is reading:true with worldFirst; the cache key prefix is 'read7: ' in lookupOnScreen().
+is reading:true with worldFirst; the cache key prefix is 'read8: ' in lookupOnScreen().
 
 Do:
 1. Read the reports below. Find what they have in common — the KIND of mistake (wrong
