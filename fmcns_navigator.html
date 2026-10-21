@@ -15217,7 +15217,7 @@ function goBootPlace() {
   if (kid === 'room' && parts[1]) {
     let id = parts[1];
     try { id = decodeURIComponent(id); } catch (e) {}
-    try { localStorage.setItem(ROOM_SEL_KEY, id); } catch (e) {}
+    roomSelSave(id);
     if (roomThreads.some(t => t.id === id)) roomSelect(id); else roomSel = null;
   }
   if (kid === 'content' || kid === 'map') setMode(kid);
@@ -15408,6 +15408,16 @@ let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null, room
                             // before the picker had ever been opened threw, and the throw took
                             // the attached-card list down with it
 const ROOM_SEL_KEY = 'fmcns_room_thread';
+// Each tab keeps its own conversation across a refresh (sessionStorage is per tab);
+// the shared copy only seeds a brand-new tab.
+function roomSelSave(id) {
+  try { sessionStorage.setItem(ROOM_SEL_KEY, id); } catch (e) {}
+  try { localStorage.setItem(ROOM_SEL_KEY, id); } catch (e) {}
+}
+function roomSelSaved() {
+  try { const own = sessionStorage.getItem(ROOM_SEL_KEY); if (own) return own; } catch (e) {}
+  try { return localStorage.getItem(ROOM_SEL_KEY); } catch (e) { return null; }
+}
 // Whether each side zone is being kept open. Not saved before this, so shutting
 // the thread list to read something long meant shutting it again on every
 // return — the app remembered which thread, which pane and how wide the column
@@ -16045,7 +16055,7 @@ async function loadRoom() {
   if (roomSel && !roomThreads.some(t => t.id === roomSel)) roomSel = null;
   if (!roomSel) {
     let saved = null;
-    try { saved = localStorage.getItem(ROOM_SEL_KEY); } catch (e) {}
+    saved = roomSelSaved();
     roomSel = (saved && roomThreads.some(t => t.id === saved)) ? saved
             : (roomThreads.length ? roomThreads[0].id : null);
   }
@@ -16852,7 +16862,7 @@ async function roomDeleteThread(id) {
     await apiWrite('/api/convos/' + encodeURIComponent(id), 'DELETE');
     if (roomSel === id) {
       roomSel = null;
-      try { localStorage.removeItem(ROOM_SEL_KEY); } catch (e) {}
+      try { localStorage.removeItem(ROOM_SEL_KEY); sessionStorage.removeItem(ROOM_SEL_KEY); } catch (e) {}
     }
     await loadRoom();
   } catch (e) {
@@ -19006,7 +19016,7 @@ function roomExtractHostClick(ev) {
 function roomSelect(id) {
   if (!id || id === roomSel) return;
   roomSel = id;
-  try { localStorage.setItem(ROOM_SEL_KEY, id); } catch (e) {}
+  roomSelSave(id);
   syncAddress();
   roomSubjects = []; roomLinks = []; roomMergeBridgeReady = true;
   roomPickOpen = false; roomPickQ = '';
