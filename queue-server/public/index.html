@@ -4445,8 +4445,10 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-mark span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .se-mark b { font-weight:400; color:var(--c-ink-5); padding:0 1px; font-size:var(--fs-sm); line-height:1; }
 .se-mark b:hover { color:var(--c-danger); }
-mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radius:var(--r-xs); animation:seJumped 2.2s var(--ease) forwards; }
-@keyframes seJumped { 0%, 55% { background:var(--c-amber, #f3c969); } 100% { background:transparent; } }
+mark.se-jumped { background:color-mix(in srgb, #f3c969 45%, transparent); color:inherit; border-radius:var(--r-xs); animation:seJumped 4s var(--ease) forwards; }
+@keyframes seJumped { 0%, 60% { background:color-mix(in srgb, #f3c969 45%, transparent); } 100% { background:transparent; } }
+.se-chap.is-jumped .se-chap-name { animation:seChapJumped 4s var(--ease) forwards; }
+@keyframes seChapJumped { 0%, 60% { color:#f3c969; text-shadow:0 0 14px rgba(243,201,105,.7); } 100% { } }
 /* The chapter rail — the shape of a long conversation, down its LEFT edge.
    Closed: a column of fine ticks, the one you are reading longer and inked, the
    ones you saved by hand in green. Touch it and it opens into a numbered contents
@@ -4459,7 +4461,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
   transition:width .22s var(--ease), background-color .22s var(--ease),
              border-color .22s var(--ease), box-shadow .22s var(--ease); }
 .se-rail[hidden] { display:none; }
-.se-rail:hover, .se-rail:focus-within {
+.se-rail:not(.is-shut):hover, .se-rail:not(.is-shut):focus-within {
   width:340px; overflow-y:auto; overflow-x:hidden; pointer-events:auto; padding:8px 6px;
   background:color-mix(in srgb, var(--c-surface) 94%, transparent);
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
@@ -4469,7 +4471,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
   font:500 10px/1 var(--font-ui); letter-spacing:.2em; text-transform:uppercase; color:var(--c-ink-5);
   white-space:nowrap; opacity:0; height:0; padding-top:0; padding-bottom:0; border-bottom-color:transparent; overflow:hidden;
   transition:opacity .2s var(--ease); }
-.se-rail:hover .se-rail-head, .se-rail:focus-within .se-rail-head { opacity:1; height:auto; padding-top:6px; padding-bottom:10px; border-bottom-color:var(--c-border); }
+.se-rail:not(.is-shut):hover .se-rail-head, .se-rail:not(.is-shut):focus-within .se-rail-head { opacity:1; height:auto; padding-top:6px; padding-bottom:10px; border-bottom-color:var(--c-border); }
 .se-rail-head b { font-weight:400; letter-spacing:.04em; }
 .se-rail-item { pointer-events:auto; position:relative; display:flex; align-items:center; gap:12px;
   background:none; border:none; margin:0; padding:7px 12px 7px 9px; cursor:pointer;
@@ -4486,27 +4488,27 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 /* Open: the tick gives way to the chapter's numeral. */
 .se-rail-num { display:none; flex:none; width:20px; font:11px/1 var(--font-mono); color:var(--c-ink-5);
   font-variant-numeric:tabular-nums; text-align:right; }
-.se-rail:hover .se-rail-dash, .se-rail:focus-within .se-rail-dash { display:none; }
-.se-rail:hover .se-rail-num, .se-rail:focus-within .se-rail-num { display:block; }
+.se-rail:not(.is-shut):hover .se-rail-dash, .se-rail:not(.is-shut):focus-within .se-rail-dash { display:none; }
+.se-rail:not(.is-shut):hover .se-rail-num, .se-rail:not(.is-shut):focus-within .se-rail-num { display:block; }
 .se-rail-item.is-here .se-rail-num { color:var(--c-ink); }
 .se-rail-item.is-here::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:2px; border-radius:2px; background:var(--c-accent); }
 .se-rail-name { flex:1; min-width:0; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
   font-family:var(--font-read); font-size:var(--fs-base); line-height:1.35; color:var(--c-ink-3); opacity:0;
   transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .se-rail:not(:hover):not(:focus-within) .se-rail-name { max-height:1.35em; }
-.se-rail:hover .se-rail-name, .se-rail:focus-within .se-rail-name { opacity:1; }
+.se-rail:not(.is-shut):hover .se-rail-name, .se-rail:not(.is-shut):focus-within .se-rail-name { opacity:1; }
 .se-rail-item:hover .se-rail-name { color:var(--c-ink); }
 .se-rail-item.is-here .se-rail-name { color:var(--c-ink); font-weight:500; }
 .se-rail-item.is-saved .se-rail-name { font-style:normal; }
 .se-rail-item.is-saved .se-rail-num { color:var(--c-kept-echo, var(--c-accent)); }
 .se-rail-drop { display:none; flex:none; font-weight:400; font-size:var(--fs-xs); line-height:1; padding:3px; color:var(--c-ink-5); border-radius:4px; }
-.se-rail:hover .se-rail-item:hover .se-rail-drop { display:block; }
+.se-rail:not(.is-shut):hover .se-rail-item:hover .se-rail-drop { display:block; }
 .se-rail-drop:hover { color:var(--c-ink); background:var(--c-surface-2); }
 /* Small and tight (his pick A, 2026-09-24): a narrow list, one line per kept
    chapter, and the search folded into an icon in the head. */
-#roomConvo .se-rail:hover, #roomConvo .se-rail:focus-within { width:300px; padding:6px 5px; border-radius:12px; }
+#roomConvo .se-rail:not(.is-shut):hover, #roomConvo .se-rail:not(.is-shut):focus-within { width:300px; padding:6px 5px; border-radius:12px; }
 #roomConvo .se-rail-head { align-items:center; padding-left:10px; padding-right:4px; }
-#roomConvo .se-rail:hover .se-rail-head, #roomConvo .se-rail:focus-within .se-rail-head { padding-top:4px; padding-bottom:6px; border-bottom-color:transparent; }
+#roomConvo .se-rail:not(.is-shut):hover .se-rail-head, #roomConvo .se-rail:not(.is-shut):focus-within .se-rail-head { padding-top:4px; padding-bottom:6px; border-bottom-color:transparent; }
 .se-rail-findbtn { display:flex; align-items:center; justify-content:center; width:24px; height:24px; padding:0; border:0; border-radius:6px; background:none; color:var(--c-ink-5); cursor:pointer; }
 .se-rail-findbtn:hover, .se-rail.is-searching .se-rail-findbtn { color:var(--c-ink-2); background:var(--c-hover-wash); }
 .se-rail-findbtn svg { width:13px; height:13px; }
@@ -4517,18 +4519,18 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 #roomConvo .se-rail-num { width:20px; font:500 12px/1 'Cinzel', var(--font-read); }
 #roomConvo .se-rail-name { font:13px/1.35 var(--font-ui); }
 /* Open, a chapter name shows whole — wrapped, never cut; the number sits on its first line. */
-#roomConvo .se-rail:hover .se-rail-item, #roomConvo .se-rail:focus-within .se-rail-item { align-items:baseline; }
+#roomConvo .se-rail:not(.is-shut):hover .se-rail-item, #roomConvo .se-rail:not(.is-shut):focus-within .se-rail-item { align-items:baseline; }
 #roomConvo .se-rail:not(:hover):not(:focus-within) .se-rail-name { display:block; white-space:nowrap; text-overflow:ellipsis; }
-#roomConvo .se-rail:hover .se-rail-name, #roomConvo .se-rail:focus-within .se-rail-name { -webkit-line-clamp:3; }
+#roomConvo .se-rail:not(.is-shut):hover .se-rail-name, #roomConvo .se-rail:not(.is-shut):focus-within .se-rail-name { -webkit-line-clamp:3; }
 #roomConvo .se-rail-item.is-here::before { top:6px; bottom:6px; }
 .se-rail-mark { display:none; flex:none; width:10px; height:12px; color:var(--c-brand); }
-.se-rail:hover .se-rail-item.is-saved .se-rail-mark, .se-rail:focus-within .se-rail-item.is-saved .se-rail-mark { display:block; }
+.se-rail:not(.is-shut):hover .se-rail-item.is-saved .se-rail-mark, .se-rail:not(.is-shut):focus-within .se-rail-item.is-saved .se-rail-mark { display:block; }
 /* Sections inside a chapter — an answer's headings, and the lines he kept — and the
    search field. Only when the rail is open; closed, it stays a column of ticks. */
 .se-rail-find, .se-rail-hits, .se-rail-sub { display:none; }
-.se-rail:hover .se-rail-find, .se-rail:focus-within .se-rail-find { display:flex; }
-.se-rail:hover .se-rail-sub, .se-rail:focus-within .se-rail-sub { display:flex; }
-.se-rail:hover .se-rail-hits, .se-rail:focus-within .se-rail-hits { display:block; }
+.se-rail:not(.is-shut):hover .se-rail-find, .se-rail:not(.is-shut):focus-within .se-rail-find { display:flex; }
+.se-rail:not(.is-shut):hover .se-rail-sub, .se-rail:not(.is-shut):focus-within .se-rail-sub { display:flex; }
+.se-rail:not(.is-shut):hover .se-rail-hits, .se-rail:not(.is-shut):focus-within .se-rail-hits { display:block; }
 .se-rail-find { align-items:center; gap:8px; margin:0 6px 8px; padding:7px 12px; border:1px solid var(--c-border); border-radius:999px;
   background:var(--c-bg); color:var(--c-ink-5); }
 .se-rail-find:focus-within { border-color:var(--c-border-2); color:var(--c-ink-3); }
@@ -33950,7 +33952,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // offset — an offset would point at the wrong words the moment anything
   // changed, and a passage that no longer matches simply lands on the message.
   function jumpToMark(log, mark){
-    jumpToPassage(log, mark.message_id, mark.snippet);
+    jumpToPassage(log, mark.message_id, mark.snippet, mark.id);
   }
 
   // ─── The chapter rail ──────────────────────────────────────────────────────
@@ -34144,6 +34146,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // after a click the rail stayed open with the mouse long gone. Leaving it lets
     // go of that focus, unless he is typing a search in it.
     rail.onmouseleave = function(){
+      rail.classList.remove('is-shut');
       var a = document.activeElement;
       if(!a || !rail.contains(a)) return;
       if(a.matches && a.matches('.se-rail-find input') && a.value.trim()) return;
@@ -34167,7 +34170,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         clearTimeout(rail._pinTimer);
         rail._pinTimer = setTimeout(function(){ rail.dataset.pinHere = ''; railHere(rail, log, chapters); }, 900);
         railHere(rail, log, chapters);
-        jumpToPassage(log, c.messageId, c.kind === 'saved' ? c.snippet : '');
+        // The open list would sit over the very place it jumps to: it shuts on
+        // the click and stays shut until the mouse leaves it.
+        rail.classList.add('is-shut');
+        if(document.activeElement && rail.contains(document.activeElement)) document.activeElement.blur();
+        jumpToPassage(log, c.messageId, c.kind === 'saved' ? c.snippet : '', c.markId);
       };
     });
 
@@ -34402,7 +34409,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
 
   // Go and read a passage where it was said — the one move behind both a chapter
   // chip and a carried quote, so they cannot drift apart.
-  function jumpToPassage(log, messageId, snippet){
+  function jumpToPassage(log, messageId, snippet, markId){
     if(!log || !messageId) return;
     var turn = log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(messageId) : messageId) + '"]');
     if(!turn) return;
@@ -34417,14 +34424,22 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       m.replaceWith(document.createTextNode(m.textContent));
     });
     log.normalize();
-    var hit = snippet ? highlightIn(body, snippet) : null;
+    // A chapter placed at a gap snippets its paragraph's whole text, a cover's
+    // caption included; the match skips covers, so it missed and the jump landed
+    // mid-answer with nothing lit (his report, 2026-10-21). Try again counting
+    // every word, and light the chapter's own line in the transcript as well.
+    var hit = snippet ? (highlightIn(body, snippet) || highlightIn(body, snippet, null, true)) : null;
+    var line = markId ? log.querySelector('.se-chap[data-mark-id="' + (window.CSS && CSS.escape ? CSS.escape(markId) : markId) + '"]') : null;
+    if(line){ line.classList.remove('is-jumped'); void line.offsetWidth; line.classList.add('is-jumped'); }
     // Scroll the LOG, by arithmetic. scrollIntoView refused to move this nested
     // scroller — verified live: the passage lit up correctly and stayed off
     // screen — and a chapter you cannot see is not a chapter.
-    var target = hit || turn;
+    var target = line || hit || turn;
     var lr = log.getBoundingClientRect();
     var tr = target.getBoundingClientRect();
-    var to = log.scrollTop + (tr.top - lr.top) - (log.clientHeight / 2) + (tr.height / 2);
+    // The chapter's line sits a third of the way down, the passage under it.
+    var to = line ? log.scrollTop + (tr.top - lr.top) - log.clientHeight * 0.3
+      : log.scrollTop + (tr.top - lr.top) - (log.clientHeight / 2) + (tr.height / 2);
     // Plain assignment, not scrollTo({behavior:'smooth'}): smooth is a no-op on
     // this element — measured live, the scrollTop did not move by a single pixel —
     // and the app kills animation under reduced motion anyway.
@@ -34436,7 +34451,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // the full length of the passage in <mark>s, one per text node it crosses, so a
   // multi-paragraph/bullet selection gets highlighted end to end rather than just
   // its opening words.
-  function highlightIn(root, needle, cls){
+  function highlightIn(root, needle, cls, all){
     // Searched across the whole answer's text as ONE string, not node by node: a
     // passage that runs through an italic title ("John Pfaff's <i>Locked In</i>
     // re-examines…") spans three text nodes, and a node-by-node search never found
@@ -34446,7 +34461,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!want) return null;
     root.normalize();
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode: function(n){ return n.parentElement && n.parentElement.closest('.se-cover, .se-pic, .se-card') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+      acceptNode: function(n){ return !all && n.parentElement && n.parentElement.closest('.se-cover, .se-pic, .se-card') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
     });
     // flat: the answer's text with runs of whitespace folded to one space;
     // map[i]: the text node and offset that flat[i] came from.
