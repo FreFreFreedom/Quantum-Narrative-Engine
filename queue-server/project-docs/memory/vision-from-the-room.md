@@ -11,6 +11,21 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Official narratives misrepresent systemic failures as inherent pathologies of marginalized populations.
+
+- The focus is on how power structures deflect responsibility for conditions they produce.
+- Governing bodies and media outlets frame emerging counter-structures as alien or monstrous anomalies.
+- This framing hides the upstream municipal or geopolitical drivers of economic despair and violent policing.
+- The purpose is to uncover how institutional self-defense mechanisms obscure complicity in generating social crises.
+
+## Parallel organizational structures emerge across scales when governing bodies abandon populations.
+
+- The focus is on parallel organizational forms across scales, from urban street groups to international extremist groups.
+- Both arise as functional replacements where governing bodies fail to provide basic security, economic survival, and justice.
+- The pattern repeats identically whether examining marginalized city neighborhoods or war-torn international regions.
+- Governing bodies consistently misinterpret these groups as external anomalies rather than products of systemic failures.
+- The goal is to recognize how structural neglect systematically generates its own opposition.
+
 ## The hospital functions as a biopolitical fortress managing biological life under acute scarcity.
 
 As conceptualized through Foucault, the modern hospital shifts from a place of simple care to an institutional regulator of life, functioning as a micro-scale iteration of the state's immune system and total logistics engine.
