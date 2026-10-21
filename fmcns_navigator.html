@@ -4461,7 +4461,10 @@ mark.se-jumped { background:color-mix(in srgb, #f3c969 45%, transparent); color:
   transition:width .22s var(--ease), background-color .22s var(--ease),
              border-color .22s var(--ease), box-shadow .22s var(--ease); }
 .se-rail[hidden] { display:none; }
-.se-rail:not(.is-shut):hover, .se-rail:not(.is-shut):focus-within {
+/* Open while the mouse is on it, or while the keyboard is in it (Tab, or typing a
+   search). A click's focus never counts: it held the list open with the mouse long
+   gone (his report, 2026-10-21). */
+.se-rail:not(.is-shut):hover, .se-rail:not(.is-shut):has(:focus-visible) {
   width:340px; overflow-y:auto; overflow-x:hidden; pointer-events:auto; padding:8px 6px;
   background:color-mix(in srgb, var(--c-surface) 94%, transparent);
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
@@ -4471,7 +4474,7 @@ mark.se-jumped { background:color-mix(in srgb, #f3c969 45%, transparent); color:
   font:500 10px/1 var(--font-ui); letter-spacing:.2em; text-transform:uppercase; color:var(--c-ink-5);
   white-space:nowrap; opacity:0; height:0; padding-top:0; padding-bottom:0; border-bottom-color:transparent; overflow:hidden;
   transition:opacity .2s var(--ease); }
-.se-rail:not(.is-shut):hover .se-rail-head, .se-rail:not(.is-shut):focus-within .se-rail-head { opacity:1; height:auto; padding-top:6px; padding-bottom:10px; border-bottom-color:var(--c-border); }
+.se-rail:not(.is-shut):hover .se-rail-head, .se-rail:not(.is-shut):has(:focus-visible) .se-rail-head { opacity:1; height:auto; padding-top:6px; padding-bottom:10px; border-bottom-color:var(--c-border); }
 .se-rail-head b { font-weight:400; letter-spacing:.04em; }
 .se-rail-item { pointer-events:auto; position:relative; display:flex; align-items:center; gap:12px;
   background:none; border:none; margin:0; padding:7px 12px 7px 9px; cursor:pointer;
@@ -4488,15 +4491,15 @@ mark.se-jumped { background:color-mix(in srgb, #f3c969 45%, transparent); color:
 /* Open: the tick gives way to the chapter's numeral. */
 .se-rail-num { display:none; flex:none; width:20px; font:11px/1 var(--font-mono); color:var(--c-ink-5);
   font-variant-numeric:tabular-nums; text-align:right; }
-.se-rail:not(.is-shut):hover .se-rail-dash, .se-rail:not(.is-shut):focus-within .se-rail-dash { display:none; }
-.se-rail:not(.is-shut):hover .se-rail-num, .se-rail:not(.is-shut):focus-within .se-rail-num { display:block; }
+.se-rail:not(.is-shut):hover .se-rail-dash, .se-rail:not(.is-shut):has(:focus-visible) .se-rail-dash { display:none; }
+.se-rail:not(.is-shut):hover .se-rail-num, .se-rail:not(.is-shut):has(:focus-visible) .se-rail-num { display:block; }
 .se-rail-item.is-here .se-rail-num { color:var(--c-ink); }
 .se-rail-item.is-here::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:2px; border-radius:2px; background:var(--c-accent); }
 .se-rail-name { flex:1; min-width:0; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
   font-family:var(--font-read); font-size:var(--fs-base); line-height:1.35; color:var(--c-ink-3); opacity:0;
   transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .se-rail:not(:hover):not(:focus-within) .se-rail-name { max-height:1.35em; }
-.se-rail:not(.is-shut):hover .se-rail-name, .se-rail:not(.is-shut):focus-within .se-rail-name { opacity:1; }
+.se-rail:not(.is-shut):hover .se-rail-name, .se-rail:not(.is-shut):has(:focus-visible) .se-rail-name { opacity:1; }
 .se-rail-item:hover .se-rail-name { color:var(--c-ink); }
 .se-rail-item.is-here .se-rail-name { color:var(--c-ink); font-weight:500; }
 .se-rail-item.is-saved .se-rail-name { font-style:normal; }
@@ -4506,9 +4509,9 @@ mark.se-jumped { background:color-mix(in srgb, #f3c969 45%, transparent); color:
 .se-rail-drop:hover { color:var(--c-ink); background:var(--c-surface-2); }
 /* Small and tight (his pick A, 2026-09-24): a narrow list, one line per kept
    chapter, and the search folded into an icon in the head. */
-#roomConvo .se-rail:not(.is-shut):hover, #roomConvo .se-rail:not(.is-shut):focus-within { width:300px; padding:6px 5px; border-radius:12px; }
+#roomConvo .se-rail:not(.is-shut):hover, #roomConvo .se-rail:not(.is-shut):has(:focus-visible) { width:300px; padding:6px 5px; border-radius:12px; }
 #roomConvo .se-rail-head { align-items:center; padding-left:10px; padding-right:4px; }
-#roomConvo .se-rail:not(.is-shut):hover .se-rail-head, #roomConvo .se-rail:not(.is-shut):focus-within .se-rail-head { padding-top:4px; padding-bottom:6px; border-bottom-color:transparent; }
+#roomConvo .se-rail:not(.is-shut):hover .se-rail-head, #roomConvo .se-rail:not(.is-shut):has(:focus-visible) .se-rail-head { padding-top:4px; padding-bottom:6px; border-bottom-color:transparent; }
 .se-rail-findbtn { display:flex; align-items:center; justify-content:center; width:24px; height:24px; padding:0; border:0; border-radius:6px; background:none; color:var(--c-ink-5); cursor:pointer; }
 .se-rail-findbtn:hover, .se-rail.is-searching .se-rail-findbtn { color:var(--c-ink-2); background:var(--c-hover-wash); }
 .se-rail-findbtn svg { width:13px; height:13px; }
@@ -4519,18 +4522,18 @@ mark.se-jumped { background:color-mix(in srgb, #f3c969 45%, transparent); color:
 #roomConvo .se-rail-num { width:20px; font:500 12px/1 'Cinzel', var(--font-read); }
 #roomConvo .se-rail-name { font:13px/1.35 var(--font-ui); }
 /* Open, a chapter name shows whole — wrapped, never cut; the number sits on its first line. */
-#roomConvo .se-rail:not(.is-shut):hover .se-rail-item, #roomConvo .se-rail:not(.is-shut):focus-within .se-rail-item { align-items:baseline; }
+#roomConvo .se-rail:not(.is-shut):hover .se-rail-item, #roomConvo .se-rail:not(.is-shut):has(:focus-visible) .se-rail-item { align-items:baseline; }
 #roomConvo .se-rail:not(:hover):not(:focus-within) .se-rail-name { display:block; white-space:nowrap; text-overflow:ellipsis; }
-#roomConvo .se-rail:not(.is-shut):hover .se-rail-name, #roomConvo .se-rail:not(.is-shut):focus-within .se-rail-name { -webkit-line-clamp:3; }
+#roomConvo .se-rail:not(.is-shut):hover .se-rail-name, #roomConvo .se-rail:not(.is-shut):has(:focus-visible) .se-rail-name { -webkit-line-clamp:3; }
 #roomConvo .se-rail-item.is-here::before { top:6px; bottom:6px; }
 .se-rail-mark { display:none; flex:none; width:10px; height:12px; color:var(--c-brand); }
-.se-rail:not(.is-shut):hover .se-rail-item.is-saved .se-rail-mark, .se-rail:not(.is-shut):focus-within .se-rail-item.is-saved .se-rail-mark { display:block; }
+.se-rail:not(.is-shut):hover .se-rail-item.is-saved .se-rail-mark, .se-rail:not(.is-shut):has(:focus-visible) .se-rail-item.is-saved .se-rail-mark { display:block; }
 /* Sections inside a chapter — an answer's headings, and the lines he kept — and the
    search field. Only when the rail is open; closed, it stays a column of ticks. */
 .se-rail-find, .se-rail-hits, .se-rail-sub { display:none; }
-.se-rail:not(.is-shut):hover .se-rail-find, .se-rail:not(.is-shut):focus-within .se-rail-find { display:flex; }
-.se-rail:not(.is-shut):hover .se-rail-sub, .se-rail:not(.is-shut):focus-within .se-rail-sub { display:flex; }
-.se-rail:not(.is-shut):hover .se-rail-hits, .se-rail:not(.is-shut):focus-within .se-rail-hits { display:block; }
+.se-rail:not(.is-shut):hover .se-rail-find, .se-rail:not(.is-shut):has(:focus-visible) .se-rail-find { display:flex; }
+.se-rail:not(.is-shut):hover .se-rail-sub, .se-rail:not(.is-shut):has(:focus-visible) .se-rail-sub { display:flex; }
+.se-rail:not(.is-shut):hover .se-rail-hits, .se-rail:not(.is-shut):has(:focus-visible) .se-rail-hits { display:block; }
 .se-rail-find { align-items:center; gap:8px; margin:0 6px 8px; padding:7px 12px; border:1px solid var(--c-border); border-radius:999px;
   background:var(--c-bg); color:var(--c-ink-5); }
 .se-rail-find:focus-within { border-color:var(--c-border-2); color:var(--c-ink-3); }
