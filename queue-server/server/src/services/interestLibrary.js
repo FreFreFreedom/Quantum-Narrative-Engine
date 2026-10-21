@@ -535,6 +535,15 @@ export function haveWorks(owner, works = []) {
       || (book && shelf.some(b => sameWork(b.title, title)));
   });
 }
+// Every book the Library holds, by its spelling-free key, to the key its card
+// answers to ('shelf:id' or 'media:id') — the shelf copy first, as the wall shows it.
+export function bookKeys(owner) {
+  const out = new Map();
+  if (!db || !owner) return out;
+  try { for (const b of db.prepare('SELECT id,title FROM shelf_books WHERE owner=?').all(owner)) { const k = workKey(b.title); if (k && !out.has(k)) out.set(k, 'shelf:' + b.id); } } catch (_) {}
+  for (const w of db.prepare("SELECT id,title FROM interest_works WHERE owner=? AND kind='book'").all(owner)) { const k = workKey(w.title); if (k && !out.has(k)) out.set(k, 'media:' + w.id); }
+  return out;
+}
 export function listInterests(owner, { query = '', kind = '', limit = 100, offset = 0 } = {}) {
   if (!db || !owner) return [];
   const words = norm(clean(query, 300)).split(' ').filter(Boolean).slice(0, 12);

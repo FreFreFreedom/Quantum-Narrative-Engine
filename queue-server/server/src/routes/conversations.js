@@ -24,6 +24,7 @@ import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import * as interests from '../services/interestLibrary.js';
 import { discover } from '../services/discover.js';
+import { pulitzerFor } from '../services/pulitzer.js';
 import { lookupWord, glossaryFor, askAboutWord, keepWordTalk } from '../services/wordLookup.js';
 
 // The lanes the manual model picker (plan "chat-model-picker") may point a
@@ -79,6 +80,8 @@ export function conversationsRoutes() {
     try { filters = JSON.parse(String(req.query.filters || '{}')) || {}; } catch (_) {}
     res.json(await discover(owner, { source: req.query.source === 'books' ? 'books' : 'screen', q: req.query.q || '', filters, fast: req.query.fast === '1' }));
   }));
+  // The Pulitzer panel beside the full-screen Library (his pick, 2026-10-21).
+  router.get('/pulitzer', interestRoute((req, owner) => pulitzerFor(owner)));
   router.post('/interests/have', interestRoute((req, owner) => ({ have: interests.haveWorks(owner, (req.body || {}).works || []) })));
   router.get('/interests', interestRoute((req, owner) => ({ items: interests.listInterests(owner, req.query) })));
   router.get('/favs', interestRoute((req, owner) => ({ favs: interests.listFavs(owner), ...(req.query.works === '1' ? { works: interests.favWorks(owner) } : {}) })));
@@ -170,6 +173,17 @@ export function conversationsRoutes() {
     if (it.kind === 'book') { const f = (await bookFacts.bookFactsFor(owner, [it])).x || {}; return res.json({ isbn: f.isbn || '', cover: f.poster || '', goodreads: f.goodreads || '', fullTitle: f.fullTitle || '' }); }
     const f = (await screen.screenFactsFor(owner, [it])).x || {};
     res.json({ imdbId: f.imdbId || '', cover: f.poster || '' });
+  }));
+
+  // A book card for a book the Library does not hold yet (the Pulitzer panel):
+  // the catalogue facts and the Amazon stars, no model.
+  router.get('/book-facts', asyncHandler(async (req, res) => {
+    const owner = req.user?.id || 'antoine';
+    const it = { id: 'x', kind: 'book', title: String(req.query.title || '').slice(0, 300), creator: String(req.query.creator || '').slice(0, 200), year: String(req.query.year || '').slice(0, 8) };
+    if (!it.title.trim()) return res.status(400).json({ error: 'title required' });
+    const f = (await bookFacts.bookFactsFor(owner, [it])).x || {};
+    const st = f.stars ? null : bookFacts.starsFor(f.fullTitle || it.title) || await bookFacts.amazonStarsFor(f.fullTitle || it.title, it.creator, f.isbn).catch(() => null);
+    res.json({ ...f, ...(st ? { stars: st.stars, starCount: st.count } : {}) });
   }));
 
   // The film/book card in a Room answer: the catalogue facts plus a 75-word line

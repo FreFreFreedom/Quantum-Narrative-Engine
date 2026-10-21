@@ -3942,10 +3942,10 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .lib-over > .shelf-panel { position:absolute; left:26px; right:26px; top:200px; max-height:calc(100% - 226px); margin:0;
   overflow:auto; overscroll-behavior:contain; isolation:isolate; background:var(--c-surface); border:1px solid rgba(217,184,119,.45);
   border-radius:16px; box-shadow:0 30px 80px rgba(0,0,0,.8); }
-.lib-over .shelf-panel-head.is-pop { align-items:center; text-align:center; }
-.lib-over .shelf-panel-head.is-pop > div { display:flex; flex-direction:column; align-items:center; }
-.lib-over .shelf-panel-head.is-pop .lib-pop-cv { width:170px; max-width:none; aspect-ratio:2/3; height:auto; box-shadow:0 10px 28px rgba(0,0,0,.7); }
-.lib-over .shelf-panel-head.is-pop > div > b { font:italic 500 26px/1.15 'Spectral', var(--font-read); }
+:is(.lib-over, .pz-over) .shelf-panel-head.is-pop { align-items:center; text-align:center; }
+:is(.lib-over, .pz-over) .shelf-panel-head.is-pop > div { display:flex; flex-direction:column; align-items:center; }
+:is(.lib-over, .pz-over) .shelf-panel-head.is-pop .lib-pop-cv { width:170px; max-width:none; aspect-ratio:2/3; height:auto; box-shadow:0 10px 28px rgba(0,0,0,.7); }
+:is(.lib-over, .pz-over) .shelf-panel-head.is-pop > div > b { font:italic 500 26px/1.15 'Spectral', var(--font-read); }
 .lib-pop-bg { position:absolute; left:0; right:0; top:0; height:340px; z-index:-1; pointer-events:none;
   background-size:cover; background-position:center; filter:blur(18px) saturate(1.1); opacity:.5; transform:scale(1.2);
   -webkit-mask-image:linear-gradient(#000 35%, transparent); mask-image:linear-gradient(#000 35%, transparent); }
@@ -4078,6 +4078,53 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .libx-where a { display:flex; align-items:baseline; gap:8px; padding:6px 8px; border-radius:7px; color:var(--c-ink-2); text-decoration:none; font:14px var(--font-read); }
 .libx-where a::before { content:'◇'; color:#d9b877; font-size:11px; }
 .libx-where a:hover { background:rgba(255,255,255,.05); color:#d9b877; }
+/* The Pulitzer panel, down the right of the full-screen Library. */
+#roomInterests.is-full.pz-on > :not(.libx-side):not(.lib-over):not(.pz-side) { margin-right:var(--pz-w, 440px); }
+#roomInterests.is-full.pz-on.libx-open > :not(.libx-side):not(.lib-over):not(.pz-side) { margin-right:calc(var(--pz-w, 440px) + var(--libx-card, 400px)); }
+.libx-opt.on .libx-sw.is-pz { background:#c9a14a; }
+#roomInterests.is-full > .pz-side { position:fixed; top:0; right:0; bottom:0; width:var(--pz-w, 440px); z-index:41; margin:0; padding:0;
+  display:flex; flex-direction:column; background:var(--c-bg); border-left:1px solid rgba(217,184,119,.35); box-shadow:-20px 0 60px rgba(0,0,0,.35); }
+#roomInterests:not(.is-active) > .pz-side { display:none; }
+.pz-head { display:flex; align-items:center; padding:16px 18px 8px; }
+.pz-head b { flex:1; font:italic 500 22px 'Spectral', var(--font-read); color:#d9b877; }
+.pz-x { width:28px; height:28px; min-width:0; padding:0; border:0; border-radius:50%; background:var(--c-surface-2); color:var(--c-ink-3); cursor:pointer; }
+.pz-chips { display:flex; flex-wrap:wrap; gap:5px; padding:4px 18px; }
+.pz-chips button { min-width:0; padding:3px 10px; border:1px solid var(--c-border-2); border-radius:999px; background:none; color:var(--c-ink-3); font:12.5px var(--font-ui); cursor:pointer; }
+.pz-chips button:hover { color:var(--c-ink); }
+.pz-chips button.on { background:#d9b877; border-color:#d9b877; color:#141a26; }
+.pz-body { flex:1; min-height:0; display:flex; margin-top:10px; border-top:1px solid var(--c-border); overflow:auto; overscroll-behavior:contain; }
+.pz-rail { position:sticky; top:0; align-self:flex-start; flex:none; width:64px; display:flex; flex-direction:column; padding:8px 0 30px; border-right:1px solid var(--c-border); }
+.pz-rail button { min-width:0; padding:4px 0; border:0; background:none; cursor:pointer; text-align:center; }
+.pz-dec { font:600 10.5px var(--font-ui); letter-spacing:.08em; color:var(--c-ink-5); }
+.pz-dec.on { color:#d9b877; }
+.pz-yr { font:13px var(--font-ui); color:var(--c-ink-3); }
+.pz-yr.on { background:#d9b877 !important; color:#141a26; }
+.pz-list { flex:1; min-width:0; padding:4px 16px 40px; }
+.pz-list h6 { margin:16px 0 8px; font:600 10.5px var(--font-ui); letter-spacing:.12em; text-transform:uppercase; color:var(--c-ink-5); }
+.pz-row { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px 12px; }
+.pz-none { color:var(--c-ink-5); font:14px var(--font-read); }
+.pz-card { position:relative; min-width:0; }
+.pz-card > b { display:block; margin-top:6px; font:italic 500 13px/1.2 'Spectral', var(--font-read); color:var(--c-ink-2); }
+.pz-card > small { display:block; font-size:11.5px; color:var(--c-ink-5); }
+.pz-card:not(.is-won) .pz-cv { opacity:.55; }
+.pz-card:not(.is-won):hover .pz-cv { opacity:1; }
+.pz-cv { display:block; position:relative; width:100%; aspect-ratio:2/3; padding:0; border:1px solid var(--c-border-2); border-radius:5px; cursor:pointer;
+  background:var(--c-surface-2) center/cover no-repeat; }
+.pz-card.is-won .pz-cv { outline:2px solid #d9b877; outline-offset:2px; }
+.pz-rib { position:absolute; top:-1px; left:50%; margin-left:-7px; width:14px; height:24px; background:#d9b877; clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%); }
+.pz-fav { position:absolute; top:4px; left:4px; width:24px; height:24px; min-width:0; padding:0; border:0; border-radius:50%; background:rgba(10,14,22,.65);
+  color:#f1ece0; font-size:14px; cursor:pointer; opacity:0; transition:opacity .15s; }
+.pz-card:hover .pz-fav, .pz-card.is-fav .pz-fav { opacity:1; }
+.pz-card.is-fav .pz-fav { color:#c9a14a; }
+.pz-card .libx-add { width:24px; height:24px; font-size:14px; right:4px; top:4px; }
+.pz-over { position:absolute; inset:0; z-index:3; animation:fmcnsFade .2s ease both; }
+.pz-over > .shelf-panel { position:absolute; inset:0; margin:0; overflow:auto; overscroll-behavior:contain; isolation:isolate; background:var(--c-surface); border:0; border-radius:0; }
+.pz-prize { display:inline-block; margin:8px 0 2px; padding:3px 10px; border-radius:999px; background:#d9b877; color:#141a26; font:600 10.5px var(--font-ui); letter-spacing:.1em; text-transform:uppercase; }
+.pz-acts { justify-content:center; gap:8px; }
+.pz-big { min-width:0; padding:7px 16px; border:0; border-radius:999px; background:#d9b877; color:#141a26; font:14px var(--font-ui); cursor:pointer; }
+.pz-big.in { background:none; border:1px solid #d9b877; color:#d9b877; }
+.pz-big.is-ghost { background:var(--c-surface-2); color:#d9b877; font-size:16px; padding:5px 14px; }
+.pz-kin { background:var(--c-surface-2) center/cover no-repeat; }
 .libx-where span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .libx-where b { font-weight:500; font-size:12px; color:var(--c-ink-5); }
 .libx-kin { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; }
@@ -20240,7 +20287,8 @@ function libSizeOver(host) {
   // Full screen, the card stands docked down the right side, the wall left in view.
   if (libFull && pane.classList.contains('is-full')) {
     const w = libxCardW();
-    Object.assign(over.style, { left: (r.right - w) + 'px', top: r.top + 'px', width: w + 'px', height: r.height + 'px' });
+    const pz = pzShown() ? pzW() : 0;
+    Object.assign(over.style, { left: (r.right - w - pz) + 'px', top: r.top + 'px', width: w + 'px', height: r.height + 'px' });
     return;
   }
   const tabs = pane.querySelector('.room-tabs:not([hidden])');
@@ -20521,7 +20569,7 @@ if (!window.__discKeys) {
 // on the cover itself on hover; the size slider sets how big the covers are. Library,
 // IMDb and Amazon are three switches, any mix; the outside ones answer a search with
 // covers that a gold ＋ adds. The wall can be grouped by author, decade or theme.
-let libFull = false, libxSrc = { library: true, screen: false, books: false }, libxGroup = '', libxOrder = 'added';
+let libFull = false, libxSrc = { library: true, screen: false, books: false, pulitzer: false }, libxGroup = '', libxOrder = 'added';
 let libxFolded = new Set(), libxFacets = null, libxFacetsAsk = null, libxWallNow = [];
 const libxWhere = new Map();
 try {
@@ -20543,7 +20591,7 @@ function libxSave() {
 function libxApply() {
   const cards = document.getElementById('roomCards'), host = document.getElementById('roomInterests');
   if (cards) cards.classList.toggle('is-full', libFull);
-  if (host) { host.classList.toggle('is-full', libFull); host.style.setProperty('--libx-card', libxCardW() + 'px'); }
+  if (host) { host.classList.toggle('is-full', libFull); host.classList.toggle('pz-on', pzShown()); host.style.setProperty('--libx-card', libxCardW() + 'px'); host.style.setProperty('--pz-w', pzW() + 'px'); }
 }
 function libxSetFull(on) {
   libFull = !!on; libxSave(); libxApply();
@@ -20554,7 +20602,7 @@ const LIBX_W = [0, 118, 150, 190, 240];
 function libxCols(size) {
   const host = document.getElementById('roomInterests');
   const side = host && host.querySelector('.libx-side');
-  const w = innerWidth - (side ? side.offsetWidth : 240) - (libOpen ? libxCardW() : 0) - 64;
+  const w = innerWidth - (side ? side.offsetWidth : 240) - (libOpen ? libxCardW() : 0) - (pzShown() ? pzW() : 0) - 64;
   return Math.max(2, Math.floor((w + 14) / ((LIBX_W[size] || 150) + 14)));
 }
 const libxCardW = () => Math.round(Math.min(460, Math.max(340, innerWidth * 0.3)));
@@ -20627,7 +20675,7 @@ function libxSide() {
     + '<h6>Kind</h6>' + LIB_KINDS.map(([k, l]) => opt('data-lib-tab', k, '<span>' + l + '</span><b data-lib-count="' + k + '">' + libCountFor(k) + '</b>', k === interestLibraryKind)).join('')
     + '<h6>Years</h6><span class="lib-years"><input class="lib-year" data-lib-year="from" type="text" inputmode="numeric" maxlength="4" aria-label="From year" placeholder="From">'
     + '<i>–</i><input class="lib-year" data-lib-year="to" type="text" inputmode="numeric" maxlength="4" aria-label="To year" placeholder="To"></span>'
-    + '<h6>Search in</h6>' + [['library', 'Library', 'is-lib'], ['screen', 'IMDb', 'is-imdb'], ['books', 'Amazon', 'is-amz']].map(([s, l, c]) =>
+    + '<h6>Search in</h6>' + [['library', 'Library', 'is-lib'], ['screen', 'IMDb', 'is-imdb'], ['books', 'Amazon', 'is-amz'], ['pulitzer', 'Pulitzer', 'is-pz']].map(([s, l, c]) =>
       opt('data-libx-src', s, '<i class="libx-sw ' + c + '"></i><span>' + l + '</span><b data-libx-n="' + s + '"></b>', libxSrc[s], ' role="switch" aria-checked="' + !!libxSrc[s] + '"')).join('')
     + '<h6>Group by</h6>' + [['', 'Nothing'], ['creator', 'Author'], ['decade', 'Decade'], ['theme', 'Theme']].map(([g, l]) => opt('data-libx-group', g, l, libxGroup === g)).join('')
     + '<h6>Order</h6>' + [['added', 'Newest added'], ['year', 'Year'], ['az', 'A–Z']].map(([o, l]) => opt('data-libx-order', o, l, libxOrder === o)).join('')
@@ -20635,7 +20683,7 @@ function libxSide() {
 }
 function libxWire(host) {
   host.querySelectorAll('[data-libx-src]').forEach((b) => { b.onclick = () => {
-    const s = b.dataset.libxSrc; libxSrc[s] = !libxSrc[s]; libxSave(); renderInterestLibrary({ quiet: true });
+    const s = b.dataset.libxSrc; libxSrc[s] = !libxSrc[s]; if (s === 'pulitzer') pzOpen = null; libxSave(); renderInterestLibrary({ quiet: true });
   }; });
   host.querySelectorAll('[data-libx-group]').forEach((b) => { b.onclick = () => { libxGroup = b.dataset.libxGroup; libxSave(); renderInterestLibrary({ quiet: true }); }; });
   host.querySelectorAll('[data-libx-order]').forEach((b) => { b.onclick = () => { libxOrder = b.dataset.libxOrder; libxSave(); renderInterestLibrary({ quiet: true }); }; });
@@ -20691,6 +20739,177 @@ function libxLoadOut(host, cols) {
       .finally(() => { delete libxOutGot[key + '?']; });
   }
   paint();
+}
+
+// The Pulitzer panel down the right of the full-screen Library (his pick B, built
+// from the Library's own cards, 2026-10-21): a rail of years, the chosen year's
+// winners and finalists category by category, the same ☆ and ＋ as the wall, and a
+// click opens the same book card. The Library's search and years narrow it too.
+const PZ_CATS = [['fiction', 'Fiction'], ['nonfiction', 'Nonfiction'], ['history', 'History'], ['biography', 'Biography'],
+  ['memoir', 'Memoir'], ['poetry', 'Poetry'], ['drama', 'Drama'], ['music', 'Music']];
+let pzData = null, pzAsk = null, pzOpen = null, pzScroll = 0;
+const pzFacts = {};
+let pzCats = new Set(PZ_CATS.map((c) => c[0]).filter((c) => c !== 'music')), pzWho = '', pzMissing = false, pzYear = 0;
+try {
+  const c = JSON.parse(localStorage.getItem('qne-pz-cats') || 'null'); if (Array.isArray(c) && c.length) pzCats = new Set(c);
+  pzWho = localStorage.getItem('qne-pz-who') || ''; pzMissing = localStorage.getItem('qne-pz-missing') === '1';
+  pzYear = Number(localStorage.getItem('qne-pz-year')) || 0;
+} catch (_) {}
+function pzSave() {
+  try {
+    localStorage.setItem('qne-pz-cats', JSON.stringify([...pzCats])); localStorage.setItem('qne-pz-who', pzWho);
+    localStorage.setItem('qne-pz-missing', pzMissing ? '1' : ''); localStorage.setItem('qne-pz-year', String(pzYear || ''));
+  } catch (_) {}
+}
+const pzW = () => Math.round(Math.min(480, Math.max(380, innerWidth * 0.3)));
+const pzShown = () => libFull && !!libxSrc.pulitzer;
+function pzLoad() {
+  if (pzData || pzAsk) return;
+  pzAsk = api('/api/convos/pulitzer').then((o) => { pzData = (o && o.entries) || []; })
+    .catch(() => { pzData = []; }).finally(() => { pzAsk = null; if (pzShown()) renderInterestLibrary({ quiet: true }); });
+}
+window.addEventListener('library:updated', () => { pzData = null; });
+const pzCatName = (c) => (PZ_CATS.find((x) => x[0] === c) || [, c])[1];
+// What passes the chips, before the year: the categories, winners or finalists,
+// and only what the Library does not hold yet.
+function pzPass(e) {
+  return pzCats.has(e.c) && (!pzWho || (pzWho === 'won' ? e.w : !e.w)) && (!pzMissing || !e.k);
+}
+function pzCard(e) {
+  const i = pzData.indexOf(e), fav = !!(e.k && libFavs && libFavs.has(e.k));
+  return '<div class="pz-card' + (e.w ? ' is-won' : '') + (fav ? ' is-fav' : '') + '" data-pz="' + i + '">'
+    + '<button type="button" class="pz-cv shelf-cover" data-pz-open aria-label="' + qEscAttr(e.t) + '">' + (e.w ? '<i class="pz-rib"></i>' : '') + '</button>'
+    + '<button type="button" class="pz-fav" data-pz-fav title="' + (fav ? 'Unfavourite' : 'Favourite') + '" aria-pressed="' + fav + '">' + (fav ? '★' : '☆') + '</button>'
+    + (e.c === 'music' ? '' : '<button type="button" class="libx-add' + (e.k ? ' in' : '') + '" data-pz-add title="' + (e.k ? 'In the Library' : 'Add to the Library') + '">' + (e.k ? '✓' : '＋') + '</button>')
+    + '<b>' + qEsc(e.t) + '</b><small>' + qEsc(e.a || '') + '</small></div>';
+}
+function pzSide() {
+  const all = pzData || [];
+  const head = '<div class="pz-head"><b>Pulitzer</b><button type="button" class="pz-x" data-pz-close aria-label="Close">✕</button></div>'
+    + '<div class="pz-chips">' + PZ_CATS.map(([c, l]) => '<button type="button" class="' + (pzCats.has(c) ? 'on' : '') + '" data-pz-cat="' + c + '">' + l + '</button>').join('') + '</div>'
+    + '<div class="pz-chips">' + [['', 'All'], ['won', 'Winners'], ['fin', 'Finalists']].map(([w, l]) => '<button type="button" class="' + (pzWho === w ? 'on' : '') + '" data-pz-who="' + w + '">' + l + '</button>').join('')
+    + '<button type="button" class="' + (pzMissing ? 'on' : '') + '" data-pz-missing>Not in my library</button></div>';
+  if (!pzData) return '<aside class="pz-side">' + head + waitHtml('searching', 'Loading') + '</aside>';
+  const words = libNorm(interestLibraryQuery).split(' ').filter(Boolean);
+  const yf = Number(libYearFrom) || 0, yt = Number(libYearTo) || 0;
+  const pass = all.filter(pzPass);
+  let body;
+  if (words.length || yf || yt) {
+    // A search reaches across every year at once, newest first.
+    const hits = pass.filter((e) => (!yf || e.y >= yf) && (!yt || e.y <= yt)
+      && words.every((w) => libNorm(e.t + ' ' + (e.a || '')).includes(w))).slice(0, 120);
+    const years = [...new Set(hits.map((e) => e.y))];
+    body = '<div class="pz-list">' + (hits.length ? years.map((y) => '<h6>' + y + '</h6><div class="pz-row">'
+      + hits.filter((e) => e.y === y).map(pzCard).join('') + '</div>').join('') : '<p class="pz-none">Nothing</p>') + '</div>';
+  } else {
+    const years = [...new Set(pass.map((e) => e.y))].sort((a, b) => b - a);
+    if (!years.includes(pzYear)) pzYear = years[0] || 0;
+    const decades = [...new Set(years.map((y) => Math.floor(y / 10) * 10))];
+    const myDec = Math.floor(pzYear / 10) * 10;
+    const rail = '<nav class="pz-rail">' + decades.map((d) => '<button type="button" class="pz-dec' + (d === myDec ? ' on' : '') + '" data-pz-dec="' + d + '">' + d + 's</button>'
+      + (d === myDec ? years.filter((y) => Math.floor(y / 10) * 10 === d).map((y) => '<button type="button" class="pz-yr' + (y === pzYear ? ' on' : '') + '" data-pz-year="' + y + '">' + y + '</button>').join('') : '')).join('') + '</nav>';
+    const inYear = pass.filter((e) => e.y === pzYear);
+    body = rail + '<div class="pz-list">' + PZ_CATS.filter(([c]) => inYear.some((e) => e.c === c)).map(([c, l]) =>
+      '<h6>' + l + '</h6><div class="pz-row">' + inYear.filter((e) => e.c === c).sort((a, b) => b.w - a.w).map(pzCard).join('') + '</div>').join('')
+      + (inYear.length ? '' : '<p class="pz-none">No prize</p>') + '</div>';
+  }
+  return '<aside class="pz-side">' + head + '<div class="pz-body">' + body + '</div>' + (pzOpen != null && all[pzOpen] ? pzPop(all[pzOpen]) : '') + '</aside>';
+}
+// The same book card the wall opens, with the prize under the title and the rest
+// of that year's shortlist at its foot.
+function pzPop(e) {
+  const w = { kind: 'book', title: e.t, creator: e.a || '', year: String(e.y) };
+  const f = pzFacts[e.t + '|' + e.a] || {};
+  const src = f.poster || roomMediaArtCache.get(roomMediaArtKey(w)) || '';
+  const prize = '<span class="pz-prize">' + (e.w ? '★ Winner' : 'Finalist') + ' · ' + qEsc(pzCatName(e.c)) + ' · ' + e.y + '</span>';
+  const about = (e.n ? '<div class="shelf-note"><h6>' + (e.w ? 'Why it won' : 'The jury') + '</h6><p>' + qEsc(e.n) + '</p></div>' : '')
+    + (f.overview ? '<div class="shelf-note"><h6>What it is</h6><p>' + qEsc(libForty(f.overview)) + '</p></div>'
+      : (f.done || e.c === 'music' ? '' : waitHtml('searching', 'Looking it up', 'p', 'shelf-note-wait')));
+  const fav = !!(e.k && libFavs && libFavs.has(e.k));
+  const kin = pzData.filter((o) => o !== e && o.y === e.y && o.c === e.c);
+  return '<div class="pz-over"><div class="shelf-panel is-pop">'
+    + libPopHead(src, f.fullTitle || e.t, e.a || '', prize, e.c === 'music' ? '' : bookOutMenu(bookLinks(w, f)), libStatStrip(f.stars, f.starCount, f.pages, f.year))
+    + '<div class="bk-pane">' + about + '</div>'
+    + (e.c === 'music' ? '' : '<div class="shelf-acts pz-acts" data-pz="' + pzData.indexOf(e) + '">'
+      + '<button type="button" class="pz-big' + (e.k ? ' in' : '') + '" data-pz-add>' + (e.k ? '✓ In the Library' : '＋ Add to the Library') + '</button>'
+      + '<button type="button" class="pz-big is-ghost" data-pz-fav aria-pressed="' + fav + '">' + (fav ? '★' : '☆') + '</button></div>')
+    + (kin.length ? '<div class="libx-more"><h6>Also in ' + qEsc(pzCatName(e.c)) + ' · ' + e.y + '</h6><div class="libx-kin">'
+      + kin.map((o) => '<button type="button" class="pz-kin" data-pz-kin="' + pzData.indexOf(o) + '" title="' + qEscAttr(o.t) + '"></button>').join('') + '</div></div>' : '')
+    + '</div></div>';
+}
+// Into the Library, then (when asked) starred: a book he does not hold yet is
+// added first, since a star belongs to a card on the wall.
+async function pzAdd(e) {
+  if (e.k) return e.k;
+  const o = await apiWrite('/api/convos/interests', 'POST', { works: [{ kind: 'book', title: e.t, creator: e.a || '', year: String(e.y) }] });
+  const s = o && o.saved && o.saved[0];
+  if (!s || !s.id) throw new Error('Not added');
+  for (const x of pzData) if (x.c !== 'music' && libWorkKey(x.t) === libWorkKey(e.t)) x.k = (s.shelf ? 'shelf:' : 'media:') + s.id;
+  libData = null; libxFacets = null;
+  return e.k;
+}
+function pzWire(host) {
+  const side = host.querySelector('.pz-side'); if (!side) return;
+  const body = side.querySelector('.pz-body');
+  if (body) { body.scrollTop = pzScroll; body.onscroll = () => { pzScroll = body.scrollTop; }; }
+  const again = (top) => { if (top) pzScroll = 0; pzSave(); renderInterestLibrary({ quiet: true }); };
+  side.querySelector('[data-pz-close]').onclick = () => { libxSrc.pulitzer = false; pzOpen = null; libxSave(); renderInterestLibrary({ quiet: true }); };
+  side.querySelectorAll('[data-pz-cat]').forEach((b) => { b.onclick = () => { const c = b.dataset.pzCat; if (pzCats.has(c)) pzCats.delete(c); else pzCats.add(c); again(); }; });
+  side.querySelectorAll('[data-pz-who]').forEach((b) => { b.onclick = () => { pzWho = b.dataset.pzWho; again(); }; });
+  const mi = side.querySelector('[data-pz-missing]'); if (mi) mi.onclick = () => { pzMissing = !pzMissing; again(); };
+  side.querySelectorAll('[data-pz-dec]').forEach((b) => { b.onclick = () => {
+    const d = Number(b.dataset.pzDec), ys = (pzData || []).filter((e) => pzPass(e) && Math.floor(e.y / 10) * 10 === d).map((e) => e.y);
+    if (ys.length) pzYear = Math.max(...ys); again(true);
+  }; });
+  side.querySelectorAll('[data-pz-year]').forEach((b) => { b.onclick = () => { pzYear = Number(b.dataset.pzYear); again(true); }; });
+  side.querySelectorAll('[data-pz-open]').forEach((b) => { b.onclick = () => { pzOpen = Number(b.closest('[data-pz]').dataset.pz); renderInterestLibrary({ quiet: true }); }; });
+  side.querySelectorAll('[data-pz-kin]').forEach((b) => { b.onclick = () => { pzOpen = Number(b.dataset.pzKin); renderInterestLibrary({ quiet: true }); }; });
+  side.querySelectorAll('.pz-over [data-close]').forEach((b) => { b.onclick = () => { pzOpen = null; renderInterestLibrary({ quiet: true }); }; });
+  side.querySelectorAll('[data-pz-add]').forEach((b) => { b.onclick = async () => {
+    const e = pzData[Number(b.closest('[data-pz]').dataset.pz)];
+    if (!e || e.k || b.disabled) return;
+    b.disabled = true; b.textContent = '…';
+    try { await pzAdd(e); } catch (_) {}
+    renderInterestLibrary();
+  }; });
+  side.querySelectorAll('[data-pz-fav]').forEach((b) => { b.onclick = async () => {
+    const e = pzData[Number(b.closest('[data-pz]').dataset.pz)];
+    if (!e || b.disabled) return;
+    b.disabled = true;
+    try {
+      if (!libFavs) libFavs = new Set();
+      const key = await pzAdd(e), on = !libFavs.has(key);
+      await apiWrite('/api/convos/favs', 'POST', { key, on });
+      if (on) libFavs.add(key); else libFavs.delete(key);
+    } catch (_) {}
+    renderInterestLibrary();
+  }; });
+  // Covers, found the way the wall finds them.
+  side.querySelectorAll('[data-pz]').forEach((card) => {
+    const e = pzData[Number(card.dataset.pz)], cv = card.querySelector('.pz-cv');
+    if (!e || !cv || e.c === 'music') return;
+    roomFindMediaArt({ kind: 'book', title: e.t, creator: e.a || '' }).then((u) => { if (/^https:\/\//.test(u || '') && cv.isConnected) libLight(cv, u); }).catch(() => {});
+  });
+  side.querySelectorAll('[data-pz-kin]').forEach((b) => {
+    const o = pzData[Number(b.dataset.pzKin)];
+    if (o && o.c !== 'music') roomFindMediaArt({ kind: 'book', title: o.t, creator: o.a || '' }).then((u) => { if (/^https:\/\//.test(u || '') && b.isConnected) b.style.backgroundImage = 'url("' + u + '")'; }).catch(() => {});
+  });
+  const open = pzOpen != null && pzData[pzOpen];
+  if (open && open.c !== 'music') {
+    const key = open.t + '|' + open.a;
+    const cv = side.querySelector('.pz-over .lib-pop-cv'), bg = side.querySelector('.pz-over .lib-pop-bg');
+    if (cv && !cv.style.backgroundImage) roomFindMediaArt({ kind: 'book', title: open.t, creator: open.a || '' }).then((u) => {
+      if (!/^https:\/\//.test(u || '') || !cv.isConnected) return;
+      cv.style.backgroundImage = bg.style.backgroundImage = 'url("' + u + '")';
+    }).catch(() => {});
+    if (!pzFacts[key]) {
+      pzFacts[key] = { done: false };
+      api('/api/convos/book-facts?title=' + encodeURIComponent(open.t) + '&creator=' + encodeURIComponent(open.a || '') + '&year=' + open.y)
+        .then((f) => { pzFacts[key] = { ...(f || {}), done: true }; })
+        .catch(() => { pzFacts[key] = { done: true }; })
+        .then(() => { if (pzShown() && pzOpen != null) renderInterestLibrary({ quiet: true }); });
+    }
+  }
 }
 
 // The docked card, dressed: the cover's own colours behind it, the conversations it
@@ -20758,6 +20977,7 @@ if (!window.__libxKeys) {
     if (ev.key !== 'Escape' || !libFull) return;
     const t = ev.target; if (t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]')) return;
     const host = document.getElementById('roomInterests'); if (!host || !host.offsetParent) return;
+    if (pzOpen != null && pzShown()) { pzOpen = null; renderInterestLibrary({ quiet: true }); return; }
     if (libOpen) { libOpen = null; shelfOpen = ''; shelfDetail = null; shelfNotes = null; renderInterestLibrary({ quiet: true }); return; }
     libxSetFull(false);
   });
@@ -20859,6 +21079,7 @@ async function renderInterestLibrary(opts) {
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
     + '<div class="shelf-grid" style="--shelf-cols:' + cols + '"></div><div class="shelf-slot"></div></div>'
     + (libFull ? '<div class="libx-out"></div>' : '')
+    + (pzShown() ? pzSide() : '')
     + '<div class="interest-results">' + (quiet || pre ? '' : waitHtml('searching', 'Loading')) + '</div>';
   host.dataset.libView = view;
   putBack();
@@ -20866,6 +21087,7 @@ async function renderInterestLibrary(opts) {
   const fullBtn = host.querySelector('[data-lib-full]');
   if (fullBtn) fullBtn.onclick = () => libxSetFull(!libFull);
   if (libFull) libxLoadOut(host, cols);
+  if (pzShown()) { pzLoad(); if (pzData) pzWire(host); }
   const favOnly = host.querySelector('[data-fav-only]');
   if (favOnly) favOnly.onclick = () => {
     libFavOnly = !libFavOnly;
