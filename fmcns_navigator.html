@@ -4638,6 +4638,7 @@ ul > .se-chap, ol > .se-chap { list-style:none; margin-left:calc(12% - 1.5em); }
 .lib-pass-text { margin:0; cursor:pointer; font-family:var(--room-font, var(--font-read)); font-size:var(--fs-md); line-height:1.55; color:var(--c-read, var(--c-ink-2));
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .lib-pass.is-open .lib-pass-text { -webkit-line-clamp:unset; display:block; }
+.lib-kw-term { margin:0 0 4px; font-family:var(--room-font, var(--font-read)); font-style:italic; font-weight:500; font-size:var(--fs-lg, 1.2rem); color:var(--c-kept-echo, var(--c-accent)); }
 .lib-pass-foot { display:flex; align-items:center; gap:10px; margin-top:6px; min-height:22px; }
 .lib-pass-src { font-family:'Cinzel',var(--font-read); font-size:var(--fs-2xs); letter-spacing:.16em; text-transform:uppercase; color:var(--c-ink-5); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lib-pass-acts { margin-left:auto; display:flex; gap:12px; opacity:.55; transition:opacity .2s ease; }
@@ -6062,6 +6063,7 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-queue" viewBox="0 0 16 16"><path d="M3 4.2h10M3 8h10M3 11.8h6"/></symbol>
   <symbol id="ic-home" viewBox="0 0 16 16"><path d="M2.4 7.2 8 2.6l5.6 4.6"/><path d="M3.8 8.4v4.2a.8.8 0 0 0 .8.8h6.8a.8.8 0 0 0 .8-.8V8.4"/></symbol>
   <symbol id="ic-quote" viewBox="0 0 16 16"><path d="M6.4 4.2C4.7 4.9 3.6 6.3 3.6 8.1v3.7h3.6V8.2H5.4c0-1.1.4-2 1-2.6zM12.8 4.2c-1.7.7-2.8 2.1-2.8 3.9v3.7h3.6V8.2h-1.8c0-1.1.4-2 1-2.6z"/></symbol>
+  <symbol id="ic-star" viewBox="0 0 16 16"><path d="M8 1.6l1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.3l-4 2.3 1-4.4-3.4-3 4.5-.5z"/></symbol>
   <symbol id="ic-bookmark" viewBox="0 0 16 16"><path d="M4.2 2.6h7.6v11l-3.8-2.7-3.8 2.7z"/></symbol>
   <symbol id="ic-fork" viewBox="0 0 16 16"><path d="M5 13.4V8.6a2 2 0 0 1 2-2h4"/><path d="M5 2.6v4"/><circle cx="5" cy="14" r="1.4"/><circle cx="5" cy="2" r="1.4"/><circle cx="12" cy="6.6" r="1.4"/></symbol>
   <symbol id="ic-pencil" viewBox="0 0 16 16"><path d="M11.2 2.6 13.4 4.8 5.6 12.6l-3 .8.8-3z"/></symbol>
@@ -19330,7 +19332,7 @@ let libMoreObs = null;
 // The library's own tabs (his pick D, 2026-09-24). Suggestions live inside one type,
 // behind its button, where the Discover tab and three panes used to be.
 const LIB_KINDS = [['', 'All'], ['book', 'Books'], ['film', 'Films'], ['series', 'Series'],
-  ['passage', 'Passages']];
+  ['passage', 'Passages'], ['keyword', 'Keywords']];
 // Papers, projects and analogies are gone from the Library (his ask, 2026-10-11).
 const LIB_GONE = new Set(['paper', 'project', 'analogy']);
 const LIB_SUGGEST = { book: 'media', film: 'media', series: 'media', paper: 'papers', project: 'apps', analogy: 'analogies' };
@@ -20969,6 +20971,12 @@ async function renderInterestLibrary(opts) {
         // source only when it came from a book, and symbols, not words, for acting on it.
         if (w.kind === 'passage' || w.type === 'passage') return '<div class="interest-item lib-pass" data-interest="' + qEscAttr(w.id) + '">'
           + '<p class="lib-pass-text" data-pass-open>' + qEsc(w.excerpt || w.title || '') + '</p>'
+          + '<div class="lib-pass-foot">' + (w.sourceTitle ? '<span class="lib-pass-src">' + qEsc(w.sourceTitle) + '</span>' : '')
+          + '<span class="lib-pass-acts">' + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</span></div></div>';
+        // A keyword (2026-10-21): the word in gold, what it meant where he met it, where.
+        if (w.kind === 'keyword') return '<div class="interest-item lib-pass lib-kw" data-interest="' + qEscAttr(w.id) + '">'
+          + '<p class="lib-kw-term">' + qEsc(w.title || '') + '</p>'
+          + (w.excerpt ? '<p class="lib-pass-text" data-pass-open>' + qEsc(w.excerpt) + '</p>' : '')
           + '<div class="lib-pass-foot">' + (w.sourceTitle ? '<span class="lib-pass-src">' + qEsc(w.sourceTitle) + '</span>' : '')
           + '<span class="lib-pass-acts">' + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</span></div></div>';
         const passage = w.kind === 'passage' || w.type === 'passage';
@@ -33386,6 +33394,21 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // Remember, which were three doors into the same room (his pick, 2026-09-25).
         mk('target', 'Teach', 'Teach the Mind something from this', function(){
           openTeach(e, msgId, passage, r);
+        });
+        // Keyword (his pick A, 2026-10-21): a word or a few, banked in the Library's
+        // Keywords as a subject for a future conversation.
+        var kwPop = quotePop;
+        if(passage.split(' ').length <= 8) mk('star', 'Keyword', 'Save as a keyword, a subject to explore later', function(){
+          var here = kwPop.querySelector('.se-define .here');
+          var toast = seMindToast(r, 'Saving', 'wait');
+          apiWrite('/api/keywords', 'POST', { term: passage, meaning: here ? here.textContent.trim() : '', sourceTitle: e.title || '', line: sentenceAround(range, passage) })
+            .then(function(out){
+              var already = !!(out && out.already);
+              seMindToast(r, already ? 'Already a keyword' : 'Saved as a keyword', already ? 'miss' : 'ok', toast);
+              if(!already) seFlyToMind(r, '[data-room-primary="library"]');
+              try { libData = null; } catch(_) {}
+            })
+            .catch(function(){ seMindToast(r, 'Not saved', 'miss', toast); });
         });
         document.body.appendChild(quotePop);
         placeQuotePop();

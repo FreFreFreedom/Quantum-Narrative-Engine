@@ -4,6 +4,7 @@ import { cachedBookFacts } from './bookFacts.js';
 import { cachedScreenFacts } from './screenFacts.js';
 import { bindWorkTopics, topicsFor } from './workTopics.js';
 import { listBooks } from './bookShelf.js';
+import { listKeywords, getKeyword, removeKeyword } from './keywords.js';
 import { generateText } from './ai/text.js';
 let db;
 const parse = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
@@ -49,6 +50,9 @@ export function resolveReference(owner, ref) {
       const message = r.message_id && db.prepare('SELECT m.role FROM convo_messages m JOIN convos c ON c.id=m.convo_id WHERE m.id=? AND c.created_by=? AND c.deleted_at IS NULL').get(r.message_id,owner);
       return {type:'passage',id:r.id,kind:'passage',title:r.text.slice(0,100),text:r.text,origin:'Kept passage',speaker:message?.role || 'Original speaker unavailable',sourceTitle:r.source_title,identity:'passage:'+r.id};
     }
+  } else if (ref.type === 'keyword') {
+    r = getKeyword(owner, ref.id);
+    if(r) return {type:'keyword',id:r.id,kind:'keyword',title:r.term,text:r.meaning||'',origin:'Keyword',sourceTitle:r.source_title||'',identity:'keyword:'+r.id};
   } else if (ref.type === 'saved') {
     r = db.prepare('SELECT * FROM reference_saves WHERE id=? AND owner=?').get(ref.id,owner);
     if(r) return {...parse(r.snapshot),type:'saved',id:r.id};
@@ -78,7 +82,7 @@ export function resolveReference(owner, ref) {
 export function saveReference(owner, ref) {
   const item=resolveReference(owner,ref);
   if(item.type==='media') {db.prepare('UPDATE interest_works SET kept=1 WHERE id=? AND owner=?').run(item.id,owner);return item;}
-  if(item.type==='passage'||item.type==='saved')return item;
+  if(item.type==='passage'||item.type==='saved'||item.type==='keyword')return item;
   // Already in the Library under another spelling: that copy is the one kept.
   const fp=workFingerprint(item);
   if(fp)for(const w of db.prepare('SELECT id,kind,title,creator,year,episode FROM interest_works WHERE owner=?').all(owner))
@@ -104,6 +108,8 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40,from=''
   // book or a document names where it came from.
   const passages=db.prepare('SELECT id,text,source_title,convo_id,message_id,created_at FROM saved_passages WHERE created_by=? AND deleted_at IS NULL').all(owner)
     .map(r=>({type:'passage',id:r.id,kind:'passage',title:r.text.slice(0,100),text:r.text,sourceTitle:(r.convo_id||r.message_id)?'':(r.source_title||''),added:addedMs(r.created_at)}));
+  // Keywords (2026-10-21): the word, what it meant where he met it, and where.
+  const keywords=listKeywords(owner).map(r=>({type:'keyword',id:r.id,kind:'keyword',title:r.term,text:r.meaning||'',sourceTitle:r.source_title||'',added:addedMs(r.created_at)}));
   const saved=db.prepare('SELECT id,snapshot,created_at FROM reference_saves WHERE owner=? ORDER BY created_at DESC').all(owner).map(r=>({...parse(r.snapshot),type:'saved',id:r.id,added:addedMs(r.created_at)}));
   const words=String(query).toLowerCase().slice(0,250).split(/\s+/).filter(Boolean);
   // Filtering by year or by words reaches what the catalogues know too: the year a
@@ -126,7 +132,7 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40,from=''
   // the entry — matched with or without subtitle, author or year (2026-09-28).
   const twinOf=(r)=>{const fp=workFingerprint(r);return !!fp&&media.some(m=>workFingerprint(m)===fp&&sameEntry(m,r));};
   const savedShown=saved.filter(r=>!twinOf(r));
-  const items=[...savedShown,...media,...passages].filter(r=>(!kind||r.kind===kind)&&hit(r))
+  const items=[...savedShown,...media,...passages,...keywords].filter(r=>(!kind||r.kind===kind)&&hit(r))
     .sort((a,b)=>(b.added||0)-(a.added||0));
   if(rankOf.size) items.sort((a,b)=>(rankOf.get('m:'+a.id)??1e9)-(rankOf.get('m:'+b.id)??1e9));
   const start=Math.max(0,Number(offset)||0), cap=Math.max(1,Math.min(2000,Number(limit)||40));
@@ -134,7 +140,7 @@ export function listReferences(owner,{kind='',query='',offset=0,limit=40,from=''
   // filter does not), for the kind menu. Book titles travel too so the page can
   // leave out the ones its own shelf already counts.
   const counts={}, bookTitles=[];
-  for(const r of [...savedShown,...media,...passages]) {
+  for(const r of [...savedShown,...media,...passages,...keywords]) {
     if(!hit(r)) continue;
     counts[r.kind]=(counts[r.kind]||0)+1;
     if(r.kind==='book') bookTitles.push(r.title);
@@ -273,6 +279,7 @@ export function removeReference(owner,ref) {
   const item=resolveReference(owner,ref);
   if(item.type==='saved' && item.found && item.identity) db.prepare('INSERT OR IGNORE INTO reference_dismissed(owner,identity) VALUES(?,?)').run(owner,item.identity);
   if(item.type==='saved')db.prepare('DELETE FROM reference_saves WHERE id=? AND owner=?').run(item.id,owner);
+  else if(item.type==='keyword')removeKeyword(owner,item.id);
   else if(item.type==='passage')db.prepare('UPDATE saved_passages SET deleted_at=CURRENT_TIMESTAMP WHERE id=? AND created_by=?').run(item.id,owner);
   else if(item.type==='media') {
     db.exec('BEGIN IMMEDIATE');
