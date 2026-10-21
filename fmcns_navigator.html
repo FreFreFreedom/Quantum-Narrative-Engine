@@ -34140,6 +34140,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }
     var wrap = rail.closest('.se-wrap');
     if(wrap) wrap.classList.add('has-rail');
+    // The rail also opens on :focus-within, and a clicked chapter keeps focus — so
+    // after a click the rail stayed open with the mouse long gone. Leaving it lets
+    // go of that focus, unless he is typing a search in it.
+    rail.onmouseleave = function(){
+      var a = document.activeElement;
+      if(!a || !rail.contains(a)) return;
+      if(a.matches && a.matches('.se-rail-find input') && a.value.trim()) return;
+      a.blur();
+    };
     if(railSame){
       railHere(rail, log, chapters);
       log.onscroll = function(){ railHere(rail, log, chapters); };
