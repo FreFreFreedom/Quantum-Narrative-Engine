@@ -19,7 +19,12 @@ import { DB_PATH } from '../../db/schema.js';
 import { randomUUID } from 'node:crypto';
 
 let db = null;
-export function bindAiTextDb(database) { db = database; roomToDelete(); pruneHelperJobs(); }
+export function bindAiTextDb(database) {
+  db = database; roomToDelete(); pruneHelperJobs();
+  // Checked every ten minutes, not only at boot: the disk filled between two
+  // deploys and nothing could be saved for a day (2026-10-22).
+  setInterval(() => { roomToDelete(); pruneHelperJobs(); }, 10 * 60 * 1000).unref();
+}
 
 // A full disk refuses even a DELETE, which needs a little room to write (2026-10-19:
 // the cleanup below failed "database or disk is full"). So when almost nothing is
@@ -30,6 +35,9 @@ function roomToDelete() {
     const st = fs.statfsSync(dir);
     if (st.bavail * st.bsize > 20e6) return;
     fs.rmSync(path.join(dir, 'imdb-ratings.tsv.gz'), { force: true });
+    fs.rmSync(path.join(dir, 'imdb-ratings.tsv.gz.part'), { force: true });
+    // Leftovers of the old in-container runner: one small file per task, never read.
+    for (const f of fs.readdirSync(dir)) if (f.startsWith('.agent-') && Date.now() - fs.statSync(path.join(dir, f)).mtimeMs > 7 * 864e5) fs.rmSync(path.join(dir, f), { force: true });
     console.log('[disk] nearly full: removed the IMDb ratings file to make room');
   } catch (e) { console.error('[disk] could not make room:', e.message); }
 }

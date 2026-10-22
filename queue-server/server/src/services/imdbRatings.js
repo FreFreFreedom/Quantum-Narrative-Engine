@@ -12,6 +12,7 @@
 // when something new arrives on the shelf.
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import readline from 'node:readline';
@@ -19,7 +20,11 @@ import { pipeline } from 'node:stream/promises';
 import { DB_PATH } from '../db/schema.js';
 
 const SOURCE = 'https://datasets.imdbws.com/title.ratings.tsv.gz';
-const FILE = path.join(path.dirname(DB_PATH), 'imdb-ratings.tsv.gz');
+// Kept off the volume (2026-10-22): a download cut short by a full disk left 9 MB
+// there and every save in the app failed. The container's own disk is free and
+// large; losing the file on a redeploy only means one more download.
+const FILE = path.join(os.tmpdir(), 'imdb-ratings.tsv.gz');
+try { fs.rmSync(path.join(path.dirname(DB_PATH), 'imdb-ratings.tsv.gz'), { force: true }); } catch (err) { /* gone already */ }
 const WEEK = 7 * 24 * 60 * 60 * 1000;
 
 function fresh() {
