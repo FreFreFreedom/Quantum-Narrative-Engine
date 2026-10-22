@@ -68,6 +68,12 @@ export function bindBookFacts(database) {
         OR cover LIKE '%covers.openlibrary.org/b/isbn/%' OR cover LIKE '%books.google.com/books/content?vid=ISBN%'`);
       db.exec("INSERT INTO book_facts_marks (name) VALUES ('isbn-covers-checked')");
     }
+    // Books saved with no author were matched by a borrowed one (see lookupOnce):
+    // each is matched once more, so a stranger's jacket goes (2026-10-22).
+    if (!db.prepare("SELECT 1 FROM book_facts_marks WHERE name='borrowed-author'").get()) {
+      db.exec("UPDATE book_facts SET found_by=0 WHERE creator=''");
+      db.exec("INSERT INTO book_facts_marks (name) VALUES ('borrowed-author')");
+    }
     // Page counts taken from the first record found, before the middle of all of
     // them was used: every book is asked once more (full_title NULL means "ask").
     if (!db.prepare("SELECT 1 FROM book_facts_marks WHERE name='pages-middle'").get()) {
@@ -329,7 +335,7 @@ const NOT_A_PERSON = /^\s*\(?\s*(?:not\s+(?:specified|given|stated|known|mention
 const noDegrees = (a) => { const s = String(a || '').replace(/,?\s*\b(?:ph\.?\s?d|m\.?d|j\.?d|esq|mba|psy\.?d|ed\.?d)\b\.?/ig, '').trim(); return NOT_A_PERSON.test(s) ? '' : s; };
 
 export async function lookupBook(rawTitle, rawCreator, again = true) {
-  const out = await lookupOnce(rawTitle, rawCreator);
+  const out = await lookupOnce(rawTitle, rawCreator, again);
   // No author saved, and the catalogues file the book under its main title alone,
   // so the subtitle check could not be met ("Devil in the Grove", "Licensed to
   // Lie"). The catalogue's own author for that exact title lets the ordinary
@@ -347,7 +353,10 @@ export async function lookupBook(rawTitle, rawCreator, again = true) {
   return out;
 }
 
-async function lookupOnce(rawTitle, rawCreator) {
+// `ownAuthor` false: the author was borrowed from a stranger's book with the same
+// main title, so it may not lead to that author's other books — "Hostage" by
+// Madeleine Ker became the jacket of Eli Sharabi's Gaza memoir (2026-10-22).
+async function lookupOnce(rawTitle, rawCreator, ownAuthor = true) {
   const title = shopClean(rawTitle), creator = noDegrees(rawCreator);
   const main = mainTitle(title), who = personName(creator);
   const cands = [];
@@ -409,7 +418,7 @@ async function lookupOnce(rawTitle, rawCreator) {
   // Morgenthau" is Andrew Meier's "Morgenthau" (2026-09-27). Among that author's
   // own books, take the one sharing a telling word (five letters or more) with the
   // title we hold, and only when exactly one of them does.
-  if (!cands.length && surname(who)) {
+  if (!cands.length && ownAuthor && surname(who)) {
     const want = new Set(words(title).filter((w) => w.length >= 5));
     const sn = surname(who), mine = [];
     const ol = await getJson('https://openlibrary.org/search.json?limit=30&fields=cover_i,key,title,subtitle,author_name,first_publish_year,isbn,number_of_pages_median&author=' + encodeURIComponent(who));
