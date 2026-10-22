@@ -1,3 +1,5 @@
+import path from 'node:path';
+import fs from 'node:fs';
 // Routes for the Architecture Navigator's live backend surface.
 import { Router } from 'express';
 import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions } from '../services/architecture.js';
@@ -213,6 +215,30 @@ export function architectureRoutes(db) {
 
   router.get('/components', (req, res) => {
     res.json({ components: getComponents(db) });
+  });
+
+  // What fills the volume (2026-10-22: 495 of 500 MB, every save failed with
+  // "database or disk is full"). Read-only: file sizes beside the DB, and the
+  // biggest tables by page count.
+  router.get('/disk-usage', (req, res) => {
+    const dir = path.dirname(DB_PATH), files = [];
+    const walk = (d, depth) => {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const f = path.join(d, e.name);
+        try {
+          if (e.isDirectory()) { if (depth < 3) walk(f, depth + 1); }
+          else files.push({ file: path.relative(dir, f), mb: +(fs.statSync(f).size / 1048576).toFixed(2) });
+        } catch (_) {}
+      }
+    };
+    try { walk(dir, 0); } catch (_) {}
+    const dirs = {};
+    for (const f of files) { const top = f.file.split('/')[0]; dirs[top] = +((dirs[top] || 0) + f.mb).toFixed(2); }
+    let tables = [];
+    try { tables = db.prepare('SELECT name, ROUND(SUM(pgsize)/1048576.0, 2) AS mb FROM dbstat GROUP BY name ORDER BY mb DESC LIMIT 25').all(); } catch (err) { tables = [{ error: err.message }]; }
+    let free = null;
+    try { free = db.prepare('PRAGMA freelist_count').get(); } catch (_) {}
+    res.json({ dir, byTop: Object.entries(dirs).sort((a, b) => b[1] - a[1]).slice(0, 30), files: files.sort((a, b) => b.mb - a.mb).slice(0, 30), tables, free });
   });
 
   router.get('/queue-status', (req, res) => {
