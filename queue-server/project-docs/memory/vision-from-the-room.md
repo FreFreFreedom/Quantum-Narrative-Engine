@@ -11,6 +11,14 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Military black sites and public military camps like Guantánamo share the same DNA as the ultimate manifestation of the state of exception.
+
+While black sites operated completely off-grid and Guantánamo was a military-run camp, both share identical structural DNA: operation outside domestic and international law, identical torture techniques, indefinite detention, and total legal impunity.
+
+## Cartels are mature, transnational corporate states operating in the sovereign void left by hollowed-out or complicit governments.
+
+When viewed through self-similarity, cartels stop looking like criminal anomalies and reveal themselves as structural scale-ups of street gangs and insurgencies. They fill the institutional vacuum where the state fails to provide security or economy, becoming de facto sovereigns complete with taxation, private armies, and extreme theatrical violence deployed as a cold doctrine of absolute deterrence.
+
 ## Official narratives misrepresent systemic failures as inherent pathologies of marginalized populations.
 
 - The focus is on how power structures deflect responsibility for conditions they produce.

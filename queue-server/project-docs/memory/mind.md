@@ -69,6 +69,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## The project
 
+- Exploring Mansoor Adayfi's 'Don't Forget Us Here: Lost and Found at Guantánamo' as an account of survival inside the ultimate legal void. — Mansoor Adayfi's memoir of Guantánamo Bay maps the extreme carceral frontier—a state of exception engineered outside domestic and international law to strip human beings of ontological status and subject them to totalizing psychological and physical erasure.
 - Exploring 'The Pitt' and 'Late Shift' as studies of the hospital as a biopolitical fortress and frontline management theater. — Examining how emergency medical settings operate as micro-scale systems of total logistics, triage, and life-management under conditions of extreme scarcity.
 - Exploring Michael Shaara's 'The Killer Angels' as an immersive study of frontline military leadership and tactical friction. — Using the Battle of Gettysburg to map the psychological and visceral realities of brigade and division-level command under acute combat stress.
 - Exploring Stephen E. Ambrose's 'Eisenhower: Soldier and President' as a study of grand-strategic command and coalition architecture. — Examining how Dwight Eisenhower managed massive egos, coalition warfare, and continent-spanning logistics through ruthless, clear-eyed administrative geometry.
