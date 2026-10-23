@@ -18,7 +18,7 @@
 import { randomUUID } from 'node:crypto';
 import { KEPT_SIDE_ONLY_SQL } from './pairSql.js';
 import { generateText } from './ai/text.js';
-import { buildIndex, terms, geminiText, readThinking } from './convoThinking.js';
+import { buildIndex, terms, writerText, readThinking } from './convoThinking.js';
 import { broadcastAll } from '../realtime.js';
 import { triggerMindMirror } from './mindMirror.js';
 import { triggerMentionScan } from './entityMentions.js';
@@ -1007,27 +1007,11 @@ function parseTeach(text) {
 // took half a minute (2026-10-18). Flash with its thinking capped first, then
 // Flash-Lite at once, both short. Flash out of quota (429) is skipped for ten
 // minutes rather than asked again on every turn.
-let teachFlashRestUntil = 0;
 async function teachAsk(prompt) {
-  const key = process.env.GOOGLE_AI_STUDIO_API_KEY;
-  if (!key) return geminiText({ maxTokens: 3000, timeoutMs: 30_000, label: 'mind:teach', prompt });
-  let error = 'no_answer';
-  for (const [model, thinking] of [['gemini-flash-latest', { thinkingBudget: 512 }], ['gemini-flash-lite-latest', null]]) {
-    if (thinking && Date.now() < teachFlashRestUntil) continue;
-    try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-        method: 'POST', signal: AbortSignal.timeout(thinking ? 9_000 : 15_000), headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 3000, ...(thinking ? { thinkingConfig: thinking } : {}) } }),
-      });
-      const d = await r.json();
-      const text = (d.candidates?.[0]?.content?.parts || []).filter((x) => !x.thought).map((x) => x.text || '').join('');
-      if (text.trim()) return { text };
-      if (thinking && r.status === 429) teachFlashRestUntil = Date.now() + 10 * 60_000;
-      error = `${model}:${r.status}`;
-    } catch (e) { error = `${model}:${e.name}`; }
-  }
-  console.warn('[mind:teach]', error);
-  return { text: '', error };
+  // Off Gemini since 2026-10-23: Flash's daily twenty are kept for side talks.
+  const out = await writerText({ maxTokens: 3000, timeoutMs: 30_000, label: 'mind:teach', prompt });
+  if (!String(out?.text || '').trim()) console.warn('[mind:teach]', out?.message || out?.error || 'no_answer');
+  return { text: out?.text || '', error: out?.text ? undefined : (out?.error || 'no_answer') };
 }
 
 export async function teachTurn({ passage = '', turns = [] } = {}) {
@@ -1158,7 +1142,7 @@ export async function tidyTaught() {
   const revised = [];
   const failed = [];
   for (const [convoId, items] of groups) {
-    const res = await geminiText({ label: 'mind:teach-tidy', maxTokens: 6000, timeoutMs: 240_000, prompt: tidyPrompt(items, sourceFor(convoId)) });
+    const res = await writerText({ label: 'mind:teach-tidy', maxTokens: 6000, timeoutMs: 240_000, prompt: tidyPrompt(items, sourceFor(convoId)) });
     const m = String(res?.text || '').match(/\{[\s\S]*\}/);
     let out = null; try { out = m ? JSON.parse(m[0]) : null; } catch {}
     if (!Array.isArray(out?.items)) { failed.push(convoId || '(none)'); continue; }
@@ -1176,7 +1160,7 @@ export async function tidyTaught() {
   const long = listSubjects().filter((x) => String(x.name).split(/\s+/).length > 5);
   const renamed = [];
   if (long.length) {
-    const res = await geminiText({ label: 'mind:subject-names', maxTokens: 1500, timeoutMs: 120_000,
+    const res = await writerText({ label: 'mind:subject-names', maxTokens: 1500, timeoutMs: 120_000,
       prompt: `Each line is a subject Antoine is drawn to, written too long. Give each its usual short name, at most five words, keeping exactly what it is about. Add nothing.\n\n${long.map((x) => `[${x.id}] ${x.name}`).join('\n')}\n\nReturn ONLY JSON, no fence: {"names": [{"id": "<id>", "name": "<short name>"}]}` });
     const m = String(res?.text || '').match(/\{[\s\S]*\}/);
     let out = null; try { out = m ? JSON.parse(m[0]) : null; } catch {}

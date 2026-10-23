@@ -16,6 +16,7 @@
 import { randomUUID } from 'node:crypto';
 import { readKnowledgeDoc, createKnowledgeNote, NOTE_PREFIX } from './knowledgeDocs.js';
 import { generateText } from './ai/text.js';
+import { writerText } from './convoThinking.js';
 import { projectMapBlock } from './projectMap.js';
 
 let db = null;
@@ -23,9 +24,8 @@ export function bindDocExtractionDb(database) { db = database; }
 
 const DEFAULT_CHUNK_CHARS = 25000;   // fixed-window fallback size, when no structure is detected at all
 const MAX_SECTION_CHARS = 16000;     // a detected section larger than this is subdivided further
-const SWEEP_DELAY_MS = 2500;         // between-unit pause — respects Gemini's free-tier rate limit; no speed cap otherwise
+const SWEEP_DELAY_MS = 12000;        // between-unit pause — Cerebras allows five a minute
 const SECTION_MAX_TOKENS = 1600;     // concise per-section notes: real room for a dense section, but the model can't ramble
-const DOC_EXTRACTION_MODEL = 'gemini-flash-latest';
 
 function docTotalChars(title) {
   if (!db) return null;
@@ -370,10 +370,8 @@ export async function runExtractionSweep({ convoId, limit = 1000, onProgress = n
           chunkIndex: row.chunk_index, charStart: row.char_start, charEnd: row.char_end, totalChars: slice.total_chars,
           sectionTitle: row.section_title, appContext, relevantDocs,
         });
-        const out = await generateText({
-          prompt, feature: 'doc-extraction', model: DOC_EXTRACTION_MODEL, maxTokens: SECTION_MAX_TOKENS,
-          allowLongOutput: true, label: 'doc-extraction',
-        });
+        // Off Gemini since 2026-10-23 — Flash's daily twenty are kept for side talks.
+        const out = await writerText({ prompt, feature: 'doc-extraction', maxTokens: SECTION_MAX_TOKENS, timeoutMs: 120_000, label: 'doc-extraction' });
         if (!out?.text) throw new Error(out?.message || out?.error || 'no answer');
         db.prepare(`UPDATE doc_extractions SET extracted_text=?, status='extracted', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
           .run(out.text.trim(), row.id);

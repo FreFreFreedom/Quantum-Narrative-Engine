@@ -191,22 +191,27 @@ export function writeNote(convoId) {
 const _inFlight = new Set();
 const _failedAt = new Map();
 
-// Written by Gemini, always — his pick (2026-10-01): the record is the system's
-// own reading, not the reading of whichever model a session runs on. Flash first,
-// Flash-Lite when Flash is out of its daily allowance; never another provider.
-const GEMINI_WRITERS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
-export async function geminiText({ prompt, label, maxTokens = 4000, timeoutMs = 300_000 }) {
+// Written off Gemini since 2026-10-23 (his call): Gemini Flash's twenty a day are
+// kept for side talks. Cerebras first (fast, 2400 a day), Groq when Cerebras is
+// busy, the second Claude account's Haiku last — through the Mac runner, so it
+// answers whenever Haiku is awake. Exported for every background writer.
+export const OFF_GEMINI_LANES = Object.freeze([
+  { provider: 'cerebras', model: 'gpt-oss-120b' },
+  { provider: 'groq', model: 'openai/gpt-oss-120b' },
+  { provider: 'claude-side', account: 'side', model: 'haiku' },
+]);
+export async function writerText({ prompt, label, maxTokens = 4000, timeoutMs = 300_000, feature = 'studio' }) {
   let last = null;
-  for (const model of GEMINI_WRITERS) {
+  for (const lane of OFF_GEMINI_LANES) {
     last = await generateText({
-      prompt, feature: 'studio', provider: 'google-ai-studio', model, strictModel: true,
+      ...lane, prompt, feature, strictModel: true, maxAttempts: 1,
       label, maxTokens, allowLongOutput: true, timeoutMs,
-    });
+    }).catch((e) => ({ error: 'threw', message: e.message }));
     if (String(last?.text || '').trim()) return last;
   }
   return last;
 }
-const geminiWrite = (prompt) => geminiText({ prompt, label: 'conversations:thinking', maxTokens: 16000 });
+const geminiWrite = (prompt) => writerText({ prompt, label: 'conversations:thinking', maxTokens: 16000 });
 
 export async function writeThinking(convoId, { force = false, reset = false } = {}) {
   if (!db) return { error: 'no_db' };
