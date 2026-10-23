@@ -63,6 +63,15 @@ function fromText(text) {
   return null;
 }
 
+// A refusal that names a per-minute ceiling ("input tokens per minute", Google's
+// "...PerMinute" metric ids, Groq's "TPM") is over in a minute whatever the
+// catalogue says. Google's free tier has no rpm in the catalogue, so without this
+// one busy minute in the Room benched Gemini until UTC midnight (2026-10-23).
+function perMinute(text) {
+  if (!/per minute|PerMinute|\b(?:TPM|RPM)\b/i.test(String(text || ''))) return null;
+  return { resetsAt: new Date(Date.now() + 60_000).toISOString(), known: false, source: 'text:per-minute' };
+}
+
 function nextUtcMidnight() {
   const d = new Date();
   const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 0, 0));
@@ -94,5 +103,5 @@ export function resolveResetWindow({ providerId, scope = 'rpm', headers = null, 
     const window = subscriptionUsage.session?.resetsAt ? subscriptionUsage.session : subscriptionUsage.week;
     if (window?.resetsAt) return { resetsAt: window.resetsAt, known: true, source: 'anthropic-usage-api' };
   }
-  return fromHeaders(headers) || fromText(errorText) || catalogueDefault(providerId, scope);
+  return fromHeaders(headers) || fromText(errorText) || perMinute(errorText) || catalogueDefault(providerId, scope);
 }

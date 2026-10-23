@@ -10,7 +10,16 @@ import { listModels as listCatalogModels } from './catalog.js';
 import { resolveResetWindow } from './resetWindow.js';
 
 let db = null;
-export function bindRouterDb(database) { db = database; }
+export function bindRouterDb(database) {
+  db = database;
+  // Benches set before resetWindow.js read "per minute" ran until UTC midnight;
+  // release them on boot rather than leave a lane idle for the rest of the day.
+  try {
+    db.prepare(`UPDATE provider_quota_state SET exhausted = 0 WHERE exhausted = 1 AND last_event_id IN (
+      SELECT id FROM provider_quota_ledger WHERE reason = 'catalogue:rpd-default'
+        AND (evidence LIKE '%per minute%' OR evidence LIKE '%PerMinute%'))`).run();
+  } catch {}
+}
 
 function nowIso() { return new Date().toISOString(); }
 
