@@ -36356,9 +36356,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var els = Array.prototype.slice.call(document.querySelectorAll('.se-add:not([data-checked])'));
       if (!els.length) return;
       els.forEach(function(el){ el.dataset.checked = '1'; });
-      apiWrite('/api/convos/interests/have', 'POST', { works: els.map(function(el){ return { kind: el.dataset.kind, title: el.dataset.title }; }) })
-        .then(function(o){ (o.have || []).forEach(function(h, i){ if (h && els[i]) seAddOn(els[i]); }); })
-        .catch(function(){ els.forEach(function(el){ delete el.dataset.checked; }); });
+      // In batches: the server answers at most 300 at a time, and a long thread
+      // holds more covers than that — the last ones never heard back (2026-10-23).
+      for (var b = 0; b < els.length; b += 200) (function(part){
+        apiWrite('/api/convos/interests/have', 'POST', { works: part.map(function(el){ return { kind: el.dataset.kind, title: el.dataset.title }; }) })
+          .then(function(o){ (o.have || []).forEach(function(h, i){ if (h && part[i]) seAddOn(part[i]); }); })
+          .catch(function(){ part.forEach(function(el){ delete el.dataset.checked; }); });
+      })(els.slice(b, b + 200));
     }, 120);
   }
   window.addEventListener('click', function(ev){
