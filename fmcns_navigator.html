@@ -20983,7 +20983,7 @@ function pzWire(host) {
   const cards = side.querySelectorAll('.pz-list [data-pz]');
   if (window.IntersectionObserver && body) {
     const io = new IntersectionObserver((ents) => { ents.forEach((en) => { if (en.isIntersecting) { io.unobserve(en.target); light(en.target); } }); }, { root: body, rootMargin: '400px 0px' });
-    cards.forEach((c) => io.observe(c));
+    cards.forEach((c, i) => { if (i < 30) light(c); else io.observe(c); });
   } else cards.forEach(light);
   side.querySelectorAll('[data-pz-kin]').forEach((b) => {
     const o = pzData[Number(b.dataset.pzKin)];
