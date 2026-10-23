@@ -196,10 +196,10 @@ export function libraryWhere(owner,{title,creator}={}) {
 // search until the Library changes size, so typing the same words again is instant.
 const meaningCache=new Map();
 // Off Gemini since 2026-10-23 (his call: Flash's daily twenty are kept for side
-// talks). The second Claude account's Haiku reads the whole catalogue well; it
-// runs through the Mac runner, so Cerebras stands in when the runner is away.
+// talks). Haiku reads the whole catalogue well — the second Claude account first,
+// the main one when that is spent; both through the Mac runner.
 async function rankAsk(prompt){
-  for(const lane of [{provider:'claude-side',account:'side',model:'haiku',timeoutMs:60_000},{provider:'cerebras',model:'gpt-oss-120b',timeoutMs:40_000}]){
+  for(const lane of [{provider:'claude-side',account:'side',model:'haiku',timeoutMs:60_000},{provider:'claude-code',model:'haiku',timeoutMs:60_000}]){
     const out=await generateText({...lane,prompt,feature:'summary',label:'library-search',maxTokens:6000,allowLongOutput:true,strictModel:true,maxAttempts:1}).catch(()=>null);
     if(String(out?.text||'').trim()) return out;
   }

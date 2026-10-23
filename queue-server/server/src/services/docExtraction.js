@@ -24,7 +24,7 @@ export function bindDocExtractionDb(database) { db = database; }
 
 const DEFAULT_CHUNK_CHARS = 25000;   // fixed-window fallback size, when no structure is detected at all
 const MAX_SECTION_CHARS = 16000;     // a detected section larger than this is subdivided further
-const SWEEP_DELAY_MS = 12000;        // between-unit pause — Cerebras allows five a minute
+const SWEEP_DELAY_MS = 2500;         // between-unit pause
 const SECTION_MAX_TOKENS = 1600;     // concise per-section notes: real room for a dense section, but the model can't ramble
 
 function docTotalChars(title) {

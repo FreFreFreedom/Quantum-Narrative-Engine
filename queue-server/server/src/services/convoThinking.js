@@ -192,13 +192,14 @@ const _inFlight = new Set();
 const _failedAt = new Map();
 
 // Written off Gemini since 2026-10-23 (his call): Gemini Flash's twenty a day are
-// kept for side talks. Cerebras first (fast, 2400 a day), Groq when Cerebras is
-// busy, the second Claude account's Haiku last — through the Mac runner, so it
-// answers whenever Haiku is awake. Exported for every background writer.
+// kept for side talks. Groq first (a small prompt only — its free tier stops at 8k
+// tokens a minute, and generateText skips it for anything bigger), then Haiku on
+// the second Claude account, then on the main one — both through the Mac runner.
+// Cerebras was here for an hour: its free tier now answers "payment required".
 export const OFF_GEMINI_LANES = Object.freeze([
-  { provider: 'cerebras', model: 'gpt-oss-120b' },
   { provider: 'groq', model: 'openai/gpt-oss-120b' },
   { provider: 'claude-side', account: 'side', model: 'haiku' },
+  { provider: 'claude-code', model: 'haiku' },
 ]);
 export async function writerText({ prompt, label, maxTokens = 4000, timeoutMs = 300_000, feature = 'studio' }) {
   let last = null;

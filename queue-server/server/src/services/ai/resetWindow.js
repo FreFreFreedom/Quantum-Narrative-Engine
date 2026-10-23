@@ -72,6 +72,24 @@ function perMinute(text) {
   return { resetsAt: new Date(Date.now() + 60_000).toISOString(), known: false, source: 'text:per-minute' };
 }
 
+// Claude's own refusal: "You've hit your session limit · resets 4:40pm
+// (America/Toronto)". A clock time in a named zone, read as its next occurrence.
+// Unread, it fell to the five-hour guess and benched the account four hours late.
+function fromClockInZone(text) {
+  const m = String(text || '').match(/resets\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\s*\(([A-Za-z_]+\/[A-Za-z_\/]+)\)/i);
+  if (!m) return null;
+  try {
+    let h = Number(m[1]) % 12; if (/pm/i.test(m[3])) h += 12;
+    const min = Number(m[2] || 0), tz = m[4], now = new Date();
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' })
+      .formatToParts(now).map((p) => [p.type, Number(p.value)]));
+    const offset = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute) - Math.floor(now.getTime() / 60000) * 60000;
+    let at = Date.UTC(parts.year, parts.month - 1, parts.day, h, min) - offset;
+    if (at <= now.getTime()) at += 24 * 3600_000;
+    return { resetsAt: new Date(at).toISOString(), known: true, source: 'text:clock' };
+  } catch { return null; }
+}
+
 function nextUtcMidnight() {
   const d = new Date();
   const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 0, 0));
@@ -103,5 +121,5 @@ export function resolveResetWindow({ providerId, scope = 'rpm', headers = null, 
     const window = subscriptionUsage.session?.resetsAt ? subscriptionUsage.session : subscriptionUsage.week;
     if (window?.resetsAt) return { resetsAt: window.resetsAt, known: true, source: 'anthropic-usage-api' };
   }
-  return fromHeaders(headers) || fromText(errorText) || perMinute(errorText) || catalogueDefault(providerId, scope);
+  return fromHeaders(headers) || fromClockInZone(errorText) || fromText(errorText) || perMinute(errorText) || catalogueDefault(providerId, scope);
 }

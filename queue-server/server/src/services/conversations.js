@@ -1265,9 +1265,9 @@ export async function addNamedMark(convoId, { messageId, snippet = '' } = {}) {
 }
 
 const CHAPTER_LANES = [
-  { provider: 'cerebras', model: 'gpt-oss-120b', strictModel: true },
   { provider: 'groq', model: 'openai/gpt-oss-120b', strictModel: true },
-  { provider: 'cerebras', model: 'qwen-3.8-27b', strictModel: true },
+  { provider: 'groq', model: 'qwen/qwen3.8-27b', strictModel: true },
+  { provider: 'groq', model: 'openai/gpt-oss-20b', strictModel: true },
   { provider: 'claude-side', account: 'side', model: 'haiku', strictModel: true },
   { provider: 'codex', strictModel: true },
   {}, // any free model that is awake
