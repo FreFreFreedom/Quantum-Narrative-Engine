@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- State Security Architects and Their Moral Complexities — conversations/state-security-architects-and-their-moral-complexities-565a6e84.md
+- Prison and Revolution: Media Dissecting Institutional Violence — conversations/prison-and-revolution-media-dissecting-institutional-violence-565a6e84.md
 - Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
 - Biopolitics and the George Marshall Archetype — conversations/biopolitics-and-the-george-marshall-archetype-a969a91c.md
 - American healthcare books: diagnosis and future — conversations/american-healthcare-books-diagnosis-and-future-8c4c0f76.md
