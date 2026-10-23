@@ -4082,9 +4082,14 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 #roomInterests.is-full.pz-on > :not(.libx-side):not(.lib-over):not(.pz-side) { margin-right:var(--pz-w, 440px); }
 #roomInterests.is-full.pz-on.libx-open > :not(.libx-side):not(.lib-over):not(.pz-side) { margin-right:calc(var(--pz-w, 440px) + var(--libx-card, 400px)); }
 .libx-opt.on .libx-sw.is-pz { background:#c9a14a; }
-#roomInterests.is-full > .pz-side { position:fixed; top:0; right:0; bottom:0; width:var(--pz-w, 440px); z-index:41; margin:0; padding:0;
+#roomInterests > .pz-side { position:fixed; top:0; right:0; bottom:0; width:var(--pz-w, 440px); z-index:41; margin:0; padding:0;
   display:flex; flex-direction:column; background:var(--c-bg); border-left:1px solid rgba(217,184,119,.35); box-shadow:-20px 0 60px rgba(0,0,0,.35); }
 #roomInterests:not(.is-active) > .pz-side { display:none; }
+/* In the column, the panel opens beside it rather than over it (his ask, 2026-10-23). */
+#roomInterests:not(.is-full) > .pz-side { right:auto; left:var(--pz-left, 0px); border-right:1px solid rgba(217,184,119,.35); }
+.lib-pz { color:#d9b877; }
+.lib-pz svg { width:11px; height:14px; }
+.lib-pz.on svg path { fill:#141a26; }
 .pz-head { display:flex; align-items:center; padding:16px 18px 8px; }
 .pz-head b { flex:1; font:italic 500 22px 'Spectral', var(--font-read); color:#d9b877; }
 .pz-x { width:28px; height:28px; min-width:0; padding:0; border:0; border-radius:50%; background:var(--c-surface-2); color:var(--c-ink-3); cursor:pointer; }
@@ -20767,7 +20772,14 @@ function pzSave() {
   } catch (_) {}
 }
 const pzW = () => Math.round(Math.min(480, Math.max(380, innerWidth * 0.3)));
-const pzShown = () => libFull && !!libxSrc.pulitzer;
+const pzShown = () => !!libxSrc.pulitzer;
+// Beside the column: on its left when there is room, else on its right.
+function pzPlace(host) {
+  if (libFull || !pzShown()) return;
+  const r = host.getBoundingClientRect(), w = pzW();
+  host.style.setProperty('--pz-w', w + 'px');
+  host.style.setProperty('--pz-left', (r.left >= w + 8 ? r.left - w - 8 : Math.min(r.right + 8, innerWidth - w)) + 'px');
+}
 function pzLoad() {
   if (pzData || pzAsk) return;
   pzAsk = api('/api/convos/pulitzer').then((o) => { pzData = (o && o.entries) || []; })
@@ -20979,15 +20991,16 @@ function libxDress(host) {
 if (!window.__libxKeys) {
   window.__libxKeys = true;
   document.addEventListener('keydown', (ev) => {
-    if (ev.key !== 'Escape' || !libFull) return;
+    if (ev.key !== 'Escape' || !(libFull || pzShown())) return;
     const t = ev.target; if (t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]')) return;
     const host = document.getElementById('roomInterests'); if (!host || !host.offsetParent) return;
     if (pzOpen != null && pzShown()) { pzOpen = null; renderInterestLibrary({ quiet: true }); return; }
+    if (!libFull) { libxSrc.pulitzer = false; libxSave(); renderInterestLibrary({ quiet: true }); return; }
     if (libOpen) { libOpen = null; shelfOpen = ''; shelfDetail = null; shelfNotes = null; renderInterestLibrary({ quiet: true }); return; }
     libxSetFull(false);
   });
   let rt = 0;
-  window.addEventListener('resize', () => { if (!libFull) return; clearTimeout(rt); rt = setTimeout(() => renderInterestLibrary({ quiet: true }), 200); });
+  window.addEventListener('resize', () => { const h = document.getElementById('roomInterests'); if (h && !libFull) pzPlace(h); if (!libFull) return; clearTimeout(rt); rt = setTimeout(() => renderInterestLibrary({ quiet: true }), 200); });
 }
 
 async function renderInterestLibrary(opts) {
@@ -21078,7 +21091,8 @@ async function renderInterestLibrary(opts) {
   host.classList.toggle('libx-open', libFull && !!libOpen);
   host.innerHTML = top
     + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><button type="button" class="lib-fullbtn" data-lib-full title="' + (libFull ? 'Back to the column' : 'Full screen') + '" aria-label="' + (libFull ? 'Back to the column' : 'Full screen') + '">'
-    + (libFull ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 2.5v4h-4M9.5 13.5v-4h4M6.5 6.5 2 2M9.5 9.5 14 14"/></svg>' : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.5v-4h4M13.5 9.5v4h-4M2.5 2.5 7 7M13.5 13.5 9 9"/></svg>') + '</button><button type="button" class="lib-favonly' + (libFavOnly ? ' on' : '') + '" data-fav-only aria-pressed="' + libFavOnly + '" title="Only favourites">★</button><span class="shelf-size" title="Cover size">'
+    + (libFull ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 2.5v4h-4M9.5 13.5v-4h4M6.5 6.5 2 2M9.5 9.5 14 14"/></svg>' : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.5v-4h4M13.5 9.5v4h-4M2.5 2.5 7 7M13.5 13.5 9 9"/></svg>') + '</button><button type="button" class="lib-favonly' + (libFavOnly ? ' on' : '') + '" data-fav-only aria-pressed="' + libFavOnly + '" title="Only favourites">★</button>'
+    + (libFull ? '' : '<button type="button" class="lib-favonly lib-pz' + (libxSrc.pulitzer ? ' on' : '') + '" data-pz-tog aria-pressed="' + !!libxSrc.pulitzer + '" title="Pulitzer"><svg viewBox="0 0 11 14" aria-hidden="true"><path d="M0 0h11v14L5.5 10.4 0 14z" fill="currentColor"/></svg></button>') + '<span class="shelf-size" title="Cover size">'
     + '<i class="shelf-ticks"><b></b><b></b><b></b><b></b></i><i class="shelf-fill"></i>'
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
@@ -21092,7 +21106,9 @@ async function renderInterestLibrary(opts) {
   const fullBtn = host.querySelector('[data-lib-full]');
   if (fullBtn) fullBtn.onclick = () => libxSetFull(!libFull);
   if (libFull) libxLoadOut(host, cols);
-  if (pzShown()) { pzLoad(); if (pzData) pzWire(host); }
+  if (pzShown()) { pzLoad(); if (pzData) pzWire(host); pzPlace(host); }
+  const pzTog = host.querySelector('[data-pz-tog]');
+  if (pzTog) pzTog.onclick = () => { libxSrc.pulitzer = !libxSrc.pulitzer; pzOpen = null; libxSave(); renderInterestLibrary({ quiet: true }); };
   const favOnly = host.querySelector('[data-fav-only]');
   if (favOnly) favOnly.onclick = () => {
     libFavOnly = !libFavOnly;
