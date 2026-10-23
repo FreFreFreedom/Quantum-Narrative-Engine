@@ -36333,6 +36333,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   }
   function seAddOn(el){ el.classList.add('on'); el.textContent = '\u2713'; el.title = 'In the Library'; el.setAttribute('aria-label', 'In the Library'); }
   var seAddTimer = 0;
+  // The answer's HTML is built a beat before it reaches the page, and sometimes
+  // much later (a thread redrawn after typing stops); a check fired from
+  // seAddMark alone found nothing on the page and every + stayed a + for good,
+  // books he already had included (2026-10-23). So also check whenever a cover
+  // actually lands on the page.
+  if (window.MutationObserver && !window.__seAddWatch) {
+    window.__seAddWatch = true;
+    new MutationObserver(function(list){
+      for (var i = 0; i < list.length; i++) {
+        var added = list[i].addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          var n = added[j];
+          if (n.nodeType === 1 && (n.matches('.se-add:not([data-checked])') || n.querySelector('.se-add:not([data-checked])'))) { seAddCheck(); return; }
+        }
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
   function seAddCheck(){
     clearTimeout(seAddTimer);
     seAddTimer = setTimeout(function(){
