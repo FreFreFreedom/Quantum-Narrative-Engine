@@ -2943,6 +2943,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-card-film { all:unset; cursor:pointer; width:96px; display:flex; flex-direction:column; gap:3px; }
 .se-card-film span { display:block; width:96px; height:140px; border-radius:5px; background:var(--c-border) center/cover no-repeat;
   box-shadow:0 3px 10px rgba(0,0,0,.35); transition:transform .15s, box-shadow .15s; }
+.se-screen.on [data-cover-art] { box-shadow:0 0 0 2px var(--c-accent); }
 .se-card-film:hover span, .se-card-film.on span { transform:translateY(-3px); box-shadow:0 0 0 2px var(--c-accent); }
 .se-card-film b { font-size:13px; font-weight:500; line-height:1.25; margin-top:5px; }
 .se-card-film small { font-size:11px; color:var(--c-ink-3); }
@@ -4169,6 +4170,11 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .pz-side.is-wide .pz-row { grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); }
 .pz-list > h6 { font:600 12px 'Cinzel', var(--font-read) !important; letter-spacing:.15em !important; color:#d9b877 !important; }
 .pz-card > .pz-cat { display:block; font:normal 10px var(--font-ui); letter-spacing:.1em; text-transform:uppercase; color:rgba(217,184,119,.6); margin-top:2px; }
+.pz-mk { display:inline-block; vertical-align:-1px; margin-right:5px; }
+.pz-mk.is-rib { width:7px; height:11px; background:#d9b877; clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%); }
+.pz-mk.is-medal { width:10px; height:10px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #f3dca8, #b8913f); }
+.pz-dm > span .pz-mk { margin-right:7px; }
+.pz-medal { position:absolute; top:6px; right:6px; width:16px; height:16px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #f3dca8, #b8913f); box-shadow:0 1px 4px rgba(0,0,0,.5); }
 .pz-more { display:block; margin:22px auto 0; padding:7px 18px; min-width:0; border:1px solid rgba(217,184,119,.4); border-radius:999px; background:none; color:#d9b877; font:13px var(--font-ui); cursor:pointer; }
 .libx-where span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .libx-where b { font-weight:500; font-size:12px; color:var(--c-ink-5); }
@@ -20483,7 +20489,7 @@ function discSourceRow() {
     + '<button type="button" data-disc-src="books" class="' + (libSource === 'books' ? 'on' : '') + '"><i class="disc-amz">amazon</i>Books ' + n('books') + '</button>'
     // Not a tab: the prize lists open beside the column and the search box reaches
     // into them too (his ask, 2026-10-23 — the ribbon by the star went unseen).
-    + (libFull ? '' : '<button type="button" data-pz-tog class="' + (libxSrc.pulitzer ? 'on' : '') + '" aria-pressed="' + !!libxSrc.pulitzer + '"><i class="disc-pz"><svg viewBox="0 0 11 14" aria-hidden="true"><path d="M0 0h11v14L5.5 10.4 0 14z" fill="currentColor"/></svg></i>Pulitzer</button>')
+    + (libFull ? '' : '<button type="button" data-pz-tog class="' + (libxSrc.pulitzer ? 'on' : '') + '" aria-pressed="' + !!libxSrc.pulitzer + '"><i class="disc-pz"><svg viewBox="0 0 11 14" aria-hidden="true"><path d="M0 0h11v14L5.5 10.4 0 14z" fill="currentColor"/></svg></i>Prizes</button>')
     + (libSource === 'library' ? '' : '<button type="button" class="disc-ftog' + (discFiltersOpen ? ' on' : '') + '" data-disc-ftog title="Filters (F)">'
       + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M4.5 8h7M7 12h2"/></svg>Filters' + (act ? ' <b>' + act + '</b>' : '') + '</button>')
     + '</div>';
@@ -20730,7 +20736,7 @@ function libxSide() {
     + '<h6>Kind</h6>' + LIB_KINDS.map(([k, l]) => opt('data-lib-tab', k, '<span>' + l + '</span><b data-lib-count="' + k + '">' + libCountFor(k) + '</b>', k === interestLibraryKind)).join('')
     + '<h6>Years</h6><span class="lib-years"><input class="lib-year" data-lib-year="from" type="text" inputmode="numeric" maxlength="4" aria-label="From year" placeholder="From">'
     + '<i>–</i><input class="lib-year" data-lib-year="to" type="text" inputmode="numeric" maxlength="4" aria-label="To year" placeholder="To"></span>'
-    + '<h6>Search in</h6>' + [['library', 'Library', 'is-lib'], ['screen', 'IMDb', 'is-imdb'], ['books', 'Amazon', 'is-amz'], ['pulitzer', 'Pulitzer', 'is-pz']].map(([s, l, c]) =>
+    + '<h6>Search in</h6>' + [['library', 'Library', 'is-lib'], ['screen', 'IMDb', 'is-imdb'], ['books', 'Amazon', 'is-amz'], ['pulitzer', 'Prizes', 'is-pz']].map(([s, l, c]) =>
       opt('data-libx-src', s, '<i class="libx-sw ' + c + '"></i><span>' + l + '</span><b data-libx-n="' + s + '"></b>', libxSrc[s], ' role="switch" aria-checked="' + !!libxSrc[s] + '"')).join('')
     + '<h6>Group by</h6>' + [['', 'Nothing'], ['creator', 'Author'], ['decade', 'Decade'], ['theme', 'Theme']].map(([g, l]) => opt('data-libx-group', g, l, libxGroup === g)).join('')
     + '<h6>Order</h6>' + [['added', 'Newest added'], ['year', 'Year'], ['az', 'A–Z']].map(([o, l]) => opt('data-libx-order', o, l, libxOrder === o)).join('')
@@ -20807,9 +20813,15 @@ const pzFacts = {};
 // Every prize at once, narrowed by category, winners/finalists and a span of years
 // (his picks, 2026-10-23: the column gets a summary bar whose ⚙ drops the filters,
 // full screen keeps them down the panel's left; diamonds, and a from–to of years).
-let pzCats = new Set(PZ_CATS.map((c) => c[0]).filter((c) => c !== 'music')), pzWho = '', pzFrom = 2000, pzTo = 0, pzFiltOpen = false, pzLimit = 240;
+// The Nobel's six fields beside them (his pick, 2026-10-23): a prize's categories show
+// in the filters only once that prize is chosen. Nobel has no finalists.
+const NB_CATS = [['literature', 'Literature'], ['peace', 'Peace'], ['economics', 'Economics'], ['medicine', 'Medicine'], ['physics', 'Physics'], ['chemistry', 'Chemistry']];
+const pzPrizeOf = (e) => e.p === 'n' ? 'n' : 'p';
+let pzCats = new Set(PZ_CATS.map((c) => c[0]).filter((c) => c !== 'music').concat(NB_CATS.map((c) => c[0]))), pzPrizes = new Set(['p']), pzWho = '', pzFrom = 2000, pzTo = 0, pzFiltOpen = false, pzLimit = 240;
 try {
   const c = JSON.parse(localStorage.getItem('qne-pz-cats') || 'null'); if (Array.isArray(c) && c.length) pzCats = new Set(c);
+  const pr = JSON.parse(localStorage.getItem('qne-pz-prizes') || 'null'); if (Array.isArray(pr) && pr.length) pzPrizes = new Set(pr);
+  if (!NB_CATS.some(([k]) => pzCats.has(k))) NB_CATS.forEach(([k]) => pzCats.add(k));
   pzWho = localStorage.getItem('qne-pz-who') || '';
   const f = localStorage.getItem('qne-pz-from'), t = localStorage.getItem('qne-pz-to');
   if (f !== null) pzFrom = Number(f) || 0; if (t !== null) pzTo = Number(t) || 0;
@@ -20817,6 +20829,7 @@ try {
 function pzSave() {
   try {
     localStorage.setItem('qne-pz-cats', JSON.stringify([...pzCats])); localStorage.setItem('qne-pz-who', pzWho);
+    localStorage.setItem('qne-pz-prizes', JSON.stringify([...pzPrizes]));
     localStorage.setItem('qne-pz-from', String(pzFrom || '')); localStorage.setItem('qne-pz-to', String(pzTo || ''));
   } catch (_) {}
 }
@@ -20835,17 +20848,20 @@ function pzLoad() {
     .catch(() => { pzData = []; }).finally(() => { pzAsk = null; if (pzShown()) renderInterestLibrary({ quiet: true }); });
 }
 window.addEventListener('library:updated', () => { pzData = null; });
-const pzCatName = (c) => (PZ_CATS.find((x) => x[0] === c) || [, c])[1];
+const pzCatName = (c) => (PZ_CATS.concat(NB_CATS).find((x) => x[0] === c) || [, c])[1];
+const PZ_ORDER = PZ_CATS.concat(NB_CATS).map((c) => c[0]);
+const PZ_RIB = '<i class="pz-mk is-rib"></i>', PZ_MEDAL = '<i class="pz-mk is-medal"></i>';
 // What passes the chips, before the year: the categories, winners or finalists,
 // and only what the Library does not hold yet.
+const pzWhoOk = (e) => pzPrizeOf(e) === 'n' || !pzWho || (pzWho === 'won' ? e.w : !e.w);
 function pzPass(e) {
-  return pzCats.has(e.c) && (!pzWho || (pzWho === 'won' ? e.w : !e.w))
+  return pzPrizes.has(pzPrizeOf(e)) && pzCats.has(e.c) && pzWhoOk(e)
     && (!pzFrom || e.y >= pzFrom) && (!pzTo || e.y <= pzTo);
 }
 function pzCard(e) {
   const i = pzData.indexOf(e), fav = !!(e.k && libFavs && libFavs.has(e.k));
   return '<div class="pz-card' + (e.w ? ' is-won' : '') + (fav ? ' is-fav' : '') + '" data-pz="' + i + '">'
-    + '<button type="button" class="pz-cv shelf-cover" data-pz-open aria-label="' + qEscAttr(e.t) + '">' + (e.w ? '<i class="pz-rib"></i>' : '') + '</button>'
+    + '<button type="button" class="pz-cv shelf-cover" data-pz-open aria-label="' + qEscAttr(e.t) + '">' + (pzPrizeOf(e) === 'n' ? '<i class="pz-medal"></i>' : e.w ? '<i class="pz-rib"></i>' : '') + '</button>'
     + '<button type="button" class="pz-fav" data-pz-fav title="' + (fav ? 'Unfavourite' : 'Favourite') + '" aria-pressed="' + fav + '">' + (fav ? '★' : '☆') + '</button>'
     + (e.c === 'music' ? '' : '<button type="button" class="libx-add' + (e.k ? ' in' : '') + '" data-pz-add title="' + (e.k ? 'In the Library' : 'Add to the Library') + '">' + (e.k ? '✓' : '＋') + '</button>')
     + '<b>' + qEsc(e.t) + '</b><small>' + qEsc(e.a || '') + '</small><i class="pz-cat">' + qEsc(pzCatName(e.c)) + '</i></div>';
@@ -20855,24 +20871,33 @@ const pzYearsTxt = () => (pzFrom || 1917) + '–' + (pzTo || new Date().getFullY
 // full-screen panel's left.
 function pzFilters() {
   const all = pzData || [];
-  const n = (c) => all.filter((e) => e.c === c && (!pzWho || (pzWho === 'won' ? e.w : !e.w)) && (!pzFrom || e.y >= pzFrom) && (!pzTo || e.y <= pzTo)).length;
+  const n = (c) => all.filter((e) => e.c === c && pzWhoOk(e) && (!pzFrom || e.y >= pzFrom) && (!pzTo || e.y <= pzTo)).length;
   const dm = (attr, v, label, on, count) => '<button type="button" class="pz-dm' + (on ? ' on' : '') + '" ' + attr + '="' + v + '" aria-pressed="' + on + '"><span>' + label + '</span>' + (count != null ? '<b>' + count + '</b>' : '') + '</button>';
-  return '<h6>Category</h6><div class="pz-dms">' + PZ_CATS.map(([c, l]) => dm('data-pz-cat', c, l, pzCats.has(c), pzData ? n(c) : null)).join('') + '</div>'
-    + '<div class="pz-hr"></div><h6>Result</h6><div class="pz-dms">' + dm('data-pz-who', 'won', 'Winners', pzWho !== 'fin') + dm('data-pz-who', 'fin', 'Finalists', pzWho !== 'won') + '</div>'
-    + '<div class="pz-hr"></div><h6>Years</h6><div class="pz-yrs"><input data-pz-y="from" inputmode="numeric" maxlength="4" aria-label="From year" placeholder="1917" value="' + (pzFrom || '') + '">'
+  const cats = (list) => '<div class="pz-dms">' + list.map(([c, l]) => dm('data-pz-cat', c, l, pzCats.has(c), pzData ? n(c) : null)).join('') + '</div>';
+  return '<h6>Prize</h6><div class="pz-dms">' + dm('data-pz-prize', 'p', PZ_RIB + 'Pulitzer', pzPrizes.has('p')) + dm('data-pz-prize', 'n', PZ_MEDAL + 'Nobel', pzPrizes.has('n')) + '</div>'
+    + (pzPrizes.has('p') ? '<div class="pz-hr"></div><h6>Pulitzer</h6>' + cats(PZ_CATS)
+      + '<h6>Result</h6><div class="pz-dms">' + dm('data-pz-who', 'won', 'Winners', pzWho !== 'fin') + dm('data-pz-who', 'fin', 'Finalists', pzWho !== 'won') + '</div>' : '')
+    + (pzPrizes.has('n') ? '<div class="pz-hr"></div><h6>Nobel</h6>' + cats(NB_CATS) : '')
+    + '<div class="pz-hr"></div><h6>Years</h6><div class="pz-yrs"><input data-pz-y="from" inputmode="numeric" maxlength="4" aria-label="From year" placeholder="1901" value="' + (pzFrom || '') + '">'
     + '<i></i><input data-pz-y="to" inputmode="numeric" maxlength="4" aria-label="To year" placeholder="' + new Date().getFullYear() + '" value="' + (pzTo || '') + '"></div>';
 }
+// Only the pills stay once the filters close: each prize's choices behind its mark.
 function pzSummary() {
-  const cats = PZ_CATS.filter(([c]) => pzCats.has(c)).map(([, l]) => l);
-  const pills = (cats.length === PZ_CATS.length ? ['Every prize'] : cats.length > 3 ? [cats.length + ' categories'] : cats)
-    .concat(pzWho ? [pzWho === 'won' ? 'Winners' : 'Finalists'] : []).concat([pzYearsTxt()]);
-  return '<div class="pz-sum">' + pills.map((p) => '<span>' + qEsc(p) + '</span>').join('') + '</div>';
+  const group = (prize, list, mark, name) => {
+    if (!pzPrizes.has(prize)) return [];
+    const on = list.filter(([c]) => pzCats.has(c)).map(([, l]) => l);
+    const words = on.length === list.length || (prize === 'p' && on.length === list.length - 1 && !pzCats.has('music')) ? [name] : on.length > 3 ? [name + ' · ' + on.length] : on;
+    return words.map((w, i) => (i ? '' : mark) + qEsc(w));
+  };
+  const pills = group('p', PZ_CATS, PZ_RIB, 'Pulitzer').concat(group('n', NB_CATS, PZ_MEDAL, 'Nobel'))
+    .concat(pzPrizes.has('p') && pzWho ? [pzWho === 'won' ? 'Winners' : 'Finalists'] : []).concat([pzYearsTxt()]);
+  return '<div class="pz-sum">' + pills.map((p) => '<span>' + p + '</span>').join('') + '</div>';
 }
 function pzSide() {
   const all = pzData || [];
   const x = '<button type="button" class="pz-x" data-pz-close aria-label="Close">✕</button>';
   const head = libFull
-    ? '<div class="pz-head"><b>Pulitzer</b>' + x + '</div>'
+    ? '<div class="pz-head"><b>Prizes</b>' + x + '</div>'
     : '<div class="pz-head is-bar">' + pzSummary() + '<button type="button" class="pz-gear' + (pzFiltOpen ? ' on' : '') + '" data-pz-filt aria-expanded="' + pzFiltOpen + '" title="Filters">'
       + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M4.5 8h7M7 12h2"/></svg></button>' + x + '</div>';
   const drop = !libFull && pzFiltOpen ? '<div class="pz-drop">' + pzFilters() + '</div>' : '';
@@ -20882,7 +20907,7 @@ function pzSide() {
     // Every year at once, newest first; the Library's search box narrows it by words.
     const words = libNorm(interestLibraryQuery).split(' ').filter((w) => w.length > 2 || /\d/.test(w));
     const hits = all.filter((e) => pzPass(e) && words.every((w) => libNorm(e.t + ' ' + (e.a || '')).includes(w)))
-      .sort((a, b) => b.y - a.y || PZ_CATS.findIndex((c) => c[0] === a.c) - PZ_CATS.findIndex((c) => c[0] === b.c) || b.w - a.w);
+      .sort((a, b) => b.y - a.y || PZ_ORDER.indexOf(a.c) - PZ_ORDER.indexOf(b.c) || b.w - a.w);
     const shown = hits.slice(0, pzLimit);
     const years = [...new Set(shown.map((e) => e.y))];
     body = '<div class="pz-list">' + (hits.length ? years.map((y) => '<h6>' + y + '</h6><div class="pz-row">' + shown.filter((e) => e.y === y).map(pzCard).join('') + '</div>').join('')
@@ -20898,7 +20923,7 @@ function pzPop(e) {
   const w = { kind: 'book', title: e.t, creator: e.a || '', year: String(e.y) };
   const f = pzFacts[e.t + '|' + e.a] || {};
   const src = f.poster || roomMediaArtCache.get(roomMediaArtKey(w)) || '';
-  const prize = '<span class="pz-prize">' + (e.w ? '★ Winner' : 'Finalist') + ' · ' + qEsc(pzCatName(e.c)) + ' · ' + e.y + '</span>';
+  const prize = '<span class="pz-prize">' + (pzPrizeOf(e) === 'n' ? 'Nobel' : e.w ? '★ Winner' : 'Finalist') + ' · ' + qEsc(pzCatName(e.c)) + ' · ' + e.y + '</span>';
   const about = (e.n ? '<div class="shelf-note"><h6>' + (e.w ? 'Why it won' : 'The jury') + '</h6><p>' + qEsc(e.n) + '</p></div>' : '')
     + (f.overview ? '<div class="shelf-note"><h6>What it is</h6><p>' + qEsc(libForty(f.overview)) + '</p></div>'
       : (f.done || e.c === 'music' ? '' : waitHtml('searching', 'Looking it up', 'p', 'shelf-note-wait')));
@@ -20932,6 +20957,7 @@ function pzWire(host) {
   const again = (top) => { if (top) pzScroll = 0; pzSave(); renderInterestLibrary({ quiet: true }); };
   side.querySelector('[data-pz-close]').onclick = () => { libxSrc.pulitzer = false; pzOpen = null; libxSave(); renderInterestLibrary({ quiet: true }); };
   side.querySelectorAll('[data-pz-cat]').forEach((b) => { b.onclick = () => { const c = b.dataset.pzCat; if (pzCats.has(c)) { if (pzCats.size > 1) pzCats.delete(c); } else pzCats.add(c); pzLimit = 240; again(true); }; });
+  side.querySelectorAll('[data-pz-prize]').forEach((b) => { b.onclick = () => { const k = b.dataset.pzPrize; if (pzPrizes.has(k)) { if (pzPrizes.size > 1) pzPrizes.delete(k); } else pzPrizes.add(k); pzLimit = 240; again(true); }; });
   // Winners and Finalists are two switches, never both off: turning one off leaves the other.
   side.querySelectorAll('[data-pz-who]').forEach((b) => { b.onclick = () => {
     const me = b.dataset.pzWho, other = me === 'won' ? 'fin' : 'won';
@@ -21172,7 +21198,7 @@ async function renderInterestLibrary(opts) {
     + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><button type="button" class="lib-fullbtn" data-lib-full title="' + (libFull ? 'Back to the column' : 'Full screen') + '" aria-label="' + (libFull ? 'Back to the column' : 'Full screen') + '">'
     + (libFull ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 2.5v4h-4M9.5 13.5v-4h4M6.5 6.5 2 2M9.5 9.5 14 14"/></svg>' : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.5v-4h4M13.5 9.5v4h-4M2.5 2.5 7 7M13.5 13.5 9 9"/></svg>') + '</button><button type="button" class="lib-favonly' + (libFavOnly ? ' on' : '') + '" data-fav-only aria-pressed="' + libFavOnly + '" title="Only favourites">★</button>'
     // The Pulitzer chip lives in the search row; with that row closed, a ribbon here.
-    + (libFull || finding ? '' : '<button type="button" class="lib-favonly lib-pz' + (libxSrc.pulitzer ? ' on' : '') + '" data-pz-tog aria-pressed="' + !!libxSrc.pulitzer + '" title="Pulitzer"><svg viewBox="0 0 11 14" aria-hidden="true"><path d="M0 0h11v14L5.5 10.4 0 14z" fill="currentColor"/></svg></button>')
+    + (libFull || finding ? '' : '<button type="button" class="lib-favonly lib-pz' + (libxSrc.pulitzer ? ' on' : '') + '" data-pz-tog aria-pressed="' + !!libxSrc.pulitzer + '" title="Prizes"><svg viewBox="0 0 11 14" aria-hidden="true"><path d="M0 0h11v14L5.5 10.4 0 14z" fill="currentColor"/></svg></button>')
     + '<span class="shelf-size" title="Cover size">'
     + '<i class="shelf-ticks"><b></b><b></b><b></b><b></b></i><i class="shelf-fill"></i>'
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
@@ -36851,12 +36877,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     seCard2.dataset.convo = btn.dataset.convo || '';
     seCard2For = d.coverArt;
     document.body.appendChild(seCard2);
-    if (seCard) seCard.querySelectorAll('.se-card-film').forEach(function(b){ b.classList.toggle('on', b === btn); });
+    if (seCard) seCard.querySelectorAll('.se-card-film, .se-screen').forEach(function(b){ b.classList.toggle('on', b === btn); });
     var paint = function(card){ if (!seCard2 || seCard2For !== d.coverArt) return; seCard2.innerHTML = seCardHtml(d, card); seCard2.classList.toggle('is-k5', d.coverKind === 'book'); seCard2Place(); };
     paint(null);
     if (btn.dataset.convo) {
       api('/api/convos/' + encodeURIComponent(btn.dataset.convo) + '/work-card?kind=' + encodeURIComponent(d.coverKind) + '&title=' + encodeURIComponent(d.coverTitle)
-        + '&creator=&year=' + encodeURIComponent(d.coverYear || ''))
+        + '&creator=' + encodeURIComponent(d.coverCreator || '') + '&year=' + encodeURIComponent(d.coverYear || ''))
         .then(function(card){ paint(card || {}); }).catch(function(){ paint({}); });
     }
   }
@@ -37082,6 +37108,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (pic) { ev.preventDefault(); seCoverBig(pic.querySelector('.se-pic-img')); return; }
     var fb = ev.target.closest && ev.target.closest('.se-face');
     if (fb) { ev.preventDefault(); sePersonOpen(fb); return; }
+    // A book or film in a person's card opens beside it, the person's card staying
+    // open (his ask, 2026-10-23) — with its ↗ to Amazon, YouTube and the rest.
+    var pw = ev.target.closest && ev.target.closest('.is-person-card .se-cover.se-screen');
+    if (pw) { ev.preventDefault(); seCardBeside(pw); return; }
     var btn = ev.target.closest && ev.target.closest('.se-cover, .se-work');
     if (btn) { ev.preventDefault(); seCardOpen(btn); return; }
     if (ev.target.closest('.se-quote-pop')) return;
