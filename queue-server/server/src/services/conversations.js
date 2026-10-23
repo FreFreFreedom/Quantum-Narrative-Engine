@@ -50,6 +50,7 @@ import { bindBookShelf, shelfContext, namesShelfBook, BOOK_TOOLS, bookTool } fro
 import { WATCHING_TOOLS, watchingTool, watchingContext } from './watching.js';
 import { bindScreenFacts } from './screenFacts.js';
 import { bindBookFacts } from './bookFacts.js';
+import { bindCoverCheck } from './coverCheck.js';
 import { bindBookContents } from './bookContents.js';
 import { bindWorkNotes } from './workNotes.js';
 import { bindPersonNotes, namedPeople, PEOPLE_V } from './personNotes.js';
@@ -60,7 +61,7 @@ import { bindConvoImages, saveConvoImages, dropMessageImages } from './convoImag
 import './subjectContext.js';
 
 let db = null;
-export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); bindBookFacts(database); bindBookContents(database); bindWorkNotes(database); bindPersonNotes(database); bindAnswerPictures(database); bindConvoImages(database); }
+export function bindConversationsDb(database) { db = database; bindInterestLibrary(database); bindBookShelf(database); bindScreenFacts(database); bindBookFacts(database); bindCoverCheck(database); bindBookContents(database); bindWorkNotes(database); bindPersonNotes(database); bindAnswerPictures(database); bindConvoImages(database); }
 
 // Plans live in knowledge_docs under the `Plan: ` prefix (seeded by
 // bootstrapData.js#seedPlans from the project-docs/plans/ mirror). This returns

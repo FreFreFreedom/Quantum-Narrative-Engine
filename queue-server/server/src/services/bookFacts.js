@@ -14,6 +14,7 @@
 // its anonymous quota runs out). A Google Books API key would make the second one
 // dependable — that needs an account, so it stays optional: BOOKS_API_KEY.
 
+import { coverRefused } from './coverCheck.js';
 import { generateText, runAmazonStarsProbe } from './ai/text.js';
 import jpeg from 'jpeg-js';
 import { mindBlock } from './mind.js';
@@ -137,7 +138,7 @@ const MATCHER = 9;
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, ' ').trim();
-const keyOf = (title, creator) => `${norm(title)}|${norm(creator)}`;
+export const keyOf = (title, creator) => `${norm(title)}|${norm(creator)}`;
 
 // "Torn Apart: How the Child Welfare System Destroys…" → "Torn Apart". A
 // subtitle is what makes a catalogue miss a book it holds.
@@ -240,7 +241,7 @@ async function googleCoverIsJacket(url) {
 // reads French, English otherwise. A Vietnamese "Atlas of AI" is the right book in
 // the wrong hands — its jacket is not the one he would recognise.
 const FRENCH = /\b(le|la|les|des|du|une|leurs|après|douce|chanson|enfants|et|pour|sur)\b|[éèêàùçœ]/i;
-const titleLang = (t) => (FRENCH.test(String(t || '')) ? 'fr' : 'en');
+export const titleLang = (t) => (FRENCH.test(String(t || '')) ? 'fr' : 'en');
 
 async function getJson(url, ms = 8000) {
   try {
@@ -332,7 +333,7 @@ export function shopClean(title) {
 // held as one, it made every candidate fail the author check and the cover stayed
 // blank ("The Hot House", "The New Makers of Modern Strategy", 2026-10-11).
 const NOT_A_PERSON = /^\s*\(?\s*(?:not\s+(?:specified|given|stated|known|mentioned|named|provided)|unknown|unspecified|various|anonymous|n\/?a|none|tbd|\?+)\b|\b(?:press|publish\w*|books|editions?|house|media|university|institute|council|staff|department|office|ministry|association|foundation)\s*$/i;
-const noDegrees = (a) => { const s = String(a || '').replace(/,?\s*\b(?:ph\.?\s?d|m\.?d|j\.?d|esq|mba|psy\.?d|ed\.?d)\b\.?/ig, '').trim(); return NOT_A_PERSON.test(s) ? '' : s; };
+export const noDegrees = (a) => { const s = String(a || '').replace(/,?\s*\b(?:ph\.?\s?d|m\.?d|j\.?d|esq|mba|psy\.?d|ed\.?d)\b\.?/ig, '').trim(); return NOT_A_PERSON.test(s) ? '' : s; };
 
 export async function lookupBook(rawTitle, rawCreator, again = true) {
   const out = await lookupOnce(rawTitle, rawCreator, again);
@@ -495,7 +496,7 @@ async function lookupOnce(rawTitle, rawCreator, ownAuthor = true) {
   const top = cands.length ? cands[0].score : 0;
   const apple = cands.find((c) => c.src === 'apple' && c.score >= top - 3);
   const covers = [];
-  const addCover = (u) => { if (u && !covers.includes(u) && covers.length < 4) covers.push(u); };
+  const addCover = (u) => { if (u && !coverRefused(u) && !covers.includes(u) && covers.length < 4) covers.push(u); };
   if (apple) addCover(apple.art);
   for (const c of cands) {
     if (covers.length >= 3 && out.blurb && out.isbn && out.pages) break;
@@ -552,7 +553,7 @@ async function lookupOnce(rawTitle, rawCreator, ownAuthor = true) {
     if (!out.isbn && isbns.length) out.isbn = isbns.find((i) => i.length === 10) || isbns[0];
     for (const i of out.ok === 1 ? [] : [...new Set(isbns)].slice(0, 5)) {
       const u = await coverFromIsbn(i, title, who);
-      if (!u) continue;
+      if (!u || coverRefused(u)) continue;
       if (!out.cover) { out.cover = u; out.ok = 0; }
       if ((await coverIsSharp(u)) === true) { out.cover = u; out.ok = 1; break; }
     }
