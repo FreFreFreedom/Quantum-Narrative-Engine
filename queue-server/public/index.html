@@ -3805,6 +3805,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .disc-src .disc-imdb { background:#f5c518; color:#000; font:900 9px Arial, sans-serif; padding:1px 4px; border-radius:2px; }
 .disc-src .disc-amz { background:#232f3e; color:#ff9900; font:700 9px Arial, sans-serif; padding:1px 4px; border-radius:2px; }
 .disc-src .disc-ftog { margin-left:auto; }
+.disc-src .disc-pz { color:#d9b877; display:inline-flex; } .disc-src .disc-pz svg { width:9px; height:12px; }
 .disc-src .disc-ftog svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; }
 .disc-src .disc-ftog b { background:var(--c-kept-echo, var(--c-accent)); color:#111; border-radius:8px; padding:0 5px; }
 .disc { display:block; }
@@ -20444,6 +20445,9 @@ function discSourceRow() {
     + '<button type="button" data-disc-src="library" class="' + (libSource === 'library' ? 'on' : '') + '"><i class="disc-lib">◆</i>Library</button>'
     + '<button type="button" data-disc-src="screen" class="' + (libSource === 'screen' ? 'on' : '') + '"><i class="disc-imdb">IMDb</i>Films &amp; series ' + n('screen') + '</button>'
     + '<button type="button" data-disc-src="books" class="' + (libSource === 'books' ? 'on' : '') + '"><i class="disc-amz">amazon</i>Books ' + n('books') + '</button>'
+    // Not a tab: the prize lists open beside the column and the search box reaches
+    // into them too (his ask, 2026-10-23 — the ribbon by the star went unseen).
+    + (libFull ? '' : '<button type="button" data-pz-tog class="' + (libxSrc.pulitzer ? 'on' : '') + '" aria-pressed="' + !!libxSrc.pulitzer + '"><i class="disc-pz"><svg viewBox="0 0 11 14" aria-hidden="true"><path d="M0 0h11v14L5.5 10.4 0 14z" fill="currentColor"/></svg></i>Pulitzer</button>')
     + (libSource === 'library' ? '' : '<button type="button" class="disc-ftog' + (discFiltersOpen ? ' on' : '') + '" data-disc-ftog title="Filters (F)">'
       + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M4.5 8h7M7 12h2"/></svg>Filters' + (act ? ' <b>' + act + '</b>' : '') + '</button>')
     + '</div>';
@@ -21097,7 +21101,7 @@ async function renderInterestLibrary(opts) {
   host.innerHTML = top
     + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><button type="button" class="lib-fullbtn" data-lib-full title="' + (libFull ? 'Back to the column' : 'Full screen') + '" aria-label="' + (libFull ? 'Back to the column' : 'Full screen') + '">'
     + (libFull ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 2.5v4h-4M9.5 13.5v-4h4M6.5 6.5 2 2M9.5 9.5 14 14"/></svg>' : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.5v-4h4M13.5 9.5v4h-4M2.5 2.5 7 7M13.5 13.5 9 9"/></svg>') + '</button><button type="button" class="lib-favonly' + (libFavOnly ? ' on' : '') + '" data-fav-only aria-pressed="' + libFavOnly + '" title="Only favourites">★</button>'
-    + (libFull ? '' : '<button type="button" class="lib-favonly lib-pz' + (libxSrc.pulitzer ? ' on' : '') + '" data-pz-tog aria-pressed="' + !!libxSrc.pulitzer + '" title="Pulitzer"><svg viewBox="0 0 11 14" aria-hidden="true"><path d="M0 0h11v14L5.5 10.4 0 14z" fill="currentColor"/></svg></button>') + '<span class="shelf-size" title="Cover size">'
+    + '<span class="shelf-size" title="Cover size">'
     + '<i class="shelf-ticks"><b></b><b></b><b></b><b></b></i><i class="shelf-fill"></i>'
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
     + '<div class="shelf-working-host">' + shelfWorkingMarkup() + '</div>'
