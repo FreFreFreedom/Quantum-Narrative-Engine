@@ -19917,10 +19917,12 @@ function libGoogleLink(w, f) {
               : 'https://www.google.com/search?tbm=bks&q=' + encodeURIComponent(q) };
 }
 
-// A YouTube search for the book — talks, interviews, lectures by or about it.
+// A YouTube search for the book's author, never its title (his ask, 2026-10-23,
+// to match the extension). No author, no link.
 function libYouTubeLink(w) {
   if (!w || w.kind !== 'book') return null;
-  const q = [libShortTitle(w.title), w.creator || ''].filter(Boolean).join(' ');
+  const q = String(w.creator || '').split(/\s*(?:,|;|&|\band\b)\s*/)[0].trim();
+  if (!q) return null;
   return { label: 'YouTube', url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q) };
 }
 
