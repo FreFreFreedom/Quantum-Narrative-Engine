@@ -3247,6 +3247,9 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-lanepop .h.g { display:flex; justify-content:space-between; align-items:center; width:100%; border:0; background:none; cursor:pointer; text-align:left; padding:9px 18px; }
 .se-lanepop .h.g:hover, .se-lanepop .h.g.is-open { color:var(--c-kept-echo, var(--c-accent)); }
 .se-lanepop .h.g small { font-family:var(--font-ui); font-size:12px; letter-spacing:0; color:var(--c-ink-5); }
+.se-lanepop .lq { font-family:var(--font-ui); font-size:12px; letter-spacing:0; margin-left:auto; padding-right:10px; font-variant-numeric:tabular-nums; }
+.se-lanepop .it .lq { padding-right:0; }
+.se-lanepop .lq.ok { color:#7fb59a; } .se-lanepop .lq.mid { color:#d9b877; } .se-lanepop .lq.low { color:#c9705f; }
 .se-lanepop .sh { font-family:'Cinzel',var(--font-read); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); padding:9px 18px 2px; }
 .se-lanepop .it.in { padding-left:28px; font-size:16px; }
 .se-lanepop .it { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:7px 18px; border:0; background:none; text-align:left; cursor:pointer;
@@ -31158,6 +31161,54 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // Which maker is unfolded in the list. Only one at a time: the one in use when the
   // list opens, then whichever heading he touches (too many models otherwise).
   var lanePopGroup = null;
+  // What is left on each lane, as a share (his pick C, 2026-10-23): the Claude
+  // accounts and the paid OpenAI lane from the usage read-out, the free API lanes
+  // from today's calls against their daily allowance. Unknown stays blank.
+  var laneQuotaData = null, laneQuotaAt = 0;
+  function ensureLaneQuota(){
+    if(laneQuotaData && Date.now() - laneQuotaAt < 60000) return Promise.resolve(laneQuotaData);
+    return Promise.all([
+      api('/api/agent/usage').catch(function(){ return null; }),
+      api('/api/travaux/free-providers').catch(function(){ return null; })
+    ]).then(function(r){ laneQuotaData = { usage: r[0] || {}, free: r[1] || {} }; laneQuotaAt = Date.now(); return laneQuotaData; });
+  }
+  function quotaLeftOfAccount(a){
+    if(!a) return null;
+    var used = [a.session, a.week, a.primary, a.secondary].map(function(w){ return w && typeof w.utilizationPct === 'number' ? w.utilizationPct : (w && typeof w.usedPercent === 'number' ? w.usedPercent : null); })
+      .filter(function(v){ return v != null; });
+    if(typeof a.pct === 'number') used.push(a.pct);
+    return used.length ? Math.max(0, 1 - Math.max.apply(null, used) / 100) : null;
+  }
+  function laneQuotaLeft(key, model){
+    var q = laneQuotaData;
+    if(!q) return null;
+    var u = q.usage || {};
+    if(key === 'claude-code') return quotaLeftOfAccount(u.claudeMax || (u.session ? u : null));
+    if(key === 'claude-side') return quotaLeftOfAccount(u.side);
+    if(key === 'codex-pro') return quotaLeftOfAccount(u.codex);
+    if(key === 'codex') return quotaLeftOfAccount(u.codexSecond);
+    if(key === 'openai' || key === 'blank-openai') return u.openai && typeof u.openai.pct === 'number' ? Math.max(0, 1 - u.openai.pct / 100) : null;
+    var f = q.free || {};
+    var prov = (f.providers || []).filter(function(p){ return p.id === key; })[0];
+    if(!prov) return null;
+    var ids = model ? [model] : laneModelsFor(key, laneCatalog);
+    var best = null;
+    ids.forEach(function(m){
+      var bench = (f.state || []).some(function(st){ return st.provider_id === key && st.model === m && st.exhausted; });
+      var cat = (prov.models || []).filter(function(x){ return x.id === m; })[0];
+      var rpd = (cat && cat.limits && cat.limits.rpd) || (prov.limits && prov.limits.rpd) || 0;
+      var row = (f.usage || []).filter(function(x){ return x.provider_id === key && x.model === m; })[0];
+      var v = bench ? 0 : rpd ? Math.max(0, 1 - ((row && row.calls) || 0) / rpd) : null;
+      if(v != null && (best == null || v > best)) best = v;
+    });
+    return best;
+  }
+  function laneQuotaHtml(keys, model){
+    var best = null;
+    keys.forEach(function(k){ var v = laneQuotaLeft(k, model); if(v != null && (best == null || v > best)) best = v; });
+    if(best == null) return '';
+    return '<span class="lq ' + (best < 0.2 ? 'low' : best < 0.5 ? 'mid' : 'ok') + '">' + Math.round(best * 100) + '%</span>';
+  }
   function lanePopHtml(e, side){
     var pick = side === 'b' ? e.laneB : e.lane;
     var cur = laneKeyOf(pick);
@@ -31175,7 +31226,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       g[1].forEach(function(key){ total += Math.max(1, laneModelsFor(key, laneCatalog).length); });
       if(g[0] !== openGroup){
         var offAll = laneCatalog ? g[1].every(function(key){ return !laneAvailable(key, laneCatalog); }) : false;
-        html += (gi ? '<hr>' : '') + '<button type="button" class="h g' + (offAll ? ' off' : '') + '" data-group="' + qEscAttr(g[0]) + '">' + qEsc(g[0]) + '<small>' + total + ' ▸</small></button>';
+        html += (gi ? '<hr>' : '') + '<button type="button" class="h g' + (offAll ? ' off' : '') + '" data-group="' + qEscAttr(g[0]) + '">' + qEsc(g[0]) + laneQuotaHtml(g[1]) + '<small>' + total + ' ▸</small></button>';
         return;
       }
       g[1].forEach(function(key){
@@ -31192,7 +31243,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var maker = laneModelMaker(m);
           if(maker && maker !== lastMaker){ rows += '<div class="sh">' + qEsc(maker) + '</div>'; lastMaker = maker; }
           rows += '<button type="button" class="it' + (on ? ' on' : '') + (maker ? ' in' : '') + '" data-lane="' + qEscAttr(key) + '" data-model="' + qEscAttr(m) + '" title="' + qEscAttr(m) + '"' + (off ? ' disabled title="' + qEscAttr(laneOffReason(key) || '') + '"' : '') + '>'
-            + qEsc(laneModelShort(m)) + (sub && !maker ? '<small>' + qEsc(sub) + '</small>' : '') + '</button>';
+            + qEsc(laneModelShort(m)) + (sub && !maker ? '<small>' + qEsc(sub) + '</small>' : '') + laneQuotaHtml([key], m) + '</button>';
         });
         if(cur === key && pick && laneHasEffort(key, pick.model)){
           var levels = laneEffortLevels(key, pick.model);
@@ -31202,7 +31253,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }
       });
       if(!rows) return;
-      html += (gi ? '<hr>' : '') + '<button type="button" class="h g is-open" data-group="' + qEscAttr(g[0]) + '">' + qEsc(g[0]) + '<small>▾</small></button>' + rows;
+      html += (gi ? '<hr>' : '') + '<button type="button" class="h g is-open" data-group="' + qEscAttr(g[0]) + '">' + qEsc(g[0]) + laneQuotaHtml(g[1]) + '<small>▾</small></button>' + rows;
     });
     return html;
   }
@@ -32999,7 +33050,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           if(!lanePop.hidden && lanePopSide === side){ closePop(); return; }
           lanePopSide = side;
           lanePopGroup = null;
-          ensureLaneCatalog().then(function(){ if(!lanePop.hidden) lanePop.innerHTML = lanePopHtml(e, lanePopSide); });
+          Promise.all([ensureLaneCatalog(), ensureLaneQuota()]).then(function(){ if(!lanePop.hidden) lanePop.innerHTML = lanePopHtml(e, lanePopSide); });
           lanePop.innerHTML = lanePopHtml(e, side);
           lanePop.hidden = false; btn.setAttribute('aria-expanded', 'true');
           lanePopPlace(btn, lanePop);
