@@ -21171,6 +21171,8 @@ async function renderInterestLibrary(opts) {
   host.innerHTML = top
     + '<div class="room-shelf" id="roomShelf"><div class="lib-bar"><button type="button" class="lib-fullbtn" data-lib-full title="' + (libFull ? 'Back to the column' : 'Full screen') + '" aria-label="' + (libFull ? 'Back to the column' : 'Full screen') + '">'
     + (libFull ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 2.5v4h-4M9.5 13.5v-4h4M6.5 6.5 2 2M9.5 9.5 14 14"/></svg>' : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6.5v-4h4M13.5 9.5v4h-4M2.5 2.5 7 7M13.5 13.5 9 9"/></svg>') + '</button><button type="button" class="lib-favonly' + (libFavOnly ? ' on' : '') + '" data-fav-only aria-pressed="' + libFavOnly + '" title="Only favourites">★</button>'
+    // The Pulitzer chip lives in the search row; with that row closed, a ribbon here.
+    + (libFull || finding ? '' : '<button type="button" class="lib-favonly lib-pz' + (libxSrc.pulitzer ? ' on' : '') + '" data-pz-tog aria-pressed="' + !!libxSrc.pulitzer + '" title="Pulitzer"><svg viewBox="0 0 11 14" aria-hidden="true"><path d="M0 0h11v14L5.5 10.4 0 14z" fill="currentColor"/></svg></button>')
     + '<span class="shelf-size" title="Cover size">'
     + '<i class="shelf-ticks"><b></b><b></b><b></b><b></b></i><i class="shelf-fill"></i>'
     + '<input type="range" min="1" max="4" step="1" value="' + shelfSize() + '" aria-label="Cover size"></span></div>'
