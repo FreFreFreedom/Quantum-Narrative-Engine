@@ -1,6 +1,6 @@
 # Prison and Revolution: Media Dissecting Institutional Violence
 
-Thread 565a6e84-f3d7-4ada-8d3f-591d47413bb0 · 135 turns · last said 2026-10-23T19:21:10.534Z
+Thread 565a6e84-f3d7-4ada-8d3f-591d47413bb0 · 136 turns · last said 2026-10-24T22:59:58.608Z
 
 ## you
 
