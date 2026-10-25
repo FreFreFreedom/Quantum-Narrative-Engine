@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The physical substrate is no longer inert matter; it has become programmable as biology and material science are digitized.
+
+When biology, chemistry, and materials science are digitized, the physical substrate functions as code. Rather than fighting over static resources like oil fields, superpowers engineer yeast strains and microbes to brew fuel, plastics, and pharmaceuticals locally in vats, turning the physical world into a malleable compile target where the physical and informational merge into a single continuum.
+
 ## Military black sites and public military camps like Guantánamo share the same DNA as the ultimate manifestation of the state of exception.
 
 While black sites operated completely off-grid and Guantánamo was a military-run camp, both share identical structural DNA: operation outside domestic and international law, identical torture techniques, indefinite detention, and total legal impunity.

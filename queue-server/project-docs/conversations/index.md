@@ -4,6 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
+- Geopolitical ontological warfare over physical substrate — conversations/geopolitical-ontological-warfare-over-physical-substrate-b63a4169.md
 - Prison and Revolution: Media Dissecting Institutional Violence — conversations/prison-and-revolution-media-dissecting-institutional-violence-565a6e84.md
 - Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
 - Biopolitics and the George Marshall Archetype — conversations/biopolitics-and-the-george-marshall-archetype-a969a91c.md
