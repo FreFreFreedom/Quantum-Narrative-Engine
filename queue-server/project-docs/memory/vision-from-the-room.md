@@ -11,6 +11,14 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Cults operate on a Manichean split between absolute purity inside and total corruption outside, mirroring pop-culture mythology.
+
+Cult leaders use extreme dualistic framing—pure insiders versus a demonic outside world, flawless messianic figures, and the externalization of the shadow—to bypass critical thinking, mirroring the same psychological flight from integration found in mass narratives.
+
+## Popular mythology splits the world into absolute purity versus absolute corruption out of a terror of entanglement.
+
+In stories like Dune, Avatar, Star Wars, and The Lord of the Rings, the Manichean split between uncorrupted nature or people and demonic machinery is a symptom of ontological anxiety. We know we are already implicated in the machine, so we invent pure domains as a nostalgic fantasy of an unfallen self to avoid the terrifying reality of integration.
+
 ## The physical substrate is no longer inert matter; it has become programmable as biology and material science are digitized.
 
 When biology, chemistry, and materials science are digitized, the physical substrate functions as code. Rather than fighting over static resources like oil fields, superpowers engineer yeast strains and microbes to brew fuel, plastics, and pharmaceuticals locally in vats, turning the physical world into a malleable compile target where the physical and informational merge into a single continuum.

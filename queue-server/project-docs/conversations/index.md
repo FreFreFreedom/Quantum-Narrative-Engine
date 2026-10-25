@@ -4,6 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
+- Cult leaders weaponizing anti-technology purity myths — conversations/cult-leaders-weaponizing-anti-technology-purity-myths-74ec82e7.md
 - Ontological warfare and the evolving substrate — conversations/ontological-warfare-and-the-evolving-substrate-b63a4169.md
 - Prison and Revolution: Media Dissecting Institutional Violence — conversations/prison-and-revolution-media-dissecting-institutional-violence-565a6e84.md
 - Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
