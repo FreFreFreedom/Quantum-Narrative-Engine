@@ -295,40 +295,44 @@ export function mindBlock(context = '', { exclude = [] } = {}) {
   } catch { return ''; }
 }
 
+// Kinds that never ride on their own. A taste or style fact is a rule in disguise
+// ("he loves poetic answers" reads as "be poetic"), and a decision or project is
+// the state of the app, not who he is. They stay in the table and the recall tool
+// still finds them when a model asks; they are just never pushed (2026-10-24).
+export const UNPROMPTED_KINDS = new Set(['taste', 'style', 'decision', 'project']);
+// Teach's rule, applied to the whole memory (his call, 2026-10-24): a fact comes
+// back only when what he is asking shares real words with it. Before this, every
+// fact rode as a headline on every book note, dictionary card and card answer, so
+// one conversation about the prosecutor surfaced the prosecutor everywhere.
+const MIND_MIN_SHARED = 2;
+
 // The block itself, from a list of facts — no database, so the self-test can prove
-// the ranking and the detail selection without one. mindBlock() above is this plus
-// one query. Same split as mindMirror.js's renderMindFrom().
+// the selection without one. mindBlock() above is this plus one query.
 export function renderMindBlockFrom(facts = [], context = '', now = Date.now()) {
-  if (!facts.length) return '';
   const contextWords = topicWords(String(context || '').slice(0, 4000));
-  const scored = facts.map((f) => {
+  if (!facts.length || !contextWords.size) return '';
+  const scored = facts.filter((f) => !UNPROMPTED_KINDS.has(f.kind)).map((f) => {
+    const own = topicWords(`${f.text} ${f.detail || ''}`);
+    let shared = 0;
+    for (const w of own) if (contextWords.has(w)) shared += 1;
+    if (shared < MIND_MIN_SHARED) return null;
     const t = f.last_used_at || f.updated_at || f.created_at;
     let days = 30;
     if (t) { const dt = new Date(t).getTime(); if (!Number.isNaN(dt)) days = Math.max(0, (now - dt) / 86400000); }
     const recency = 1 / (1 + days);
     const rel = relevanceTo(f, contextWords);
     const score = (f.weight || 1) * recency * (1 + Math.log((f.hits || 0) + 1)) * (1 + RELEVANCE_PULL * rel);
-    return { f, score, rel };
-  }).sort((a, b) => b.score - a.score);
+    return { f, score };
+  }).filter(Boolean).sort((a, b) => b.score - a.score);
+  if (!scored.length) return '';
 
-  // Only a fact that genuinely touches the subject earns its reasoning. Without
-  // this guard the deep section is three arbitrary facts dressed up as the ones
-  // that matter, which is worse than sending headlines alone.
-  const deep = scored.filter((x) => x.rel > 0 && x.f.detail).slice(0, DETAIL_FACTS);
-  const deepIds = new Set(deep.map((x) => x.f.id));
-
-  let out = '\n=== WHAT YOU KNOW ABOUT THE OWNER ===\nWho he is and how he thinks, learned from past conversations.\n';
-  if (deep.length) {
-    out += '\nCLOSEST TO WHAT HE IS ASKING NOW — the claim, and the thinking under it:\n';
-    for (const { f } of deep) {
-      out += `- ${String(f.text).slice(0, 240)}\n  ${String(f.detail).slice(0, DETAIL_CHARS).replace(/\s+/g, ' ')}\n`;
-    }
-    out += '\nEVERYTHING ELSE YOU KNOW:\n';
-  }
+  let detailed = 0;
+  let out = '\n=== WHAT YOU KNOW ABOUT THE OWNER ===\nWhat he has thought before on this subject, from past conversations.\n';
   for (const { f } of scored) {
-    if (deepIds.has(f.id)) continue;
-    const line = `- ${String(f.text).slice(0, 240)}`;
+    const withDetail = f.detail && detailed < DETAIL_FACTS;
+    const line = `- ${String(f.text).slice(0, 240)}${withDetail ? `\n  ${String(f.detail).slice(0, DETAIL_CHARS).replace(/\s+/g, ' ')}` : ''}`;
     if (out.length + line.length + 1 > BLOCK_CAP) break;
+    if (withDetail) detailed += 1;
     out += line + '\n';
   }
   return out;
@@ -422,14 +426,14 @@ function buildHarvestPrompt(newTurns, factList) {
   const facts = factList.length
     ? factList.map((f) => `- [${f.id}] (${f.kind}) ${f.text}`).join('\n')
     : '(none yet)';
-  return `You maintain the long-term memory of a personal app built for one man. He is its only user. Two things go in that memory: standing facts about HIM, and the PARADIGM the platform is built on — the ideas he and this app are working out together.
+  return `You maintain the long-term memory of a personal app built for one man. He is its only user. What goes in that memory is what HE thinks: his ideas, how he sees things, and who he is — never what the answers said, and never how he wants to be answered.
 
 Return ONLY a JSON array (no prose, no markdown fence) of objects:
-  {"kind": "about"|"taste"|"decision"|"project"|"person"|"style"|"vision", "text": "<the claim itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the example that made it land — as long as it needs to be>", "replaces"?: "<an existing fact id, if this corrects or sharpens it>", "contradicts"?: "<an existing fact id this REVERSES>", "merges"?: ["<existing fact ids that are all one idea>"]}
+  {"kind": "vision"|"about"|"person", "text": "<the claim itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the example that made it land — as long as it needs to be>", "turn": "T<n> — the HE ASKED turn it comes from", "replaces"?: "<an existing fact id, if this corrects or sharpens it>", "contradicts"?: "<an existing fact id this REVERSES>", "merges"?: ["<existing fact ids that are all one idea>"]}
 
-USE "vision" for the paradigm: what the platform IS, the mechanisms it runs on, what counts as an entity or a scale or a pattern, how analogy is supposed to work, what a part of the system is FOR. This is the material the whole project is built to accumulate — err toward keeping it.
+ONLY HIS WORDS. A memory must come from a HE ASKED turn, and "turn" names it. THE ANSWER turns are there so you can understand what he was replying to; an idea that only the answer said is not his and is never saved. When he takes up an answer's idea in his own words, that is his.
 
-Use the other kinds for him: "taste" and "style" for how he likes things and wants to be worked with, "decision" for a choice he has made, "project" for what is being built, "person" for people, "about" for who he is.
+USE "vision" for his ideas and how he sees things: the patterns, mechanisms and readings he holds. "about" for who he is, "person" for people in his life. Never save how he likes answers, a choice about the app, or what is being built — those are not his thinking. A memory states what he thinks; it never tells anyone what to do.
 
 ALWAYS fill "detail" when there is reasoning behind a fact. "text" alone is a headline, and a headline without its argument is close to useless a month later — the mechanism, the why, and the example that convinced him all belong in "detail".
 
@@ -469,6 +473,15 @@ function parseHarvest(text) {
     const arr = JSON.parse(s.slice(open, close + 1));
     return Array.isArray(arr) ? arr : null;
   } catch { return null; }
+}
+
+// What an automatic pass may write (2026-10-24, the no-rule principle): his ideas,
+// who he is, the people in his life — never how to answer him, and never an order.
+export const HARVEST_KINDS = ['vision', 'about', 'person'];
+// Narrower than ORDER_WORDS: a real idea says "always" and "never" all the time.
+const HARVEST_ORDER = /\b(from now on|going forward|in (?:all )?(?:future|later|every) (?:answers?|responses?|replies)|adopt an?|make sure|be sure to|(?:answers?|responses?|you) (?:should|must))\b/i;
+export function isHisThinking(it) {
+  return Boolean(it && HARVEST_KINDS.includes(it.kind) && !HARVEST_ORDER.test(`${it.text || ''} ${it.detail || ''}`));
 }
 
 // A merge rearranges the list the other moves point into, so merges are applied
@@ -556,7 +569,12 @@ async function runHarvest(convoId, force) {
   // next harvest pass retries these same turns rather than silently losing them.
   if (!items) { console.error('[mind] harvest: unparseable model reply, watermark not advanced'); return; }
 
-  const wrote = applyHarvestItems(items.filter((it) => it?.kind !== 'analogy' && it?.kind !== 'reach'), { sourceConvoId: convoId });
+  // Only his own thinking becomes memory: a fact must name one of HIS turns, and an
+  // answer's idea he never took up is dropped here, whatever the model returned —
+  // otherwise the Room's words come back as his, then ride into the next answer.
+  const his = (it) => newTurns[Number(String(it.turn || '').replace(/\D/g, '')) - 1]?.role === 'user';
+  const wrote = applyHarvestItems(items.filter((it) => it?.kind !== 'analogy' && it?.kind !== 'reach')
+    .filter((it) => isHisThinking(it) && his(it)), { sourceConvoId: convoId });
   // Reaches go to the connections ledger (plans/room-connections.md), never into memory.
   let reached = 0;
   for (const it of items.filter((x) => x?.kind === 'reach')) {
@@ -628,10 +646,10 @@ That choice is the signal. Out of a long answer he lifted one sentence and saved
 
 Do NOT save the line itself. A quote is not a memory. Name what it is an instance OF — the standing fact about him, or the paradigm concept it is pointing at — and save THAT. If several kept things point at the same thing, that is one strong memory, not four weak ones.
 
-Two things go in this memory: standing facts about HIM (what he is drawn to, how he wants to be worked with, what he has decided) and the PARADIGM the platform is built on — what it IS, its mechanisms, what counts as an entity or a scale, how analogy is supposed to work.
+What goes in this memory is what he thinks: "vision" for the ideas and patterns he is circling, "about" for who he is and what he is drawn to, "person" for people. Never how he wants to be answered, and never an instruction — a memory states what he thinks.
 
 Return ONLY a JSON array (no prose, no markdown fence) of objects:
-  {"kind": "about"|"taste"|"decision"|"project"|"person"|"style"|"vision", "text": "<the claim itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the kept line that made it land — as long as it needs to be>", "replaces"?: "<an existing fact id, if this sharpens it>", "contradicts"?: "<an existing fact id this REVERSES>", "merges"?: ["<existing fact ids that are all one idea>"]}
+  {"kind": "vision"|"about"|"person", "text": "<the claim itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the kept line that made it land — as long as it needs to be>", "replaces"?: "<an existing fact id, if this sharpens it>", "contradicts"?: "<an existing fact id this REVERSES>", "merges"?: ["<existing fact ids that are all one idea>"]}
 
 ALWAYS fill "detail", and quote the kept line inside it when the line is what makes the fact real.
 
@@ -677,7 +695,7 @@ async function runLibraryHarvest(force) {
   // watermark, or the kept lines it was about are lost for good.
   if (!items) { console.error('[mind] library: unparseable model reply, watermarks not advanced'); return; }
 
-  const wrote = applyHarvestItems(items, { sourceNote: 'library' });
+  const wrote = applyHarvestItems(items.filter(isHisThinking), { sourceNote: 'library' });
   // Set from the rows actually read, never from the clock — anything saved while
   // this pass was running is then still unseen and gets read next time.
   if (passages.length) markSet(MARK_PASSAGES, passages[passages.length - 1].created_at);

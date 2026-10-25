@@ -13,7 +13,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { unseenTurns, buildProposePrompt, buildCoreAddition, CENTRAL_WEIGHT, explicitMemoryText, renderDirectInstructions, renderMindBlockFrom, orderHarvestItems } from '../server/src/services/mind.js';
+import { unseenTurns, buildProposePrompt, buildCoreAddition, CENTRAL_WEIGHT, explicitMemoryText, renderDirectInstructions, renderMindBlockFrom, orderHarvestItems, isHisThinking } from '../server/src/services/mind.js';
 import { renderMindFrom, renderVisionFrom, mindFiles, MEMORY_REPO_PATH } from '../server/src/services/mindMirror.js';
 
 let passed = 0;
@@ -199,29 +199,33 @@ const factRows = [
   { id: 'f_bare', kind: 'project', text: 'Fractal politics is where political analysis is going', detail: null, weight: 1, hits: 0, updated_at: day(150) },
 ];
 
-// No context: recency wins, exactly as before, and nothing carries its detail.
-const plain = renderMindBlockFrom(factRows, '', NOW);
-assert.ok(plain.indexOf('interactive graph') < plain.indexOf('frozen posture'), 'without a subject the recent fact still leads');
-assert.ok(!plain.includes('CLOSEST TO WHAT HE IS ASKING NOW'));
-assert.ok(!plain.includes('cannot face grief'), 'no subject means no reasoning is spent');
-ok('with nothing to rank against, the block is the old block');
+// Teach's rule for the whole memory (2026-10-24): nothing rides without a subject,
+// a fact rides only when it shares real words with what he asks, and the
+// rule-shaped kinds (taste, style, decision, project) never ride at all.
+assert.equal(renderMindBlockFrom(factRows, '', NOW), '', 'no subject, no memory');
+ok('with nothing to match against, the block is empty');
 
-// Asked about policy: a fact 200 days old outranks one from today, and brings the
-// mechanism with it.
 const ranked = renderMindBlockFrom(factRows, 'how does a policy actually reach a family, and what posture is it', NOW);
-assert.ok(ranked.includes('CLOSEST TO WHAT HE IS ASKING NOW'));
-assert.ok(ranked.indexOf('frozen posture') < ranked.indexOf('interactive graph'), 'the relevant fact leads however old it is');
-assert.ok(ranked.includes('cannot face grief'), 'the reasoning under the relevant fact is sent, not just the headline');
-ok('the subject outranks recency, and the closest fact brings its thinking');
+assert.ok(ranked.includes('frozen posture'), 'the fact on the subject rides');
+assert.ok(ranked.includes('cannot face grief'), 'the reasoning under it is sent, not just the headline');
+assert.ok(!ranked.includes('interactive graph'), 'a taste fact never rides — it is a rule in disguise');
+ok('the fact on the subject comes with its thinking; a taste fact stays home');
 
-// A fact with no detail can never enter the deep section — there is nothing to add.
-assert.ok(!renderMindBlockFrom(factRows, 'fractal politics analysis', NOW).includes('CLOSEST TO WHAT HE IS ASKING NOW')
-  || !renderMindBlockFrom(factRows, 'fractal politics analysis', NOW).match(/CLOSEST[\s\S]*?f_bare/));
-ok('a fact with no reasoning stays a headline');
+assert.equal(renderMindBlockFrom(factRows, 'fractal politics analysis', NOW), '', 'a project fact never rides');
+assert.equal(renderMindBlockFrom(factRows, 'the best books on grief', NOW), '', 'one shared word is not the subject');
+ok('off the subject, nothing rides');
 
-// Every fact still reaches the model — ranking reorders, it never drops.
-for (const f of factRows) assert.ok(ranked.includes(f.text), `${f.id} must still be in the block`);
-ok('ranking reorders the memory, it never hides any of it');
+const prosecutor = [{ id: 'f_p', kind: 'vision', text: 'The prosecutor functions as the boundary-setting immune organ', detail: 'Names threats, acts proportionally.', weight: 1, hits: 0, updated_at: day(1) }];
+assert.equal(renderMindBlockFrom(prosecutor, 'tell me about this novel by Toni Morrison and its mother figure', NOW), '');
+assert.ok(renderMindBlockFrom(prosecutor, 'what does the prosecutor do as a boundary in a family', NOW).includes('immune organ'));
+ok('the prosecutor comes back only when he is talking about it');
+
+// The harvest writes only his thinking, never a rule.
+assert.ok(isHisThinking({ kind: 'vision', text: 'Power always replicates the wound that made it.' }), 'an idea may say always');
+assert.ok(!isHisThinking({ kind: 'taste', text: 'He loves poetic, lyrical writing.' }), 'a taste is not his thinking');
+assert.ok(!isHisThinking({ kind: 'decision', text: 'He intends to re-value the prosecutor role.' }));
+assert.ok(!isHisThinking({ kind: 'about', text: 'Answers should use a poetic tone from now on.' }), 'an order is never saved');
+ok('the harvest keeps ideas and drops rules');
 
 // ─── the harvest's four moves ────────────────────────────────────────────────
 //

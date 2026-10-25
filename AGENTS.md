@@ -305,6 +305,11 @@ and must not be written back into the Room's prompt. Code: `ROOM_LINE` and `room
 `services/conversations.js`. The two memory blocks that ride along say what he asked and what
 he is drawn to, never "follow", "outrank" or "never force" (2026-09-26).
 
+**The harvested memory follows the same principle (2026-10-24).** It stays automatic, but it
+keeps only what he thinks, from his own words — never how to answer him, never the answer's
+ideas filed as his — and a fact rides into any prompt only when he is on its subject, like
+Teach. Code: `isHisThinking` and `renderMindBlockFrom` in `services/mind.js`.
+
 **Where the rules kept hiding (audit 2026-09-30 — he still preferred a fresh model).** Five
 back doors, all closed; do not reopen any of them:
 - **The Mac's own Claude setup.** Room answers on either Claude account run through the

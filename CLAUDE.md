@@ -162,10 +162,13 @@ grow a second lane.
 forward with no action from Antoine. Three things make that memory reach a coding
 session too:
 
-- **Both roles are read.** The harvest used to see only his messages, which threw away
-  most of the thinking in a thread of few questions and long answers. It now reads the
-  answers as well (cut to 2000 chars each) and runs after **three** of his messages, not
-  eight — a whole conversation used to end below the old watermark and harvest nothing.
+- **Only his thinking is kept (2026-10-24).** The harvest still shows the answers so the
+  model understands his replies, and still reads analogies from them, but a memory must
+  cite one of HIS turns and be a `vision`/`about`/`person` fact — the code drops the rest
+  (`isHisThinking`). Reading the answers as his had made a loop: the Room's prosecutor
+  became "his" fact, then rode into every later prompt. Runs after **three** of his messages.
+- **Memory rides only on its subject**, Teach's rule: `renderMindBlockFrom` sends nothing
+  without at least two shared words, and never the taste/style/decision/project kinds.
 - **`vision` is its own kind.** The paradigm — what the platform is, the mechanisms, what
   counts as an entity — is filed apart from his preferences, and the prompt insists on a
   `detail` field so the reasoning survives and not just the headline.
