@@ -41,6 +41,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Redlining as civic self-dissociation — side talk of Comparative politics across structural scales — notes/redlining-as-civic-self-dissociation-side-talk-of-comparative-politics-across-st.md
 - Note: Relational Dynamics Reduced to Fundamental Polarity — notes/relational-dynamics-reduced-to-fundamental-polarity.md
 - Note: Repeated Single-Word Requests Trigger Model Rate Limit Errors — notes/repeated-single-word-requests-trigger-model-rate-limit-errors.md
+- Note: Software's ontology: grammar as being — notes/software-s-ontology-grammar-as-being.md
 - Note: State Experiments in Constitutional Decision‑Making — notes/state-experiments-in-constitutional-decision-making.md
 - Note: Suits law firm loyalty betrayals — side talk of Comparative politics across structural scales — notes/suits-law-firm-loyalty-betrayals-side-talk-of-comparative-politics-across-struct.md
 - Note: Suits: Law as Adversarial Sport — notes/suits-law-as-adversarial-sport.md
