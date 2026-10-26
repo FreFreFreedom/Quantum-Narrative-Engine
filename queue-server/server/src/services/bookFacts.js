@@ -871,6 +871,17 @@ export async function bookFactsFor(owner, items = []) {
   return out;
 }
 
+// "What it is" for a book the Library does not hold (the prize cards): the same
+// writer and the same cache as a Library card, so every card reads alike.
+export async function aboutFor(title, creator, year = '') {
+  if (!db) return '';
+  const row = rowOf(title, creator);
+  if (row?.about) return row.about;
+  const about = await writeAbout({ kind: 'book', title, creator: personName(creator), year: row?.year || year, source: row?.blurb || '' });
+  if (about && row) { try { db.prepare('UPDATE book_facts SET about=? WHERE key=?').run(about, keyOf(title, creator)); } catch (err) { /* next time */ } }
+  return about;
+}
+
 // What is already known about a book, without asking any catalogue.
 export function cachedBookFacts(title, creator) {
   if (!db) return null;

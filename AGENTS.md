@@ -518,6 +518,15 @@ Written after a UI pass Antoine asked for in his own words: "intelligent, elegan
 not taking too much space for nothing". These are the rules that pass produced, and
 they hold for every view, not only the ones it touched.
 
+**Coherence: a new kind of thing gets everything its siblings already have (2026-10-26).**
+When something new is added — a new source of books, a new panel, a new prize list — it
+must carry every part the existing version of that thing carries, through the same code:
+a book card opened from the Pulitzer or Nobel panel shows "What it is" exactly as a Library
+card does, written by the same writer (`bookFacts.writeAbout`) into the same cache. Check
+the existing card/row/panel field by field before calling the new one done. Broken once:
+prize cards shipped with stars and a cover but no description, and a pill reading
+"Winner · Fiction" that never said of which prize.
+
 **One design everywhere: the Room is the source (2026-10-19).** The app, the browser
 extension (`~/edge-extensions/amazon-author-youtube`) and the Mac side (Hammerspoon:
 dictionary card, PDF chapter rail) are one product. A control that exists in the Room is

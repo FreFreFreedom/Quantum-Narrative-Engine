@@ -20923,7 +20923,9 @@ function pzPop(e) {
   const w = { kind: 'book', title: e.t, creator: e.a || '', year: String(e.y) };
   const f = pzFacts[e.t + '|' + e.a] || {};
   const src = f.poster || roomMediaArtCache.get(roomMediaArtKey(w)) || '';
-  const prize = '<span class="pz-prize">' + (pzPrizeOf(e) === 'n' ? 'Nobel' : e.w ? '★ Winner' : 'Finalist') + ' · ' + qEsc(pzCatName(e.c)) + ' · ' + e.y + '</span>';
+  // The prize named in full (his ask, 2026-10-26: "Winner · Fiction" did not say of what).
+  const prize = '<span class="pz-prize">' + (pzPrizeOf(e) === 'n' ? 'Nobel Prize in ' + qEsc(pzCatName(e.c))
+    : (e.w ? '★ Pulitzer Prize for ' : 'Pulitzer finalist · ') + qEsc(pzCatName(e.c))) + ' · ' + e.y + '</span>';
   const about = (e.n ? '<div class="shelf-note"><h6>' + (e.w ? 'Why it won' : 'The jury') + '</h6><p>' + qEsc(e.n) + '</p></div>' : '')
     + (f.overview ? '<div class="shelf-note"><h6>What it is</h6><p>' + qEsc(libForty(f.overview)) + '</p></div>'
       : (f.done || e.c === 'music' ? '' : waitHtml('searching', 'Looking it up', 'p', 'shelf-note-wait')));

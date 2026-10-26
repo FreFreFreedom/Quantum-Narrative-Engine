@@ -176,14 +176,17 @@ export function conversationsRoutes() {
   }));
 
   // A book card for a book the Library does not hold yet (the Pulitzer panel):
-  // the catalogue facts and the Amazon stars, no model.
+  // the catalogue facts, the Amazon stars, and "What it is" written as on a Library card.
   router.get('/book-facts', asyncHandler(async (req, res) => {
     const owner = req.user?.id || 'antoine';
     const it = { id: 'x', kind: 'book', title: String(req.query.title || '').slice(0, 300), creator: String(req.query.creator || '').slice(0, 200), year: String(req.query.year || '').slice(0, 8) };
     if (!it.title.trim()) return res.status(400).json({ error: 'title required' });
     const f = (await bookFacts.bookFactsFor(owner, [it])).x || {};
-    const st = f.stars ? null : bookFacts.starsFor(f.fullTitle || it.title) || await bookFacts.amazonStarsFor(f.fullTitle || it.title, it.creator, f.isbn).catch(() => null);
-    res.json({ ...f, ...(st ? { stars: st.stars, starCount: st.count } : {}) });
+    const [st, about] = await Promise.all([
+      f.stars ? null : bookFacts.starsFor(f.fullTitle || it.title) || bookFacts.amazonStarsFor(f.fullTitle || it.title, it.creator, f.isbn).catch(() => null),
+      f.overview ? '' : bookFacts.aboutFor(it.title, it.creator, it.year).catch(() => ''),
+    ]);
+    res.json({ ...f, ...(about ? { overview: about } : {}), ...(st ? { stars: st.stars, starCount: st.count } : {}) });
   }));
 
   // The film/book card in a Room answer: the catalogue facts plus a 75-word line
