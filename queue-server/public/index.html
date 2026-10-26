@@ -37150,13 +37150,24 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp') return;
     var toEnd = ev.key === 'ArrowDown' && ev.shiftKey && !ev.altKey && (ev.metaKey || ev.ctrlKey);
     var step = ev.altKey && !ev.shiftKey && !ev.metaKey && !ev.ctrlKey;
-    if (!toEnd && !step) return;
+    // Plain ⌘↓ / ⌘↑: the end or the top of the chat, wherever the focus is (2026-10-26:
+    // left to the browser, it did nothing unless the chat itself had focus). A box he
+    // is writing in keeps the keys for moving through his own text.
+    var plain = (ev.metaKey || ev.ctrlKey) && !ev.shiftKey && !ev.altKey;
+    if (plain) {
+      var ed = ev.target && ev.target.closest && ev.target.closest('input, textarea, [contenteditable="true"], [contenteditable=""]');
+      if (ed && String(ed.value != null ? ed.value : ed.textContent || '').trim()) return;
+    }
+    var toTop = plain && ev.key === 'ArrowUp';
+    if (plain && ev.key === 'ArrowDown') toEnd = true;
+    if (!toEnd && !toTop && !step) return;
     var shown = function(id){ var h = document.getElementById(id), l = h && h.querySelector('.se-log'); return l && l.offsetParent ? l : null; };
     var log = (seLastChat && shown(seLastChat)) || shown('roomConvo') || shown('roomSideEmbed');
     if (!log) return;
     ev.preventDefault();
     var end = function(){ log._detached = 0; log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' }); };
     if (toEnd) return end();
+    if (toTop) { log._detached = 1; return log.scrollTo({ top: 0, behavior: 'smooth' }); }
     var lt = log.getBoundingClientRect().top, base = log._stepTo != null && Date.now() - log._stepAt < 700 ? log._stepTo : log.scrollTop;
     var answers = Array.prototype.filter.call(log.querySelectorAll('.se-turn'), function(t){ return !t.classList.contains('you') && !t.parentElement.closest('.se-turn'); });
     var tops = answers.map(function(t){ return Math.round(log.scrollTop + t.getBoundingClientRect().top - lt - 8); });
