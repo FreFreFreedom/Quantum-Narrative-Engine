@@ -3356,6 +3356,11 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-side-peek-body { flex:1; min-height:0; overflow:auto; padding:10px 12px 16px; }
 .room-side-peek-body p { margin:0 0 10px; font-size:13px; line-height:1.5; }
 .room-side-peek-body p.me { color:var(--c-ink); opacity:.75; }
+.room-side-rib { padding-top:32px; }
+.room-side-ribx { position:absolute; top:6px; left:50%; width:20px; height:20px; margin-left:-10px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; font:normal 11px/1 var(--font-ui); color:var(--c-ink-4); opacity:0; transition:opacity var(--t-fast) var(--ease); }
+.room-side-rib:hover .room-side-ribx { opacity:1; }
+.room-side-ribx:hover { color:var(--c-kept-echo, var(--c-accent)); background:var(--c-hover-wash, rgba(255,255,255,.08)); }
 .room-side-rib:hover { background:color-mix(in srgb, var(--c-kept-echo, var(--c-accent)) 10%, transparent); }
 .room-side-rib span { writing-mode:vertical-rl; transform:rotate(180deg); max-height:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
   font:500 10.5px/1 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-4); }
@@ -18230,7 +18235,7 @@ function renderRoomSide() {
       if (!s) return '';
       const name = roomSideName(s);
       return '<button type="button" class="room-side-rib' + (deeper ? ' deeper' : '') + '" data-side-rib="' + qEscAttr(id) + '"'
-        + ' title="' + qEscAttr(name) + '"><span>' + qEsc(name) + '</span></button>';
+        + ' title="' + qEscAttr(name) + '"><i class="room-side-ribx" role="button" title="Close" aria-label="Close">✕</i><span>' + qEsc(name) + '</span></button>';
     };
     html += '<div class="room-side-stack">'
       + trail.slice(0, at).map(id => rib(id, false)).join('')
@@ -18293,7 +18298,18 @@ function renderRoomSide() {
     setTimeout(() => { renameBox.focus(); renameBox.select(); }, 0);
   }
   host.querySelectorAll('[data-side-rib]').forEach(b => {
-    b.onclick = () => { roomPeekClose(); roomSideOpen(b.getAttribute('data-side-rib')); };
+    b.onclick = (ev) => {
+      roomPeekClose();
+      // ✕ on a folded talk takes it off the spine; the talk itself is kept (2026-10-26).
+      if (ev.target.closest('.room-side-ribx')) {
+        ev.stopPropagation();
+        const id = b.getAttribute('data-side-rib');
+        roomSideTrail = roomSideTrail.filter(x => x !== id);
+        renderRoomSide();
+        return;
+      }
+      roomSideOpen(b.getAttribute('data-side-rib'));
+    };
     roomRibDwell(b, () => roomRibPeek(b, b.getAttribute('data-side-rib')));
     b.addEventListener('mouseleave', (ev) => {
       const to = ev.relatedTarget;
