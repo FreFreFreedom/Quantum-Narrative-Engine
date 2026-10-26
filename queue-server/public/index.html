@@ -2589,6 +2589,9 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .room-threads.collapsed.peek { position:absolute; top:0; left:34px; bottom:0; z-index:var(--z-panel);
   width:var(--threads-w, 300px); min-width:0; max-width:92vw; padding:14px;
   border-right-color:var(--c-border); border-top:1px solid var(--c-border); box-shadow:var(--sh-md); }
+/* With the Room folded, its rib stands where the list would start and sits above it:
+   the list starts after the rib, or every name loses its first letters (2026-10-26). */
+.ws-room.room-folded > .room-threads.collapsed.peek { left:68px; }
 .room-cards.collapsed.peek { position:absolute; top:var(--room-topbar, 0px); right:0; bottom:0; z-index:var(--z-panel);
   width:var(--cards-w, 290px); min-width:0; max-width:92vw; padding:14px;
   border-left-color:var(--c-border); border-top:1px solid var(--c-border); box-shadow:var(--sh-md); }
@@ -4090,8 +4093,10 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 #roomInterests > .pz-side { position:fixed; top:0; right:0; bottom:0; width:var(--pz-w, 440px); z-index:41; margin:0; padding:0;
   display:flex; flex-direction:column; background:var(--c-bg); border-left:1px solid rgba(217,184,119,.35); box-shadow:-20px 0 60px rgba(0,0,0,.35); }
 #roomInterests:not(.is-active) > .pz-side { display:none; }
-/* In the column, the panel opens beside it rather than over it (his ask, 2026-10-23). */
-#roomInterests:not(.is-full) > .pz-side { right:auto; left:var(--pz-left, 0px); border-right:1px solid rgba(217,184,119,.35); }
+/* In the column, the prizes take the Library's place under its bar: one window, never
+   two (his ask, 2026-10-26 — it used to open beside the column). */
+#roomInterests:not(.is-full) > .pz-side { right:auto; left:var(--pz-left, 0px); top:var(--pz-top, 0px); bottom:var(--pz-bottom, 0px); border:0; box-shadow:none; }
+#roomInterests:not(.is-full).pz-on .room-shelf > :not(.lib-bar), #roomInterests:not(.is-full).pz-on > .interest-results { visibility:hidden; }
 .lib-pz { color:#d9b877; }
 .lib-pz svg { width:11px; height:14px; }
 .lib-pz.on svg path { fill:#141a26; }
@@ -4128,6 +4133,8 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .pz-card.is-fav .pz-fav { color:#c9a14a; }
 .pz-card .libx-add { width:24px; height:24px; font-size:14px; right:4px; top:4px; }
 .pz-over { position:absolute; inset:0; z-index:3; animation:fmcnsFade .2s ease both; }
+.pz-over .shelf-panel-head [data-close] { width:32px; height:32px; font-size:14px; }
+.pz-over .shelf-panel-head.is-pop .bk-out { right:54px; }
 .pz-over > .shelf-panel { position:absolute; inset:0; margin:0; overflow:auto; overscroll-behavior:contain; isolation:isolate; background:var(--c-surface); border:0; border-radius:0; }
 .pz-prize { display:inline-block; margin:8px 0 2px; padding:3px 10px; border-radius:999px; background:#d9b877; color:#141a26; font:600 10.5px var(--font-ui); letter-spacing:.1em; text-transform:uppercase; }
 .pz-acts { justify-content:center; gap:8px; }
@@ -20835,12 +20842,14 @@ function pzSave() {
 }
 const pzW = () => Math.round(libFull ? Math.min(900, Math.max(560, innerWidth * 0.5)) : Math.min(480, Math.max(380, innerWidth * 0.3)));
 const pzShown = () => !!libxSrc.pulitzer;
-// Beside the column: on its left when there is room, else on its right.
+// In the column's own place, under its bar, so the prizes replace the Library.
 function pzPlace(host) {
   if (libFull || !pzShown()) return;
-  const r = host.getBoundingClientRect(), w = pzW();
-  host.style.setProperty('--pz-w', w + 'px');
-  host.style.setProperty('--pz-left', (r.left >= w + 8 ? r.left - w - 8 : Math.min(r.right + 8, innerWidth - w)) + 'px');
+  const r = host.getBoundingClientRect(), bar = host.querySelector('.lib-bar');
+  host.style.setProperty('--pz-w', r.width + 'px');
+  host.style.setProperty('--pz-left', r.left + 'px');
+  host.style.setProperty('--pz-top', (bar ? bar.getBoundingClientRect().bottom : r.top) + 'px');
+  host.style.setProperty('--pz-bottom', Math.max(0, innerHeight - r.bottom) + 'px');
 }
 function pzLoad() {
   if (pzData || pzAsk) return;
@@ -20933,7 +20942,8 @@ function pzPop(e) {
   const kin = pzData.filter((o) => o !== e && o.y === e.y && o.c === e.c);
   return '<div class="pz-over"><div class="shelf-panel is-pop">'
     + libPopHead(src, f.fullTitle || e.t, e.a || '', prize, e.c === 'music' ? '' : bookOutMenu(bookLinks(w, f)), libStatStrip(f.stars, f.starCount, f.pages, f.year))
-    + '<div class="bk-pane">' + about + '</div>'
+    // About and Contents, the Library card's own two tabs (coherence, 2026-10-26).
+    + bookTabs(about, f.done && e.c !== 'music' ? libContentsMarkup(e.t, e.a || '', f.isbn || '', true) : '')
     + (e.c === 'music' ? '' : '<div class="shelf-acts pz-acts" data-pz="' + pzData.indexOf(e) + '">'
       + '<button type="button" class="pz-big' + (e.k ? ' in' : '') + '" data-pz-add>' + (e.k ? '✓ In the Library' : '＋ Add to the Library') + '</button>'
       + '<button type="button" class="pz-big is-ghost" data-pz-fav aria-pressed="' + fav + '">' + (fav ? '★' : '☆') + '</button></div>')
@@ -21215,6 +21225,7 @@ async function renderInterestLibrary(opts) {
   const fullBtn = host.querySelector('[data-lib-full]');
   if (fullBtn) fullBtn.onclick = () => libxSetFull(!libFull);
   if (libFull) libxLoadOut(host, cols);
+  host.classList.toggle('pz-on', pzShown());
   if (pzShown()) { pzLoad(); if (pzData) pzWire(host); pzPlace(host); }
   const pzTog = host.querySelector('[data-pz-tog]');
   if (pzTog) pzTog.onclick = () => { libxSrc.pulitzer = !libxSrc.pulitzer; pzOpen = null; libxSave(); renderInterestLibrary({ quiet: true }); };
