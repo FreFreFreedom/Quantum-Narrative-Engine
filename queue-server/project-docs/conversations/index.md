@@ -4,11 +4,11 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Cult leaders weaponizing anti-technology purity myths — conversations/cult-leaders-weaponizing-anti-technology-purity-myths-74ec82e7.md
 - Ontological warfare and the evolving substrate — conversations/ontological-warfare-and-the-evolving-substrate-b63a4169.md
+- Psychiatric administrators as unsung institutional wardens — conversations/psychiatric-administrators-as-unsung-institutional-wardens-a969a91c.md
+- Cult leaders weaponizing anti-technology purity myths — conversations/cult-leaders-weaponizing-anti-technology-purity-myths-74ec82e7.md
 - Prison and Revolution: Media Dissecting Institutional Violence — conversations/prison-and-revolution-media-dissecting-institutional-violence-565a6e84.md
 - Comparative politics across structural scales — conversations/comparative-politics-across-structural-scales-400c0cb3.md
-- Biopolitics and the George Marshall Archetype — conversations/biopolitics-and-the-george-marshall-archetype-a969a91c.md
 - American healthcare books: diagnosis and future — conversations/american-healthcare-books-diagnosis-and-future-8c4c0f76.md
 - Mapping Psychological Walls Across Cultures and Media — conversations/mapping-psychological-walls-across-cultures-and-media-30b86c18.md
 - State Experiments in Constitutional Decision‑Making — conversations/state-experiments-in-constitutional-decision-making-cf34af05.md
