@@ -3055,6 +3055,8 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    capitals over one gold rule, thin lines between rows, no walls between columns. */
 .se-body.md th, .se-body.md td { border:0; padding:.75em 1.6em .75em 0; text-align:left; vertical-align:top; }
 .se-body.md th:last-child, .se-body.md td:last-child { padding-right:0; }
+/* Break between words only: the message column's own break-anywhere split "CIVILIZATION" mid-word. */
+.se-body.md th, .se-body.md td { word-break:normal; overflow-wrap:normal; hyphens:manual; min-width:7em; }
 .se-body.md th { padding-top:0; padding-bottom:.7em; border-bottom:1px solid var(--c-accent); background:none;
   font:500 .62em/1.4 'Cinzel', var(--font-read); letter-spacing:.2em; text-transform:uppercase; color:var(--c-accent); }
 .se-body.md td { border-bottom:1px solid var(--c-border); color:var(--c-ink-3); font-variant-numeric:tabular-nums; }
@@ -3067,7 +3069,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
   letter-spacing:.16em; text-transform:uppercase; color:var(--c-accent); }
 .se-body.md table.se-ladder td:first-child::before { content:''; position:absolute; left:.3em; top:.9em; width:.5em; height:.5em;
   transform:rotate(45deg); background:var(--c-accent); z-index:1; }
-.se-body.md table.se-ladder td:first-child::after { content:''; position:absolute; left:.58em; top:0; bottom:0; width:1px; background:var(--c-border); }
+.se-body.md table.se-ladder td:first-child::after { content:''; position:absolute; left:.58em; top:0; bottom:0; width:1px; background:var(--c-accent); opacity:.4; }
 .se-body.md table.se-ladder tbody tr:first-child td:first-child::after { top:.9em; }
 .se-body.md table.se-ladder tr:last-child td:first-child::after { bottom:auto; height:.9em; }
 .se-body.md img { max-width:100%; height:auto; border-radius:var(--r-sm); }
