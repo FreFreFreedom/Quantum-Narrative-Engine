@@ -32464,8 +32464,17 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // where the drawing put a border between them.
   var SE_GRID_EDGE = /^\s*[+┌├└╔╠╚][-=+:─-╿\s]*[+┐┤┘╗╣╝]\s*$/;
   var SE_GRID_ROW = /^\s*[|│║].*[|│║]\s*$/;
+  // A markdown separator row ("| --- | --- |") inside a drawing is a border too.
+  var SE_GRID_SEP = /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/;
   function seGridToMd(lines){
-    lines = lines.filter(function(l){ return l.trim(); });
+    lines = lines.filter(function(l){ return l.trim(); }).map(function(l){ return SE_GRID_SEP.test(l) ? '+---+' : l; });
+    // A title drawn over the table — one or two lines of words, maybe boxed by a
+    // border — is kept as the table's title rather than spoiling the drawing.
+    var title = [];
+    while (lines.length && title.length < 3 && !SE_GRID_ROW.test(lines[0])) {
+      if (!SE_GRID_EDGE.test(lines[0])) { if (lines[0].trim().length > 90) return null; title.push(lines[0].trim()); }
+      lines.shift();
+    }
     if (lines.length < 3 || !lines.every(function(l){ return SE_GRID_EDGE.test(l) || SE_GRID_ROW.test(l); })) return null;
     var groups = [], cur = null, edges = 0;
     lines.forEach(function(l){
@@ -32489,7 +32498,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var cell = function(c){ return String(c || '').replace(/&amp;/g, '&').replace(/\|/g, '\\|'); };
     var line = function(r){ var out = []; for (var i = 0; i < cols; i++) out.push(cell(r[i])); return '| ' + out.join(' | ') + ' |'; };
     var sep = []; for (var j = 0; j < cols; j++) sep.push('---');
-    return [line(rows[0]), '| ' + sep.join(' | ') + ' |'].concat(rows.slice(1).map(line)).join('\n');
+    var table = [line(rows[0]), '| ' + sep.join(' | ') + ' |'].concat(rows.slice(1).map(line)).join('\n');
+    return title.length ? '**' + title.join(' — ').replace(/\*/g, '') + '**\n\n' + table : table;
   }
   function seGridTables(t){
     t = t.replace(/```[^\n]*\n([\s\S]*?)```/g, function(all, body){
@@ -32559,6 +32569,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           return /[.?!]$/.test(title) ? all : '## ' + title + '\n';
         });
         var out = seScaleLadders(seTimelines(marked.parse(safe, { breaks: false, gfm: true })));
+        // Code is escaped a second time by marked, so "<" and "&" in a drawing were
+        // printed as "&lt;" and "&amp;". Undo the second pass, inside code only.
+        out = out.replace(/(<code[^>]*>)([\s\S]*?)(<\/code>)/g, function(all, a, body, b){ return a + body.replace(/&amp;(lt|amp|gt|quot|#39);/g, '&$1;') + b; });
         if (cacheKey) {
           if (mdCache.size > 300) mdCache.clear();   // a whole conversation fits; a year of them does not
           mdCache.set(cacheKey, { src: raw, html: out });
