@@ -771,6 +771,11 @@ export function conversationsRoutes() {
     res.json(out);
   });
 
+  // GET /api/convos/:id/titles — every name the thread has carried, newest first.
+  router.get('/:id/titles', (req, res) => {
+    res.json({ titles: convos.listConvoTitles(req.params.id) });
+  });
+
   // POST /api/convos/:id/rename — a roaming thread earns its name as it goes.
   router.post('/:id/rename', (req, res) => {
     const out = convos.renameConvo(req.params.id, req.body?.title);

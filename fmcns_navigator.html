@@ -3104,6 +3104,14 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .umenu-item.has-icon .umenu-ic { flex:none; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 .umenu-item.has-icon .umenu-label { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .umenu-sep { height:1px; margin:4px 6px; background:var(--c-border); }
+.umenu.title-peek { min-width:260px; max-width:420px; }
+.title-peek-row { display:flex; align-items:baseline; gap:14px; width:100%; padding:6px 10px 6px 22px; border:0; border-radius:6px;
+  background:none; color:var(--c-ink-3); font:15px/1.3 var(--font-read); text-align:left; cursor:pointer; position:relative; }
+.title-peek-row:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.title-peek-row.is-now { color:var(--c-ink); cursor:default; }
+.title-peek-row.is-now::before { content:''; position:absolute; left:10px; top:50%; width:5px; height:5px; margin-top:-2px; border-radius:50%; background:var(--c-accent); }
+.title-peek-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.title-peek-when { margin-left:auto; flex:none; font:11px/1 var(--font-ui, inherit); color:var(--c-ink-5); }
 .umenu-head { padding:7px 10px 3px 22px; font:500 10.5px/1 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); }
 
 /* The look picker: fixed dark glass whatever the look, so every preview reads true. */
@@ -16431,7 +16439,7 @@ function openRoomRowMenu(btn, id) {
   if (!t) return;
   openMenu(btn, [
     { label: 'Rename', icon: 'pencil', on: () => { roomSelect(id); roomBeginRename(); } },
-    { label: 'Auto-title', icon: 'spark', on: () => roomRetitleThread(id) },
+    { label: 'Auto-title', icon: 'spark', hover: (row) => openTitlePeek(row, id), on: () => roomRetitleThread(id) },
     { label: Number(t.starred) ? 'Unstar' : 'Star', icon: 'bookmark', on: () => roomToggleStar(id) },
     { sep: true },
     { label: 'Delete this thread', danger: true, on: () => roomDeleteThread(id) },
@@ -16767,7 +16775,7 @@ function openRoomMoreMenu(btn) {
   // and the recap costs more than it saves. A control that cannot act is not shown.
   openMenu(btn, [
     { label: 'Rename', icon: 'pencil', on: roomBeginRename },
-    { label: 'Auto-title', icon: 'spark', on: () => roomRetitleThread(roomSel) },
+    { label: 'Auto-title', icon: 'spark', hover: (row) => openTitlePeek(row, roomSel), on: () => roomRetitleThread(roomSel) },
     { label: Number(t.starred) ? 'Unstar' : 'Star', icon: 'bookmark',
       on: () => roomToggleStar(roomSel) },
     (turns > 0 || turns >= 4) ? { sep: true } : null,
@@ -16787,6 +16795,70 @@ function openRoomMoreMenu(btn) {
 // Name it by what it is about. The automatic pass already runs after the first
 // exchange and again at the fifth, but only while the name is still the machine's
 // — so this is how a thread he renamed once, or an old one, gets a real name.
+// Every name the thread has carried, beside the menu while Auto-title is hovered
+// (his ask, 2026-10-28) — the current one on top with a gold dot. A click on an
+// older one gives it back, as a name he chose. One name only: nothing to show.
+let titlePeek = null, titlePeekTimer = null;
+function killTitlePeek() {
+  if (titlePeekTimer) { clearTimeout(titlePeekTimer); titlePeekTimer = null; }
+  if (titlePeek && titlePeek.parentNode) titlePeek.parentNode.removeChild(titlePeek);
+  titlePeek = null;
+}
+function scheduleTitlePeekClose() {
+  if (titlePeekTimer) clearTimeout(titlePeekTimer);
+  titlePeekTimer = setTimeout(() => {
+    titlePeekTimer = null;
+    if (titlePeek && !titlePeek.matches(':hover')) killTitlePeek();
+  }, 180);
+}
+async function openTitlePeek(row, id, after) {
+  if (!id) return;
+  if (titlePeekTimer) { clearTimeout(titlePeekTimer); titlePeekTimer = null; }
+  if (titlePeek && titlePeek.dataset.id === id) return;
+  killTitlePeek();
+  let titles = [];
+  try { titles = (await api('/api/convos/' + encodeURIComponent(id) + '/titles')).titles || []; } catch (e) { return; }
+  if (titles.length < 2 || !row.isConnected || !row.matches(':hover')) return;
+  const el = document.createElement('div');
+  el.className = 'umenu title-peek is-shown';
+  el.dataset.id = id;
+  const day = (iso) => {
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    return d.toDateString() === new Date().toDateString()
+      ? d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+      : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+  titles.forEach((t, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'title-peek-row' + (i === 0 ? ' is-now' : '');
+    const name = document.createElement('span'); name.className = 'title-peek-name'; name.textContent = t.title;
+    const when = document.createElement('span'); when.className = 'title-peek-when'; when.textContent = i === 0 ? 'now' : day(t.created_at);
+    b.append(name, when);
+    b.title = t.title;
+    b.onclick = async (ev) => {
+      ev.stopPropagation(); closeMenu();
+      if (i === 0) return;
+      try { await apiWrite('/api/convos/' + encodeURIComponent(id) + '/rename', 'POST', { title: t.title }); } catch (e) {}
+      if (after) after(); else loadRoom();
+    };
+    el.appendChild(b);
+  });
+  el.onmousedown = (ev) => ev.stopPropagation();
+  el.onmouseenter = () => { if (titlePeekTimer) { clearTimeout(titlePeekTimer); titlePeekTimer = null; } };
+  el.onmouseleave = scheduleTitlePeekClose;
+  document.body.appendChild(el);
+  titlePeek = el;
+  // Beside the menu, on whichever side has room — never over the menu itself.
+  const m = (openMenuNow && openMenuNow.el ? openMenuNow.el : row).getBoundingClientRect();
+  const r = row.getBoundingClientRect();
+  const w = el.offsetWidth, h = el.offsetHeight;
+  const left = m.left - w - 4 >= 6 ? m.left - w - 4 : Math.min(window.innerWidth - w - 6, m.right + 4);
+  el.style.left = left + 'px';
+  el.style.top = Math.max(6, Math.min(window.innerHeight - h - 6, r.top - 5)) + 'px';
+}
+
 async function roomRetitleThread(id) {
   if (!id) return;
   const btn = document.getElementById('roomTitleBtn');
@@ -18045,7 +18117,7 @@ function openRoomSideMenu(anchor) {
   if (open) {
     items.push({ sep: true },
       { label: 'Rename', icon: 'pencil', on: () => { roomSideRenaming = true; renderRoomSide(); } },
-      { label: 'Auto-title', icon: 'spark', on: async () => {
+      { label: 'Auto-title', icon: 'spark', hover: (row) => openTitlePeek(row, open.id, loadRoomSides), on: async () => {
         try { await apiWrite('/api/convos/' + encodeURIComponent(open.id) + '/retitle', 'POST', {}); } catch (e) {}
         loadRoomSides();
       } },
@@ -23645,6 +23717,7 @@ function closeMenu() {
   const anchor = openMenuNow.anchor;
   const onClose = openMenuNow.onClose;
   openMenuNow = null;
+  killTitlePeek();
   if (el && el.parentNode) el.parentNode.removeChild(el);
   if (onClose) onClose();
   if (anchor) anchor.setAttribute('aria-expanded', 'false');
@@ -23679,7 +23752,7 @@ function openMenu(anchor, items, opts) {
     if (it.indent) b.style.paddingLeft = (22 + it.indent * 14) + 'px';
     if (it.hover) {
       b.addEventListener('mouseenter', () => it.hover(b));
-      b.addEventListener('mouseleave', () => { if (roomTypeMenu) scheduleRoomTypePeekClose(); });
+      b.addEventListener('mouseleave', () => { if (roomTypeMenu) scheduleRoomTypePeekClose(); if (titlePeek) scheduleTitlePeekClose(); });
     }
     if (it.disabled) b.disabled = true;
     // A row can carry its own ✕ at the end (the side talks, his ask 2026-10-11).

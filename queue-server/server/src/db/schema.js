@@ -1754,6 +1754,17 @@ export function initConversationsSchema(db) {
   // 1 while the title is the machine's, cleared the moment the owner renames.
   // Without it, re-titling a drifted conversation would overwrite a name he chose.
   try { db.exec(`ALTER TABLE convos ADD COLUMN title_auto INTEGER NOT NULL DEFAULT 0`); } catch {}
+  // Every name a conversation has carried, oldest first (his ask, 2026-10-28): the
+  // title menu's Auto-title row shows how the name moved as the talk moved.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS convo_titles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      convo_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_titles_convo ON convo_titles(convo_id, id)`); } catch {}
 
   // The memory watermark (plan "room-shared-memory"): how many of this
   // conversation's turns the fact-harvest job has already read, so it never

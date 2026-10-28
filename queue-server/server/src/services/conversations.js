@@ -245,7 +245,7 @@ function maybeAutoTitleConvo(convo) {
     ).get(convo.id);
     const title = generateTitleFromText(firstUser?.text);
     if (title) {
-      db.prepare(`UPDATE convos SET title=?, title_auto=1 WHERE id=?`).run(title, convo.id);
+      setTitle(convo.id, title, 'title_auto=1');
       broadcastAll('convos:updated', { convoId: convo.id });
     }
   }
@@ -353,7 +353,7 @@ async function writeSmartTitle(convoId) {
   // Read again: the whole point of the flag is that a rename during the call wins.
   const still = getConvo(convoId);
   if (!still || Number(still.title_auto) !== 1) return null;
-  db.prepare(`UPDATE convos SET title=?, title_auto=1 WHERE id=?`).run(title, convoId);
+  setTitle(convoId, title, 'title_auto=1');
   broadcastAll('convos:updated', { convoId });
   return title;
 }
@@ -390,6 +390,24 @@ export function cleanTitle(raw) {
 }
 
 // ─── Read paths ──────────────────────────────────────────────────────────────
+
+// The one way a conversation's title changes, so every name it carried is kept.
+// A thread from before the history existed gets its current name first, dated
+// when the thread began — otherwise the first change would lose it.
+function setTitle(convoId, title, extraSet) {
+  const was = db.prepare(`SELECT title, created_at FROM convos WHERE id=?`).get(convoId);
+  db.prepare(`UPDATE convos SET title=?, ${extraSet} WHERE id=?`).run(title, convoId);
+  if (!was || String(was.title || '') === String(title)) return;
+  const kept = db.prepare(`SELECT COUNT(*) AS n FROM convo_titles WHERE convo_id=?`).get(convoId)?.n || 0;
+  if (!kept && was.title) db.prepare(`INSERT INTO convo_titles (convo_id, title, created_at) VALUES (?,?,?)`).run(convoId, was.title, was.created_at);
+  db.prepare(`INSERT INTO convo_titles (convo_id, title) VALUES (?,?)`).run(convoId, title);
+}
+
+// Newest first, the current name on top.
+export function listConvoTitles(id) {
+  if (!db) return [];
+  return db.prepare(`SELECT title, created_at FROM convo_titles WHERE convo_id=? ORDER BY id DESC LIMIT 30`).all(id);
+}
 
 export function getConvo(id) {
   if (!db) return null;
@@ -1100,7 +1118,7 @@ export function renameConvo(id, title) {
   const name = String(title || '').trim().slice(0, 120);
   if (!name) return { error: 'empty' };
   // title_auto=0: he has named it, so no later pass may rename it again.
-  db.prepare(`UPDATE convos SET title=?, title_auto=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(name, id);
+  setTitle(id, name, `title_auto=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')`);
   broadcastAll('convos:updated', { convoId: id });
   return { ok: true, convo: getConvo(id) };
 }
