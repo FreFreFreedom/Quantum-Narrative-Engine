@@ -2872,6 +2872,10 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-add:hover { transform:scale(1.1); }
 .se-add.on { background:var(--c-kept-echo, #c9a45c); color:var(--c-bg, #151b27); cursor:default; font-size:13px; }
 .se-add.on:hover { transform:none; }
+/* The + inside a work's card (his ask, 2026-10-28): on the book's cover, beside the ✕ on a film's. */
+.k5-cover { position:relative; }
+.k5-cover .se-add { top:12px; right:12px; }
+.se-card > .se-add { top:14px; right:52px; }
 .se-cover.is-left { float:left; clear:both; margin-right:24px; }
 .se-cover-row { float:right; clear:both; width:min(260px, 46%); margin:6px 0 12px 24px; display:flex; flex-wrap:wrap; gap:10px; }
 .se-cover-row > .se-cover, .se-cover-row > .qne-wrap > .se-cover { float:none; clear:none; width:calc(50% - 5px); margin:0; }
@@ -37044,7 +37048,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       var bg = /^https:\/\//.test(cov) ? ' style="background-image:url(&quot;' + qEscAttr(cov) + '&quot;)"' : '';
       // His pick K5 (2026-10-11): the cover fills the card's left edge and the rest
       // stands beside it, so the reading starts without a scroll.
-      return '<div class="k5"><span class="bk-cover k5-cover" draggable="true" data-cover-kind="' + qEscAttr(kind) + '" data-cover-title="' + qEscAttr(d.coverTitle || '') + '" data-cover-creator="' + qEscAttr(who) + '" data-cover-year="' + qEscAttr(f.year || d.coverYear || '') + '" data-cover-episode=""' + bg + '></span><div class="k5-body">'
+      return '<div class="k5"><span class="bk-cover k5-cover" draggable="true" data-cover-kind="' + qEscAttr(kind) + '" data-cover-title="' + qEscAttr(d.coverTitle || '') + '" data-cover-creator="' + qEscAttr(who) + '" data-cover-year="' + qEscAttr(f.year || d.coverYear || '') + '" data-cover-episode=""' + bg + '>' + seAddMark({ kind: kind, title: d.coverTitle, creator: who, year: f.year || d.coverYear || '' }) + '</span><div class="k5-body">'
         + (f.fiction ? '<div class="se-card-band">' + qEsc(f.fiction) + (f.genre ? ' · ' + qEsc(f.genre) : '') + '</div>' : '')
         + '<div class="bk-head is-pop is-k5">'
         + '<div class="bk-id"><b class="se-card-title">' + qEsc(fullHead) + '</b>'
@@ -37057,6 +37061,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         + seCardScreen(f.screen, d) + '</div></div>';
     }
     var html = '<button type="button" class="se-card-x" data-card-close aria-label="Close">✕</button>'
+      + seAddMark({ kind: kind, title: d.coverTitle, creator: d.coverCreator || '', year: f.year || d.coverYear || '', episode: d.coverEpisode || '' })
       + '<b class="se-card-title">' + qEsc(libShortTitle(d.coverTitle)) + '</b>'
       + (d.coverEpisode ? '<div class="se-card-by">Episode · ' + qEsc(d.coverEpisode) + '</div>' : '')
       + (meta.length ? '<div class="se-card-meta">' + meta.map(qEsc).join(' · ') + '</div>' : '');
