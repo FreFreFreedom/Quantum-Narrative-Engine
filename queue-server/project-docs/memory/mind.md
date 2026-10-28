@@ -12,6 +12,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## About Antoine
 
+- He is personally learning how to build deterrence, move past uncritical non-reactivity, and establish self-defense in hostile environments. — He identifies as someone who used to practice non-reactivity in the face of bullying, but recognizes that in environments like prison and other hostile spaces, pretending nothing happened invites more harm. He is actively learning to establish boundaries and react to stop abuse when escape is impossible.
 - He wants to explore leadership across the full vertical axis from the ground level up to grand strategy. — Moving beyond domestic and parental scales to examine the complete spectrum of command—from the frontline soldier and trench leader up to the Eisenhower-scale supreme commander and the architectural warden.
 - He requested a deep, 1300-word essay on David Simon's 'Homicide', signaling a desire for immersive institutional ethnography over brief summaries. — When prompted to explore David Simon's work in detail, he asked for a 1300-word deep dive, reflecting his preference for comprehensive, unhurried examinations of systemic machinery rather than high-level overviews.
 - His name is Antoine. — The AI addressed him by name ('Antoine') during the conversation, establishing his identity as the sole user of the platform.
