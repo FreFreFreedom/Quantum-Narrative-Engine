@@ -32154,6 +32154,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             if(repaint) repaint();
             return;
           }
+          // The question itself never got saved: a deploy restarted the server as it
+          // was sent, and this waited twenty minutes for an answer nothing was writing
+          // (2026-10-28). The server saves his message within seconds of routing the
+          // turn, so two minutes without it means it is gone. Slash commands save no
+          // message of his, so they are left to the old wait.
+          var usersSaved = msgs.filter(function(m){ return m.role === 'user'; }).length;
+          var usersHad = e.msgs.slice(0, at === -1 ? e.msgs.length : at).filter(function(m){ return m.role === 'user'; }).length;
+          if(at !== -1 && usersSaved <= usersHad && Date.now() - waitedSince > 120000 && !/^\s*\//.test(sentMsg.text || '')){
+            e.msgs.splice(at, 1);
+            e.draft = sentMsg.quotes ? (sentMsg.body || '') : sentMsg.text; e.draftForce = true;
+            if(sentMsg.quotes) e.quotes = sentMsg.quotes.concat(e.quotes || []);
+            if(sentMsg.retryAttachments) e.pendingAttachments = sentMsg.retryAttachments;
+            e.note = 'Not received. Your message is back in the box.';
+            saveDraft(e);
+            if(repaint) repaint();
+            return;
+          }
           return tick();
         })
         .catch(function(){ return tick(); });
