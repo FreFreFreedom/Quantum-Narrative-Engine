@@ -3050,10 +3050,26 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 /* A table is the one thing allowed to be wider than the measure, in its own scroller,
    so the paragraphs around it never move. */
 .se-body.md table { display:block; width:max-content; max-width:100%; overflow-x:auto;
-  border-collapse:collapse; margin:.75em 0; font-size:var(--fs-base); font-family:var(--font-ui); }
-.se-body.md th, .se-body.md td { border:1px solid var(--c-border); padding:5px 9px; text-align:left; vertical-align:top; }
-.se-body.md th { background:var(--c-surface-2); font-weight:var(--fw-medium); color:var(--c-ink); }
-.se-body.md td { font-variant-numeric:tabular-nums; }
+  border-collapse:collapse; margin:1.4em 0; font-size:.86em; line-height:1.5; font-family:var(--font-read); }
+/* An open ledger, not a grid of boxes (2026-10-28): the column names in the Room's
+   capitals over one gold rule, thin lines between rows, no walls between columns. */
+.se-body.md th, .se-body.md td { border:0; padding:.75em 1.6em .75em 0; text-align:left; vertical-align:top; }
+.se-body.md th:last-child, .se-body.md td:last-child { padding-right:0; }
+.se-body.md th { padding-top:0; padding-bottom:.7em; border-bottom:1px solid var(--c-accent); background:none;
+  font:500 .62em/1.4 'Cinzel', var(--font-read); letter-spacing:.2em; text-transform:uppercase; color:var(--c-accent); }
+.se-body.md td { border-bottom:1px solid var(--c-border); color:var(--c-ink-3); font-variant-numeric:tabular-nums; }
+.se-body.md tr:last-child td { border-bottom:0; }
+.se-body.md td:first-child { color:var(--c-ink); font-weight:var(--fw-medium); }
+.se-body.md td code { white-space:normal; }
+/* The ladder: the scale column climbs one gold line, a diamond on each rung. */
+.se-body.md table.se-ladder td { border-bottom:0; padding-bottom:1.1em; }
+.se-body.md table.se-ladder td:first-child { position:relative; padding-left:1.9em; font:500 .74em/1.9 'Cinzel', var(--font-read);
+  letter-spacing:.16em; text-transform:uppercase; color:var(--c-accent); }
+.se-body.md table.se-ladder td:first-child::before { content:''; position:absolute; left:.3em; top:.9em; width:.5em; height:.5em;
+  transform:rotate(45deg); background:var(--c-accent); z-index:1; }
+.se-body.md table.se-ladder td:first-child::after { content:''; position:absolute; left:.58em; top:0; bottom:0; width:1px; background:var(--c-border); }
+.se-body.md table.se-ladder tbody tr:first-child td:first-child::after { top:.9em; }
+.se-body.md table.se-ladder tr:last-child td:first-child::after { bottom:auto; height:.9em; }
 .se-body.md img { max-width:100%; height:auto; border-radius:var(--r-sm); }
 /* The one popup menu. Anchored under its button by openMenu(), never wider than the
    window, and a rule above any destructive row so it cannot be hit by accident. */
@@ -32441,9 +32457,78 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     return t.replace(/\\(rightarrow|Rightarrow|leftarrow|Leftarrow|leftrightarrow|longrightarrow|implies|mapsto)\b/g, function(all, name){ return SE_SYM[name]; });
   }
 
+  // Some models draw a table out of characters — "+----+----+" borders and "|" walls,
+  // often inside a code block — and the page printed the drawing, in typewriter type,
+  // every wrapped cell on its own line (his complaint, 2026-10-28). Read the drawing
+  // back into a real table: a cell wrapped across lines is joined, the rows are split
+  // where the drawing put a border between them.
+  var SE_GRID_EDGE = /^\s*[+┌├└╔╠╚][-=+:─-╿\s]*[+┐┤┘╗╣╝]\s*$/;
+  var SE_GRID_ROW = /^\s*[|│║].*[|│║]\s*$/;
+  function seGridToMd(lines){
+    lines = lines.filter(function(l){ return l.trim(); });
+    if (lines.length < 3 || !lines.every(function(l){ return SE_GRID_EDGE.test(l) || SE_GRID_ROW.test(l); })) return null;
+    var groups = [], cur = null, edges = 0;
+    lines.forEach(function(l){
+      if (SE_GRID_EDGE.test(l)) { edges++; if (cur) { groups.push(cur); cur = null; } return; }
+      var cells = l.trim().replace(/^[|│║]|[|│║]$/g, '').split(/[|│║]/).map(function(c){ return c.trim(); });
+      (cur = cur || []).push(cells);
+    });
+    if (cur) groups.push(cur);
+    // Borders only around the header: then every line is its own row.
+    var interior = groups.length > 2 || (groups.length === 2 && groups[1].length === 1);
+    var rows = [];
+    groups.forEach(function(g, gi){
+      if (!interior && gi > 0) { g.forEach(function(r){ rows.push(r); }); return; }
+      var width = Math.max.apply(null, g.map(function(r){ return r.length; }));
+      var row = [];
+      for (var i = 0; i < width; i++) row.push(g.map(function(r){ return r[i] || ''; }).filter(Boolean).join(' '));
+      rows.push(row);
+    });
+    var cols = Math.max.apply(null, rows.map(function(r){ return r.length; }));
+    if (rows.length < 2 || cols < 2) return null;
+    var cell = function(c){ return String(c || '').replace(/&amp;/g, '&').replace(/\|/g, '\\|'); };
+    var line = function(r){ var out = []; for (var i = 0; i < cols; i++) out.push(cell(r[i])); return '| ' + out.join(' | ') + ' |'; };
+    var sep = []; for (var j = 0; j < cols; j++) sep.push('---');
+    return [line(rows[0]), '| ' + sep.join(' | ') + ' |'].concat(rows.slice(1).map(line)).join('\n');
+  }
+  function seGridTables(t){
+    t = t.replace(/```[^\n]*\n([\s\S]*?)```/g, function(all, body){
+      var md = seGridToMd(body.split('\n'));
+      return md ? '\n' + md + '\n' : all;
+    });
+    if (!/^\s*[+┌╔][-=─═]/m.test(t)) return t;
+    var lines = t.split('\n'), out = [], i = 0;
+    while (i < lines.length) {
+      if (SE_GRID_EDGE.test(lines[i]) || SE_GRID_ROW.test(lines[i])) {
+        var j = i;
+        while (j < lines.length && (SE_GRID_EDGE.test(lines[j]) || SE_GRID_ROW.test(lines[j]) || (!lines[j].trim() && j + 1 < lines.length && (SE_GRID_EDGE.test(lines[j + 1]) || SE_GRID_ROW.test(lines[j + 1]))))) j++;
+        var run = lines.slice(i, j);
+        var md = run.some(function(l){ return SE_GRID_EDGE.test(l); }) && seGridToMd(run);
+        if (md) { out.push('', md, ''); i = j; continue; }
+      }
+      out.push(lines[i]); i++;
+    }
+    return out.join('\n');
+  }
+  // A table whose rows are steps up the scales — individual, family, city, nation —
+  // is drawn as a ladder, the first column climbing a gold line, because that is
+  // what it is. Every other table stays a plain one.
+  var SE_SCALE_WORD = /^(?:\*\*|<strong>)?\s*(?:micro|meso|macro|mega|meta|nano|cell|cellular|molecular|atomic|organism|individual|person|personal|self|psyche|family|household|couple|group|tribe|clan|community|neighbou?rhood|local|city|urban|region|regional|state|nation|national|nation-state|country|empire|civili[sz]ation|society|societal|institution|institutional|enterprise|corporate|ecosystem|species|global|planetary|world|cosmic|cosmos|universe)\b/i;
+  function seScaleLadders(html){
+    return html.replace(/<table>([\s\S]*?)<\/table>/g, function(all, inner){
+      var head = (inner.match(/<th[^>]*>([\s\S]*?)<\/th>/) || [])[1] || '';
+      var firsts = []; inner.replace(/<tr>\s*<td[^>]*>([\s\S]*?)<\/td>/g, function(m, c){ firsts.push(c.replace(/<[^>]+>/g, '').trim()); return m; });
+      if (firsts.length < 3) return all;
+      var hits = firsts.filter(function(c){ return SE_SCALE_WORD.test(c); }).length;
+      var ladder = hits >= Math.ceil(firsts.length * 0.75) || (/\b(?:scale|level|layer)s?\b/i.test(head) && hits >= 2);
+      return ladder ? '<table class="se-ladder">' + inner + '</table>' : all;
+    });
+  }
+
   function fmtBody(text, asMarkdown, cacheKey){
     var raw = String(text == null ? '' : text);
     raw = seUnlatex(raw);
+    raw = seGridTables(raw);
     if (asMarkdown && typeof marked !== 'undefined' && marked.parse) {
       if (cacheKey) {
         var hit = mdCache.get(cacheKey);
@@ -32473,7 +32558,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         safe = safe.replace(/^[ \t]*\*\*([^*\n][^\n]{0,88}?)\*\*[ \t]*$/gm, function(all, title){
           return /[.?!]$/.test(title) ? all : '## ' + title + '\n';
         });
-        var out = seTimelines(marked.parse(safe, { breaks: false, gfm: true }));
+        var out = seScaleLadders(seTimelines(marked.parse(safe, { breaks: false, gfm: true })));
         if (cacheKey) {
           if (mdCache.size > 300) mdCache.clear();   // a whole conversation fits; a year of them does not
           mdCache.set(cacheKey, { src: raw, html: out });
