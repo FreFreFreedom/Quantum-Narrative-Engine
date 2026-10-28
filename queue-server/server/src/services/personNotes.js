@@ -10,6 +10,7 @@
 // no marks or no line, never a lost answer.
 
 import { generateText } from './ai/text.js';
+import { writerText } from './convoThinking.js';
 
 let db = null;
 export const KINDS = new Set(['real', 'fictional', 'myth']);
@@ -112,9 +113,10 @@ export async function personCard(convoId, { name = '', full = '', kind = 'real',
     .all(convoId).reverse().map((m) => (m.role === 'user' ? 'HIM: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1200)).join('\n\n');
   const spec = CARD[kind] || CARD.real;
   const what = spec.what(who, from);
-  const out = await generateText({
-    feature: 'summary', maxTokens: 800, label: 'room:person-card', timeoutMs: 30_000, maxAttempts: 2,
-    claudeLastResort: true, helperWaitMs: 60_000,
+  const out = await writerText({
+    // The fast writer, not the free chain: a card he just clicked waited up to two
+    // minutes while Gemini and two OpenCode models each timed out (2026-10-28).
+    feature: 'summary', maxTokens: 800, label: 'room:person-card', timeoutMs: 20_000,
     prompt: [
       `Write a short card about ${what}, for the conversation below.`,
       LENS,

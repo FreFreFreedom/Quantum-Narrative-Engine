@@ -5,6 +5,7 @@
 // reopening the card costs nothing; a failure just means no line.
 
 import { generateText } from './ai/text.js';
+import { writerText } from './convoThinking.js';
 
 let db = null;
 export function bindWorkNotes(database) {
@@ -55,9 +56,10 @@ export async function workNote(convoId, { kind = 'film', title = '', creator = '
   const msgs = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' ORDER BY created_at DESC, rowid DESC LIMIT 6`)
     .all(convoId).reverse().map((m) => (m.role === 'user' ? 'HIM: ' : 'ANSWER: ') + String(m.text || '').slice(0, 1200)).join('\n\n');
   const what = kind === 'book' ? 'book' : kind === 'series' ? (episode ? `episode ${episode} of the TV series` : 'TV series') : 'film';
-  const out = await generateText({
-    feature: 'summary', maxTokens: 1000, label: 'room:work-note', timeoutMs: 30_000, maxAttempts: 2,
-    claudeLastResort: true, helperWaitMs: 60_000,
+  const out = await writerText({
+    // The fast writer, not the free chain: a card he just clicked waited up to two
+    // minutes while Gemini and two OpenCode models each timed out (2026-10-28).
+    feature: 'summary', maxTokens: 1000, label: 'room:work-note', timeoutMs: 20_000,
     prompt: [
       `Write ${MAX_WORDS - 10} to ${MAX_WORDS + 5} words about the ${what} "${title}"${creator ? ` (${creator}${year ? ', ' + year : ''})` : year ? ` (${year})` : ''} for the conversation below.`,
       'Not a catalogue synopsis. Say, in one short clause, what happens in it — then spend most of the words on why it matters HERE: which idea of this conversation it shows, and how (a scene, a mechanism, a character). Use the conversation\'s own ideas and words.',
