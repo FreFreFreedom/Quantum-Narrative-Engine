@@ -17889,6 +17889,18 @@ async function roomRibPeek(ribEl, id) {
 }
 // He unfolded the Room by hand: leave it open until he steps into another aside.
 let roomFoldSuppressed = false;
+// Which layer this tab is reading — the main talk or one side talk, folded or not —
+// kept per tab and per thread (sessionStorage), so a refresh lands where the tab
+// was even when other tabs sit on other layers of the same conversation. The shared
+// localStorage copy only seeds a tab that has never been on this thread.
+let roomLayerFor = null;   // the thread whose saved layer has been read back in this tab
+function roomLayerSave() {
+  if (!roomSel || roomLayerFor !== roomSel) return;
+  try { sessionStorage.setItem('fmcns.roomLayer.' + roomSel, JSON.stringify({ side: roomSideOpenId || '', main: roomFoldSuppressed })); } catch (e) {}
+}
+function roomLayerSaved(thread) {
+  try { const raw = sessionStorage.getItem('fmcns.roomLayer.' + thread); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
 // Folded whenever an aside is open in the pane and he has not asked for the Room
 // back. Nothing to press to fold it — stepping into an aside is the asking.
 function applyRoomFold() {
@@ -17932,6 +17944,7 @@ function applyRoomFold() {
       rib.onclick = roomUnfold;
     }
   }
+  roomLayerSave();
 }
 window.applyRoomFold = applyRoomFold;
 function roomUnfold() {
@@ -18069,8 +18082,13 @@ async function loadRoomSides() {
     const out = await api('/api/convos/' + encodeURIComponent(want) + '/sides?deep=1');
     if (roomSel !== want) return;   // a different thread was picked mid-flight
     roomSides = out.sides || [];
-    if (!roomSideOpenId) {
-      try { roomSideOpenId = localStorage.getItem('fmcns.roomSideOpen.' + want); } catch (e) {}
+    if (roomLayerFor !== want) {
+      const layer = roomLayerSaved(want);
+      if (layer) { roomSideOpenId = layer.side || null; roomFoldSuppressed = !!layer.main; }
+      roomLayerFor = want;
+      if (!layer && !roomSideOpenId) {
+        try { roomSideOpenId = localStorage.getItem('fmcns.roomSideOpen.' + want); } catch (e) {}
+      }
     }
     if (roomSideOpenId && !roomSides.some(s => s.id === roomSideOpenId)) roomSideOpenId = null;
     roomSideTrail = roomSideTrail.filter(id => roomSides.some(s => s.id === id));
