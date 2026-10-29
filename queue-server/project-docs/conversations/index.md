@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Machete Season: Fractal Deterrence Across Violence — conversations/machete-season-fractal-deterrence-across-violence-565a6e84.md
+- Memoirs of deterrence across extreme environments — conversations/memoirs-of-deterrence-across-extreme-environments-565a6e84.md
 - Technological anxiety and paternal withdrawal — conversations/technological-anxiety-and-paternal-withdrawal-74ec82e7.md
 - Ontological warfare and the evolving substrate — conversations/ontological-warfare-and-the-evolving-substrate-b63a4169.md
 - Psychiatric administrators as unsung institutional wardens — conversations/psychiatric-administrators-as-unsung-institutional-wardens-a969a91c.md
