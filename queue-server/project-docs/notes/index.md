@@ -6,6 +6,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Anthony Bourdain: Kitchen Confidential's Toughest Lessons — notes/anthony-bourdain-kitchen-confidential-s-toughest-lessons.md
 - Note: Biomedical Ontologies as Geopolitical Battlegrounds — side talk of Algorithmic Warfare: The Automated Kill Chain — notes/biomedical-ontologies-as-geopolitical-battlegrounds-side-talk-of-algorithmic-war.md
 - Note: Boy A: Redemption and Identity Reconstruction — notes/boy-a-redemption-and-identity-reconstruction.md
+- Note: Childhood gaming nostalgia and adult guilt — side talk of Memoirs of deterrence across extreme environments — notes/childhood-gaming-nostalgia-and-adult-guilt-side-talk-of-memoirs-of-deterrence-ac.md
 - Note: Comparative politics across structural scales — notes/comparative-politics-across-structural-scales.md
 - Note: Comparative politics and its parallel disciplines — side talk of Comparative politics across structural scales — notes/comparative-politics-and-its-parallel-disciplines-side-talk-of-comparative-polit.md
 - Note: Comparing Depth of Snowfall vs Top Boy — side talk of State Experiments in Constitutional Decision‑Making — notes/comparing-depth-of-snowfall-vs-top-boy-side-talk-of-state-experiments-in-constit.md
