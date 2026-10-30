@@ -81,9 +81,10 @@ async function raceLanes(prompt, { maxTokens, label, claudeLastResort = false, f
 // A page is read by Gemini first (2026-10-19): with "campaigning, shotgun slung over my
 // shoulder" beside it, gpt-oss still answered "persuading voters", and "the unit
 // library" in a juvenile hall came back as a stash room; Gemini read the scene both
-// times, in under a second.
-async function quickText(prompt, reading = false) {
-  return raceLanes(prompt, { maxTokens: 800, label: 'screen:define', claudeLastResort: true, fallbackMs: 20_000, prefer: reading ? 'google-ai-studio' : '' });
+// times, in under a second. Shows too since 2026-10-30: gpt-oss called Happy Valley's
+// Clare "the small girl in the kitchen"; Gemini knew she is Catherine's sister.
+async function quickText(prompt) {
+  return raceLanes(prompt, { maxTokens: 800, label: 'screen:define', claudeLastResort: true, fallbackMs: 20_000, prefer: 'google-ai-studio' });
 }
 
 const COMMON = `English is his second language — plain words, no jargon explained with more jargon.
@@ -139,6 +140,19 @@ meaning of the term and stop there — a specific sense you cannot support, or a
 detail not in the text, is worse than a general one. This holds with no text around the
 word: then only the title and the first pages decide, and the answer stays general.`;
 
+// A show is read from its own place (his ask, 2026-10-30, starting Happy Valley): a
+// British series carries regional speech, its own police and institutions, and a cast
+// he does not know yet. The place and era are settled first so a word is heard as
+// people there say it, and a name is answered as who that person is in the story.
+const SHOW_WORLD = `First settle where the show lives: its country, its region or town, its era, its
+milieu. Hear the word as people from THERE say it — regional or national speech, local
+slang, that country's police, courts, hospitals, schools and benefits, its brands and
+places — never as an American or a dictionary would read it. A rank, a title or an office
+is that country's own, with what it does there. If he selected the name of a character or
+a place, answer who or what it is in this show, from what you know of the show — their
+place in the story and who they are to the main characters, by name — not what they are
+doing in this one line. Only as far as the story has gone; never what happens later.`;
+
 function context({ show, line, reading = false, opening = '' }) {
   const s = String(show || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   const l = String(line || '').replace(/\s+/g, ' ').trim().slice(0, 1200);
@@ -146,7 +160,7 @@ function context({ show, line, reading = false, opening = '' }) {
   return (s ? `\n\n=== WHAT HE IS ${reading ? 'READING' : 'WATCHING'} ===\n${s}` : '')
     + (o ? `\n\n=== THE FIRST PAGES OF THE BOOK (to know which book it is) ===\n${o}` : '')
     + (l ? `\n\n=== ${reading ? 'THE TEXT AROUND IT' : 'THE DIALOGUE JUST NOW'} ===\n${l}` : '')
-    + `\n\n${SENSE}`;
+    + `\n\n${SENSE}` + (reading ? '' : `\n\n${SHOW_WORLD}`);
 }
 
 // The same dictionary away from the player (2026-10-15): any web page, a PDF, any
@@ -288,7 +302,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
   const earlier = reading ? correctionFor(show, raw) : '';
   const prompt = lookupPrompt({ base, raw, show, line, reading, opening, worldFirst, earlier })
     + (/^[\d\s.,/#-]+$/.test(raw) ? NUMBER_HINT : '');
-  const out = await quickText(prompt, reading);
+  const out = await quickText(prompt);
   if (out.error || !out.text) return { error: out.error || 'generation_failed' };
 
   let text = '';
@@ -322,7 +336,7 @@ export async function lookupOnScreen({ show = '', term = '', line = '', reading 
 // written into the lookup cache too, so clicking it later costs nothing.
 const GLOSSARY_PROMPT = `Below are the last lines of dialogue from a series someone is watching. He follows the
 story perfectly well. What he does not know is the vocabulary only the people on screen
-share. Read the show's world first and look for ITS language: a hospital's procedures,
+share. Read the show's world first — its country, region, era — and look for ITS language: a hospital's procedures,
 drugs and codes; a police unit's or a court's terms; a street crew's slang and code words
 for drugs, money, guns, police and selling (a word like "package", "re-up", "burner",
 "hopper", "five-oh"); a dialect, a trade, a military rank. An ordinary English word
@@ -413,7 +427,7 @@ async function quickTextLong(prompt) {
 // whole episode never spoils any of it.
 const EPISODE_PROMPT = `Below is part of the subtitles of one episode. Find the words and phrases an ordinary
 viewer would NOT understand — the language only the people on screen share. Read the
-show's world first and look for ITS language: a hospital's procedures, drugs and codes; a
+show's world first — its country, region, era — and look for ITS language: a hospital's procedures, drugs and codes; a
 police unit's or a court's terms; a street crew's slang and code words for drugs, money,
 guns, police and selling; a dialect, a trade, a military rank. An ordinary English word
 used in a special sense counts. So does a whole EXPRESSION — slang phrases and idioms
