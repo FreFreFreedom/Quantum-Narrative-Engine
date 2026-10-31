@@ -31720,6 +31720,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (meta.pair) { out.pair = meta.pair; out.side = meta.side || 'a'; out.pairOf = meta.pair_of || null; out.kept = meta.kept === true; }
         if (Array.isArray(meta.quotes) && meta.quotes.length && typeof meta.body === 'string') { out.quotes = meta.quotes; out.body = meta.body; }
         if (Array.isArray(meta.attachments)) { out.attachments = meta.attachments; if (meta.body && !out.body) out.body = meta.body; }
+        // A pasted link: the page the app read rides in `text` for the models; he sees his own words.
+        if (meta.links && typeof meta.body === 'string' && !out.body) out.body = meta.body;
         if (Array.isArray(meta.works) && meta.works.length) out.works = meta.works;
         // 2 since 2026-09-28: answers whose titles were written in a shape the old
         // reader passed over are read again, so their books get their covers.

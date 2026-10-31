@@ -56,6 +56,7 @@ import { bindWorkNotes } from './workNotes.js';
 import { bindPersonNotes, namedPeople, PEOPLE_V } from './personNotes.js';
 import { answerPictures, bindAnswerPictures, PICTURES_V } from './answerPictures.js';
 import { bindConvoImages, saveConvoImages, dropMessageImages } from './convoImages.js';
+import { linksIn, readLinksBlock, stripLinkPages } from './linkReader.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
@@ -3073,7 +3074,9 @@ function ownWords(text) {
 }
 function lastUserText(convoId) {
   const msgs = threadMessages(convoId).filter((m) => m.kind === 'chat');
-  for (let i = msgs.length - 1; i >= 0; i--) if (msgs[i].role === 'user') return msgs[i].text;
+  // His own words only: a page the app read for a pasted link must not count as
+  // something he said (a "2000 words" on the page is not his length request).
+  for (let i = msgs.length - 1; i >= 0; i--) if (msgs[i].role === 'user') return stripLinkPages(msgs[i].text);
   return null;
 }
 function lastAssistantMsg(convoId) {
@@ -3684,6 +3687,14 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   // talked about earlier.
   const shownText = sendText;
   if (imageList.length) sendText += `\n\n[${imageList.length > 1 ? `${imageList.length} images are` : 'An image is'} attached to this message (${imageList.map((x) => x.name).join(', ')}). ${imageList.length > 1 ? 'They are' : 'It is'} its subject: "this", "here", "the book", "these" point to what the image shows — read it first, before anything said earlier in the conversation.]`;
+  // A pasted link is opened by the app, so whichever model answers sees the page.
+  let linkBlock = '';
+  if (linksIn(trimmed).length) {
+    if (onStatus) { try { onStatus('Reading the link…'); } catch {} }
+    try { linkBlock = await readLinksBlock(trimmed); } catch (e) { console.error('[links] read failed:', e?.message || e); }
+    sendText += linkBlock;
+    if (signal?.aborted) return { error: 'cancelled' };
+  }
   const mid = randomUUID();
   // `text` keeps the carried passages folded in, so the model and every later
   // reader of the transcript see what the question was about. `meta` keeps the
@@ -3711,7 +3722,8 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   // Passages are kept apart from his words even when he typed nothing, so the
   // Room can fold them to a line instead of showing the whole carried text.
   if (quoteList.length) { meta.quotes = quoteList; meta.body = typed || ''; }
-  else if (imageList.length) meta.body = shownText;
+  else if (imageList.length || linkBlock) meta.body = shownText;
+  if (linkBlock) meta.links = linksIn(trimmed);
   if (attachmentMeta.length) meta.attachments = attachmentMeta;
   const userMeta = Object.keys(meta).length ? JSON.stringify(meta) : null;
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta) VALUES (?,?,?,?,?,?)`)
