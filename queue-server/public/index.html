@@ -3044,10 +3044,13 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-body.md hr { border:none; border-top:1px solid var(--c-border); margin:1.4em 0; }
 .se-body.md strong { font-weight:var(--fw-medium); color:var(--c-ink); }
 .se-body.md a, .se-body a { color:var(--c-accent); }
-/* Code keeps the UI's monospace at a fixed size: it is data, and it should not grow with
-   the reading size the way the prose around it does. */
-.se-body code, .se-body.md code { font-family:var(--font-mono); font-size:var(--fs-sm);
-  background:var(--c-surface-2); padding:.1em .35em; border-radius:var(--r-xs); }
+/* A name inside a sentence (a folder, a file) grows with the reading size and sits on
+   the line like a word: at a fixed UI size it shrank to a speck beside large prose, and
+   it broke in half at its hyphen. Blocks of code (pre, below) keep the fixed size. */
+.se-body code, .se-body.md code { font-family:var(--font-mono); font-size:.8em;
+  color:var(--c-ink-2); background:var(--c-surface-2); border:1px solid var(--c-border);
+  padding:.08em .4em; border-radius:var(--r-xs); white-space:nowrap;
+  -webkit-box-decoration-break:clone; box-decoration-break:clone; }
 .se-body.md pre { margin:.75em 0; padding:9px 11px; background:var(--c-surface-2);
   border:1px solid var(--c-border); border-radius:var(--r-sm); overflow-x:auto; }
 .se-body.md pre code { background:none; padding:0; font-size:var(--fs-sm); line-height:1.5; }
