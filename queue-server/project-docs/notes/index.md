@@ -10,6 +10,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Comparative politics across structural scales — notes/comparative-politics-across-structural-scales.md
 - Note: Comparative politics and its parallel disciplines — side talk of Comparative politics across structural scales — notes/comparative-politics-and-its-parallel-disciplines-side-talk-of-comparative-polit.md
 - Note: Comparing Depth of Snowfall vs Top Boy — side talk of State Experiments in Constitutional Decision‑Making — notes/comparing-depth-of-snowfall-vs-top-boy-side-talk-of-state-experiments-in-constit.md
+- Note: Congo Wars and U.S. Genocide Policy: Comparative Shadow Work — notes/congo-wars-and-u-s-genocide-policy-comparative-shadow-work.md
 - Note: Cook County Court as Fractal Injustice Anatomy — notes/cook-county-court-as-fractal-injustice-anatomy.md
 - Note: Cross-Domain Analogical Reasoning — notes/cross-domain-analogical-reasoning.md
 - Note: Cross‑Domain Analogy Recommendation for Fractal Legal Engine — notes/cross-domain-analogy-recommendation-for-fractal-legal-engine.md
@@ -31,6 +32,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Kinetic workout media selection — notes/kinetic-workout-media-selection.md
 - Note: Legal Realism in Better Call Saul — side talk of State Experiments in Constitutional Decision‑Making — notes/legal-realism-in-better-call-saul-side-talk-of-state-experiments-in-constitution.md
 - Note: Lower East Side abandonment phenomenon — side talk of Comparative politics across structural scales — notes/lower-east-side-abandonment-phenomenon-side-talk-of-comparative-politics-across-.md
+- Note: Macro Conspiracy Narratives Mirror Personal Powerlessness — side talk of Internal Split, Parts Work, and Apocalyptic Narratives — notes/macro-conspiracy-narratives-mirror-personal-powerlessness-side-talk-of-internal-.md
 - Note: Mapping Psychological Walls Across Cultures and Media — notes/mapping-psychological-walls-across-cultures-and-media.md
 - Note: Ontological Warfare and Geopolitical Power Struggles — side talk of Palantir's Role in Modern Societal Infrastructure — notes/ontological-warfare-and-geopolitical-power-struggles-side-talk-of-palantir-s-rol.md
 - Note: Ontology Integration as Institutional Ego Work — notes/ontology-integration-as-institutional-ego-work.md
