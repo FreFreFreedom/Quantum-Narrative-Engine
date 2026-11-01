@@ -3129,13 +3129,13 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .umenu-item.has-icon .umenu-ic { flex:none; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 .umenu-item.has-icon .umenu-label { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .umenu-sep { height:1px; margin:4px 6px; background:var(--c-border); }
-.umenu.title-peek { min-width:260px; max-width:420px; }
+.umenu.title-peek { min-width:260px; max-width:min(480px, calc(100vw - 12px)); }
 .title-peek-row { display:flex; align-items:baseline; gap:14px; width:100%; padding:6px 10px 6px 22px; border:0; border-radius:6px;
   background:none; color:var(--c-ink-3); font:15px/1.3 var(--font-read); text-align:left; cursor:pointer; position:relative; }
 .title-peek-row:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .title-peek-row.is-now { color:var(--c-ink); cursor:default; }
-.title-peek-row.is-now::before { content:''; position:absolute; left:10px; top:50%; width:5px; height:5px; margin-top:-2px; border-radius:50%; background:var(--c-accent); }
-.title-peek-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.title-peek-row.is-now::before { content:''; position:absolute; left:10px; top:14px; width:5px; height:5px; border-radius:50%; background:var(--c-accent); }
+.title-peek-name { min-width:0; overflow-wrap:anywhere; }
 .title-peek-when { margin-left:auto; flex:none; font:11px/1 var(--font-ui, inherit); color:var(--c-ink-5); }
 .umenu-head { padding:7px 10px 3px 22px; font:500 10.5px/1 'Cinzel', var(--font-read); letter-spacing:.18em; text-transform:uppercase; color:var(--c-ink-5); }
 
