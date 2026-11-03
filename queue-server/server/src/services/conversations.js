@@ -38,7 +38,7 @@ import { uniqueTitle } from './knowledgeDocs.js';
 import { mindBlock, directInstructionsBlock, harvest as harvestMind, saveExplicitChatMemory, subjectsBlock, taughtForRoom } from './mind.js';
 import { chapterize } from './chapters.js';
 import { logConversation, logText } from './convoLog.js';
-import { writeThinking, hisRecentWords } from './convoThinking.js';
+import { writeThinking, hisRecentWords, OFF_GEMINI_LANES } from './convoThinking.js';
 import { splitByLabels, splitByMarks, parseMarks, MARKS_PROMPT } from './convoImport.js';
 import { detectReach, recordReach } from './connections.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
@@ -360,18 +360,26 @@ async function writeSmartTitle(convoId) {
 }
 
 async function generateSmartTitle(transcript) {
-  const ask = async (prompt, label) => {
-    const out = await generateText({
-      prompt: `${prompt}\n\n=== THE CONVERSATION ===\n${transcript}`,
-      feature: 'summary',
-      label,
-      maxTokens: 30,
-      timeoutMs: 45_000,
-    });
-    return cleanTitle(out?.text);
-  };
-  return await ask(SMART_TITLE_PROMPT, 'conversations:smart-title')
-    || await ask(SMART_TITLE_REPAIR_PROMPT, 'conversations:smart-title-repair');
+  // Off the 'summary' lane (Gemini, rationed, slow to give up): Groq answers a
+  // title in well under a second; Haiku through the Mac runner is the fallback.
+  // One try per lane, short timeouts — a rename he clicked must not hang.
+  for (const lane of OFF_GEMINI_LANES) {
+    const ask = async (prompt, label) => {
+      const out = await generateText({
+        ...lane, strictModel: true, maxAttempts: 1,
+        prompt: `${prompt}\n\n=== THE CONVERSATION ===\n${transcript}`,
+        feature: 'summary',
+        label,
+        maxTokens: 300,
+        timeoutMs: lane.provider === 'groq' ? 15_000 : 40_000,
+      }).catch(() => null);
+      return cleanTitle(out?.text);
+    };
+    const title = await ask(SMART_TITLE_PROMPT, 'conversations:smart-title')
+      || await ask(SMART_TITLE_REPAIR_PROMPT, 'conversations:smart-title-repair');
+    if (title) return title;
+  }
+  return null;
 }
 
 // Models like to answer a request for a title with a sentence about the title.
