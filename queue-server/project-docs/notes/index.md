@@ -14,6 +14,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Cook County Court as Fractal Injustice Anatomy — notes/cook-county-court-as-fractal-injustice-anatomy.md
 - Note: Cross-Domain Analogical Reasoning — notes/cross-domain-analogical-reasoning.md
 - Note: Cross‑Domain Analogy Recommendation for Fractal Legal Engine — notes/cross-domain-analogy-recommendation-for-fractal-legal-engine.md
+- Note: Culinary Obsession and Mastery Narratives — notes/culinary-obsession-and-mastery-narratives.md
 - Note: Damiana's relevance as somatic catalyst — notes/damiana-s-relevance-as-somatic-catalyst.md
 - Note: Essential Functions and Ontological Mapping Terminology — side talk of Palantir's Role in Modern Societal Infrastructure — notes/essential-functions-and-ontological-mapping-terminology-side-talk-of-palantir-s-.md
 - Note: Exoconsciousness and the survival of free will — notes/exoconsciousness-and-the-survival-of-free-will.md
