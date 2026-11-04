@@ -36,19 +36,30 @@
   person as in a society. Learning to honor that role is his way of learning to hold his own
   boundaries.
 
+  His self-description was taken out of the box 2026-11-04, his call: its list of topics
+  (cyberpunk, transhumanist warfare, biopolitics...) was copied word for word into answers
+  on unrelated subjects. Its meaning is sent instead. The original, kept here:
+
+  In his own words:
+
+  "I navigate the liminal space where history, myth, and imagination converge. My research
+  traces the conscious architectures and subconscious drives of entities—families,
+  corporations, nations, civilizations—viewing them as evolving, self-similar consciousness
+  systems. I explore biopolitics, post-humanism, cyberpunk dynamics, transhumanist warfare,
+  shadow work, and grief as mirrors of power and memory. Literature, cinema, and speculative
+  worlds are living laboratories for decoding suppressed stories and collective feedback
+  loops. My work maps multi-scale narrative cartographies where every node—real or
+  imagined—can reveal deeper structural truths."
+
   Body starts after this comment.
 -->
 
-In his own words:
+What drives him:
 
-"I navigate the liminal space where history, myth, and imagination converge. My research
-traces the conscious architectures and subconscious drives of entities—families,
-corporations, nations, civilizations—viewing them as evolving, self-similar consciousness
-systems. I explore biopolitics, post-humanism, cyberpunk dynamics, transhumanist warfare,
-shadow work, and grief as mirrors of power and memory. Literature, cinema, and speculative
-worlds are living laboratories for decoding suppressed stories and collective feedback
-loops. My work maps multi-scale narrative cartographies where every node—real or
-imagined—can reveal deeper structural truths."
+He reads families, companies, nations and civilizations as living minds, each with its
+own conscious design and its own hidden drives. Stories, films and imagined worlds are
+where he finds what a society has hidden from itself, and how what it hurts and what it
+remembers keep shaping its power.
 
 How he sees things:
 
