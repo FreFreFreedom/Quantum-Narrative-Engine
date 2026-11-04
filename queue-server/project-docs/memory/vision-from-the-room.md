@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Scalable mastery allows an operator to dial effort and ambition up or down without losing quality by mastering core techniques rather than rigid instructions.
+
+A master does not necessarily cook harder; they cook smarter, applying the same underlying physical principles across different levels of engagement depending on available time, energy, and resources.
+
 ## Deterrence is a universal survival code operating identically from nations to individuals in hostile, inescapable environments.
 
 In a hostile environment like prison where you cannot leave, non-reactivity or 'turning the other cheek' invites further exploitation and signals zero cost to predators. Just as nations use deterrence to signal consequences, an individual must project a credible boundary or self-defense to stop predators from hurting them more.
