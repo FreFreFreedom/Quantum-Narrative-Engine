@@ -22,6 +22,12 @@ export function bindReferenceLibrary(database) {
   db.exec(`CREATE TABLE IF NOT EXISTS reference_dismissed (
     owner TEXT NOT NULL, identity TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(owner,identity)
   )`);
+  // The search by meaning, kept on disk (2026-11-06): the in-memory copy died with
+  // every redeploy, and the notes mirror redeploys every few minutes.
+  db.exec(`CREATE TABLE IF NOT EXISTS library_meaning (
+    owner TEXT NOT NULL, q TEXT NOT NULL, keys TEXT NOT NULL, works_n INTEGER NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(owner,q)
+  )`);
 }
 function ownerCheck(owner) { if (owner !== 'antoine') fail('Reference not found.',404); }
 export function resolveReference(owner, ref) {
@@ -193,8 +199,7 @@ export function libraryWhere(owner,{title,creator}={}) {
 // miss a book that is about ethnography but never says so, and need every word
 // typed. A model reads the whole catalogue — title, author, topic words — once
 // per search and hands back what a good librarian would, best first. Kept per
-// search until the Library changes size, so typing the same words again is instant.
-const meaningCache=new Map();
+// search on disk, so typing the same words again is instant.
 // Off Gemini since 2026-10-23 (his call: Flash's daily twenty are kept for side
 // talks). Haiku reads the whole catalogue well — the second Claude account first,
 // the main one when that is spent; both through the Mac runner.
@@ -215,9 +220,32 @@ export async function searchByMeaning(owner,opts={}) {
   for(const r of db.prepare("SELECT id,kind,title,creator FROM interest_works WHERE owner=? AND kind IN ('book','film','series')").all(owner))
     works.push({key:'m:'+r.id,kind:r.kind,title:r.title,creator:r.creator||'',topics:about(r.kind,r.title,r.creator)});
   try{for(const b of listBooks(owner)) works.push({key:'s:'+b.id,kind:'book',title:b.title,creator:b.author||'',topics:about('book',b.title,b.author)});}catch{}
-  const ck=q+'|'+works.length;
-  let keys=meaningCache.get(ck);
-  if(!keys&&works.length){
+  // A search already made answers at once, even after the Library grew; a new
+  // work is still found by its words, and the ranking is redone in the background.
+  // The same words asked twice while ranking share one model call.
+  const row=db.prepare('SELECT keys,works_n FROM library_meaning WHERE owner=? AND q=?').get(owner,q);
+  let keys=row?JSON.parse(row.keys):null;
+  if(works.length&&(!row||row.works_n!==works.length)){
+    const job=meaningJob(owner,q,query,works);
+    if(!keys) keys=await job;
+  }
+  return listReferences(owner,{...opts,meaning:keys||null});
+}
+const meaningInFlight=new Map();
+function meaningJob(owner,q,query,works){
+  const id=owner+'|'+q;
+  if(meaningInFlight.has(id)) return meaningInFlight.get(id);
+  const p=rankByMeaning(query,works).then((keys)=>{
+    if(keys) db.prepare('INSERT INTO library_meaning(owner,q,keys,works_n) VALUES(?,?,?,?) ON CONFLICT(owner,q) DO UPDATE SET keys=excluded.keys,works_n=excluded.works_n,created_at=CURRENT_TIMESTAMP')
+      .run(owner,q,JSON.stringify(keys),works.length);
+    return keys;
+  }).catch(()=>null).finally(()=>meaningInFlight.delete(id));
+  meaningInFlight.set(id,p);
+  return p;
+}
+async function rankByMeaning(query,works){
+  let keys=null;
+  {
     const list=works.map((w,i)=>`${i+1}. ${String(w.title).slice(0,110)}${w.creator?' — '+String(w.creator).slice(0,60):''} [${w.kind}]${w.topics?' ('+w.topics+')':''}`).join('\n');
     const prompt=[
       `He typed "${query}" into the search box of his own library. Find every work below a thoughtful librarian would hand him for that search: by what the work is really about — its field, method, subject, people, place, period, author — and by the meaning of his words, not only the words themselves. A theme or a subject is rarely in a title: think which works deal with it at their core, or show it at work in a case, a life, a place or a story, films and series included. A misspelled or partial word means what he meant. A question or a description is answered by the works that fit it.`,
@@ -233,11 +261,9 @@ export async function searchByMeaning(owner,opts={}) {
       const scored=rs.map((x,i)=>({n:Number(Array.isArray(x)?x[0]:x),s:Number(Array.isArray(x)?x[1]:1)||1,i}))
         .filter((x)=>works[x.n-1]).sort((a,b)=>b.s-a.s||a.i-b.i);
       keys=[...new Set(scored.map((x)=>works[x.n-1].key))];
-      meaningCache.set(ck,keys);
-      if(meaningCache.size>200) meaningCache.delete(meaningCache.keys().next().value);
     } else console.warn('[library-search] no ranking:',out?.error||String(out?.text||'').slice(0,160));
   }
-  return listReferences(owner,{...opts,meaning:keys||null});
+  return keys;
 }
 
 export function analogyIdentity(left,right) {

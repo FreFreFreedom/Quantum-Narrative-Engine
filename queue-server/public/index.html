@@ -21423,10 +21423,15 @@ async function renderInterestLibrary(opts) {
         libReadingKey = k;
         const shown = host.querySelector('.lib-find'); if (shown) shown.classList.add('is-reading');
         const done = () => { if (libReadingKey !== k) return; libReadingKey = ''; document.querySelectorAll('.lib-find.is-reading').forEach((el) => el.classList.remove('is-reading')); };
-        api('/api/recommendations/library?meaning=1&limit=' + libLimit() + '&offset=0&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)
-          + '&from=' + encodeURIComponent(libYearFrom) + '&to=' + encodeURIComponent(libYearTo))
-          .then((o) => { done(); if (!o || !o.order || !libData || libData.key !== k || libKey() !== k) return; libData.out = o; renderInterestLibrary({ quiet: true }); })
-          .catch(done);
+        // Only once he has stopped typing: each half-typed word used to start its own
+        // slow reading, and the whole word waited behind them.
+        setTimeout(() => {
+          if (libKey() !== k) return done();
+          api('/api/recommendations/library?meaning=1&limit=' + libLimit() + '&offset=0&query=' + encodeURIComponent(interestLibraryQuery) + '&kind=' + encodeURIComponent(interestLibraryKind)
+            + '&from=' + encodeURIComponent(libYearFrom) + '&to=' + encodeURIComponent(libYearTo))
+            .then((o) => { done(); if (!o || !o.order || !libData || libData.key !== k || libKey() !== k) return; libData.out = o; renderInterestLibrary({ quiet: true }); })
+            .catch(done);
+        }, 900);
       }
     }
     if (request !== interestLibraryRequest) return;
