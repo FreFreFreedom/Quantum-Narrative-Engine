@@ -748,6 +748,7 @@ async function runHelperJobs() {
   const body = await r.json().catch(() => ({ none: true }));
   if (body.none || !body.job) return;
   const job = body.job;
+  helperClaimed++;
 
   // No model, no account, no window gate — a probe costs nothing and cannot be
   // declined for quota. Answered inline and returned before any of that applies.
@@ -921,15 +922,22 @@ async function runHelperJobs() {
 // container's memory ceiling. claimHelperJob hands out a different row to each
 // caller (its claim is one synchronous SQLite step), so they never collide.
 const HELPER_CONCURRENCY = Math.max(1, Number(process.env.RUNNER_HELPER_CONCURRENCY || 2));
-let helperInFlight = 0;
+let helperInFlight = 0, helperClaimed = 0;
+// A claim that found a job tries for the next one at once, so a burst (the Library
+// search asks eight questions together) starts together instead of one every 2s.
+async function helperTick() {
+  if (stopping || helperInFlight >= HELPER_CONCURRENCY) return;
+  helperInFlight++;
+  const before = helperClaimed;
+  let next = false;
+  const more = () => { if (!next && helperClaimed > before) { next = true; helperTick(); } };
+  const check = setInterval(more, 150);
+  try { await runHelperJobs(); }
+  catch (e) { console.error('Helper job failed —', e.message); }
+  finally { clearInterval(check); helperInFlight--; more(); }
+}
 function startHelperLane() {
-  const timer = setInterval(async () => {
-    if (stopping || helperInFlight >= HELPER_CONCURRENCY) return;
-    helperInFlight++;
-    try { await runHelperJobs(); }
-    catch (e) { console.error('Helper job failed —', e.message); }
-    finally { helperInFlight--; }
-  }, 2_000);
+  const timer = setInterval(helperTick, 2_000);
   timer.unref(); // never the reason the process refuses to exit
 }
 
