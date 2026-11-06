@@ -16866,7 +16866,7 @@ async function openTitlePeek(row, id, after) {
       ev.stopPropagation(); closeMenu();
       if (i === 0) return;
       try { await apiWrite('/api/convos/' + encodeURIComponent(id) + '/rename', 'POST', { title: t.title }); } catch (e) {}
-      if (after) after(); else loadRoom();
+      if (after) after(); else roomRefreshTitles();
     };
     el.appendChild(b);
   });
@@ -16884,13 +16884,21 @@ async function openTitlePeek(row, id, after) {
   el.style.top = Math.max(6, Math.min(window.innerHeight - h - 6, r.top - 5)) + 'px';
 }
 
+// A new name changes two words on screen: the list row and the heading. A full
+// loadRoom() redraws the conversation too and throws away where he was reading.
+async function roomRefreshTitles() {
+  try { roomThreads = (await api('/api/convos/open')).convos || roomThreads; } catch (e) {}
+  renderRoomThreads();
+  renderRoomHead();
+}
+
 async function roomRetitleThread(id) {
   if (!id) return;
   const btn = document.getElementById('roomTitleBtn');
   if (btn) btn.disabled = true;
   try {
     await apiWrite('/api/convos/' + encodeURIComponent(id) + '/retitle', 'POST', {});
-    await loadRoom();
+    await roomRefreshTitles();
   } catch (e) {
     roomThreadsNote = 'Could not name this thread just now.';
     renderRoomThreads();
