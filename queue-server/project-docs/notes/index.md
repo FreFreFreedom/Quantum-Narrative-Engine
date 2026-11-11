@@ -3,6 +3,7 @@
 Saved conversations, mirrored automatically for the coding agent.
 
 - Note: . by Michael Sierra-Arévalo — side talk of American Justice: Institutional Power and Systemic Failure — notes/by-michael-sierra-arevalo-side-talk-of-american-justice-institutional-power-and-.md
+- Note: Anaerobic Glycolytic Intervals for Cycling Performance — side talk of Granular Daily Ownership: Tactical Guides for Action — notes/anaerobic-glycolytic-intervals-for-cycling-performance-side-talk-of-granular-dai.md
 - Note: Anthony Bourdain: Kitchen Confidential's Toughest Lessons — notes/anthony-bourdain-kitchen-confidential-s-toughest-lessons.md
 - Note: Biomedical Ontologies as Geopolitical Battlegrounds — side talk of Algorithmic Warfare: The Automated Kill Chain — notes/biomedical-ontologies-as-geopolitical-battlegrounds-side-talk-of-algorithmic-war.md
 - Note: Boy A: Redemption and Identity Reconstruction — notes/boy-a-redemption-and-identity-reconstruction.md
