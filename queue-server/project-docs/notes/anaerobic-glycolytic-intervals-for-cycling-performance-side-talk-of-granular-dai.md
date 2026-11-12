@@ -1,6 +1,6 @@
 # Note: Anaerobic Glycolytic Intervals for Cycling Performance — side talk of Granular Daily Ownership: Tactical Guides for Action
 
-Saved: 2026-11-11T06:20:42.119Z
+Saved: 2026-11-12T07:44:07.703Z
 
 ## What this conversation understood
 
@@ -50,6 +50,37 @@ The answer ended on the image of variety as a way to choose the somatic stimulus
 ## Where it stood
 
 Antoine did not push back or correct anything in either answer. His two questions moved from what the anaerobic intervals are and why they matter, to the full map of training types in the app. Left open: pacing an anaerobic session on MyWhoosh, and how these sessions affect mental grit and nervous system state.
+
+### Later — 2026-11-12
+
+## Turn: what FTP is
+
+Antoine asked for FTP in 100 words. The answer gave the name, Functional Threshold Power, and defined it as the maximum power, in watts, that you can sustain in a steady state for one hour without blowing up or accumulating more lactate than the body can clear. It called FTP the "physiological fulcrum" or "personal engine capacity," and the baseline from which every cycling zone is calculated, "from easy recovery spins to agonizing VO2 max intervals." Knowing it lets apps like MyWhoosh calibrate workouts so they stress the right energy systems "without sliding into overtraining or wasting your effort."
+
+## Turn: VO2
+
+Antoine asked what VO2 meant and what it was. The answer said VO2 stands for "Volume of Oxygen," and that VO2 Max is the absolute maximum amount of oxygen the heart, lungs and muscles can extract and consume during intense exercise, measured in milliliters per kilogram of body weight per minute. It repeated the earlier image: "the size of your aerobic engine."
+
+## Turn: how to find FTP
+
+Antoine said he could sustain about 200 watts for roughly an hour on a stationary bike, plus some short sprints, and asked how he would know his FTP. The answer took the 200 watts as a starting point: if he could truly hold 200 watts for a solid, unbroken hour, his FTP was right around 200 watts, since FTP is by definition the power held for 60 minutes. It then said a true all-out hour test is brutally painful, so shorter protocols are used.
+
+Two were given:
+
+- **The 20-minute test (called the gold standard).** Ride as hard and steadily as possible for 20 minutes after a good warm-up, then take the average wattage and subtract 5%. The example was an average of 210 watts, giving 210 × 0.95 = 199.5 watts FTP.
+- **The Ramp Test (called the quickest way).** The answer said most indoor apps, MyWhoosh included, offer it. You start at an easy wattage, for example 100W, and the resistance steps up every minute by a small amount, for example 20W, until you cannot turn the pedals. The app takes your highest 1-minute power and multiplies it by 75%. It takes about 15 to 20 minutes.
+
+The answer closed that if 200 watts for an hour matched his intuition, he was "already in a great baseline spot," and entering that number in MyWhoosh would lock in all the training zones. Antoine did not say whether he had run either test.
+
+## Turn: ERG mode
+
+Antoine asked whether ERG should be on or off, and what it was, in 100 words. The answer said ERG mode makes the smart trainer's resistance match the exact wattage of the workout regardless of pedaling speed. If an interval calls for 241 watts, the trainer locks you to that figure. If you slow your cadence to a crawl, the resistance spikes to force the watts, which can cause a "dreaded 'death spiral.'"
+
+It gave two uses. Keep ERG On for structured workouts like these anaerobic intervals, so you do not have to keep shifting gears. Turn ERG Off for racing, free-ride group rides, or when you want to manage your own power entirely through the bike's physical gears.
+
+## Where it stood
+
+Antoine did not push back or correct anything in these answers. He moved from defining FTP and VO2, to estimating his own FTP from his 200-watt hour, to how the trainer holds the wattage in ERG mode. His own FTP estimate was not tested. The two questions from the earlier record remain open: pacing an anaerobic session on MyWhoosh, and how these sessions affect mental grit and nervous system state.
 
 ## Full conversation
 
@@ -114,3 +145,48 @@ Yes. MyWhoosh structures its workout library around the classic physiological po
 * **Structured Training Plans:** Multi-week progressive tracks (like 4- to 8-week blocks) targeted at specific goals: climbing, general fitness, gran fondos, or e-racing.
 
 In terms of physical grounding and daily rhythm, having that variety means you can dial in the exact somatic stimulus your body needs on any given day—from meditative Zone 2 base miles to a 30-minute high-voltage anaerobic shock.
+
+**You:**
+in 100 words what is FTP ?
+
+**Assistant:**
+FTP stands for Functional Threshold Power. It is the maximum power, measured in watts, that you can sustain in a steady state for one hour without blowing up or accumulating more lactate than your body can clear. Think of it as your physiological fulcrum or your personal engine capacity. It serves as the baseline metric from which all your cycling training zones—from easy recovery spins to agonizing VO2 max intervals—are calculated. Knowing your FTP allows apps like MyWhoosh to precisely calibrate workouts so you are always stressing the right energy systems without sliding into overtraining or wasting your effort.
+
+**You:**
+VO2 ? what u mean ? What is that ?
+
+**Assistant:**
+VO2 stands for **Volume of Oxygen**. In fitness, **VO2 Max** is the absolute maximum amount of oxygen your heart, lungs, and muscles can extract and consume during intense exercise, measured in milliliters of oxygen per kilogram of body weight per minute. 
+
+Think of it as the size of your aerobic engine'
+
+**You:**
+how do i know my FTP ? i know i can sustain like 200 Watts for like an hour on a stationary bike  + some shorts sprints
+
+**Assistant:**
+If you can truly sustain **200 watts for a solid, unbroken hour** on a stationary bike, then your FTP is right around **200 watts**. By definition, FTP is the maximum power output you can hold for 60 minutes. 
+
+However, because doing a true all-out 60-minute test is brutally painful both physically and mentally, cyclists usually use shorter diagnostic protocols to calculate it. Here is how you can find your exact number:
+
+### 1. The 20-Minute Test (The Gold Standard)
+Instead of riding for an hour, you do a structured 20-minute time trial after a good warm-up:
+* **The Test:** Ride as hard and steadily as you possibly can for 20 minutes. 
+* **The Calculation:** Take your average wattage for those 20 minutes and **subtract 5%**. 
+* *Example:* If you average 210 watts for 20 minutes, $210 \times 0.95 = 199.5$ watts FTP. 
+
+### 2. The Ramp Test (The Quickest Way)
+Most indoor apps (including MyWhoosh) offer a Ramp Test. 
+* **The Test:** You start at a very easy wattage (e.g., 100W), and every minute, the resistance automatically steps up by a small amount (e.g., 20W). You keep pedaling until you literally cannot turn the pedals anymore.
+* **The Calculation:** The app takes your highest 1-minute power output and multiplies it by **75%** to estimate your FTP. It takes about 15–20 minutes total.
+
+If your intuition says 200W for an hour, you are already in a great baseline spot. Punching that number into MyWhoosh will instantly lock in all your training zones so your intervals and endurance rides hit the exact right intensity.
+
+**You:**
+ERG on or off ? what is that ? in 100 words
+
+**Assistant:**
+ERG mode automatically controls your smart trainer's resistance to match the exact wattage of your workout, regardless of your pedaling speed. If the interval calls for 241 watts, the trainer locks you there; if you slow your cadence to a crawl, the resistance spikes to force those watts, which can cause a dreaded "death spiral." 
+
+**Keep ERG On** for structured workouts like these anaerobic intervals so you don't have to constantly shift gears. 
+
+**Turn ERG Off** if you are racing, doing free-ride group rides, or want to manage your own power entirely through your bike's physical gears.
