@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Cooking is a modular system where core variables like salt, fat, acid, and heat govern every dish.
+
+By mastering core techniques rather than rigid instructions, an operator can adjust variables dynamically to fix or create food without relying on recipes.
+
 ## Scalable mastery allows an operator to dial effort and ambition up or down without losing quality by mastering core techniques rather than rigid instructions.
 
 A master does not necessarily cook harder; they cook smarter, applying the same underlying physical principles across different levels of engagement depending on available time, energy, and resources.

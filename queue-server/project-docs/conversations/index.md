@@ -4,8 +4,8 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
+- Julia Child as Culinary Source Code — conversations/julia-child-as-culinary-source-code-3efeeead.md
 - High‑Adrenaline Film Picks for Intense Bike Sessions — conversations/high-adrenaline-film-picks-for-intense-bike-sessions-f431467c.md
-- Culinary Mindset: From Institutional Mastery to Modular Mastery — conversations/culinary-mindset-from-institutional-mastery-to-modular-mastery-3efeeead.md
 - Memoirs of deterrence across extreme environments — conversations/memoirs-of-deterrence-across-extreme-environments-565a6e84.md
 - Technological anxiety and paternal withdrawal — conversations/technological-anxiety-and-paternal-withdrawal-74ec82e7.md
 - Ontological warfare and the evolving substrate — conversations/ontological-warfare-and-the-evolving-substrate-b63a4169.md
