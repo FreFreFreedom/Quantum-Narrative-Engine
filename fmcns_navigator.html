@@ -33947,7 +33947,71 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var h = quotePop.offsetHeight || 30;
     quotePop.style.top = (r.top > h + 12 ? r.top - h - 6 : r.bottom + 8) + 'px';
   }
+  // The bar's buttons over a selected passage — an answer's, or a card's (his ask,
+  // 2026-11-15: Keep, Quote and the rest in a book card too). Chapter needs a message.
+  function passageButtons(mk, e, msgId, passage, range, r, repaint, pop){
+    mk('quote', 'Quote', 'Carry this passage into your next question', function(){
+      if(!e.quotes) e.quotes = [];
+      // {text, msgId} rather than a bare string, so the chip can walk back to
+      // the place the line was taken from. Old stored drafts hold strings —
+      // quoteText()/quoteMsg() below read either shape.
+      if(!e.quotes.some(function(q){ return quoteText(q) === passage; })){
+        e.quotes.push({ text: passage, msgId: msgId || null });
+      }
+      saveDraft(e);
+      if(repaint) repaint();
+    });
+    // Only where there is a saved message to anchor to: an answer still
+    // streaming has no id yet, and a chapter pointing at nothing is worse
+    // than no chapter.
+    if(msgId) mk('bookmark', 'Chapter', 'Save this place, to come back to it later', function(){
+      saveMark(e, msgId, passage, repaint);
+    });
+    // Keep the line itself, not the place and not the context: it goes on the
+    // Passages shelf and is read there. Never automatic: a selection is as often
+    // a quote for the message box, and keeping it unasked got in the way.
+    mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
+      keepPassage(e, msgId, passage, repaint, r);
+    });
+    // Aside and Remember only make sense against the Room's own threads
+    // (plan "side talks in the Room, and remember this") — a side talk of a
+    // task card or a seed has nothing to step out of. Since asides nest, the
+    // open aside counts as one of those threads too.
+    if(typeof window.roomAsideHome === 'function' && window.roomAsideHome(e) && typeof roomSideCreate === 'function'){
+      // Selecting several passages before clicking Aside carries them all —
+      // the same e.quotes accumulation Quote already does. Aside takes
+      // whatever is already queued for the main composer and redirects it
+      // into the new side talk instead, rather than sending it to the main
+      // thread — so it also clears e.quotes once it has them.
+      mk('fork', 'Aside', 'Open a side talk about this, without touching this thread', function(at){
+        var turnMsg = msgId ? (e.msgs || []).find(function(m){ return m.id === msgId; }) : null;
+        seAsideMenu(e, at, { passage: passage, msg: turnMsg, repaint: repaint });
+      });
+    }
+    // Teach: a small conversation over this passage — say what to keep, see
+    // what it understood, Save when it is right. Replaces Like, Interested and
+    // Remember, which were three doors into the same room (his pick, 2026-09-25).
+    mk('target', 'Teach', 'Teach the Mind something from this', function(){
+      openTeach(e, msgId, passage, r);
+    });
+    // Keyword (his pick A, 2026-10-21): a word or a few, banked in the Library's
+    // Keywords as a subject for a future conversation.
+    var kwPop = pop;
+    if(passage.split(' ').length <= 8) mk('star', 'Keyword', 'Save as a keyword, a subject to explore later', function(){
+      var here = kwPop.querySelector('.se-define .here');
+      var toast = seMindToast(r, 'Saving', 'wait');
+      apiWrite('/api/keywords', 'POST', { term: passage, meaning: here ? here.textContent.trim() : '', sourceTitle: e.title || '', line: sentenceAround(range, passage) })
+        .then(function(out){
+          var already = !!(out && out.already);
+          seMindToast(r, already ? 'Already a keyword' : 'Saved as a keyword', already ? 'miss' : 'ok', toast);
+          if(!already) seFlyToMind(r, '[data-room-primary="library"]');
+          try { libData = null; } catch(_) {}
+        })
+        .catch(function(){ seMindToast(r, 'Not saved', 'miss', toast); });
+    });
+  }
   function wireQuotePick(log, e, repaint){
+    log._quoteCtx = { e: e, repaint: repaint };
     if(log.dataset.quoteWired) return;
     log.dataset.quoteWired = '1';
     // Quote, Chapter and Keep are all reached the same way: select a passage of an
@@ -34018,65 +34082,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           };
           quotePop.appendChild(b);
         };
-        mk('quote', 'Quote', 'Carry this passage into your next question', function(){
-          if(!e.quotes) e.quotes = [];
-          // {text, msgId} rather than a bare string, so the chip can walk back to
-          // the place the line was taken from. Old stored drafts hold strings —
-          // quoteText()/quoteMsg() below read either shape.
-          if(!e.quotes.some(function(q){ return quoteText(q) === passage; })){
-            e.quotes.push({ text: passage, msgId: msgId || null });
-          }
-          saveDraft(e);
-          if(repaint) repaint();
-        });
-        // Only where there is a saved message to anchor to: an answer still
-        // streaming has no id yet, and a chapter pointing at nothing is worse
-        // than no chapter.
-        if(msgId) mk('bookmark', 'Chapter', 'Save this place, to come back to it later', function(){
-          saveMark(e, msgId, passage, repaint);
-        });
-        // Keep the line itself, not the place and not the context: it goes on the
-        // Passages shelf and is read there. Never automatic: a selection is as often
-        // a quote for the message box, and keeping it unasked got in the way.
-        mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
-          keepPassage(e, msgId, passage, repaint, r);
-        });
-        // Aside and Remember only make sense against the Room's own threads
-        // (plan "side talks in the Room, and remember this") — a side talk of a
-        // task card or a seed has nothing to step out of. Since asides nest, the
-        // open aside counts as one of those threads too.
-        if(typeof window.roomAsideHome === 'function' && window.roomAsideHome(e) && typeof roomSideCreate === 'function'){
-          // Selecting several passages before clicking Aside carries them all —
-          // the same e.quotes accumulation Quote already does. Aside takes
-          // whatever is already queued for the main composer and redirects it
-          // into the new side talk instead, rather than sending it to the main
-          // thread — so it also clears e.quotes once it has them.
-          mk('fork', 'Aside', 'Open a side talk about this, without touching this thread', function(at){
-            var turnMsg = msgId ? (e.msgs || []).find(function(m){ return m.id === msgId; }) : null;
-            seAsideMenu(e, at, { passage: passage, msg: turnMsg, repaint: repaint });
-          });
-        }
-        // Teach: a small conversation over this passage — say what to keep, see
-        // what it understood, Save when it is right. Replaces Like, Interested and
-        // Remember, which were three doors into the same room (his pick, 2026-09-25).
-        mk('target', 'Teach', 'Teach the Mind something from this', function(){
-          openTeach(e, msgId, passage, r);
-        });
-        // Keyword (his pick A, 2026-10-21): a word or a few, banked in the Library's
-        // Keywords as a subject for a future conversation.
-        var kwPop = quotePop;
-        if(passage.split(' ').length <= 8) mk('star', 'Keyword', 'Save as a keyword, a subject to explore later', function(){
-          var here = kwPop.querySelector('.se-define .here');
-          var toast = seMindToast(r, 'Saving', 'wait');
-          apiWrite('/api/keywords', 'POST', { term: passage, meaning: here ? here.textContent.trim() : '', sourceTitle: e.title || '', line: sentenceAround(range, passage) })
-            .then(function(out){
-              var already = !!(out && out.already);
-              seMindToast(r, already ? 'Already a keyword' : 'Saved as a keyword', already ? 'miss' : 'ok', toast);
-              if(!already) seFlyToMind(r, '[data-room-primary="library"]');
-              try { libData = null; } catch(_) {}
-            })
-            .catch(function(){ seMindToast(r, 'Not saved', 'miss', toast); });
-        });
+        passageButtons(mk, e, msgId, passage, range, r, repaint, quotePop);
         document.body.appendChild(quotePop);
         placeQuotePop();
         // Whatever is selected, its meaning here opens under the bar by itself: one
@@ -34157,6 +34163,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   });
   // A word in a book or person card (his ask, 2026-10-09): the same meaning as in an
   // answer, read in the sentence around it, and nothing else in the bar.
+  function cardThreadCtx(convo){
+    var logs = Array.from(document.querySelectorAll('.se-log')).filter(function(l){ return l.isConnected && l._quoteCtx; });
+    var hit = logs.find(function(l){ return convo && l._quoteCtx.e && l._quoteCtx.e.convoId === convo; })
+      || logs.find(function(l){ return l.closest('#roomConvo'); });
+    return hit ? hit._quoteCtx : null;
+  }
   function cardDefineOffer(card){
     clearTimeout(quoteOfferTimer);
     quoteOfferTimer = setTimeout(function(){
@@ -34195,8 +34207,27 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // selection that follows must not tear down this new one.
       quotePop.dataset.born = String(Date.now());
       quotePop.onmousedown = function(x){ x.stopPropagation(); };
+      var ctx = !nested && cardThreadCtx(convo);
+      if(ctx){
+        var cardPop = quotePop, cardSel = sel;
+        var mk = function(icon, labelText, title, fn){
+          var b = document.createElement('button');
+          b.type = 'button'; b.title = title; b.className = 'se-card-act';
+          b.innerHTML = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-' + icon + '"/></svg>' + qEsc(labelText);
+          b.onmousedown = function(ev){ ev.preventDefault(); };
+          b.onclick = function(ev){
+            ev.stopPropagation();
+            var at = b.getBoundingClientRect();
+            killQuotePop();
+            if(cardSel.removeAllRanges) cardSel.removeAllRanges();
+            fn(at);
+          };
+          cardPop.appendChild(b);
+        };
+        passageButtons(mk, ctx.e, null, passage, range, r0, ctx.repaint, cardPop);
+      }
       document.body.appendChild(quotePop);
-      var e = { convoId: convo };
+      var e = ctx ? ctx.e : { convoId: convo };
       defineHere(e, passage, sentence, quotePop, null);
       if(one) defineWord(passage, quotePop);
       placeQuotePop();
