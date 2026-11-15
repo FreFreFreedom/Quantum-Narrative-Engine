@@ -83,6 +83,12 @@ export function conversationsRoutes() {
   // The Pulitzer panel beside the full-screen Library (his pick, 2026-10-21).
   router.get('/pulitzer', interestRoute((req, owner) => pulitzerFor(owner)));
   router.post('/interests/have', interestRoute((req, owner) => ({ have: interests.haveWorks(owner, (req.body || {}).works || []) })));
+  router.post('/interests/remove', interestRoute((req, owner) => {
+    const m = interests.worksMatching(owner, (req.body || {}).work || {});
+    for (const id of m.media) interests.changeInterest(owner, id, {}, true);
+    for (const id of m.shelf) shelf.removeBook(owner, id);
+    return { removed: m.media.length + m.shelf.length };
+  }));
   router.get('/interests', interestRoute((req, owner) => ({ items: interests.listInterests(owner, req.query) })));
   router.get('/favs', interestRoute((req, owner) => ({ favs: interests.listFavs(owner), ...(req.query.works === '1' ? { works: interests.favWorks(owner) } : {}) })));
   router.post('/favs', interestRoute((req, owner) => interests.setFav(owner, req.body || {})));

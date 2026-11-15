@@ -535,6 +535,17 @@ export function haveWorks(owner, works = []) {
       || (book && shelf.some(b => sameWork(b.title, title)));
   });
 }
+// The Library rows that are this work, the way haveWorks matches them — so the
+// extension's "In Library" pill can take a book back out (his ask, 2026-11-15).
+export function worksMatching(owner, w) {
+  const title = String((w && w.title) || ''), book = w && w.kind === 'book';
+  if (!db || !owner || !title) return { media: [], shelf: [] };
+  const media = db.prepare('SELECT id,kind,title FROM interest_works WHERE owner=?').all(owner)
+    .filter(h => (book ? h.kind === 'book' : h.kind !== 'book') && sameWork(h.title, title)).map(h => h.id);
+  let shelf = [];
+  if (book) try { shelf = db.prepare('SELECT id,title FROM shelf_books WHERE owner=?').all(owner).filter(b => sameWork(b.title, title)).map(b => b.id); } catch (_) {}
+  return { media, shelf };
+}
 // Every book the Library holds, by its spelling-free key, to the key its card
 // answers to ('shelf:id' or 'media:id') — the shelf copy first, as the wall shows it.
 export function bookKeys(owner) {
