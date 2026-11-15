@@ -11,6 +11,14 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Extreme time management and scheduling mask an existential panic: the urge to cheat mortality by turning the clock into a controllable machine.
+
+Derived from the observation of "ruthless time management, meticulous scheduling, and the belief that if you properly engineer your days, you can essentially “manufacture” extra time," revealing productivity hacks as an existential defense against mortality.
+
+## Vital systems rely on an architectural spine—invisible connective tissue that holds disparate elements together rather than isolated components.
+
+Derived from the recognition that "French cooking treats sauce as the architectural spine of the meal," pointing to the universal design principle that true structural integrity depends on load-bearing connective tissue across all domains.
+
 ## Cooking is a modular system where core variables like salt, fat, acid, and heat govern every dish.
 
 By mastering core techniques rather than rigid instructions, an operator can adjust variables dynamically to fix or create food without relying on recipes.
