@@ -37156,7 +37156,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (host && seCardAnchor && seCardAnchor.isConnected && !host.contains(seCardAnchor)) btn = seCardAnchor;
     seCardClose();
     seCard = document.createElement('div'); seCard.className = 'se-card'; seCard.setAttribute('role', 'dialog');
-    seCard.dataset.convo = btn.dataset.convo || ((btn.closest('[data-convo]') || {dataset:{}}).dataset.convo || '');
+    seCard.dataset.convo = btn.dataset.convo || ((btn.closest('[data-convo]') || {dataset:{}}).dataset.convo || '')
+      || ((location.hash.match(/^#room\/([0-9a-f-]{36})/) || [])[1] || ''); // shelf cards: the open talk stands in
     seCardFor = d.coverArt; seCardAnchor = btn;
     document.body.appendChild(seCard);
     var paint = function(card){ if (!seCard || seCardFor !== d.coverArt) return; seCard.innerHTML = seCardHtml(d, card); seCard.classList.toggle('is-k5', d.coverKind === 'book'); seCardPlace(btn); };
@@ -37282,7 +37283,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if (seCardFor === id) { seCardClose(); return; }
     seCardClose();
     seCard = document.createElement('div'); seCard.className = 'se-card is-person-card'; seCard.setAttribute('role', 'dialog');
-    seCard.dataset.convo = btn.dataset.convo || ((btn.closest('[data-convo]') || {dataset:{}}).dataset.convo || '');
+    seCard.dataset.convo = btn.dataset.convo || ((btn.closest('[data-convo]') || {dataset:{}}).dataset.convo || '')
+      || ((location.hash.match(/^#room\/([0-9a-f-]{36})/) || [])[1] || ''); // shelf cards: the open talk stands in
     seCardFor = id; seCardAnchor = btn;
     document.body.appendChild(seCard);
     var card = null;
