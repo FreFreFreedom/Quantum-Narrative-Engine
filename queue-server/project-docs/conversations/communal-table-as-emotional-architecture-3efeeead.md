@@ -1,4 +1,4 @@
-# Communal Dining as Social Healing
+# Communal Table as Emotional Architecture
 
 Thread 3efeeead-dc15-4e0a-9d4a-17d4a301716d · 22 turns · last said 2026-11-13T09:23:59.500Z
 
