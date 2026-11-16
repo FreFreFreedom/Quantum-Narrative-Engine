@@ -35467,7 +35467,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           }
         }
         if(changed && current()) fillEmbed(host, e, opts);
-      } catch(err){ if(current()) bar.textContent = err.message; }
+      } catch(_){ /* a background read: a failed one says nothing, the next one retries */ }
       finally { e.interestFetching = false; }
     };
     // Library reading is optional background work. A failed read must never put
