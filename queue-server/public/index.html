@@ -33997,7 +33997,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     // Keyword (his pick A, 2026-10-21): a word or a few, banked in the Library's
     // Keywords as a subject for a future conversation.
     var kwPop = pop;
-    if(passage.split(' ').length <= 8) mk('star', 'Keyword', 'Save as a keyword, a subject to explore later', function(){
+    if(passage.split(' ').length <= 30) mk('star', 'Keyword', 'Save as a keyword, a subject to explore later', function(){
       var here = kwPop.querySelector('.se-define .here');
       var toast = seMindToast(r, 'Saving', 'wait');
       apiWrite('/api/keywords', 'POST', { term: passage, meaning: here ? here.textContent.trim() : '', sourceTitle: e.title || '', line: sentenceAround(range, passage) })

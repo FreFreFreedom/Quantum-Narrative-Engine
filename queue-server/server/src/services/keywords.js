@@ -26,7 +26,7 @@ const normOf = (t) => String(t || '').toLowerCase().replace(/[’']s$/, '').repl
 
 export function saveKeyword(owner, { term, meaning = '', sourceTitle = '', line = '' } = {}) {
   if (!db) return { error: 'no_db' };
-  const t = String(term || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  const t = String(term || '').replace(/\s+/g, ' ').trim().slice(0, 400);
   const norm = normOf(t);
   if (!norm) return { error: 'empty' };
   // The same word saved twice is one keyword.
