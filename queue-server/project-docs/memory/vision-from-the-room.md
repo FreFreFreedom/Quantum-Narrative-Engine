@@ -11,6 +11,22 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The roux is the alchemical engine and foundation of culinary engineering for thickening and stabilizing liquids.
+
+A roux consists of equal parts fat and flour cooked together over heat. On a microscopic level, starch granules absorb the melted fat, coating them to prevent clumping when liquid is added. By cooking it for varying lengths of time into white, blond, or brown stages, it shifts from a thickening agent to a flavor engine.
+
+## Sauces serve as the architectural spine of a meal rather than an afterthought.
+
+While Anglo-Saxon or American home cooking historically treated sauces as an afterthought poured from a bottle, French cooking treats them as the structural core and flavor engine of the meal, organizing the kitchen hierarchy around the saucier.
+
+## The shared meal is an ancient biological and symbolic regulatory mechanism that manages human stress and recalibrates collective nervous systems.
+
+Gathering around shared food and breaking bread acts as a stabilizing technology and a civilized truce. The physical layout of a table—sharing the same salt, passing dishes, and pacing calorie consumption—forces a temporary suspension of tribal paranoia and biologically signals safety to a group.
+
+## French cuisine is the structural source code and operating system of modern Western cooking.
+
+What appear to be exclusive French culinary terms actually represent a universal syntax and standardized modular system. Auguste Escoffier applied industrial-era logic—standardization, modularity, and division of labor—to transform chaotic, localized traditions into a unified culinary architecture.
+
 ## Extreme time management and scheduling mask an existential panic: the urge to cheat mortality by turning the clock into a controllable machine.
 
 Derived from the observation of "ruthless time management, meticulous scheduling, and the belief that if you properly engineer your days, you can essentially “manufacture” extra time," revealing productivity hacks as an existential defense against mortality.
@@ -18,10 +34,6 @@ Derived from the observation of "ruthless time management, meticulous scheduling
 ## Vital systems rely on an architectural spine—invisible connective tissue that holds disparate elements together rather than isolated components.
 
 Derived from the recognition that "French cooking treats sauce as the architectural spine of the meal," pointing to the universal design principle that true structural integrity depends on load-bearing connective tissue across all domains.
-
-## Cooking is a modular system where core variables like salt, fat, acid, and heat govern every dish.
-
-By mastering core techniques rather than rigid instructions, an operator can adjust variables dynamically to fix or create food without relying on recipes.
 
 ## Scalable mastery allows an operator to dial effort and ambition up or down without losing quality by mastering core techniques rather than rigid instructions.
 
