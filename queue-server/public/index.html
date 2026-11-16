@@ -34089,10 +34089,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // word, a phrase, or a passage (then what it is really saying). The word
         // class from the dictionary only makes sense for a single word.
         var nWords = passage.split(' ').length;
-        if(/^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage) || isAcronym(passage)){
+        if(/^\p{L}[\p{L}'’-]{1,29}$/u.test(passage) || isAcronym(passage)){
           defineHere(e, passage, sentenceAround(range, passage), quotePop, msgId);
           defineWord(passage, quotePop);
-        } else if(nWords >= 2 && nWords <= 150 && /[A-Za-z]/.test(passage)){
+        } else if(nWords >= 2 && nWords <= 150 && /\p{L}/u.test(passage)){
           defineHere(e, passage, sentenceAround(range, passage), quotePop, msgId);
         }
       }, settleMs);
@@ -34181,8 +34181,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(passage.length < 2 || !card.contains(range.startContainer) || !card.contains(range.endContainer)) return;
       if(quotePop && quotePop !== card && quotePop.dataset.passage === passage) return;
       var nWords = passage.split(' ').length;
-      var one = /^[A-Za-z][A-Za-z'’-]{1,29}$/.test(passage) || isAcronym(passage);
-      if(!one && !(nWords >= 2 && nWords <= 150 && /[A-Za-z]/.test(passage))) return;
+      var one = /^\p{L}[\p{L}'’-]{1,29}$/u.test(passage) || isAcronym(passage);
+      if(!one && !(nWords >= 2 && nWords <= 150 && /\p{L}/u.test(passage))) return;
       // Read before the old bar goes: a word picked inside a meaning replaces it.
       var convo = card.dataset.convo || '', sentence = sentenceAround(range, passage), r0 = range.getBoundingClientRect();
       var nested = card.classList.contains('se-quote-pop');

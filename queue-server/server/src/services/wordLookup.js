@@ -162,7 +162,7 @@ export async function lookupWord(convoId, { word, sentence = '', messageId = nul
   if (mode === 'word' && isAcronym(raw)) return lookupAcronym(convoId, { raw, sentence, messageId });
   const w = mode === 'word' ? raw.toLowerCase().replace(/[’']s$/, '') : raw.slice(0, 600).toLowerCase();
   if (!w) return { error: 'not_a_word' };
-  if (mode === 'word' && (w.length > 40 || !/^[a-z][a-z'’-]*$/i.test(w))) return { error: 'not_a_word' };
+  if (mode === 'word' && (w.length > 40 || !/^\p{L}[\p{L}'’-]*$/u.test(w))) return { error: 'not_a_word' };
   if (mode !== 'word') return lookupPhrase(convoId, { key: w, shown: raw.slice(0, 600), mode, sentence, messageId });
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
@@ -227,7 +227,7 @@ Answer with JSON only, no markdown fence: {"words":[{"word":"…","text":"…"}]
 
 function candidateWords(text) {
   const seen = new Map();
-  for (const raw of String(text || '').match(/[A-Za-z][A-Za-z'’-]{5,}/g) || []) {
+  for (const raw of String(text || '').match(/\p{L}[\p{L}'’-]{5,}/gu) || []) {
     const w = raw.toLowerCase().replace(/[’']s$/, '');
     if (w.length < 6 || STOPWORDS.has(w) || seen.has(w)) continue;
     seen.set(w, raw);
