@@ -4430,12 +4430,13 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
 /* Roots (his pick #1, 2026-11-17): Meaning | Roots under the word; Roots is the word's
    descent as a ladder, oldest at the top, its kin branching off that oldest step. */
-.se-define .se-rtabs { display:flex; gap:22px; margin:10px 0 0; }
-.se-define .se-rtabs button { order:0; flex:none; border:0; background:none; padding:0 0 5px; border-radius:0; min-width:0;
-  font:500 11.5px/1 'Cinzel', var(--font-read); letter-spacing:.2em; text-transform:uppercase; color:color-mix(in srgb, var(--c-on-solid) 55%, transparent); cursor:pointer; }
-.se-define .se-rtabs button + button { border-left:0; }
-.se-define .se-rtabs button:hover { background:none; color:var(--c-on-solid); }
-.se-define .se-rtabs button.on { color:#d9b877; border-bottom:1px solid #d9b877; }
+.se-define .se-rtabs { display:flex; gap:8px; margin:12px 0 2px; }
+.se-define .se-rtabs button { order:0; flex:none; min-width:0; padding:7px 16px 6px; border-radius:999px; cursor:pointer;
+  border:1px solid rgba(217,184,119,.55); background:none;
+  font:600 12.5px/1 'Cinzel', var(--font-read); letter-spacing:.16em; text-transform:uppercase; color:#f1ece0; }
+.se-define .se-rtabs button + button { border-left:1px solid rgba(217,184,119,.55); }
+.se-define .se-rtabs button:hover { background:rgba(217,184,119,.12); color:#f1ece0; }
+.se-define .se-rtabs button.on { background:#d9b877; border-color:#d9b877; color:#141b2b; }
 .se-define.is-roots .here, .se-define.is-roots .se-define-chat { display:none; }
 .se-define .se-roots { display:none; padding-top:16px; }
 .se-define.is-roots .se-roots { display:block; }
