@@ -121,6 +121,9 @@ Return JSON only, no markdown fence:
 - steps: the word's real line of descent, OLDEST FIRST, 2 to 4 steps, the last one being the word
   itself with lang "here" and as gloss what it means in THE SENTENCE. lang is one or two words
   ("Latin", "Old French", "Greek", "Proto-Indo-European"). gloss: 2 to 6 words.
+  ALWAYS write the word in Latin letters: Greek, Arabic, Sanskrit and the rest are transliterated
+  (athlon, not ἆθλον; melas, not μέλας), and a reconstructed root without its asterisk and symbols
+  (dek, not *dek-; melh, not *melh₂-).
 - kin: 2 or 3 other English words from the SAME oldest root, as far from the word's own field as
   you can truly find (body, law, music, science…), never a mere form of the word itself (not
   "disciplinary" for "discipline"). where: 1 or 2 words naming the field. Prefer words named in the
@@ -131,17 +134,31 @@ Use only well-attested history. The REFERENCE below is Wiktionary's etymology, f
 entry by entry: the steps must follow it. If the
 origin is unknown or you are not sure, return {"steps":[]}.`;
 
+// Latin letters always (his ask, 2026-11-17: Greek letters read as noise). Greek is
+// spelled out letter by letter, a reconstructed root loses its star and symbols, and a
+// step still in another script after that is dropped rather than shown.
+const GREEK = { α: 'a', β: 'b', γ: 'g', δ: 'd', ε: 'e', ζ: 'z', η: 'e', θ: 'th', ι: 'i', κ: 'k', λ: 'l', μ: 'm', ν: 'n', ξ: 'x', ο: 'o', π: 'p', ρ: 'r', σ: 's', ς: 's', τ: 't', υ: 'u', φ: 'ph', χ: 'kh', ψ: 'ps', ω: 'o' };
+export function latinLetters(w) {
+  let t = String(w || '').normalize('NFD').replace(/[̀-ͯ]/g, '').normalize('NFC');
+  t = t.replace(/γ(?=[γκξχ])/gi, 'n');
+  t = [...t].map((c) => { const l = GREEK[c.toLowerCase()]; return l ? (c !== c.toLowerCase() ? l[0].toUpperCase() + l.slice(1) : l) : c; }).join('');
+  t = t.replace(/^\*/, '').replace(/[₀-₉ʰʷ]/g, '').replace(/-+$/, '').trim();
+  return /^[\p{Script=Latin}\s'’.-]+$/u.test(t) ? t : '';
+}
+
 function clean(parsed, word) {
   const s = (v, n) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, n);
   const steps = (Array.isArray(parsed?.steps) ? parsed.steps : [])
-    .map((x) => ({ word: s(x.word, 60), lang: s(x.lang, 30), gloss: s(x.gloss, 80) }))
+    .map((x) => ({ word: latinLetters(s(x.word, 60)), lang: s(x.lang, 30), gloss: s(x.gloss, 80) }))
     .filter((x) => x.word);
   if (steps.length > 5) steps.splice(4, steps.length - 5);
   if (steps.length < 2) return { steps: [], kin: [], echo: '' };
   const seen = new Set(steps.map((x) => x.word.toLowerCase()).concat(word.toLowerCase()));
+  // A form of the word itself is not kin (athletics for athlete): the stems must differ.
+  const stem = word.toLowerCase().slice(0, 5);
   const kin = (Array.isArray(parsed?.kin) ? parsed.kin : [])
-    .map((x) => ({ word: s(x.word, 40), where: s(x.where, 30) }))
-    .filter((x) => x.word && !seen.has(x.word.toLowerCase())).slice(0, 3);
+    .map((x) => ({ word: latinLetters(s(x.word, 40)), where: s(x.where, 30) }))
+    .filter((x) => x.word && !seen.has(x.word.toLowerCase()) && !x.word.toLowerCase().startsWith(stem)).slice(0, 3);
   return { steps, kin, echo: s(parsed?.echo, 220) };
 }
 
@@ -150,7 +167,8 @@ export async function wordRoots({ scope = '', word = '', sentence = '', context 
   const w = String(word || '').trim().replace(/[’']s$/, '');
   if (!w || w.length > 40 || !/^\p{L}[\p{L}'’-]*$/u.test(w)) return { error: 'not_a_word' };
   const key = w.toLowerCase();
-  const sc = String(scope || 'any').slice(0, 300);
+  // v2: Latin letters only, and no forms of the word as kin — older answers are read again.
+  const sc = 'v2|' + String(scope || 'any').slice(0, 300);
   if (db) {
     const hit = db.prepare('SELECT json FROM word_roots WHERE scope=? AND word=?').get(sc, key);
     if (hit) { try { return { ok: true, ...JSON.parse(hit.json), cached: true }; } catch { /* read again */ } }
