@@ -3,6 +3,7 @@
 // and the subject registry in services/subjectContext.js.
 import { transcribe } from '../services/dictation.js';
 import { Router } from 'express';
+import { wordRoots } from '../services/wordRoots.js';
 import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
 import * as thinking from '../services/convoThinking.js';
@@ -608,6 +609,15 @@ export function conversationsRoutes() {
   router.post('/:id/define', asyncHandler(async (req, res) => {
     const out = await lookupWord(req.params.id, { word: req.body?.word, sentence: req.body?.sentence, messageId: req.body?.messageId || null });
     if (out.error) return res.status(out.error === 'not_found' ? 404 : out.error === 'not_a_word' ? 400 : 500).json(out);
+    res.json(out);
+  }));
+
+  // POST /api/convos/:id/define/roots — where a word came from, and its kin (2026-11-17).
+  router.post('/:id/define/roots', asyncHandler(async (req, res) => {
+    const convo = convos.getConvo(req.params.id);
+    if (!convo) return res.status(404).json({ error: 'not_found' });
+    const out = await wordRoots({ scope: convo.id, word: req.body?.word, sentence: req.body?.sentence, context: convo.title || '' });
+    if (out.error) return res.status(out.error === 'not_a_word' ? 400 : 500).json(out);
     res.json(out);
   }));
 

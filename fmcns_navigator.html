@@ -4428,6 +4428,34 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   display:flex; align-items:center; justify-content:center; background:#0e1320; color:#d9b877; border:1px solid rgba(217,184,119,.6); font:12px/1 system-ui; }
 .se-quote-pop.se-quote-pop.se-quote-pop > .se-pop-x:hover { background:#1a2236; }
 .se-define .head { display:flex; align-items:baseline; gap:10px; }
+/* Roots (his pick #1, 2026-11-17): Meaning | Roots under the word; Roots is the word's
+   descent as a ladder, oldest at the top, its kin branching off that oldest step. */
+.se-define .se-rtabs { display:flex; gap:22px; margin:10px 0 0; }
+.se-define .se-rtabs button { order:0; flex:none; border:0; background:none; padding:0 0 5px; border-radius:0; min-width:0;
+  font:500 11.5px/1 'Cinzel', var(--font-read); letter-spacing:.2em; text-transform:uppercase; color:color-mix(in srgb, var(--c-on-solid) 55%, transparent); cursor:pointer; }
+.se-define .se-rtabs button + button { border-left:0; }
+.se-define .se-rtabs button:hover { background:none; color:var(--c-on-solid); }
+.se-define .se-rtabs button.on { color:#d9b877; border-bottom:1px solid #d9b877; }
+.se-define.is-roots .here, .se-define.is-roots .se-define-chat { display:none; }
+.se-define .se-roots { display:none; padding-top:16px; }
+.se-define.is-roots .se-roots { display:block; }
+.se-roots .wait { opacity:.5; margin:0; }
+.se-roots .lad { position:relative; margin-left:6px; padding-left:22px; }
+.se-roots .lad::before { content:''; position:absolute; left:3px; top:12px; bottom:16px; width:1px; background:linear-gradient(color-mix(in srgb, var(--c-on-solid) 40%, transparent), #d9b877); }
+.se-roots .st { position:relative; margin:0 0 12px; line-height:1.25; }
+.se-roots .st::before { content:''; position:absolute; left:-22px; top:9px; width:7px; height:7px; border-radius:50%; background:var(--c-ink-solid); border:1px solid color-mix(in srgb, var(--c-on-solid) 50%, transparent); }
+.se-roots .st.now::before { background:#d9b877; border-color:#d9b877; }
+.se-roots .st b { font-weight:500; font-size:22px; }
+.se-roots .st.now b { color:#d9b877; font-style:italic; }
+.se-roots .st em { display:block; margin:3px 0 1px; font:500 10.5px/1 'Cinzel', var(--font-read); letter-spacing:.14em; font-style:normal; text-transform:uppercase; color:color-mix(in srgb, var(--c-on-solid) 50%, transparent); }
+.se-roots .st span { font-size:18px; color:color-mix(in srgb, var(--c-on-solid) 78%, transparent); }
+.se-roots .top { display:flex; gap:18px; align-items:flex-start; }
+.se-roots .kin { display:flex; flex-direction:column; gap:6px; padding-top:2px; }
+.se-roots .kin div { position:relative; padding-left:26px; white-space:nowrap; font-size:19px; }
+.se-roots .kin div::before { content:''; position:absolute; left:0; top:12px; width:20px; border-top:1px dashed rgba(217,184,119,.6); }
+.se-roots .kin small { margin-left:6px; font-size:15px; color:color-mix(in srgb, var(--c-on-solid) 50%, transparent); }
+.se-roots .echo { margin:6px 0 0; font-style:italic; font-size:20px; line-height:1.4; color:color-mix(in srgb, var(--c-on-solid) 82%, transparent); }
+
 .se-define .w { font-family:'Cinzel', var(--font-read); font-size:16px; letter-spacing:.2em; text-transform:uppercase; color:var(--pop-gold); }
 .se-define .head + .here { position:relative; padding-top:16px; }
 .se-define .head + .here::before { content:''; position:absolute; top:6px; left:0; width:26px; height:1px; background:var(--pop-gold); }
@@ -33763,6 +33791,55 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .then(function(d){ var t = d && d.text ? (d.expansion ? { text: d.text, expansion: d.expansion } : d.text) : ''; defineHereCache[key] = t; paint(t); })
       .catch(function(){});
   }
+  // Roots (his pick #1, 2026-11-17): a second face of a single word's card, read only
+  // when he opens it — the word's descent, oldest first, its kin off the oldest step.
+  var rootsCache = {};
+  function rootsHtml(r){
+    var steps = (r && r.steps) || [];
+    if(!steps.length) return '';
+    var kin = (r.kin || []).map(function(k){ return '<div>' + qEsc(k.word) + (k.where ? '<small>' + qEsc(k.where) + '</small>' : '') + '</div>'; }).join('');
+    var st = function(x, i){
+      var now = i === steps.length - 1;
+      return '<div class="st' + (now ? ' now' : '') + '"><b>' + qEsc(x.word) + '</b><em>' + qEsc(now ? 'here' : x.lang) + '</em><span>' + qEsc(x.gloss) + '</span></div>';
+    };
+    return '<div class="lad"><div class="top">' + st(steps[0], 0) + (kin ? '<div class="kin">' + kin + '</div>' : '') + '</div>'
+      + steps.slice(1).map(function(x, i){ return st(x, i + 1); }).join('') + '</div>'
+      + (r.echo ? '<p class="echo">' + qEsc(r.echo) + '</p>' : '');
+  }
+  function addRootsTab(e, word, sentence, pop){
+    if(!e || !e.convoId || isAcronym(word)) return;
+    var box = defineBox(pop); if(!box || box.querySelector('.se-rtabs')) return;
+    var tabs = document.createElement('div'); tabs.className = 'se-rtabs';
+    tabs.innerHTML = '<button type="button" class="on" data-face="meaning">Meaning</button><button type="button" data-face="roots">Roots</button>';
+    var slot = document.createElement('div'); slot.className = 'se-roots';
+    box.querySelector('.head').after(tabs);
+    box.appendChild(slot);
+    var key = e.convoId + '|' + word.toLowerCase();
+    var load = function(){
+      if(slot.dataset.state) return;
+      var paint = function(r){
+        var html = rootsHtml(r);
+        slot.innerHTML = html || '<p class="wait">No known roots.</p>';
+        slot.dataset.state = html ? 'done' : 'none';
+        placeQuotePop();
+      };
+      if(key in rootsCache){ paint(rootsCache[key]); return; }
+      slot.dataset.state = 'wait'; slot.innerHTML = '<p class="wait">…</p>';
+      apiWrite('/api/convos/' + e.convoId + '/define/roots', 'POST', { word: word, sentence: sentence })
+        .then(function(r){ rootsCache[key] = r; slot.dataset.state = ''; paint(r); })
+        .catch(function(){ slot.dataset.state = ''; slot.innerHTML = '<p class="wait">Not this time. Open Roots again.</p>'; });
+    };
+    tabs.onmousedown = function(ev){ ev.stopPropagation(); ev.preventDefault(); };
+    tabs.onclick = function(ev){
+      var b = ev.target.closest('[data-face]'); if(!b) return;
+      ev.stopPropagation();
+      tabs.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x === b); });
+      var roots = b.dataset.face === 'roots';
+      box.classList.toggle('is-roots', roots);
+      if(roots) load();
+      placeQuotePop();
+    };
+  }
   // Ask about the meaning, right in its card (his pick B, 2026-10-09): a small chat
   // that stays in the card. Nothing is saved until the Side talk button is pressed
   // (his ask, 2026-10-09); pressing it keeps the meaning and every question and
@@ -34092,6 +34169,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if(/^\p{L}[\p{L}'’-]{1,29}$/u.test(passage) || isAcronym(passage)){
           defineHere(e, passage, sentenceAround(range, passage), quotePop, msgId);
           defineWord(passage, quotePop);
+          addRootsTab(e, passage, sentenceAround(range, passage), quotePop);
         } else if(nWords >= 2 && nWords <= 150 && /\p{L}/u.test(passage)){
           defineHere(e, passage, sentenceAround(range, passage), quotePop, msgId);
         }
@@ -34229,7 +34307,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       document.body.appendChild(quotePop);
       var e = ctx ? ctx.e : { convoId: convo };
       defineHere(e, passage, sentence, quotePop, null);
-      if(one) defineWord(passage, quotePop);
+      if(one){ defineWord(passage, quotePop); addRootsTab(e, passage, sentence, quotePop); }
       placeQuotePop();
     }, 250);
   }

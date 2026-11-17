@@ -3,6 +3,7 @@
 import { Router } from 'express';
 import { lookupOnScreen, glossaryOnScreen, episodeGlossary, askOnScreen, nameChapter, characterOnPage, reportLookup, listReports, markReportsHandled, sweepReports } from '../services/showLookup.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { wordRoots } from '../services/wordRoots.js';
 
 export function showLookupRoutes() {
   const router = Router();
@@ -16,6 +17,14 @@ export function showLookupRoutes() {
       opening: req.body?.opening || '',
       reading: req.body?.reading === true,
     });
+    if (out.error) return res.status(out.error === 'not_a_word' ? 400 : 500).json(out);
+    res.json(out);
+  }));
+
+  // { term, show, line } — where a word came from, and its kin (2026-11-17).
+  router.post('/roots', asyncHandler(async (req, res) => {
+    const b = req.body || {};
+    const out = await wordRoots({ scope: 'screen:' + String(b.show || ''), word: b.term, sentence: b.line, context: b.show || '' });
     if (out.error) return res.status(out.error === 'not_a_word' ? 400 : 500).json(out);
     res.json(out);
   }));
