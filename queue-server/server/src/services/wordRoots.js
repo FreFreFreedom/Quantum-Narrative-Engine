@@ -151,7 +151,12 @@ function clean(parsed, word) {
   const steps = (Array.isArray(parsed?.steps) ? parsed.steps : [])
     .map((x) => ({ word: latinLetters(s(x.word, 60)), lang: s(x.lang, 30), gloss: s(x.gloss, 80) }))
     .filter((x) => x.word);
+  // The same word twice in a row (en PIE, en Greek) is one step: the older one is dropped.
+  for (let i = steps.length - 2; i >= 0; i--) if (steps[i].word.toLowerCase() === steps[i + 1].word.toLowerCase()) steps.splice(i, 1);
+  // No abbreviations in the language line.
+  for (const x of steps) x.lang = x.lang.replace(/^PIE$/i, 'Proto-Indo-European').replace(/\bProto[‑-]/g, 'Proto-');
   if (steps.length > 5) steps.splice(4, steps.length - 5);
+  if (steps.length < 2) return { steps: [], kin: [], echo: '' };
   if (steps.length < 2) return { steps: [], kin: [], echo: '' };
   const seen = new Set(steps.map((x) => x.word.toLowerCase()).concat(word.toLowerCase()));
   // A form of the word itself is not kin (athletics for athlete): the stems must differ.
@@ -167,8 +172,8 @@ export async function wordRoots({ scope = '', word = '', sentence = '', context 
   const w = String(word || '').trim().replace(/[’']s$/, '');
   if (!w || w.length > 40 || !/^\p{L}[\p{L}'’-]*$/u.test(w)) return { error: 'not_a_word' };
   const key = w.toLowerCase();
-  // v2: Latin letters only, and no forms of the word as kin — older answers are read again.
-  const sc = 'v2|' + String(scope || 'any').slice(0, 300);
+  // v3: no doubled steps; v2: Latin letters only, and no forms of the word as kin — older answers are read again.
+  const sc = 'v3|' + String(scope || 'any').slice(0, 300);
   if (db) {
     const hit = db.prepare('SELECT json FROM word_roots WHERE scope=? AND word=?').get(sc, key);
     if (hit) { try { return { ok: true, ...JSON.parse(hit.json), cached: true }; } catch { /* read again */ } }

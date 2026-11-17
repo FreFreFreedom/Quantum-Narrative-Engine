@@ -4439,18 +4439,18 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
 .se-define .se-rtabs button:hover { background:rgba(217,184,119,.12); color:#f1ece0; }
 .se-define .se-rtabs button.on { background:#d9b877; border-color:#d9b877; color:#141b2b; }
 .se-define.is-roots .here, .se-define.is-roots .se-define-chat { display:none; }
-.se-define .se-roots { display:none; padding-top:16px; }
+.se-define .se-roots { display:none; padding-top:14px; max-height:calc(100vh - 200px); overflow-y:auto; }
 .se-define.is-roots .se-roots { display:block; }
 .se-roots .wait { color:#c9c2b2; margin:0; }
 .se-roots .lad { position:relative; margin-left:6px; padding-left:22px; }
 .se-roots .lad::before { content:''; position:absolute; left:3px; top:12px; bottom:16px; width:1px; background:linear-gradient(rgba(241,236,224,.45), #d9b877); }
-.se-roots .st { position:relative; margin:0 0 14px; line-height:1.25; }
+.se-roots .st { position:relative; margin:0 0 10px; line-height:1.2; }
 .se-roots .st::before { content:''; position:absolute; left:-22px; top:9px; width:7px; height:7px; border-radius:50%; background:#141b2b; border:1px solid rgba(241,236,224,.7); }
 .se-roots .st.now::before { background:#d9b877; border-color:#d9b877; }
 .se-roots .st b { font-weight:500; font-size:22px; color:#f1ece0; }
 .se-roots .st.now b { color:#d9b877; font-style:italic; }
-.se-roots .st em { display:block; margin:4px 0 2px; font:600 11px/1 'Cinzel', var(--font-read); letter-spacing:.14em; font-style:normal; text-transform:uppercase; color:#d9b877; }
-.se-roots .st span { font-size:19px; color:#e4ddcd; }
+.se-roots .st em { display:inline-block; margin:0 0 0 10px; vertical-align:2px; font:600 11px/1 'Cinzel', var(--font-read); letter-spacing:.14em; font-style:normal; text-transform:uppercase; color:#d9b877; }
+.se-roots .st span { display:block; margin-top:2px; font-size:18px; color:#e4ddcd; }
 .se-roots .top { display:flex; gap:18px; align-items:flex-start; }
 .se-roots .kin { display:flex; flex-direction:column; gap:6px; padding-top:2px; }
 .se-roots .kin div { position:relative; padding-left:26px; white-space:nowrap; font-size:19px; color:#f1ece0; }
@@ -33819,19 +33819,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     box.querySelector('.head').after(tabs);
     box.appendChild(slot);
     var key = e.convoId + '|' + word.toLowerCase();
+    // Read as soon as the card opens, so Roots is there the moment he clicks it.
+    var fetchRoots = function(){
+      if(!rootsCache[key]) rootsCache[key] = apiWrite('/api/convos/' + e.convoId + '/define/roots', 'POST', { word: word, sentence: sentence })
+        .catch(function(err){ delete rootsCache[key]; throw err; });
+      return rootsCache[key];
+    };
+    fetchRoots().catch(function(){});
     var load = function(){
-      if(slot.dataset.state) return;
-      var paint = function(r){
+      if(slot.dataset.state === 'done' || slot.dataset.state === 'wait') return;
+      slot.dataset.state = 'wait';
+      if(!slot.innerHTML) slot.innerHTML = '<p class="wait">…</p>';
+      fetchRoots().then(function(r){
         var html = rootsHtml(r);
         slot.innerHTML = html || '<p class="wait">No known roots.</p>';
-        slot.dataset.state = html ? 'done' : 'none';
+        slot.dataset.state = 'done';
         placeQuotePop();
-      };
-      if(key in rootsCache){ paint(rootsCache[key]); return; }
-      slot.dataset.state = 'wait'; slot.innerHTML = '<p class="wait">…</p>';
-      apiWrite('/api/convos/' + e.convoId + '/define/roots', 'POST', { word: word, sentence: sentence })
-        .then(function(r){ rootsCache[key] = r; slot.dataset.state = ''; paint(r); })
-        .catch(function(){ slot.dataset.state = ''; slot.innerHTML = '<p class="wait">Not this time. Open Roots again.</p>'; });
+      }).catch(function(){ slot.dataset.state = ''; slot.innerHTML = '<p class="wait">Not this time. Open Roots again.</p>'; });
     };
     tabs.onmousedown = function(ev){ ev.stopPropagation(); ev.preventDefault(); };
     tabs.onclick = function(ev){
@@ -34026,7 +34030,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!r || (!r.width && !r.height)) return killQuotePop();
     quotePop.style.left = Math.max(6, Math.min(window.innerWidth - quotePop.offsetWidth - 6, r.left)) + 'px';
     var h = quotePop.offsetHeight || 30;
-    quotePop.style.top = (r.top > h + 12 ? r.top - h - 6 : r.bottom + 8) + 'px';
+    // Above the words when it fits, else below; and never past the screen's edge — a
+    // card that grew (Roots) slides up until its foot is on screen (his ask, 2026-11-17).
+    var top = r.top > h + 12 ? r.top - h - 6 : r.bottom + 8;
+    top = Math.max(6, Math.min(top, window.innerHeight - h - 6));
+    quotePop.style.top = top + 'px';
   }
   // The bar's buttons over a selected passage — an answer's, or a card's (his ask,
   // 2026-11-15: Keep, Quote and the rest in a book card too). Chapter needs a message.
