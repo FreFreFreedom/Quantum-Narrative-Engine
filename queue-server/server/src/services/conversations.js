@@ -395,7 +395,7 @@ export function cleanTitle(raw) {
   if (!normalized.length || TITLE_TRAILING_CONNECTORS.has(normalized.at(-1))) return null;
   const concreteWords = normalized.filter((word) => !TITLE_STOPWORDS.has(word) && !TITLE_GENERIC_WORDS.has(word));
   if (concreteWords.length < 2) return null;
-  return t.slice(0, 80);
+  return t;
 }
 
 // ─── Read paths ──────────────────────────────────────────────────────────────
