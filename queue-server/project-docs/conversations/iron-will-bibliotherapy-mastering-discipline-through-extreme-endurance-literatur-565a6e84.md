@@ -1,6 +1,6 @@
-# Memoirs of deterrence across extreme environments
+# Iron Will Bibliotherapy: Mastering Discipline Through Extreme Endurance Literature
 
-Thread 565a6e84-f3d7-4ada-8d3f-591d47413bb0 · 147 turns · last said 2026-10-30T04:50:07.721Z
+Thread 565a6e84-f3d7-4ada-8d3f-591d47413bb0 · 147 turns · last said 2026-11-18T23:56:35.201Z
 
 ## you
 
