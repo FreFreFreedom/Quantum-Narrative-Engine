@@ -3905,8 +3905,8 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .lib-peek { cursor:pointer; }
 /* Favourite and remove, in the band's corner (his pick A, 2026-10-11). */
 .lib-peek-acts { position:absolute; top:14px; right:16px; display:flex; gap:8px; }
-.lib-peek-acts button { width:34px; height:34px; padding:0; border-radius:50%; border:1px solid rgba(201,169,106,.5); background:none; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; color:#c9a96a; font:16px/1 system-ui, sans-serif; transition:background .12s, color .12s, border-color .12s; }
+.lib-peek-acts button { width:34px; height:34px; padding:0; border-radius:50%; border:1px solid #c9a96a; background:rgba(201,169,106,.08); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; color:#f1d9a0; font:17px/1 system-ui, sans-serif; transition:background .12s, color .12s, border-color .12s; }
 .lib-peek-acts button:hover { border-color:#c9a96a; background:rgba(201,169,106,.12); }
 .lib-peek-acts button.on { background:#c9a96a; color:#0b0f18; border-color:#c9a96a; }
 .lib-peek-acts button svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
@@ -4052,11 +4052,18 @@ a.lib-based:hover b { color:var(--c-kept-echo, var(--c-accent)); }
   border-top-right-radius:5px; pointer-events:none; transition:opacity .12s; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
 .shelf-fav::after { content:'★'; position:absolute; top:-29px; right:2px; font-size:11px; line-height:1; color:#141a26; }
 .shelf-card:hover .shelf-fav { opacity:0; }
-.shelf-card [data-fav] { position:absolute; top:4px; left:4px; z-index:3; width:22px; height:22px; min-width:0; padding:0; border-radius:50%; border:0;
-  display:flex; align-items:center; justify-content:center; font-size:13px; line-height:1; cursor:pointer; color:var(--c-ink-3);
-  opacity:0; transition:opacity .12s, color .12s; background:rgba(var(--c-surface-rgb),.85); }
+.shelf-card [data-fav] { position:absolute; top:5px; left:5px; z-index:3; width:26px; height:26px; min-width:0; padding:0; border-radius:50%;
+  border:1px solid #c9a96a; display:flex; align-items:center; justify-content:center; font-size:15px; line-height:1; cursor:pointer; color:#f1d9a0;
+  opacity:0; transition:opacity .12s, color .12s, background .12s; background:rgba(8,12,20,.88); box-shadow:0 1px 6px rgba(0,0,0,.6); }
+.shelf-card [data-fav]:hover { background:rgba(201,169,106,.25); }
 .shelf-card:hover [data-fav], .shelf-card [data-fav]:focus-visible { opacity:1; }
-.shelf-card.is-fav [data-fav] { color:#c9a14a; }
+.shelf-card.is-fav [data-fav] { background:#c9a96a; color:#0b0f18; }
+/* The same star on the open card, its top-left corner. */
+.shelf-panel-head .lib-pop-fav { position:absolute; top:14px; left:14px; z-index:2; width:30px; height:30px; min-width:0; padding:0; border-radius:50%;
+  border:1px solid #c9a96a; background:rgba(8,12,20,.6); color:#f1d9a0; font-size:16px; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .12s; }
+.shelf-panel-head .lib-pop-fav:hover { background:rgba(201,169,106,.25); }
+.shelf-panel-head .lib-pop-fav.on { background:#c9a96a; color:#0b0f18; }
 .lib-bar { align-items:center; gap:10px; }
 .lib-favonly { width:26px; height:26px; min-width:0; padding:0; border-radius:50%; border:1px solid var(--c-border-2); background:none;
   display:flex; align-items:center; justify-content:center; font-size:13px; line-height:1; color:var(--c-ink-4); cursor:pointer; }
@@ -19918,7 +19925,7 @@ function shelfPanel(b) {
   return '<div class="shelf-panel is-pop">'
     + libPopHead(b.cover_url || '', d.title, d.author || '', facts ? '' : '',
       bookOutMenu(bookLinks({ kind: 'book', title: d.title, creator: d.author || '' }, null)),
-      libStatStrip(d.stars, d.starCount, Number(d.pages) || 0, d.year || '') + (facts ? '<div class="shelf-facts">' + facts + '</div>' : ''))
+      libStatStrip(d.stars, d.starCount, Number(d.pages) || 0, d.year || '') + (facts ? '<div class="shelf-facts">' + facts + '</div>' : ''), 'shelf:' + b.id)
     + bookTabs(shelfNotesMarkup(d)
       // What sat here when nothing was kept was the book's first page — the
       // publisher's front matter in capitals, which reads as broken text.
@@ -20289,12 +20296,14 @@ function libStatStrip(stars, count, pages, year) {
 }
 // A book card's head: its cover large over a blur of itself, the whole title, the
 // author, then the numbers.
-function libPopHead(src, title, creator, extra, out, stats) {
+function libPopHead(src, title, creator, extra, out, stats, favKey) {
+  const fav = favKey && libFavs ? libFavs.has(favKey) : false;
+  const star = favKey ? '<button type="button" class="lib-pop-fav' + (fav ? ' on' : '') + '" data-pop-fav="' + qEscAttr(favKey) + '" aria-pressed="' + fav + '" title="' + (fav ? 'Unfavourite' : 'Favourite') + '" aria-label="Favourite">' + (fav ? '★' : '☆') + '</button>' : '';
   const bg = /^https:\/\//.test(src || '') ? ' style="background-image:url(&quot;' + qEscAttr(src) + '&quot;)"' : '';
   return '<div class="lib-pop-bg"' + bg + '></div>'
     + '<div class="shelf-panel-head is-pop"><span class="shelf-cover lib-pop-cv" draggable="true"' + bg + '></span>'
     + '<div><b title="' + qEscAttr(title) + '">' + qEsc(title) + '</b>' + extra + (creator ? '<small>' + qEsc(creator) + '</small>' : '') + '</div>'
-    + out + '<button type="button" data-close aria-label="Close">✕</button></div>' + stats;
+    + star + out + '<button type="button" data-close aria-label="Close">✕</button></div>' + stats;
 }
 
 function libAddedMs(t) {
@@ -20424,7 +20433,7 @@ function libScreenPanel(w) {
         : (libScreenBusy ? waitHtml('weaving', 'Working out what it gives you', 'p', 'shelf-note-wait') : ''));
     return '<div class="shelf-panel is-pop">'
       + libPopHead(src, f.fullTitle || w.title, w.creator || '', w.episode ? '<small>Episode · ' + qEsc(w.episode) + '</small>' : '',
-        bookOutMenu(bookLinks(w, f)), libStatStrip(f.stars, f.starCount, f.pages, f.year || w.year))
+        bookOutMenu(bookLinks(w, f)), libStatStrip(f.stars, f.starCount, f.pages, f.year || w.year), 'media:' + w.id)
       + bookTabs(about, libContentsMarkup(libShortTitle(w.title), w.creator || '', f.isbn || '', true))
       + '<div class="shelf-acts">' + libBtn('attach', 'Attach to the conversation') + libBtn('remove', 'Remove') + '</div></div>';
   }
@@ -20646,6 +20655,26 @@ window.addEventListener('resize', () => libSizeOver(document.getElementById('roo
   }, true);
   document.addEventListener('click', (ev) => { if (!proxy && ev.target && ev.target.closest && ev.target.closest('#roomInterests .shelf-card')) hide(); }, true);
 })();
+
+// The favourite star on the open card: the same favourite as the cover's and the band's.
+document.addEventListener('click', async (ev) => {
+  const b = ev.target && ev.target.closest && ev.target.closest('[data-pop-fav]');
+  if (!b) return;
+  ev.stopPropagation(); ev.preventDefault();
+  if (!libFavs) libFavs = new Set();
+  const key = b.dataset.popFav, on = !libFavs.has(key);
+  const paint = (v) => {
+    if (v) libFavs.add(key); else libFavs.delete(key);
+    b.classList.toggle('on', v); b.textContent = v ? '★' : '☆'; b.setAttribute('aria-pressed', String(v)); b.title = v ? 'Unfavourite' : 'Favourite';
+    document.querySelectorAll('.shelf-card[data-lib="' + CSS.escape(key) + '"]').forEach((card) => {
+      card.classList.toggle('is-fav', v);
+      const f = card.querySelector('[data-fav]'); if (f) { f.textContent = v ? '★' : '☆'; f.setAttribute('aria-pressed', String(v)); f.title = v ? 'Unfavourite' : 'Favourite'; }
+      const corner = card.querySelector('.shelf-fav'); if (corner) corner.hidden = !v;
+    });
+  };
+  paint(on);
+  try { await apiWrite('/api/convos/favs', 'POST', { key, on }); } catch (err) { paint(!on); b.title = err.message; }
+}, true);
 
 // ---------- Search beyond the Library (his picks S2d, F2, C3, 2026-10-11) ----------
 // Under the Library's search, three tabs: the Library itself, IMDb (films and
