@@ -191,7 +191,7 @@ export function conversationsRoutes() {
     const f = (await bookFacts.bookFactsFor(owner, [it])).x || {};
     const [st, about] = await Promise.all([
       f.stars ? null : bookFacts.starsFor(f.fullTitle || it.title) || bookFacts.amazonStarsFor(f.fullTitle || it.title, it.creator, f.isbn).catch(() => null),
-      f.overview ? '' : bookFacts.aboutFor(it.title, it.creator, it.year).catch(() => ''),
+      f.overview || req.query.lite === '1' ? '' : bookFacts.aboutFor(it.title, it.creator, it.year).catch(() => ''),
     ]);
     res.json({ ...f, ...(about ? { overview: about } : {}), ...(st ? { stars: st.stars, starCount: st.count } : {}) });
   }));
