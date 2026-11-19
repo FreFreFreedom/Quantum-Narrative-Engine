@@ -37396,7 +37396,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var myth = /\b(mytholog\w*|myths?|deity|deities|gods?|goddess|titan\w*|spirit|angel|demon|nymph|legend\w*|folklore|biblical|saint|hero)\b/i.test(desc);
     var kind = fictional ? 'fictional' : myth ? 'myth' : 'real';
     if (kind !== d.pKind && !(d.pKind === 'real' && kind === 'myth' && /\bsaint\b/i.test(desc))) return '';
+    // The same name is not the same person (2026-11-18: James Lawrence the triathlete
+    // got the 1812 navy captain's portrait). The page must say something the answer
+    // said about them — a shared nationality alone is not enough. No match, no face.
+    if (!seSamePerson(j, d.pFrom)) return '';
     return j.thumbnail.source;
+  }
+  var SE_WHO_SKIP = /^(the|and|from|with|who|known|famous|former|born|person|people|figure|american|british|english|french|german|canadian|italian|spanish|russian|irish|scottish|australian|japanese|chinese|indian|greek|roman|jewish|dutch|swedish|polish|mexican|brazilian|israeli|african|european|century|modern|ancient)$/;
+  function seWhoWords(t){
+    return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z]+/)
+      .filter(function(w){ return w.length >= 4 && !SE_WHO_SKIP.test(w); })
+      .map(function(w){ return w.slice(0, 5); });
+  }
+  function seSamePerson(j, from){
+    var want = seWhoWords(from);
+    if (!want.length) return true;           // nothing said about them to check against
+    var page = seWhoWords(String(j.title || '') + ' ' + String(j.description || '') + ' ' + String(j.extract || '').slice(0, 700));
+    return want.some(function(w){ return page.indexOf(w) >= 0; });
   }
   function sePersonArt(d){
     var who = d.pFull || d.pName;
