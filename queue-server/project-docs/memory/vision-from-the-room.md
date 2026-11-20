@@ -11,9 +11,13 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
-## The roux is the alchemical engine and foundation of culinary engineering for thickening and stabilizing liquids.
+## Mastering foundational culinary elements like mother sauces and trilogies provides the underlying source code for kitchen autonomy.
 
-A roux consists of equal parts fat and flour cooked together over heat. On a microscopic level, starch granules absorb the melted fat, coating them to prevent clumping when liquid is added. By cooking it for varying lengths of time into white, blond, or brown stages, it shifts from a thickening agent to a flavor engine.
+By mastering a few base classes and structural systems rather than memorizing thousands of isolated recipes, an operator gains the modular freedom to substitute variables and improvise endlessly based on available ingredients.
+
+## The trilogy framework acts as the macro-level conceptual blueprint for the modular architecture of a meal.
+
+Just as mother sauces serve as molecular building blocks, a trilogy of interchangeable components (Base, Protein, and Modifier) provides the structural framework for the whole plate, freeing the cook from rigid recipes and enabling total culinary autonomy through swappable systems.
 
 ## Sauces serve as the architectural spine of a meal rather than an afterthought.
 
@@ -34,10 +38,6 @@ Derived from the observation of "ruthless time management, meticulous scheduling
 ## Vital systems rely on an architectural spine—invisible connective tissue that holds disparate elements together rather than isolated components.
 
 Derived from the recognition that "French cooking treats sauce as the architectural spine of the meal," pointing to the universal design principle that true structural integrity depends on load-bearing connective tissue across all domains.
-
-## Scalable mastery allows an operator to dial effort and ambition up or down without losing quality by mastering core techniques rather than rigid instructions.
-
-A master does not necessarily cook harder; they cook smarter, applying the same underlying physical principles across different levels of engagement depending on available time, energy, and resources.
 
 ## Deterrence is a universal survival code operating identically from nations to individuals in hostile, inescapable environments.
 
