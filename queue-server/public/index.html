@@ -2861,9 +2861,11 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .se-cover.is-right { float:right; clear:both; margin-left:24px; }
 .se-cover { position:relative; }
 .se-fav { position:absolute; top:6px; left:6px; z-index:2; width:28px; height:28px; display:flex; align-items:center; justify-content:center;
-  border-radius:50%; font-style:normal; font-size:16px; line-height:1; color:#fff; background:rgba(0,0,0,.5); opacity:0; transition:opacity .15s; cursor:pointer; }
+  border-radius:50%; font-style:normal; font-size:16px; line-height:1; color:#f1d9a0; background:rgba(8,12,20,.88); border:1px solid #c9a96a;
+  box-shadow:0 1px 6px rgba(0,0,0,.6); opacity:0; transition:opacity .15s, background .12s; cursor:pointer; }
+.se-fav:hover { background:#3a3220; }
 .se-cover:hover .se-fav, .se-fav:focus-visible, .se-fav.on { opacity:1; }
-.se-fav.on { color:#d4a24c; }
+.se-fav.on { background:#c9a96a; color:#0b0f18; }
 @media (hover:none) { .se-fav { opacity:.85; } }
 .se-add { position:absolute; top:-8px; right:-8px; z-index:3; width:26px; height:26px; display:flex; align-items:center; justify-content:center;
   border-radius:50%; font:600 16px/1 system-ui, sans-serif; font-style:normal; cursor:pointer;
