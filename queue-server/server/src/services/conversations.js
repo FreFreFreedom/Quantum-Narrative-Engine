@@ -695,6 +695,93 @@ function linkedConversationsBlock(convoId) {
   return `\n=== LINKED CONVERSATIONS ===\nThese are deliberate, lasting attachments. Use them as context, while keeping clear which conversation a claim came from. If exact wording or an omitted middle passage matters, call read_linked_conversation with its link id.\n\n${blocks.join('\n\n')}`;
 }
 
+// Recall by name (his ask, 2026-11-20): when his message names another Room
+// conversation or side talk by its title, that thread comes along on this turn —
+// no linking by hand. A side talk brings the layer it stepped out of too, since
+// it leans on it. He usually names the thing he means inside it, so a long
+// thread sends the passages that hold his other words, not only its start and end.
+// Free (no model call), and bounded: two threads at most, ~18k characters in all,
+// and only while his last two messages still name it.
+const RECALL_MAX = 2;
+const RECALL_CHARS = 9000;
+const RECALL_PARENT_CHARS = 3500;
+const RECALL_SKIP = new Set([...TITLE_STOPWORDS, 'and', 'or', 'of', 'in', 'on', 'for', 'with', 'from', 'into', 'as', 'at', 'by', 'what', 'how', 'why',
+  'when', 'who', 'its', 'his', 'her', 'their', 'not', 'but', 'conversation', 'side', 'talk', 'open', 'new', 'one', 'other', 'there', 'then']);
+const recallWords = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .split(/[^a-z0-9']+/).map((w) => w.replace(/^'+|'+$/g, '')).filter((w) => w.length >= 3 && !RECALL_SKIP.has(w));
+const recallStem = (w) => w.replace(/(?:ies|es|s|ing|ed|al)$/, '').slice(0, 7);
+
+// How surely his words name this title. He says a piece of it, in its order:
+// "the psychological walls conversation", "the iron will bibliotherapy talk". So:
+// the whole title; or three of its key words in a row; or two in a row when he
+// also says conversation / talk / thread. Scattered shared words never count —
+// "ontology … ego" is a subject, not a title (tested on his real titles).
+const RECALL_CUE = /\b(?:conversations?|convos?|talks?|threads?|chats?|discussions?|aside)\b/i;
+function titleNamed(title, said) {
+  const t = String(title || '').trim();
+  if (!t || t === DEFAULT_OPEN_TITLE || t === DEFAULT_SIDE_TITLE) return 0;
+  const flat = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9']+/g, ' ').trim();
+  if (t.length >= 6 && ` ${flat(said)} `.includes(` ${flat(t)} `)) return 99;
+  const tw = flat(t).split(' ').filter(Boolean), sw = flat(said).split(' ').filter(Boolean);
+  const key = (w) => w.length >= 3 && !RECALL_SKIP.has(w);
+  // Longest run of title words he said in the same order (small words may sit
+  // between key words in both), counted in key words.
+  let best = 0;
+  for (let i = 0; i < tw.length; i++) for (let j = 0; j < sw.length; j++) {
+    let a = i, b = j, n = 0;
+    while (a < tw.length && b < sw.length && recallStem(tw[a]) === recallStem(sw[b])) { if (key(tw[a])) n++; a++; b++; }
+    if (n > best) best = n;
+  }
+  if (best >= 3) return best;
+  return best >= 2 && RECALL_CUE.test(said) ? best : 0;
+}
+
+// A bounded piece of a thread: whole when it fits; otherwise its start, the
+// passages holding his words, and its end.
+function recallExcerpt(text, stems, budget) {
+  const t = String(text || '');
+  if (t.length <= budget) return t;
+  const paras = t.split(/\n\n+/);
+  const score = (p) => { const s = new Set(recallWords(p).map(recallStem)); let n = 0; for (const w of stems) if (s.has(w)) n++; return n; };
+  const head = t.slice(0, Math.floor(budget * 0.15));
+  const tail = t.slice(-Math.floor(budget * 0.25));
+  let room = budget - head.length - tail.length;
+  const picked = paras.map((p, i) => ({ i, p, n: score(p) })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n || b.i - a.i);
+  const keep = [];
+  for (const x of picked) { const p = x.p.slice(0, 2500); if (p.length > room) continue; keep.push({ i: x.i, p }); room -= p.length; if (room < 400) break; }
+  keep.sort((a, b) => a.i - b.i);
+  return [head, '[…]', ...keep.map((k) => k.p).flatMap((p) => [p, '[…]']), tail].join('\n\n');
+}
+
+export function recalledConversationsBlock(convo) {
+  if (!db || !convo) return '';
+  const mine = threadMessages(convo.id).filter((m) => m.kind === 'chat' && m.role === 'user').slice(-2).map((m) => ownWords(stripLinkPages(m.text)));
+  const said = mine.join('\n');
+  if (said.trim().length < 6) return '';
+  const saidStems = new Set(recallWords(said).map(recallStem));
+  // Never itself, the line above it (already here), or a thread he linked by hand.
+  const skip = new Set([convo.id]);
+  for (let c = convo, i = 0; c?.parent_convo_id && i < 6; i++) { skip.add(c.parent_convo_id); c = getConvo(c.parent_convo_id); }
+  for (const l of db.prepare('SELECT source_convo_id FROM convo_links WHERE target_convo_id=?').all(convo.id)) skip.add(l.source_convo_id);
+  const rows = db.prepare(`SELECT id, title, subject_type, parent_convo_id FROM convos
+    WHERE deleted_at IS NULL AND subject_type IN ('open','side') AND turns > 0 ORDER BY updated_at DESC LIMIT 400`).all();
+  const hits = rows.filter((r) => !skip.has(r.id)).map((r) => ({ r, s: titleNamed(r.title, said) }))
+    .filter((x) => x.s > 0).sort((a, b) => b.s - a.s).slice(0, RECALL_MAX);
+  if (!hits.length) return '';
+  const blocks = hits.map(({ r }) => {
+    const c = getConvo(r.id);
+    if (!c) return '';
+    const titleStems = new Set(recallWords(r.title).map(recallStem));
+    const element = new Set([...saidStems].filter((w) => !titleStems.has(w)));
+    let out = `--- RECALLED ${r.subject_type === 'side' ? 'SIDE TALK' : 'CONVERSATION'} — "${r.title}" ---\n${recallExcerpt(snapshotConversation(c).text, element, RECALL_CHARS)}`;
+    const parent = r.parent_convo_id ? getConvo(r.parent_convo_id) : null;
+    if (parent) out += `\n\n(It stepped out of "${parent.title || DEFAULT_OPEN_TITLE}", which it leans on:)\n${recallExcerpt(snapshotConversation(parent).text, element, RECALL_PARENT_CHARS)}`;
+    return out;
+  }).filter(Boolean);
+  if (!blocks.length) return '';
+  return `\n=== CONVERSATIONS HE IS NAMING ===\nHe named ${blocks.length > 1 ? 'these earlier threads' : 'this earlier thread'} in his message. It is what he means when he refers to it; keep clear which thread a thing was said in.\n\n${blocks.join('\n\n')}`;
+}
+
 const LINKED_CONVERSATION_TOOL = {
   name: 'read_linked_conversation',
   description: 'Read or search the exact captured snapshot of a conversation deliberately linked to the current thread. Use the link id shown in LINKED CONVERSATIONS. This cannot read unlinked Room conversations.',
@@ -2242,6 +2329,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     ctx.mode === 'open' ? '' : `\n=== WHAT THIS CONVERSATION IS ABOUT ===\n${ctx.contextText}`,
     parentTranscriptFor(convo),
     linkedConversationsBlock(convo.id),
+    recalledConversationsBlock(convo),
     // His taught ideas and subjects, only when his message is on their subject.
     // An earlier conversation's thinking no longer rides on its own (2026-10-08):
     // it handed the model its old answers, and new ones drifted back to them. A
@@ -2290,6 +2378,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     repoBlock,
     parentTranscriptFor(convo),
     linkedConversationsBlock(convo.id),
+    recalledConversationsBlock(convo),
     talk(historyWindow),
     directInstructionsBlock(),
     `\n=== WHAT TO DO NOW ===\n${instruction || `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`}`,
