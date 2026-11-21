@@ -48,6 +48,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: Redlining as civic self-dissociation — side talk of Comparative politics across structural scales — notes/redlining-as-civic-self-dissociation-side-talk-of-comparative-politics-across-st.md
 - Note: Relational Dynamics Reduced to Fundamental Polarity — notes/relational-dynamics-reduced-to-fundamental-polarity.md
 - Note: Repeated Single-Word Requests Trigger Model Rate Limit Errors — notes/repeated-single-word-requests-trigger-model-rate-limit-errors.md
+- Note: Side talk — side talk of Baking as Umbrella Term Over Pastry Explained — notes/side-talk-side-talk-of-baking-as-umbrella-term-over-pastry-explained.md
 - Note: Software's ontology: grammar as being — notes/software-s-ontology-grammar-as-being.md
 - Note: State Experiments in Constitutional Decision‑Making — notes/state-experiments-in-constitutional-decision-making.md
 - Note: Suits law firm loyalty betrayals — side talk of Comparative politics across structural scales — notes/suits-law-firm-loyalty-betrayals-side-talk-of-comparative-politics-across-struct.md
