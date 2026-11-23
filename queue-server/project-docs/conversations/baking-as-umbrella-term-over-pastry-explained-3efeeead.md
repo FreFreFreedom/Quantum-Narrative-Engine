@@ -1,6 +1,6 @@
 # Baking as Umbrella Term Over Pastry Explained
 
-Thread 3efeeead-dc15-4e0a-9d4a-17d4a301716d · 43 turns · last said 2026-11-20T10:26:07.534Z
+Thread 3efeeead-dc15-4e0a-9d4a-17d4a301716d · 44 turns · last said 2026-11-23T22:54:19.603Z
 
 ## you
 
@@ -1518,3 +1518,11 @@ is baking the umbralla term that includes pastry ? or is it the reverse ? short 
 **Baking** is the umbrella term. 
 
 It covers everything cooked by dry heat in an oven—including roasting meats, baking bread, and **pastry** (which specifically focuses on refined doughs, tarts, cakes, and laminated creations).
+
+## you
+
+and what is pastry encompasses ? short answer
+
+## the room
+
+**Pastry** encompasses sweet and savory doughs, batters, and creams that rely on precise fats, structures, and techniques—specifically tarts, pies, cakes, cookies, laminated doughs (like croissants and puff pastry), custards, and confections.
