@@ -15,6 +15,8 @@ export function bindWordRoots(database) {
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (scope, word)
   )`);
+  // An empty answer is never final: read again next time it is asked.
+  db.exec(`DELETE FROM word_roots WHERE json LIKE '{"steps":[]%'`);
 }
 
 // Wiktionary's etymology, followed back: the word's own entry (English first, then
@@ -106,13 +108,15 @@ const LANES = [
   { provider: 'cerebras', model: 'gpt-oss-120b', ms: 9000 },
   { provider: 'google-ai-studio', model: 'gemini-flash-latest', ms: 12000 },
 ];
-async function rootsText(prompt) {
+// Every lane in turn, until one gives a readable ladder: an empty or broken reply from one
+// model is a slip, not an answer (automaton came back empty once and was kept, 2026-11-23).
+async function* rootsTexts(prompt) {
   for (const l of LANES) {
     if (router.isExhausted(l.provider, l.model)) continue;
     const out = await generateTextDirect({ prompt, provider: l.provider, model: l.model, maxTokens: 2000, label: 'room:roots', timeoutMs: l.ms }).catch(() => null);
-    if (out && out.text) return out;
+    if (out && out.text) yield out;
   }
-  return generateText({ prompt, feature: 'quick', label: 'room:roots', maxTokens: 2000, timeoutMs: 25_000 });
+  yield await generateText({ prompt, feature: 'quick', label: 'room:roots', maxTokens: 2000, timeoutMs: 25_000 }).catch(() => null);
 }
 
 const PROMPT = `You show a reader where ONE word came from. English is his second language: plain words.
@@ -179,14 +183,19 @@ export async function wordRoots({ scope = '', word = '', sentence = '', context 
     if (hit) { try { return { ok: true, ...JSON.parse(hit.json), cached: true }; } catch { /* read again */ } }
   }
   const ref = await wiktionaryEtymology(w);
-  const out = await rootsText(`${PROMPT}\n\n=== THE WORD ===\n${w}\n\n=== THE SENTENCE ===\n${String(sentence || '').replace(/\s+/g, ' ').slice(0, 600) || '(not given)'}`
+  const prompt = `${PROMPT}\n\n=== THE WORD ===\n${w}\n\n=== THE SENTENCE ===\n${String(sentence || '').replace(/\s+/g, ' ').slice(0, 600) || '(not given)'}`
     + (context ? `\n\n=== WHERE HE IS READING ===\n${String(context).slice(0, 200)}` : '')
-    + `\n\n=== REFERENCE ===\n${ref || '(Wiktionary could not be reached: use the history that is well known for this word; return no steps only when its origin is truly unknown.)'}`);
-  if (out?.error || !out?.text) return { error: out?.error || 'generation_failed' };
-  let parsed;
-  try { parsed = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { return { error: 'unreadable' }; }
-  const roots = clean(parsed, w);
-  // An empty answer without the reference may be the network, not the word: not kept.
-  if (db && (roots.steps.length || ref)) db.prepare('INSERT OR REPLACE INTO word_roots (scope, word, json) VALUES (?,?,?)').run(sc, key, JSON.stringify(roots));
+    + `\n\n=== REFERENCE ===\n${ref || '(Wiktionary could not be reached: use the history that is well known for this word; return no steps only when its origin is truly unknown.)'}`;
+  let roots = null, lastErr = 'generation_failed';
+  for await (const out of rootsTexts(prompt)) {
+    if (!out || out.error || !out.text) { lastErr = out?.error || lastErr; continue; }
+    let parsed;
+    try { parsed = JSON.parse(out.text.replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch { lastErr = 'unreadable'; continue; }
+    roots = clean(parsed, w);
+    if (roots.steps.length) break;
+  }
+  if (!roots) return { error: lastErr };
+  // Only a ladder is kept; an empty answer is asked again next time.
+  if (db && roots.steps.length) db.prepare('INSERT OR REPLACE INTO word_roots (scope, word, json) VALUES (?,?,?)').run(sc, key, JSON.stringify(roots));
   return { ok: true, ...roots };
 }
