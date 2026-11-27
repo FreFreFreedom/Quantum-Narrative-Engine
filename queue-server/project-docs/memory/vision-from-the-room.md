@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## Custards, puddings, and set creams form a single modular engine governed by the coagulation of egg protein under controlled heat.
+
+The entire world of creamy, spoonable desserts is not a collection of distinct recipes but variations on a single core engine. By adjusting the ratio of whole eggs to yolks, the choice of dairy, and the presence of starch, a single custard matrix can produce puddings, baked custards, crème brûlée, pots de crème, and flans.
+
 ## Mastering foundational culinary elements like mother sauces and trilogies provides the underlying source code for kitchen autonomy.
 
 By mastering a few base classes and structural systems rather than memorizing thousands of isolated recipes, an operator gains the modular freedom to substitute variables and improvise endlessly based on available ingredients.
