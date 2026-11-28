@@ -56,6 +56,7 @@ Saved conversations, mirrored automatically for the coding agent.
 - Note: The Core of Fractal Resonance Navigation — notes/the-core-of-fractal-resonance-navigation.md
 - Note: The Living Grammar of Fractal Resonance — notes/the-living-grammar-of-fractal-resonance.md
 - Note: The trap mistaken for home — side talk of Comparative politics across structural scales — notes/the-trap-mistaken-for-home-side-talk-of-comparative-politics-across-structural-s.md
+- Note: Total Power Exchange as Trauma‑Focused Caretaking — notes/total-power-exchange-as-trauma-focused-caretaking.md
 - Note: Trauma and the Conspiratorial Mindset — notes/trauma-and-the-conspiratorial-mindset.md
 - Note: Undervalued automation skills and consulting pivot — notes/undervalued-automation-skills-and-consulting-pivot.md
 - Note: over 1,000 hours of riding shotgun in patrol cars. — side talk of American Justice: Institutional Power and Systemic Failure — notes/over-1-000-hours-of-riding-shotgun-in-patrol-cars-side-talk-of-american-justice-.md
