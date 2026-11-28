@@ -11,6 +11,18 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The Dupe Pattern is the psychological engine where people date each other's surface coping mechanisms instead of their actual unmet needs.
+
+A person splits into a hyper-competent surface persona to survive while harboring a desperate opposite need underneath. Because they attract matches to their wounds, a hyper-independent person attracts someone who wants a caretaker, leading to mutual exhaustion and a return to original trauma when the masks slip.
+
+## Enmeshment trauma causes people to disconnect from their authentic selves to stay socially alive, leading them to repeatedly attract suffocating experiences.
+
+Growing up in an intrusive or enmeshed environment forces a person to shrink and lose their identity. This initial trauma sets up a pattern of attracting similar suffocating relationships until they gradually learn to be stable and independent.
+
+## The six relationship dynamics are evolutionary attractors and developmental phases in a trauma-healing journey rather than static boxes.
+
+A person does not fit permanently into a single box like the traditional homemaker, TPE caretaker, or autonomous peer structure; rather, these dynamics represent stations along a healing trajectory as one moves through enmeshment trauma and integrates split parts.
+
 ## Custards, puddings, and set creams form a single modular engine governed by the coagulation of egg protein under controlled heat.
 
 The entire world of creamy, spoonable desserts is not a collection of distinct recipes but variations on a single core engine. By adjusting the ratio of whole eggs to yolks, the choice of dairy, and the presence of starch, a single custard matrix can produce puddings, baked custards, crème brûlée, pots de crème, and flans.
