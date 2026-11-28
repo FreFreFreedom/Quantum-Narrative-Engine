@@ -4,7 +4,7 @@ Raw transcripts, mirrored automatically for coding agents after at least three u
 
 Curated /note saves live separately in notes/. A conversation can have both a note and a raw transcript; both are kept.
 
-- Total Power Exchange: Caretaking Dynamics Explained — conversations/total-power-exchange-caretaking-dynamics-explained-bcd72547.md
+- Healing Archetypes: Trauma‑Rooted Relational Dynamics Explained — conversations/healing-archetypes-trauma-rooted-relational-dynamics-explained-bcd72547.md
 - Pastry Chef Memoirs and Fictional Baking Narratives — conversations/pastry-chef-memoirs-and-fictional-baking-narratives-3efeeead.md
 - Iron Will Bibliotherapy: Mastering Discipline Through Extreme Endurance Literature — conversations/iron-will-bibliotherapy-mastering-discipline-through-extreme-endurance-literatur-565a6e84.md
 - High‑Adrenaline Film Picks for Intense Bike Sessions — conversations/high-adrenaline-film-picks-for-intense-bike-sessions-f431467c.md
